@@ -10,6 +10,7 @@ urlpatterns = [
     path("api/balance-history/<slug:slug>/", BalanceHistoryAPI.as_view(), name="balance_history_api"),
     path("odds/", include("betting.urls")),
     path("profile/<slug:slug>/", ProfileView.as_view(), name="profile"),
+    path("", include("challenges.urls")),
     path("", include("discussions.urls")),
     path("", include("website.urls")),
     path("", include("matches.urls")),

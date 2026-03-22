@@ -8,10 +8,10 @@ from django.utils import timezone
 from django.views.generic import DetailView, TemplateView, View
 
 from betting.forms import PlaceBetForm
-from betting.models import BetSlip, Odds
+from betting.models import BetSlip
 from vinosports.betting.leaderboard import BOARD_TYPES, get_leaderboard_entries, get_user_rank
 from matches.forms import MatchNotesForm
-from matches.models import Match, MatchNotes, Standing
+from matches.models import Match, MatchNotes, Odds, Standing
 from matches.services import fetch_match_hype_data
 
 

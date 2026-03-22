@@ -13,7 +13,8 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError, transaction
 
-from betting.models import BetSlip, Odds
+from betting.models import BetSlip
+from matches.models import Odds
 from bots.models import BotComment, BotProfile
 from bots.services import get_best_odds_map
 from discussions.models import Comment

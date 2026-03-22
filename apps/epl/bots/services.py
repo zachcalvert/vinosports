@@ -12,18 +12,13 @@ from django.db.models import Min
 
 from vinosports.betting.balance import log_transaction
 from vinosports.betting.models import (
+    Bailout,
+    Bankruptcy,
     BalanceTransaction,
     UserBalance,
 )
-from betting.models import (
-    Bailout,
-    Bankruptcy,
-    BetSlip,
-    Odds,
-    Parlay,
-    ParlayLeg,
-)
-from matches.models import Match
+from betting.models import BetSlip, Parlay, ParlayLeg
+from matches.models import Match, Odds
 
 logger = logging.getLogger(__name__)
 

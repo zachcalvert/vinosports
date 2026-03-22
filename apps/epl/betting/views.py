@@ -17,15 +17,8 @@ from django.views.generic import TemplateView
 from vinosports.betting.balance import log_transaction
 from betting.context_processors import parlay_slip as _parlay_slip_ctx
 from betting.forms import PlaceBetForm, PlaceParlayForm
-from betting.models import (
-    PARLAY_MAX_LEGS,
-    PARLAY_MAX_PAYOUT,
-    PARLAY_MIN_LEGS,
-    BetSlip,
-    Odds,
-    Parlay,
-    ParlayLeg,
-)
+from betting.models import BetSlip, Parlay, ParlayLeg
+from vinosports.betting.constants import PARLAY_MAX_LEGS, PARLAY_MAX_PAYOUT, PARLAY_MIN_LEGS
 from vinosports.betting.models import (
     Badge,
     Bailout,
@@ -38,8 +31,8 @@ from vinosports.betting.models import (
 from vinosports.betting.leaderboard import get_public_identity, get_user_rank
 from challenges.engine import update_challenge_progress
 from discussions.models import Comment
-from matches.models import Match
-from rewards.models import RewardDistribution
+from matches.models import Match, Odds
+from vinosports.rewards.models import RewardDistribution
 from website.templatetags.currency_tags import format_currency
 
 logger = logging.getLogger(__name__)

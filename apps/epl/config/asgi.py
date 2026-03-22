@@ -10,12 +10,13 @@ django_asgi_app = get_asgi_application()
 
 from activity.routing import websocket_urlpatterns as activity_ws
 from matches.routing import websocket_urlpatterns as matches_ws
+from rewards.routing import websocket_urlpatterns as rewards_ws
 
 application = ProtocolTypeRouter(
     {
         "http": django_asgi_app,
         "websocket": AuthMiddlewareStack(
-            URLRouter(matches_ws + activity_ws)
+            URLRouter(matches_ws + activity_ws + rewards_ws)
         ),
     }
 )

@@ -24,7 +24,6 @@ from vinosports.betting.models import (
     UserStats,
 )
 from vinosports.betting.leaderboard import get_public_identity, get_user_rank, mask_email
-from board.models import BoardPost
 from discussions.models import Comment
 from matches.models import Team
 from users.avatars import AVATAR_COLORS, AVATAR_ICONS, get_unlocked_frames
@@ -498,21 +497,13 @@ class AdminBetsPartialView(SuperuserRequiredMixin, View):
 class AdminCommentsPartialView(SuperuserRequiredMixin, View):
     def get(self, request):
         offset = _parse_offset(request)
-        comments_qs = (
+        qs = (
             Comment.objects.filter(is_deleted=False)
             .select_related("user", "match__home_team", "match__away_team")
             .order_by("-created_at")
         )
-        posts_qs = (
-            BoardPost.objects.filter(is_hidden=False)
-            .select_related("author")
-            .order_by("-created_at")
-        )
-        items = _merged_querysets(comments_qs, posts_qs, offset, ADMIN_PAGE_SIZE)
-        total = (
-            Comment.objects.filter(is_deleted=False).count()
-            + BoardPost.objects.filter(is_hidden=False).count()
-        )
+        items = list(qs[offset : offset + ADMIN_PAGE_SIZE])
+        total = qs.count()
         return _paginated_response(
             request, items, total, offset,
             "website/partials/admin_comments_list.html",
