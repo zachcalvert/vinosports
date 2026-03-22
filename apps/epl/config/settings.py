@@ -1,5 +1,8 @@
 import os
+from datetime import timedelta
 from pathlib import Path
+
+from celery.schedules import crontab
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -35,6 +38,7 @@ INSTALLED_APPS = [
 AUTH_USER_MODEL = "users.User"
 
 MIDDLEWARE = [
+    "vinosports.middleware.BotScannerBlockMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -113,3 +117,72 @@ CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
 CELERY_TIMEZONE = TIME_ZONE
+
+CELERY_BEAT_SCHEDULE = {
+    "fetch-teams-monthly": {
+        "task": "matches.tasks.fetch_teams",
+        "schedule": crontab(hour=3, minute=0, day_of_month=1),
+    },
+    "fetch-fixtures-daily": {
+        "task": "matches.tasks.fetch_fixtures",
+        "schedule": crontab(hour=3, minute=0),
+    },
+    "fetch-standings-daily-midweek": {
+        "task": "matches.tasks.fetch_standings",
+        "schedule": crontab(hour=3, minute=0, day_of_week="tue,wed,thu"),
+    },
+    "fetch-standings-3h-matchdays": {
+        "task": "matches.tasks.fetch_standings",
+        "schedule": crontab(hour="0,3,6,9,12,15,18,21", minute=0, day_of_week="fri,sat,sun,mon"),
+    },
+    "fetch-live-scores-15m-on-matchdays": {
+        "task": "matches.tasks.fetch_live_scores",
+        "schedule": crontab(minute="0,15,30,45", hour="11-23", day_of_week="fri,sat,sun,mon"),
+    },
+    "generate-odds-10m": {
+        "task": "betting.tasks.generate_odds",
+        "schedule": timedelta(minutes=10),
+    },
+    "prefetch-hype-data-6h": {
+        "task": "matches.tasks.prefetch_upcoming_hype_data",
+        "schedule": timedelta(hours=6),
+    },
+    "rotate-daily-challenges": {
+        "task": "challenges.tasks.rotate_daily_challenges",
+        "schedule": crontab(hour=5, minute=0),
+    },
+    "rotate-weekly-challenges": {
+        "task": "challenges.tasks.rotate_weekly_challenges",
+        "schedule": crontab(hour=4, minute=0, day_of_week="friday"),
+    },
+    "expire-challenges-15m": {
+        "task": "challenges.tasks.expire_challenges",
+        "schedule": timedelta(minutes=15),
+    },
+    "run-bot-strategies-daily-thu-sat": {
+        "task": "bots.tasks.run_bot_strategies",
+        "schedule": crontab(hour=8, minute=0, day_of_week="thu,fri,sat"),
+    },
+    "generate-prematch-comments-2h-thu-sat": {
+        "task": "bots.tasks.generate_prematch_comments",
+        "schedule": crontab(hour="8,10,12,14,16,18,20,22", minute=0, day_of_week="thu,fri,sat"),
+    },
+    "generate-postmatch-comments-30m-matchdays": {
+        "task": "bots.tasks.generate_postmatch_comments",
+        "schedule": crontab(minute="0,30", hour="14-23", day_of_week="fri,sat,sun,mon"),
+    },
+    "broadcast-activity-event-20s": {
+        "task": "activity.tasks.broadcast_next_activity_event",
+        "schedule": 20.0,
+    },
+    "cleanup-old-activity-events-daily": {
+        "task": "activity.tasks.cleanup_old_activity_events",
+        "schedule": crontab(hour=4, minute=30),
+    },
+}
+
+# External APIs
+FOOTBALL_DATA_API_KEY = os.environ.get("FOOTBALL_DATA_API_KEY", "")
+ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
+API_TIMEOUT = 30
+CURRENT_SEASON = "2025"

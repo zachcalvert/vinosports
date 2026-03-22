@@ -1,0 +1,33 @@
+{% comment %}
+Live Match Card — rendered on match_detail.html for IN_PLAY/PAUSED matches.
+
+Context expected:
+  match          — Match instance
+  match_stats    — MatchStats instance or None
+  sentiment      — dict with total/home_pct/draw_pct/away_pct/most_popular, or None
+  home_standing  — Standing instance or None
+  away_standing  — Standing instance or None
+{% endcomment %}
+
+<div class="rounded-lg border border-accent/30 bg-surface overflow-hidden">
+    <!-- Header -->
+    <div class="px-5 py-3 border-b border-gray-700 flex items-center justify-between">
+        <h3 class="text-xs font-semibold uppercase tracking-widest text-accent flex items-center gap-2">
+            {% if match.status == "IN_PLAY" %}
+                <span class="w-2 h-2 rounded-full bg-accent animate-pulse"></span>
+            {% endif %}
+            Match Centre
+            {% if match.status == "PAUSED" %}
+                <span class="ml-1 rounded bg-accent/20 px-1.5 py-0.5 text-accent text-[10px] font-bold">HT</span>
+            {% endif %}
+        </h3>
+        {% if match_stats.fetched_at %}
+            <span class="text-xs text-muted">Stats via football-data.org</span>
+        {% endif %}
+    </div>
+
+    <div class="divide-y divide-gray-700">
+        {% include "matches/partials/community_sentiment.html" %}
+        {% include "matches/partials/_section_form_guide.html" %}
+    </div>
+</div>

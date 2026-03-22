@@ -1,0 +1,7 @@
+<div class="bg-surface rounded-lg border border-gray-700 border-dashed p-4 text-center">
+    <p class="text-muted text-sm mb-2">Log in to join the discussion.</p>
+    <a href="{% url 'website:login' %}?next={% url 'matches:match_detail' match.slug %}"
+       class="inline-block bg-accent text-dark font-bold py-1.5 px-4 rounded-md hover:bg-accent/90 transition-colors text-sm">
+        Log In
+    </a>
+</div>

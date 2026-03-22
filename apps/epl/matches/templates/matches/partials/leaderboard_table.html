@@ -1,0 +1,145 @@
+{% load currency_tags %}
+{# Tab bar — included here so HTMX responses update the active tab state #}
+<div class="flex gap-1 mb-6 bg-dark/40 rounded-lg p-1 overflow-x-auto">
+    {% for bt in board_types %}
+    <button
+        hx-get="{% url 'matches:leaderboard' %}?type={{ bt }}"
+        hx-target="#leaderboard-content"
+        hx-swap="innerHTML"
+        hx-push-url="true"
+        class="px-4 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap
+            {% if bt == board_type %}bg-accent/20 text-accent{% else %}text-muted hover:text-white hover:bg-surface/50{% endif %}"
+    >
+        {% if bt == "balance" %}Balance
+        {% elif bt == "profit" %}Profit
+        {% elif bt == "win_rate" %}Win Rate
+        {% elif bt == "streak" %}Streaks
+        {% endif %}
+    </button>
+    {% endfor %}
+</div>
+
+{% if leaderboard %}
+<div class="overflow-x-auto">
+    <table class="w-full" id="leaderboard-table">
+        <thead>
+            <tr class="border-b border-gray-600 text-xs text-muted uppercase tracking-wider">
+                <th class="px-2 sm:px-3 py-3 text-left w-12">#</th>
+                <th class="px-2 sm:px-3 py-3 text-left">Player</th>
+
+                {% if board_type == "balance" %}
+                <th class="px-2 sm:px-3 py-3 text-right">Balance</th>
+                <th class="px-2 sm:px-3 py-3 text-right hidden sm:table-cell">Joined</th>
+
+                {% elif board_type == "profit" %}
+                <th class="px-2 sm:px-3 py-3 text-right">Net Profit</th>
+                <th class="px-2 sm:px-3 py-3 text-right hidden sm:table-cell">Record</th>
+
+                {% elif board_type == "win_rate" %}
+                <th class="px-2 sm:px-3 py-3 text-right">Win Rate</th>
+                <th class="px-2 sm:px-3 py-3 text-right hidden sm:table-cell">Bets</th>
+
+                {% elif board_type == "streak" %}
+                <th class="px-2 sm:px-3 py-3 text-right">Best Streak</th>
+                <th class="px-2 sm:px-3 py-3 text-right hidden sm:table-cell">Current</th>
+                {% endif %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for entry in leaderboard %}
+            <tr class="border-b border-gray-700/50 hover:bg-surface/50 transition-colors{% if request.user.is_authenticated and entry.user_id == request.user.id %} bg-accent/5{% endif %}">
+                <td class="px-2 sm:px-3 py-3">
+                    <div class="flex h-7 w-7 items-center justify-center rounded-full bg-dark/40 text-muted text-xs font-bold">
+                        {{ forloop.counter }}
+                    </div>
+                </td>
+                <td class="px-2 sm:px-3 py-3">
+                    <a href="{% url 'profile' entry.user.slug %}" class="flex items-center gap-2 text-sm font-semibold text-white hover:text-accent transition-colors">
+                        {% include "website/components/avatar.html" with avatar_user=entry.user avatar_size="sm" %}
+                        {{ entry.display_identity }}
+                    </a>
+                </td>
+
+                {% if board_type == "balance" %}
+                <td class="px-2 sm:px-3 py-3 text-right">
+                    <span class="font-mono text-sm font-bold text-accent">{{ entry.balance|currency:request.user }}</span>
+                </td>
+                <td class="px-2 sm:px-3 py-3 text-right hidden sm:table-cell">
+                    <span class="text-xs text-muted">{{ entry.user.date_joined|date:"M Y" }}</span>
+                </td>
+
+                {% elif board_type == "profit" %}
+                <td class="px-2 sm:px-3 py-3 text-right">
+                    <span class="font-mono text-sm font-bold {% if entry.net_profit > 0 %}text-green-400{% elif entry.net_profit < 0 %}text-red-400{% else %}text-muted{% endif %}">
+                        {% if entry.net_profit > 0 %}+{% endif %}{{ entry.net_profit|currency:request.user }}
+                    </span>
+                </td>
+                <td class="px-2 sm:px-3 py-3 text-right hidden sm:table-cell">
+                    <span class="text-xs text-muted">{{ entry.total_wins }}W–{{ entry.total_losses }}L</span>
+                </td>
+
+                {% elif board_type == "win_rate" %}
+                <td class="px-2 sm:px-3 py-3 text-right">
+                    <span class="font-mono text-sm font-bold text-accent">{{ entry.win_rate }}%</span>
+                </td>
+                <td class="px-2 sm:px-3 py-3 text-right hidden sm:table-cell">
+                    <span class="text-xs text-muted">{{ entry.total_bets }} bets</span>
+                </td>
+
+                {% elif board_type == "streak" %}
+                <td class="px-2 sm:px-3 py-3 text-right">
+                    <span class="font-mono text-sm font-bold text-accent">{{ entry.best_streak }}W</span>
+                </td>
+                <td class="px-2 sm:px-3 py-3 text-right hidden sm:table-cell">
+                    {% if entry.current_streak > 0 %}
+                    <span class="text-xs font-semibold text-green-400">{{ entry.current_streak }}W</span>
+                    {% elif entry.current_streak < 0 %}
+                    <span class="text-xs text-red-400">{{ entry.current_streak|cut:"-" }}L</span>
+                    {% else %}
+                    <span class="text-xs text-muted">—</span>
+                    {% endif %}
+                </td>
+                {% endif %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if user_rank %}
+<div class="mt-4">
+    <a href="{% url 'betting:my_bets' %}#rank-summary" class="block rounded-lg border border-accent/30 bg-accent/10 px-4 py-3 hover:border-accent/50 hover:bg-accent/15 transition-colors">
+        <div class="flex items-center justify-between gap-3">
+            <div class="min-w-0">
+                <p class="text-xs font-semibold uppercase tracking-wider text-accent">Your rank</p>
+                <p class="text-sm text-white">You are currently #{{ user_rank.rank }}</p>
+            </div>
+            <div class="shrink-0 text-right">
+                {% if board_type == "balance" %}
+                <p class="font-mono text-sm font-bold text-white">{{ user_rank.balance|currency:request.user }}</p>
+                {% elif board_type == "profit" %}
+                <p class="font-mono text-sm font-bold {% if user_rank.net_profit > 0 %}text-green-400{% elif user_rank.net_profit < 0 %}text-red-400{% else %}text-white{% endif %}">
+                    {% if user_rank.net_profit > 0 %}+{% endif %}{{ user_rank.net_profit|currency:request.user }}
+                </p>
+                {% elif board_type == "win_rate" %}
+                <p class="font-mono text-sm font-bold text-white">{{ user_rank.win_rate }}%</p>
+                <p class="text-[11px] uppercase tracking-wider text-muted">win rate</p>
+                {% elif board_type == "streak" %}
+                <p class="font-mono text-sm font-bold text-white">{{ user_rank.best_streak }}W</p>
+                <p class="text-[11px] uppercase tracking-wider text-muted">best streak</p>
+                {% endif %}
+            </div>
+        </div>
+    </a>
+</div>
+{% endif %}
+
+{% else %}
+{% if board_type == "balance" %}
+{% include "website/components/empty_state.html" with icon="chart" title="No leaderboard data yet" message="User balances will appear here once people sign up and place bets." %}
+{% elif board_type == "win_rate" %}
+{% include "website/components/empty_state.html" with icon="chart" title="Not enough data" message="Players need at least 10 settled bets to appear on the win rate leaderboard." %}
+{% else %}
+{% include "website/components/empty_state.html" with icon="chart" title="No stats yet" message="Stats will appear here once bets start settling." %}
+{% endif %}
+{% endif %}

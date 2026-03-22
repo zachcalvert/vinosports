@@ -1,0 +1,53 @@
+{% load match_tags %}
+{% load currency_tags %}
+<section
+    id="leaderboard"
+    class="bg-surface rounded-lg border border-gray-700 p-5"
+    hx-get="{% url 'matches:leaderboard_partial' %}"
+    hx-trigger="every 30s"
+    hx-swap="outerHTML"
+>
+    <div class="flex items-center justify-between mb-4">
+        <div>
+            <h2 class="text-lg font-bold text-white">Top Balances</h2>
+            <p class="text-xs text-muted">Updated {{ leaderboard_rendered_at|relative_time }}</p>
+        </div>
+    </div>
+
+    {% if leaderboard %}
+    <div class="space-y-2">
+        {% for entry in leaderboard %}
+        <div class="{% if forloop.counter > 5 %}hidden xl:flex{% else %}flex{% endif %} items-center justify-between gap-3 rounded-lg bg-dark/40 px-3 py-3 border border-gray-700">
+            <div class="min-w-0 flex items-center gap-3">
+                <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent/15 text-sm font-bold text-accent">
+                    {{ forloop.counter }}
+                </div>
+                <div class="min-w-0">
+                    <p class="truncate text-sm font-semibold text-white">{{ entry.display_identity }}</p>
+                    <p class="text-xs text-muted">Current balance</p>
+                </div>
+            </div>
+            <div class="shrink-0 text-right">
+                <p class="font-mono text-sm font-bold text-white">{{ entry.balance|currency:request.user }}</p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% if user_rank %}
+    <a href="{% url 'betting:my_bets' %}#rank-summary" class="mt-4 block rounded-lg border border-accent/30 bg-accent/10 px-4 py-3 hover:border-accent/50 hover:bg-accent/15 transition-colors">
+        <div class="flex items-center justify-between gap-3">
+            <div class="min-w-0">
+                <p class="text-xs font-semibold uppercase tracking-wider text-accent">Your rank</p>
+                <p class="text-sm text-white">You are currently #{{ user_rank.rank }}</p>
+                <p class="text-xs text-muted">Open My Bets for your account snapshot</p>
+            </div>
+            <div class="shrink-0 text-right">
+                <p class="font-mono text-sm font-bold text-white">{{ user_rank.balance|currency:request.user }}</p>
+            </div>
+        </div>
+    </a>
+    {% endif %}
+    {% else %}
+    {% include "website/components/empty_state.html" with icon="chart" title="No leaderboard data yet" message="User balances will appear here once people sign up and place bets." %}
+    {% endif %}
+</section>

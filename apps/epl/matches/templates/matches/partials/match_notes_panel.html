@@ -1,0 +1,39 @@
+<div id="match-notes-panel" class="bg-surface rounded-lg border border-gray-700 p-5">
+    <div class="flex items-center justify-between mb-3">
+        <h3 class="text-sm font-bold text-white uppercase tracking-wide flex items-center gap-2">
+            <i data-lucide="notebook-pen" class="w-4 h-4 text-accent"></i>
+            Match Notes
+        </h3>
+        {% if match_notes %}
+            <span class="text-xs text-muted">Last saved {{ match_notes.updated_at|timesince }} ago</span>
+        {% endif %}
+    </div>
+
+    {% if saved %}
+        <div class="mb-3 rounded-md bg-green-900/30 border border-green-700/50 px-3 py-2 text-xs text-green-400">
+            Notes saved — bots will use these for post-match and reply comments.
+        </div>
+    {% endif %}
+
+    <form hx-post="{% url 'matches:match_notes' match.slug %}"
+          hx-target="#match-notes-panel"
+          hx-swap="outerHTML">
+        {% csrf_token %}
+        <label for="{{ match_notes_form.body.id_for_label }}" class="sr-only">Match notes</label>
+        {{ match_notes_form.body }}
+        {% if match_notes_form.body.errors %}
+            <div class="mt-1 text-xs text-red-400">
+                {% for error in match_notes_form.body.errors %}{{ error }}{% endfor %}
+            </div>
+        {% endif %}
+        <div class="flex items-center justify-between mt-3">
+            <p class="text-xs text-muted">
+                These notes are injected into bot prompts for post-match and reply comments.
+            </p>
+            <button type="submit"
+                    class="bg-accent text-dark font-bold py-1.5 px-4 rounded-md hover:bg-accent/90 transition-colors text-sm">
+                Save
+            </button>
+        </div>
+    </form>
+</div>

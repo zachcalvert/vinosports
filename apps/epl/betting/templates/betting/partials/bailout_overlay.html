@@ -1,0 +1,129 @@
+{% load currency_tags %}
+<div id="bailout-overlay" class="bailout-overlay" data-currency-symbol="{% currency_symbol user %}">
+    <div class="bailout-card">
+        <!-- State 1: Request -->
+        <div id="bailout-request" class="bailout-state">
+            <i class="ph-duotone ph-bank text-5xl mb-4 text-accent" aria-hidden="true"></i>
+            <h2 class="text-2xl font-bold text-white mb-2">You're Bankrupt!</h2>
+            <p class="text-muted text-sm mb-1">
+                Balance: <span class="text-accent font-mono">{{ bankrupt_balance|currency:user }}</span>
+            </p>
+            {% if bankruptcy_count > 0 %}
+            <p class="text-muted text-xs mb-6">Bankruptcy #{{ bankruptcy_count|add:1 }}</p>
+            {% else %}
+            <p class="text-muted text-xs mb-6">Your first bankruptcy</p>
+            {% endif %}
+            <button id="bailout-btn"
+                    class="bg-accent text-dark font-bold px-6 py-3 rounded-lg hover:brightness-110 transition-all duration-200 cursor-pointer">
+                Request Bailout
+            </button>
+        </div>
+
+        <!-- State 2: Countdown -->
+        <div id="bailout-countdown" class="bailout-state hidden">
+            <p class="text-sm text-muted mb-2">The EPL Bets Central Bank is reviewing</p>
+            <p class="text-sm text-muted mb-6">your application...</p>
+            <div id="bailout-timer" class="bailout-timer">10</div>
+            <p id="bailout-flavor" class="text-sm text-muted mt-6 h-5 italic"></p>
+        </div>
+
+        <!-- State 3: Result -->
+        <div id="bailout-result" class="bailout-state hidden">
+            <i class="ph-duotone ph-check-circle text-4xl mb-4 text-accent" aria-hidden="true"></i>
+            <h2 class="text-2xl font-bold text-accent mb-4">Bailout Approved!</h2>
+            <p id="bailout-amount" class="text-4xl font-bold font-mono text-white mb-2"></p>
+            <p class="text-sm text-muted">Reloading...</p>
+        </div>
+    </div>
+</div>
+
+<script>
+(function() {
+    var btn = document.getElementById('bailout-btn');
+    var requestEl = document.getElementById('bailout-request');
+    var countdownEl = document.getElementById('bailout-countdown');
+    var resultEl = document.getElementById('bailout-result');
+    var timerEl = document.getElementById('bailout-timer');
+    var flavorEl = document.getElementById('bailout-flavor');
+    var amountEl = document.getElementById('bailout-amount');
+
+    var flavors = [
+        'Reviewing your portfolio...',
+        'Consulting the board of directors...',
+        'Running credit checks...',
+        'Checking under the couch cushions...',
+        'Shredding the evidence...',
+    ];
+
+    btn.addEventListener('click', function() {
+        requestEl.classList.add('hidden');
+        countdownEl.classList.remove('hidden');
+
+        var remaining = 10;
+        var flavorIdx = 0;
+        flavorEl.textContent = flavors[0];
+
+        var interval = setInterval(function() {
+            remaining--;
+            timerEl.textContent = remaining;
+            timerEl.classList.remove('bailout-tick');
+            void timerEl.offsetWidth;
+            timerEl.classList.add('bailout-tick');
+
+            if (remaining % 2 === 0) {
+                flavorIdx = (flavorIdx + 1) % flavors.length;
+                flavorEl.style.opacity = '0';
+                setTimeout(function() {
+                    flavorEl.textContent = flavors[flavorIdx];
+                    flavorEl.style.opacity = '1';
+                }, 200);
+            }
+
+            if (remaining <= 0) {
+                clearInterval(interval);
+                submitBailout();
+            }
+        }, 1000);
+    });
+
+    function submitBailout() {
+        var csrfCookie = document.cookie.split('; ').find(function(c) {
+            return c.startsWith('csrftoken=');
+        });
+        var csrfToken = csrfCookie ? csrfCookie.split('=')[1] : '';
+
+        fetch('{% url "betting:bailout" %}', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken,
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(function(res) {
+            if (!res.ok) {
+                // Treat non-2xx responses as errors so the UI doesn't get stuck
+                throw new Error('Bailout request failed with status ' + res.status);
+            }
+            return res.json();
+        })
+        .then(function(data) {
+            if (data && data.success) {
+                countdownEl.classList.add('hidden');
+                resultEl.classList.remove('hidden');
+                var sym = document.getElementById('bailout-overlay').dataset.currencySymbol || '£';
+                amountEl.textContent = '+ ' + sym + Number(data.amount).toLocaleString();
+                setTimeout(function() {
+                    window.location.reload();
+                }, 2000);
+            } else {
+                // Handle cases like "already bailed out" or other logical failures
+                alert('Bailout could not be completed. The page will be reloaded.');
+                window.location.reload();
+            }
+        })
+        .catch(function() {
+            window.location.reload();
+        });
+    }
+})();
+</script>

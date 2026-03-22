@@ -1,0 +1,7 @@
+{% load match_tags %}
+<div id="score-display" hx-swap-oob="true" class="text-center">
+    {% score_display match %}
+</div>
+<div id="match-status" hx-swap-oob="true">
+    {% status_badge match %}
+</div>

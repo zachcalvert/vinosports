@@ -1,0 +1,203 @@
+<section id="avatar-settings-card" class="rounded-lg border border-gray-700 bg-surface p-5">
+    <p class="text-xs font-semibold uppercase tracking-wider text-accent mb-1">Avatar</p>
+    <h2 class="text-xl font-bold text-white">Customize your look</h2>
+    <p class="mt-2 text-sm text-muted">Pick an icon or team crest, a color, and a frame. Frames unlock when you earn badges.</p>
+
+    {# Live preview #}
+    <div class="mt-4 flex items-center gap-4">
+        <div id="avatar-preview">
+            {% include "website/components/avatar.html" with avatar_user=request.user avatar_size="lg" %}
+        </div>
+        <div>
+            <p class="text-sm font-semibold text-white">Preview</p>
+            <p class="text-xs text-muted">Changes update live</p>
+        </div>
+    </div>
+
+    <form
+        method="post"
+        action="{% url 'website:avatar_update' %}"
+        hx-post="{% url 'website:avatar_update' %}"
+        hx-target="#avatar-settings-card"
+        hx-swap="outerHTML"
+        class="mt-5 space-y-5"
+    >
+        {% csrf_token %}
+        <input type="hidden" name="avatar_icon" id="avatar-icon-input" value="{{ request.user.avatar_icon }}">
+        <input type="hidden" name="avatar_bg" id="avatar-bg-input" value="{{ request.user.avatar_bg }}">
+        <input type="hidden" name="avatar_frame" id="avatar-frame-input" value="{{ request.user.avatar_frame }}">
+        <input type="hidden" name="avatar_crest_url" id="avatar-crest-input" value="{{ request.user.avatar_crest_url }}">
+        {# ── Icon picker ───────────────────────────────── #}
+        <div>
+            <label class="block text-sm font-medium text-gray-300 mb-2">Icon</label>
+            <div class="avatar-picker-grid">
+                {% for icon in avatar_icons %}
+                <button
+                    type="button"
+                    class="avatar-picker-btn{% if not request.user.avatar_crest_url and icon == request.user.avatar_icon %} selected{% endif %}"
+                    data-pick="icon"
+                    data-value="{{ icon }}"
+                    title="{{ icon }}"
+                >
+                    <i class="ph-duotone ph-{{ icon }}" style="font-size: 20px;"></i>
+                </button>
+                {% endfor %}
+            </div>
+        </div>
+
+        {# ── Team crest picker ─────────────────────────── #}
+        {% if avatar_teams %}
+        <div>
+            <label class="block text-sm font-medium text-gray-300 mb-2">Team Crest</label>
+            <div class="avatar-picker-grid" style="grid-template-columns: repeat(auto-fill, minmax(48px, 1fr));">
+                {% for team in avatar_teams %}
+                <button
+                    type="button"
+                    class="avatar-picker-btn avatar-picker-btn--crest{% if request.user.avatar_crest_url == team.crest_url %} selected{% endif %}"
+                    data-pick="crest"
+                    data-value="{{ team.crest_url }}"
+                    title="{{ team.short_name }}"
+                    style="width: 48px; height: 48px;"
+                >
+                    <img src="{{ team.crest_url }}" alt="{{ team.short_name }}" style="width: 30px; height: 30px; object-fit: contain;">
+                </button>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        {# ── Color picker ──────────────────────────────── #}
+        <div>
+            <label class="block text-sm font-medium text-gray-300 mb-2">Background color</label>
+            <div class="flex flex-wrap gap-2">
+                {% for color in avatar_colors %}
+                <button
+                    type="button"
+                    class="avatar-color-btn{% if color == request.user.avatar_bg %} selected{% endif %}"
+                    data-pick="color"
+                    data-value="{{ color }}"
+                    style="background-color: {{ color }};"
+                    title="{{ color }}"
+                ></button>
+                {% endfor %}
+            </div>
+        </div>
+
+        {# ── Frame picker ──────────────────────────────── #}
+        <div>
+            <label class="block text-sm font-medium text-gray-300 mb-2">Frame</label>
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                {# No-frame option #}
+                <button
+                    type="button"
+                    class="avatar-frame-btn{% if not request.user.avatar_frame %} selected{% endif %}"
+                    data-pick="frame"
+                    data-value=""
+                >
+                    <div class="avatar avatar--sm" style="--avatar-bg: {{ request.user.avatar_bg }};">
+                        <div class="avatar-inner">
+                            {% if request.user.avatar_crest_url %}
+                            <img src="{{ request.user.avatar_crest_url }}" class="avatar-crest-img" alt="">
+                            {% else %}
+                            <i class="ph-duotone ph-{{ request.user.avatar_icon }} avatar-icon"></i>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <span class="text-xs text-muted">None</span>
+                </button>
+
+                {% for frame in avatar_frames %}
+                <button
+                    type="button"
+                    class="avatar-frame-btn{% if frame.slug == request.user.avatar_frame %} selected{% endif %}{% if not frame.unlocked %} locked{% endif %}"
+                    data-pick="frame"
+                    data-value="{{ frame.slug }}"
+                    {% if not frame.unlocked %}disabled title="Unlock: earn the {{ frame.name }} badge"{% endif %}
+                >
+                    <div class="avatar avatar--sm avatar-frame avatar-frame--{{ frame.slug }}" style="--avatar-bg: {{ request.user.avatar_bg }};">
+                        <div class="avatar-inner">
+                            {% if request.user.avatar_crest_url %}
+                            <img src="{{ request.user.avatar_crest_url }}" class="avatar-crest-img" alt="">
+                            {% else %}
+                            <i class="ph-duotone ph-{{ request.user.avatar_icon }} avatar-icon"></i>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <span class="text-xs {% if frame.unlocked %}text-white{% else %}text-muted{% endif %}">{{ frame.name }}</span>
+                    <span class="text-xs text-muted capitalize">{{ frame.rarity }}</span>
+                </button>
+                {% endfor %}
+            </div>
+        </div>
+
+        <button
+            type="submit"
+            class="rounded-md bg-accent px-4 py-2 text-sm font-semibold text-dark transition-colors hover:bg-accent/90"
+        >
+            Save avatar
+        </button>
+
+        {% if avatar_save_success %}
+        <p class="text-accent text-sm">Avatar updated!</p>
+        {% endif %}
+    </form>
+
+    <script>
+    (function() {
+        var card = document.getElementById('avatar-settings-card');
+        var preview = document.getElementById('avatar-preview');
+        var iconInput = document.getElementById('avatar-icon-input');
+        var bgInput = document.getElementById('avatar-bg-input');
+        var frameInput = document.getElementById('avatar-frame-input');
+        var crestInput = document.getElementById('avatar-crest-input');
+
+        card.addEventListener('click', function(e) {
+            var btn = e.target.closest('[data-pick]');
+            if (!btn || btn.disabled) return;
+
+            var pick = btn.dataset.pick;
+            var value = btn.dataset.value;
+
+            if (pick === 'icon') {
+                iconInput.value = value;
+                crestInput.value = '';
+                card.querySelectorAll('[data-pick="icon"]').forEach(function(b) { b.classList.remove('selected'); });
+                card.querySelectorAll('[data-pick="crest"]').forEach(function(b) { b.classList.remove('selected'); });
+                btn.classList.add('selected');
+            } else if (pick === 'crest') {
+                crestInput.value = value;
+                card.querySelectorAll('[data-pick="crest"]').forEach(function(b) { b.classList.remove('selected'); });
+                card.querySelectorAll('[data-pick="icon"]').forEach(function(b) { b.classList.remove('selected'); });
+                btn.classList.add('selected');
+            } else if (pick === 'color') {
+                bgInput.value = value;
+                card.querySelectorAll('[data-pick="color"]').forEach(function(b) { b.classList.remove('selected'); });
+                btn.classList.add('selected');
+            } else if (pick === 'frame') {
+                frameInput.value = value;
+                card.querySelectorAll('[data-pick="frame"]').forEach(function(b) { b.classList.remove('selected'); });
+                btn.classList.add('selected');
+            }
+
+            updatePreview();
+        });
+
+        function updatePreview() {
+            var icon = iconInput.value;
+            var bg = bgInput.value;
+            var frame = frameInput.value;
+            var crest = crestInput.value;
+
+            var cls = 'avatar avatar--lg';
+            if (frame) cls += ' avatar-frame avatar-frame--' + frame;
+
+            var inner = crest
+                ? '<img src="' + crest + '" class="avatar-crest-img" alt="">'
+                : '<i class="ph-duotone ph-' + icon + ' avatar-icon"></i>';
+
+            preview.innerHTML = '<div class="' + cls + '" style="--avatar-bg: ' + bg + ';">'
+                + '<div class="avatar-inner">' + inner + '</div></div>';
+        }
+    })();
+    </script>
+</section>

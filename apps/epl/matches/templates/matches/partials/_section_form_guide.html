@@ -1,0 +1,51 @@
+{% comment %}
+Form Guide section — last 5 results per team.
+Context: match, match_stats
+{% endcomment %}
+{% if match_stats.home_form_json or match_stats.away_form_json %}
+<div class="px-5 py-4">
+    <p class="text-xs font-semibold uppercase tracking-widest text-muted mb-3">Form (Last 5)</p>
+    <div class="flex flex-col gap-2">
+        <!-- Home team form -->
+        <div class="flex items-center gap-3">
+            <span class="text-sm font-medium text-white shrink-0 w-10">
+                {{ match.home_team.tla|default:match.home_team.short_name|default:match.home_team.name }}
+            </span>
+            <div class="flex gap-1">
+                {% for entry in match_stats.home_form_json reversed %}
+                    {% if entry.result == "W" %}
+                        <span class="inline-flex items-center justify-center w-6 h-6 rounded text-xs font-bold bg-green-600 text-white"
+                              title="{{ entry.home_team }} {{ entry.home_score }}–{{ entry.away_score }} {{ entry.away_team }}">W</span>
+                    {% elif entry.result == "D" %}
+                        <span class="inline-flex items-center justify-center w-6 h-6 rounded text-xs font-bold bg-amber-500 text-dark"
+                              title="{{ entry.home_team }} {{ entry.home_score }}–{{ entry.away_score }} {{ entry.away_team }}">D</span>
+                    {% elif entry.result == "L" %}
+                        <span class="inline-flex items-center justify-center w-6 h-6 rounded text-xs font-bold bg-red-600 text-white"
+                              title="{{ entry.home_team }} {{ entry.home_score }}–{{ entry.away_score }} {{ entry.away_team }}">L</span>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+        <!-- Away team form -->
+        <div class="flex items-center gap-3">
+            <span class="text-sm font-medium text-white shrink-0 w-10">
+                {{ match.away_team.tla|default:match.away_team.short_name|default:match.away_team.name }}
+            </span>
+            <div class="flex gap-1">
+                {% for entry in match_stats.away_form_json reversed %}
+                    {% if entry.result == "W" %}
+                        <span class="inline-flex items-center justify-center w-6 h-6 rounded text-xs font-bold bg-green-600 text-white"
+                              title="{{ entry.home_team }} {{ entry.home_score }}–{{ entry.away_score }} {{ entry.away_team }}">W</span>
+                    {% elif entry.result == "D" %}
+                        <span class="inline-flex items-center justify-center w-6 h-6 rounded text-xs font-bold bg-amber-500 text-dark"
+                              title="{{ entry.home_team }} {{ entry.home_score }}–{{ entry.away_score }} {{ entry.away_team }}">D</span>
+                    {% elif entry.result == "L" %}
+                        <span class="inline-flex items-center justify-center w-6 h-6 rounded text-xs font-bold bg-red-600 text-white"
+                              title="{{ entry.home_team }} {{ entry.home_score }}–{{ entry.away_score }} {{ entry.away_team }}">L</span>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}

@@ -1,0 +1,12 @@
+<div class="w-full bg-dark/60 rounded-full h-2.5 overflow-hidden">
+    <div
+        class="h-full rounded-full transition-all duration-500 ease-out {% if uc.status == 'COMPLETED' %}bg-accent{% else %}bg-accent/70{% endif %}"
+        style="width: {{ uc.progress_percent }}%"
+    ></div>
+</div>
+<p class="text-xs text-muted mt-1">
+    {{ uc.progress }}/{{ uc.target }}
+    {% if uc.status == "COMPLETED" %}
+        <span class="text-accent font-medium">&mdash; Complete!</span>
+    {% endif %}
+</p>

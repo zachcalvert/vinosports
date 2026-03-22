@@ -1,0 +1,25 @@
+{% comment %}
+Match Hype Card — rendered on match_detail.html for SCHEDULED/TIMED matches.
+
+Context expected:
+  match          — Match instance
+  match_stats    — MatchStats instance (may have empty JSON if API not yet fetched)
+  sentiment      — dict with total/home_pct/draw_pct/away_pct/most_popular, or None
+  home_standing  — Standing instance or None
+  away_standing  — Standing instance or None
+{% endcomment %}
+
+<div class="rounded-lg border border-gray-700 bg-surface overflow-hidden">
+    <!-- Header -->
+    <div class="px-5 py-3 border-b border-gray-700 flex items-center justify-between">
+        <h3 class="text-xs font-semibold uppercase tracking-widest text-accent">Match Preview</h3>
+        {% if match_stats.fetched_at %}
+            <span class="text-xs text-muted">Stats via football-data.org</span>
+        {% endif %}
+    </div>
+
+    <div class="divide-y divide-gray-700">
+        {% include "matches/partials/_section_form_guide.html" %}
+        {% include "matches/partials/community_sentiment.html" %}
+    </div><!-- /divide-y -->
+</div>

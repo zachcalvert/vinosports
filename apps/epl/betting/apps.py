@@ -6,3 +6,6 @@ class EplBettingConfig(AppConfig):
     name = "betting"
     label = "epl_betting"
     verbose_name = "EPL Betting"
+
+    def ready(self):
+        import betting.signals  # noqa: F401
