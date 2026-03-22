@@ -1,0 +1,19 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "epl-bets"
+version = "0.1.0"
+description = "EPL betting simulation powered by vinosports-core"
+requires-python = ">=3.11"
+dependencies = [
+    "vinosports-core",
+    "psycopg2-binary>=2.9",
+    "gunicorn>=23.0",
+    "whitenoise>=6.7",
+]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings"
+python_files = ["tests.py", "test_*.py"]
