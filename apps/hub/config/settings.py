@@ -94,7 +94,7 @@ LEAGUE_URLS = {
         "name": "NBA",
         "short": "NBA",
         "url": os.environ.get("NBA_URL", "http://localhost:8001"),
-        "status": "coming_soon",
+        "status": "active",
         "description": "NBA betting simulation with game props, player stats, and playoff brackets.",
         "icon": "ph-duotone ph-basketball",
     },
