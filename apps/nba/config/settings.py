@@ -1,5 +1,8 @@
 import os
+from datetime import timedelta
 from pathlib import Path
+
+from celery.schedules import crontab
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -17,6 +20,8 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    # Third-party
+    "django_htmx",
     # Shared apps from vinosports-core
     "vinosports.core",
     "vinosports.users",
@@ -35,6 +40,7 @@ INSTALLED_APPS = [
 AUTH_USER_MODEL = "users.User"
 
 MIDDLEWARE = [
+    "vinosports.middleware.BotScannerBlockMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -43,6 +49,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "django_htmx.middleware.HtmxMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -58,6 +65,11 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "website.context_processors.hub_url",
+                "website.context_processors.theme",
+                "betting.context_processors.bankruptcy",
+                "betting.context_processors.parlay_slip",
+                "activity.context_processors.activity_toasts",
             ],
         },
     },
@@ -106,6 +118,10 @@ STATICFILES_DIRS = [BASE_DIR / "static"] if (BASE_DIR / "static").exists() else 
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+LOGIN_URL = "/login/"
+LOGIN_REDIRECT_URL = "/"
+LOGOUT_REDIRECT_URL = "/"
+
 # Celery
 CELERY_BROKER_URL = REDIS_URL
 CELERY_RESULT_BACKEND = REDIS_URL
@@ -113,3 +129,85 @@ CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
 CELERY_TIMEZONE = TIME_ZONE
+
+# Beat Schedule
+# - NBA games are daily (Oct-Apr), typically 7pm-1am ET
+# - Live score window: 6pm-2am ET daily
+# - Odds fetched 6x daily from The Odds API
+CELERY_BEAT_SCHEDULE = {
+    # --- Data ingestion ---
+    "fetch-teams-monthly": {
+        "task": "games.tasks.fetch_teams",
+        "schedule": crontab(hour=3, minute=0, day_of_month=1),
+    },
+    "fetch-schedule-daily": {
+        "task": "games.tasks.fetch_schedule",
+        "schedule": crontab(hour=6, minute=0),
+    },
+    "fetch-standings-morning": {
+        "task": "games.tasks.fetch_standings",
+        "schedule": crontab(hour=8, minute=0),
+    },
+    "fetch-standings-postgame": {
+        "task": "games.tasks.fetch_standings",
+        "schedule": crontab(hour=2, minute=0),
+    },
+    "fetch-live-scores-2m": {
+        "task": "games.tasks.fetch_live_scores",
+        "schedule": crontab(minute="*/2", hour="18-23,0-1"),
+    },
+    # --- Odds ---
+    "fetch-odds-6x-daily": {
+        "task": "betting.tasks.fetch_odds",
+        "schedule": crontab(hour="6,10,14,17,19,22", minute=0),
+    },
+    # --- Settlement ---
+    "settle-pending-bets-5m": {
+        "task": "betting.tasks.settle_pending_bets",
+        "schedule": crontab(minute="*/5", hour="19-23,0-2"),
+    },
+    # --- Bots ---
+    "run-bot-strategies-daily": {
+        "task": "bots.tasks.run_bot_strategies",
+        "schedule": crontab(hour=14, minute=0),
+    },
+    "generate-pregame-comments": {
+        "task": "discussions.tasks.generate_pregame_comments",
+        "schedule": crontab(hour="14,16,18", minute=0),
+    },
+    "generate-postgame-comments": {
+        "task": "discussions.tasks.generate_postgame_comments",
+        "schedule": crontab(hour="0,1,2,3", minute=30),
+    },
+    # --- Activity feed ---
+    "broadcast-activity-event-20s": {
+        "task": "activity.tasks.broadcast_next_activity_event",
+        "schedule": timedelta(seconds=20),
+    },
+    "cleanup-old-activity-events-daily": {
+        "task": "activity.tasks.cleanup_old_activity_events",
+        "schedule": crontab(hour=5, minute=0),
+    },
+    # --- Challenges ---
+    "rotate-daily-challenges": {
+        "task": "challenges.tasks.rotate_daily_challenges",
+        "schedule": crontab(hour=6, minute=30),
+    },
+    "rotate-weekly-challenges": {
+        "task": "challenges.tasks.rotate_weekly_challenges",
+        "schedule": crontab(hour=6, minute=30, day_of_week="monday"),
+    },
+    "expire-challenges-30m": {
+        "task": "challenges.tasks.expire_challenges",
+        "schedule": timedelta(minutes=30),
+    },
+}
+
+# External APIs
+SPORTSDATA_API_KEY = os.environ.get("SPORTSDATA_API_KEY", "")
+ODDS_API_KEY = os.environ.get("ODDS_API_KEY", "")
+ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
+API_TIMEOUT = 30
+
+# Hub URL (for linking back to the homepage)
+HUB_URL = os.environ.get("HUB_URL", "http://localhost:7999")

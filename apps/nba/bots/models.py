@@ -16,6 +16,7 @@ class BotProfile(AbstractBotProfile):
         CHAOS_AGENT = "chaos_agent", _("Chaos Agent")
         ALL_IN_ALICE = "all_in_alice", _("All-In Alice")
         HOMER = "homer", _("Homer (team-loyal)")
+        ANTI_HOMER = "anti_homer", _("Anti-Homer (revenge)")
 
     strategy_type = models.CharField(
         _("strategy type"),
@@ -29,6 +30,16 @@ class BotProfile(AbstractBotProfile):
         blank=True,
         related_name="homer_bots",
         help_text=_("Only for homer bots."),
+    )
+    risk_multiplier = models.FloatField(
+        _("risk multiplier"),
+        default=1.0,
+        help_text=_("Multiplier applied to base stake percentage."),
+    )
+    max_daily_bets = models.PositiveIntegerField(
+        _("max daily bets"),
+        default=5,
+        help_text=_("Maximum bets this bot can place per day."),
     )
 
     def __str__(self):
