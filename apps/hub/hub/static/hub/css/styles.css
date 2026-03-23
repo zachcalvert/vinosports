@@ -115,7 +115,37 @@
 
 
 /* --------------------------------------------------------------------------
-   5. FOOTER
+   5. FORM INPUTS
+   -------------------------------------------------------------------------- */
+
+.themed-input {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.375rem;
+    border: 1px solid rgb(var(--color-border));
+    background-color: rgb(var(--color-bg));
+    color: rgb(var(--color-text));
+    font-size: 0.875rem;
+    transition: border-color 0.15s;
+}
+.themed-input:focus {
+    outline: none;
+    border-color: rgb(var(--color-accent));
+    box-shadow: 0 0 0 1px rgb(var(--color-accent));
+}
+
+.themed-input-sm {
+    padding: 0.375rem 0.625rem;
+    font-size: 0.8125rem;
+}
+
+select.themed-input {
+    appearance: auto;
+}
+
+
+/* --------------------------------------------------------------------------
+   6. FOOTER
    -------------------------------------------------------------------------- */
 
 .site-footer {
