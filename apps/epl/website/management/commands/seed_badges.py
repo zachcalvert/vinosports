@@ -1,6 +1,6 @@
+from betting.badges import BADGE_DEFINITIONS
 from django.core.management.base import BaseCommand
 
-from betting.badges import BADGE_DEFINITIONS
 from vinosports.betting.models import Badge
 
 

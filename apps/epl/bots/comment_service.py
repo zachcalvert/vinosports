@@ -9,16 +9,15 @@ import random
 import re
 
 import anthropic
+from betting.models import BetSlip
+from discussions.models import Comment
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError, transaction
+from matches.models import MatchNotes, MatchStats, Odds
 
-from betting.models import BetSlip
-from matches.models import Odds
 from bots.models import BotComment, BotProfile
 from bots.services import get_best_odds_map
-from discussions.models import Comment
-from matches.models import MatchNotes, MatchStats
 
 User = get_user_model()
 logger = logging.getLogger(__name__)
@@ -59,21 +58,82 @@ BOT_REPLY_AFFINITIES = {
 
 # Words that should never appear in bot comments
 PROFANITY_BLOCKLIST = {
-    "fuck", "shit", "bitch", "bastard", "asshole", "cunt", "dick", "piss",
-    "slut", "whore", "retard", "faggot", "nigger", "nigga", "spic", "chink",
+    "fuck",
+    "shit",
+    "bitch",
+    "bastard",
+    "asshole",
+    "cunt",
+    "dick",
+    "piss",
+    "slut",
+    "whore",
+    "retard",
+    "faggot",
+    "nigger",
+    "nigga",
+    "spic",
+    "chink",
     "kike",
 }
 
 # At least one of these must appear (case-insensitive) for relevance check
 FOOTBALL_KEYWORDS = {
-    "match", "goal", "goals", "win", "draw", "loss", "nil", "odds", "bet",
-    "form", "league", "premier", "epl", "kickoff", "kick", "half", "full",
-    "time", "score", "clean sheet", "derby", "relegation", "promoted",
-    "champions", "top", "bottom", "table", "points", "gd", "xg", "expected",
-    "parlay", "stake", "payout", "underdog", "favourite", "favorite",
-    "upset", "bottle", "bottled", "fraud", "frauds", "merchant", "tax",
-    "copium", "scenes", "inject", "lock", "locks", "chalk", "degen",
-    "comeback", "banger", "shithouse", "masterclass",
+    "match",
+    "goal",
+    "goals",
+    "win",
+    "draw",
+    "loss",
+    "nil",
+    "odds",
+    "bet",
+    "form",
+    "league",
+    "premier",
+    "epl",
+    "kickoff",
+    "kick",
+    "half",
+    "full",
+    "time",
+    "score",
+    "clean sheet",
+    "derby",
+    "relegation",
+    "promoted",
+    "champions",
+    "top",
+    "bottom",
+    "table",
+    "points",
+    "gd",
+    "xg",
+    "expected",
+    "parlay",
+    "stake",
+    "payout",
+    "underdog",
+    "favourite",
+    "favorite",
+    "upset",
+    "bottle",
+    "bottled",
+    "fraud",
+    "frauds",
+    "merchant",
+    "tax",
+    "copium",
+    "scenes",
+    "inject",
+    "lock",
+    "locks",
+    "chalk",
+    "degen",
+    "comeback",
+    "banger",
+    "shithouse",
+    "masterclass",
 }
 
 
@@ -85,7 +145,9 @@ def _get_bot_profile(bot_user):
         return None
 
 
-def generate_bot_comment(bot_user, match, trigger_type, bet_slip=None, parent_comment=None):
+def generate_bot_comment(
+    bot_user, match, trigger_type, bet_slip=None, parent_comment=None
+):
     """Generate and post an LLM-powered comment for a bot user.
 
     Returns the created Comment if successful, None otherwise.
@@ -105,7 +167,8 @@ def generate_bot_comment(bot_user, match, trigger_type, bet_slip=None, parent_co
     # workers all passed the pre-dispatch check before any executed.
     if trigger_type == BotComment.TriggerType.REPLY:
         reply_count = BotComment.objects.filter(
-            match=match, trigger_type=BotComment.TriggerType.REPLY,
+            match=match,
+            trigger_type=BotComment.TriggerType.REPLY,
         ).count()
         if reply_count >= MAX_REPLIES_PER_MATCH:
             logger.debug("Reply cap reached for match %s at creation time", match)
@@ -125,11 +188,21 @@ def generate_bot_comment(bot_user, match, trigger_type, bet_slip=None, parent_co
         )
     except IntegrityError:
         # Extremely unlikely race between get_or_create calls — treat as dedup.
-        logger.debug("Race on BotComment slot: %s / %s / %s", bot_user.display_name, match, trigger_type)
+        logger.debug(
+            "Race on BotComment slot: %s / %s / %s",
+            bot_user.display_name,
+            match,
+            trigger_type,
+        )
         return None
 
     if not created:
-        logger.debug("BotComment already exists: %s / %s / %s", bot_user.display_name, match, trigger_type)
+        logger.debug(
+            "BotComment already exists: %s / %s / %s",
+            bot_user.display_name,
+            match,
+            trigger_type,
+        )
         return None
 
     # Call Claude API
@@ -161,7 +234,9 @@ def generate_bot_comment(bot_user, match, trigger_type, bet_slip=None, parent_co
     if not ok:
         logger.info(
             "Bot comment filtered out (%s): %s — %r",
-            reason, bot_user.display_name, raw_text[:100],
+            reason,
+            bot_user.display_name,
+            raw_text[:100],
         )
         bc.raw_response = raw_text
         bc.filtered = True
@@ -177,7 +252,10 @@ def generate_bot_comment(bot_user, match, trigger_type, bet_slip=None, parent_co
         reply_parent = parent_comment.parent or parent_comment
     with transaction.atomic():
         comment = Comment.objects.create(
-            match=match, user=bot_user, body=raw_text, parent=reply_parent,
+            match=match,
+            user=bot_user,
+            body=raw_text,
+            parent=reply_parent,
         )
         bc.raw_response = raw_text
         bc.comment = comment
@@ -185,7 +263,10 @@ def generate_bot_comment(bot_user, match, trigger_type, bet_slip=None, parent_co
 
     logger.info(
         "Bot %s posted %s comment on %s: %r",
-        bot_user.display_name, trigger_type, match, raw_text[:80],
+        bot_user.display_name,
+        trigger_type,
+        match,
+        raw_text[:80],
     )
     return comment
 
@@ -198,8 +279,9 @@ def select_bots_for_match(match, trigger_type, max_bots=2, exclude_user_ids=None
     enqueued in the same task run).
     """
     already_commented = set(
-        BotComment.objects.filter(match=match, trigger_type=trigger_type)
-        .values_list("user_id", flat=True)
+        BotComment.objects.filter(match=match, trigger_type=trigger_type).values_list(
+            "user_id", flat=True
+        )
     )
     excluded = already_commented | (exclude_user_ids or set())
 
@@ -234,7 +316,8 @@ def select_reply_bot(match, target_comment):
     """
     # Enforce reply cap
     reply_count = BotComment.objects.filter(
-        match=match, trigger_type=BotComment.TriggerType.REPLY,
+        match=match,
+        trigger_type=BotComment.TriggerType.REPLY,
     ).count()
     if reply_count >= MAX_REPLIES_PER_MATCH:
         return None
@@ -242,7 +325,8 @@ def select_reply_bot(match, target_comment):
     # Bots that already used their REPLY slot for this match
     already_replied = set(
         BotComment.objects.filter(
-            match=match, trigger_type=BotComment.TriggerType.REPLY,
+            match=match,
+            trigger_type=BotComment.TriggerType.REPLY,
         ).values_list("user_id", flat=True)
     )
 
@@ -417,20 +501,19 @@ def _build_user_prompt(match, trigger_type, bet_slip=None, parent_comment=None):
                 f"{away.short_name or away.tla} {h2h.get('away_wins', 0)}W"
             )
         if stats.home_form_json:
-            form_str = " ".join(
-                r.get("result", "?") for r in stats.home_form_json[:5]
-            )
+            form_str = " ".join(r.get("result", "?") for r in stats.home_form_json[:5])
             lines.append(f"{home.short_name or home.tla} form: {form_str}")
         if stats.away_form_json:
-            form_str = " ".join(
-                r.get("result", "?") for r in stats.away_form_json[:5]
-            )
+            form_str = " ".join(r.get("result", "?") for r in stats.away_form_json[:5])
             lines.append(f"{away.short_name or away.tla} form: {form_str}")
     except MatchStats.DoesNotExist:
         pass
 
     # Match notes (admin-authored context) for POST_MATCH and REPLY
-    if trigger_type in (BotComment.TriggerType.POST_MATCH, BotComment.TriggerType.REPLY):
+    if trigger_type in (
+        BotComment.TriggerType.POST_MATCH,
+        BotComment.TriggerType.REPLY,
+    ):
         try:
             notes = MatchNotes.objects.get(match=match)
             if notes.body.strip():
@@ -464,10 +547,14 @@ def _build_user_prompt(match, trigger_type, bet_slip=None, parent_comment=None):
             f"for {bet_slip.stake} credits"
         )
         lines.append("")
-        lines.append("Write a comment reacting to the bet you just placed on this match.")
+        lines.append(
+            "Write a comment reacting to the bet you just placed on this match."
+        )
 
     elif trigger_type == BotComment.TriggerType.POST_MATCH:
-        lines.append(f"Final score: {home.name} {match.home_score}-{match.away_score} {away.name}")
+        lines.append(
+            f"Final score: {home.name} {match.home_score}-{match.away_score} {away.name}"
+        )
         if bet_slip:
             won = bet_slip.status == BetSlip.Status.WON
             lines.append(

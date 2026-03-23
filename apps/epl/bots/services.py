@@ -7,18 +7,18 @@ import logging
 import random
 from decimal import Decimal
 
+from betting.models import BetSlip, Parlay, ParlayLeg
 from django.db import IntegrityError, transaction
 from django.db.models import Min
+from matches.models import Match, Odds
 
 from vinosports.betting.balance import log_transaction
 from vinosports.betting.models import (
     Bailout,
-    Bankruptcy,
     BalanceTransaction,
+    Bankruptcy,
     UserBalance,
 )
-from betting.models import BetSlip, Parlay, ParlayLeg
-from matches.models import Match, Odds
 
 logger = logging.getLogger(__name__)
 
@@ -118,7 +118,8 @@ def place_bot_bet(user, match_id, selection, stake):
                 f" vs {match.away_team.short_name or match.away_team.name}"
             )
             log_transaction(
-                balance, -stake,
+                balance,
+                -stake,
                 BalanceTransaction.Type.BET_PLACEMENT,
                 f"Bet on {match_label}",
             )
@@ -132,7 +133,11 @@ def place_bot_bet(user, match_id, selection, stake):
             )
             logger.info(
                 "Bot %s placed bet: %s on %s @ %s, stake=%s",
-                user.display_name, selection, match, best_odds, stake,
+                user.display_name,
+                selection,
+                match,
+                best_odds,
+                stake,
             )
             return bet
 
@@ -171,7 +176,9 @@ def place_bot_parlay(user, legs_data, stake):
 
                 odds_field = SELECTION_TO_ODDS_FIELD.get(entry["selection"])
                 if not odds_field:
-                    logger.warning("Bot parlay leg has invalid selection %r", entry["selection"])
+                    logger.warning(
+                        "Bot parlay leg has invalid selection %r", entry["selection"]
+                    )
                     return None
                 best = (
                     Odds.objects.filter(match=match)
@@ -182,11 +189,13 @@ def place_bot_parlay(user, legs_data, stake):
                     return None
 
                 combined_odds *= best
-                leg_info.append({
-                    "match": match,
-                    "selection": entry["selection"],
-                    "odds": best,
-                })
+                leg_info.append(
+                    {
+                        "match": match,
+                        "selection": entry["selection"],
+                        "odds": best,
+                    }
+                )
 
             combined_odds = combined_odds.quantize(Decimal("0.01"))
 
@@ -195,7 +204,8 @@ def place_bot_parlay(user, legs_data, stake):
                 return None
 
             log_transaction(
-                balance, -stake,
+                balance,
+                -stake,
                 BalanceTransaction.Type.PARLAY_PLACEMENT,
                 f"Parlay with {len(leg_info)} legs",
             )
@@ -205,19 +215,24 @@ def place_bot_parlay(user, legs_data, stake):
                 stake=stake,
                 combined_odds=combined_odds,
             )
-            ParlayLeg.objects.bulk_create([
-                ParlayLeg(
-                    parlay=parlay,
-                    match=li["match"],
-                    selection=li["selection"],
-                    odds_at_placement=li["odds"],
-                )
-                for li in leg_info
-            ])
+            ParlayLeg.objects.bulk_create(
+                [
+                    ParlayLeg(
+                        parlay=parlay,
+                        match=li["match"],
+                        selection=li["selection"],
+                        odds_at_placement=li["odds"],
+                    )
+                    for li in leg_info
+                ]
+            )
 
             logger.info(
                 "Bot %s placed parlay: %d legs @ %sx, stake=%s",
-                user.display_name, len(leg_info), combined_odds, stake,
+                user.display_name,
+                len(leg_info),
+                combined_odds,
+                stake,
             )
             return parlay
 
@@ -263,7 +278,8 @@ def maybe_topup_bot(bot_user, min_balance=Decimal("50.00")):
         )
 
         log_transaction(
-            balance, amount,
+            balance,
+            amount,
             BalanceTransaction.Type.BAILOUT,
             "Bot bailout",
         )

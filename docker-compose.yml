@@ -93,32 +93,52 @@ services:
     <<: *epl-build
     ports:
       - "8000:8000"
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - ./apps/epl:/app
+      - ./packages/vinosports-core/src:/packages/vinosports-core/src
 
   epl-worker:
     <<: *epl-build
     entrypoint: []
     command: celery -A config worker -l info -Q default
+    volumes:
+      - ./apps/epl:/app
+      - ./packages/vinosports-core/src:/packages/vinosports-core/src
 
   epl-beat:
     <<: *epl-build
     entrypoint: []
     command: celery -A config beat -l info
+    volumes:
+      - ./apps/epl:/app
+      - ./packages/vinosports-core/src:/packages/vinosports-core/src
 
   # --- NBA Services ---
   nba-web:
     <<: *nba-build
     ports:
       - "8001:8000"
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - ./apps/nba:/app
+      - ./packages/vinosports-core/src:/packages/vinosports-core/src
 
   nba-worker:
     <<: *nba-build
     entrypoint: []
     command: celery -A config worker -l info -Q default
+    volumes:
+      - ./apps/nba:/app
+      - ./packages/vinosports-core/src:/packages/vinosports-core/src
 
   nba-beat:
     <<: *nba-build
     entrypoint: []
     command: celery -A config beat -l info
+    volumes:
+      - ./apps/nba:/app
+      - ./packages/vinosports-core/src:/packages/vinosports-core/src
 
 volumes:
   pgdata:

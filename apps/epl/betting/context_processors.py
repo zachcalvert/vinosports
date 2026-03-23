@@ -1,12 +1,16 @@
 from decimal import Decimal
 
 from django.db.models import Min
+from matches.models import Match, Odds
 
 from betting.forms import PlaceParlayForm
 from betting.models import BetSlip
-from vinosports.betting.constants import PARLAY_MAX_LEGS, PARLAY_MAX_PAYOUT, PARLAY_MIN_LEGS
+from vinosports.betting.constants import (
+    PARLAY_MAX_LEGS,
+    PARLAY_MAX_PAYOUT,
+    PARLAY_MIN_LEGS,
+)
 from vinosports.betting.models import Bankruptcy, UserBalance
-from matches.models import Match, Odds
 
 MIN_BET = Decimal("0.50")
 PARLAY_SESSION_KEY = "parlay_slip"
@@ -63,8 +67,14 @@ def parlay_slip(request):
     raw = list(request.session.get(PARLAY_SESSION_KEY, []))
     match_ids = {entry.get("match_id") for entry in raw if entry.get("match_id")}
     matches_by_id = (
-        {m.pk: m for m in Match.objects.filter(pk__in=match_ids).select_related("home_team", "away_team")}
-        if match_ids else {}
+        {
+            m.pk: m
+            for m in Match.objects.filter(pk__in=match_ids).select_related(
+                "home_team", "away_team"
+            )
+        }
+        if match_ids
+        else {}
     )
 
     legs = []
@@ -83,12 +93,16 @@ def parlay_slip(request):
                 .aggregate(best=Min(odds_field))
                 .get("best")
             )
-        legs.append({
-            "match": match,
-            "selection": selection,
-            "selection_display": dict(BetSlip.Selection.choices).get(selection, selection),
-            "odds": best_odds,
-        })
+        legs.append(
+            {
+                "match": match,
+                "selection": selection,
+                "selection_display": dict(BetSlip.Selection.choices).get(
+                    selection, selection
+                ),
+                "odds": best_odds,
+            }
+        )
         if best_odds:
             combined_odds *= best_odds
 

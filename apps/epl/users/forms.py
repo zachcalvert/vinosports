@@ -1,8 +1,8 @@
 from django import forms
-
-from vinosports.betting.models import UserBadge
 from matches.models import Team
+
 from users.avatars import AVATAR_COLORS, AVATAR_ICONS, get_frame_by_slug
+from vinosports.betting.models import UserBadge
 
 
 class AvatarForm(forms.Form):

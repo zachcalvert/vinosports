@@ -7,14 +7,15 @@ from django.db import transaction
 
 from betting.badges import BetContext, check_and_award_badges
 from vinosports.betting.models import UserStats
-from vinosports.challenges.models import UserChallenge
 
 logger = logging.getLogger(__name__)
 
 MAX_SINGLE_STAKE = Decimal("1000.00")
 
 
-def record_bet_result(user, *, won, stake, payout, odds=None, is_parlay=False, leg_count=0, matchday=None):
+def record_bet_result(
+    user, *, won, stake, payout, odds=None, is_parlay=False, leg_count=0, matchday=None
+):
     newly_earned = []
 
     with transaction.atomic():
@@ -80,10 +81,13 @@ def _broadcast_badges(user, user_badges):
 
     for ub in user_badges:
         try:
-            send(group, {
-                "type": "badge_notification",
-                "user_badge_id": ub.pk,
-            })
+            send(
+                group,
+                {
+                    "type": "badge_notification",
+                    "user_badge_id": ub.pk,
+                },
+            )
         except Exception:
             logger.exception(
                 "Failed to broadcast badge notification for user_badge %s", ub.pk

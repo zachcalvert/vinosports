@@ -3,12 +3,12 @@ import time
 from datetime import timedelta
 
 from asgiref.sync import async_to_sync
+from betting.tasks import settle_match_bets
 from celery import shared_task
 from channels.layers import get_channel_layer
 from django.conf import settings
 from django.utils import timezone
 
-from betting.tasks import settle_match_bets
 from matches.models import Match
 from matches.services import (
     FootballDataClient,
@@ -29,7 +29,7 @@ def fetch_teams(self):
         logger.info("fetch_teams: done created=%d updated=%d", created, updated)
     except Exception as exc:
         logger.exception("fetch_teams failed")
-        raise self.retry(exc=exc, countdown=60 * (2 ** self.request.retries))
+        raise self.retry(exc=exc, countdown=60 * (2**self.request.retries))
 
 
 @shared_task(bind=True, max_retries=3)
@@ -40,7 +40,7 @@ def fetch_fixtures(self):
         logger.info("fetch_fixtures: done created=%d updated=%d", created, updated)
     except Exception as exc:
         logger.exception("fetch_fixtures failed")
-        raise self.retry(exc=exc, countdown=60 * (2 ** self.request.retries))
+        raise self.retry(exc=exc, countdown=60 * (2**self.request.retries))
 
 
 @shared_task(bind=True, max_retries=3)
@@ -51,7 +51,7 @@ def fetch_standings(self):
         logger.info("fetch_standings: done created=%d updated=%d", created, updated)
     except Exception as exc:
         logger.exception("fetch_standings failed")
-        raise self.retry(exc=exc, countdown=60 * (2 ** self.request.retries))
+        raise self.retry(exc=exc, countdown=60 * (2**self.request.retries))
 
 
 @shared_task(bind=True, max_retries=3)
@@ -86,7 +86,7 @@ def fetch_live_scores(self):
 
     except Exception as exc:
         logger.exception("fetch_live_scores failed")
-        raise self.retry(exc=exc, countdown=30 * (2 ** self.request.retries))
+        raise self.retry(exc=exc, countdown=30 * (2**self.request.retries))
 
 
 def _refresh_stale_matches(stale_matches):
@@ -102,7 +102,9 @@ def _refresh_stale_matches(stale_matches):
                 )
                 logger.info(
                     "Refreshed stale match %d (ext %d): status=%s",
-                    pk, ext_id, data["status"],
+                    pk,
+                    ext_id,
+                    data["status"],
                 )
                 updated += 1
             except Exception:
@@ -118,14 +120,16 @@ def _broadcast_score_changes(pre_sync):
 
     send = async_to_sync(channel_layer.group_send)
 
-    current = Match.objects.filter(
-        pk__in=list(pre_sync.keys())
-    ).union(
-        Match.objects.filter(
-            status__in=["IN_PLAY", "PAUSED"],
-            season=settings.CURRENT_SEASON,
+    current = (
+        Match.objects.filter(pk__in=list(pre_sync.keys()))
+        .union(
+            Match.objects.filter(
+                status__in=["IN_PLAY", "PAUSED"],
+                season=settings.CURRENT_SEASON,
+            )
         )
-    ).values("pk", "home_score", "away_score", "status")
+        .values("pk", "home_score", "away_score", "status")
+    )
 
     for m in current:
         pk = m["pk"]
@@ -140,9 +144,11 @@ def _broadcast_score_changes(pre_sync):
             if old and (old[0] != m["home_score"] or old[1] != m["away_score"]):
                 from activity.services import queue_activity_event
 
-                match_obj = Match.objects.filter(pk=pk).select_related(
-                    "home_team", "away_team"
-                ).first()
+                match_obj = (
+                    Match.objects.filter(pk=pk)
+                    .select_related("home_team", "away_team")
+                    .first()
+                )
                 if match_obj:
                     queue_activity_event(
                         "score_change",
@@ -155,8 +161,15 @@ def _broadcast_score_changes(pre_sync):
 
             old_status = old[2] if old else None
             new_status = m["status"]
-            if new_status in ("FINISHED", "CANCELLED", "POSTPONED") and old_status != new_status:
-                logger.info("Triggering bet settlement for match %d (status: %s)", pk, new_status)
+            if (
+                new_status in ("FINISHED", "CANCELLED", "POSTPONED")
+                and old_status != new_status
+            ):
+                logger.info(
+                    "Triggering bet settlement for match %d (status: %s)",
+                    pk,
+                    new_status,
+                )
                 settle_match_bets.delay(pk)
 
 
@@ -164,12 +177,16 @@ def _broadcast_score_changes(pre_sync):
 def prefetch_upcoming_hype_data():
     now = timezone.now()
     cutoff = now + timedelta(hours=48)
-    upcoming = Match.objects.filter(
-        status__in=[Match.Status.SCHEDULED, Match.Status.TIMED],
-        kickoff__gte=now,
-        kickoff__lte=cutoff,
-        season=settings.CURRENT_SEASON,
-    ).select_related("home_team", "away_team").prefetch_related("hype_stats")
+    upcoming = (
+        Match.objects.filter(
+            status__in=[Match.Status.SCHEDULED, Match.Status.TIMED],
+            kickoff__gte=now,
+            kickoff__lte=cutoff,
+            season=settings.CURRENT_SEASON,
+        )
+        .select_related("home_team", "away_team")
+        .prefetch_related("hype_stats")
+    )
 
     refreshed = skipped = 0
     for match in upcoming:
@@ -186,4 +203,6 @@ def prefetch_upcoming_hype_data():
         refreshed += 1
         time.sleep(20)
 
-    logger.info("prefetch_upcoming_hype_data: refreshed=%d skipped=%d", refreshed, skipped)
+    logger.info(
+        "prefetch_upcoming_hype_data: refreshed=%d skipped=%d", refreshed, skipped
+    )

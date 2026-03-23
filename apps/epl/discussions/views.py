@@ -1,16 +1,16 @@
 import logging
 
+from betting.models import BetSlip
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Exists, OuterRef, Prefetch, Q
 from django.http import HttpResponse, HttpResponseForbidden
 from django.shortcuts import get_object_or_404
 from django.template.loader import render_to_string
 from django.views import View
+from matches.models import Match
 
-from betting.models import BetSlip
 from discussions.forms import CommentForm
 from discussions.models import Comment
-from matches.models import Match
 
 logger = logging.getLogger(__name__)
 
@@ -177,7 +177,9 @@ class CreateReplyView(LoginRequiredMixin, View):
 
         form = CommentForm(request.POST)
         if not form.is_valid():
-            error_msg = form.errors["body"][0] if "body" in form.errors else "Invalid reply."
+            error_msg = (
+                form.errors["body"][0] if "body" in form.errors else "Invalid reply."
+            )
             html = (
                 f'<div id="reply-error-{parent.id_hash}" hx-swap-oob="true" '
                 f'class="text-red-400 text-xs mt-1">{error_msg}</div>'
@@ -237,7 +239,9 @@ class DeleteCommentView(LoginRequiredMixin, View):
                 .select_related("user")
                 .order_by("created_at")
             )
-            user_ids = {comment.user_id} | {r.user_id for r in comment.prefetched_replies}
+            user_ids = {comment.user_id} | {
+                r.user_id for r in comment.prefetched_replies
+            }
             bet_map = _build_bet_map(match.pk, user_ids) if user_ids else {}
             _annotate_bet_positions([comment], bet_map, match)
             html = render_to_string(

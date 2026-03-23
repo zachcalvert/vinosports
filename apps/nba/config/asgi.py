@@ -8,14 +8,12 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
 
 django_asgi_app = get_asgi_application()
 
-from activity.routing import websocket_urlpatterns as activity_ws
-from games.routing import websocket_urlpatterns as games_ws
+from activity.routing import websocket_urlpatterns as activity_ws  # noqa: E402
+from games.routing import websocket_urlpatterns as games_ws  # noqa: E402
 
 application = ProtocolTypeRouter(
     {
         "http": django_asgi_app,
-        "websocket": AuthMiddlewareStack(
-            URLRouter(games_ws + activity_ws)
-        ),
+        "websocket": AuthMiddlewareStack(URLRouter(games_ws + activity_ws)),
     }
 )

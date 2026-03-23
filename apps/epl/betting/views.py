@@ -3,6 +3,8 @@ import random
 from datetime import timedelta
 from decimal import Decimal
 
+from challenges.engine import update_challenge_progress
+from discussions.models import Comment
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -13,12 +15,19 @@ from django.shortcuts import get_object_or_404, render
 from django.utils import timezone
 from django.views import View
 from django.views.generic import TemplateView
+from matches.models import Match, Odds
+from website.templatetags.currency_tags import format_currency
 
-from vinosports.betting.balance import log_transaction
 from betting.context_processors import parlay_slip as _parlay_slip_ctx
 from betting.forms import PlaceBetForm, PlaceParlayForm
 from betting.models import BetSlip, Parlay, ParlayLeg
-from vinosports.betting.constants import PARLAY_MAX_LEGS, PARLAY_MAX_PAYOUT, PARLAY_MIN_LEGS
+from vinosports.betting.balance import log_transaction
+from vinosports.betting.constants import (
+    PARLAY_MAX_LEGS,
+    PARLAY_MAX_PAYOUT,
+    PARLAY_MIN_LEGS,
+)
+from vinosports.betting.leaderboard import get_public_identity, get_user_rank
 from vinosports.betting.models import (
     Badge,
     Bailout,
@@ -28,12 +37,7 @@ from vinosports.betting.models import (
     UserBalance,
     UserStats,
 )
-from vinosports.betting.leaderboard import get_public_identity, get_user_rank
-from challenges.engine import update_challenge_progress
-from discussions.models import Comment
-from matches.models import Match, Odds
 from vinosports.rewards.models import RewardDistribution
-from website.templatetags.currency_tags import format_currency
 
 logger = logging.getLogger(__name__)
 
@@ -148,17 +152,29 @@ class PlaceBetView(LoginRequiredMixin, View):
         """Return odds context for payout preview on error re-renders."""
         if container_id:
             # Quick bet form: pass selected_odds for the chosen outcome
-            odds_field_map = {"HOME_WIN": "home_win", "DRAW": "draw", "AWAY_WIN": "away_win"}
+            odds_field_map = {
+                "HOME_WIN": "home_win",
+                "DRAW": "draw",
+                "AWAY_WIN": "away_win",
+            }
             odds_field = odds_field_map.get(selection)
             if odds_field:
-                result = Odds.objects.filter(match=match).aggregate(best=Min(odds_field))
+                result = Odds.objects.filter(match=match).aggregate(
+                    best=Min(odds_field)
+                )
                 return {"selected_odds": result.get("best")}
             return {}
         # Full bet form: pass all three best odds
         result = Odds.objects.filter(match=match).aggregate(
-            best_home=Min("home_win"), best_draw=Min("draw"), best_away=Min("away_win"),
+            best_home=Min("home_win"),
+            best_draw=Min("draw"),
+            best_away=Min("away_win"),
         )
-        return {"best_home": result["best_home"], "best_draw": result["best_draw"], "best_away": result["best_away"]}
+        return {
+            "best_home": result["best_home"],
+            "best_draw": result["best_draw"],
+            "best_away": result["best_away"],
+        }
 
     def post(self, request, match_slug):
         match = get_object_or_404(
@@ -210,9 +226,7 @@ class PlaceBetView(LoginRequiredMixin, View):
         }[selection]
 
         best_odds_val = (
-            Odds.objects.filter(match=match)
-            .aggregate(best=Min(odds_field))
-            .get("best")
+            Odds.objects.filter(match=match).aggregate(best=Min(odds_field)).get("best")
         )
         if not best_odds_val:
             return render(
@@ -252,7 +266,8 @@ class PlaceBetView(LoginRequiredMixin, View):
                     f" vs {match.away_team.short_name or match.away_team.name}"
                 )
                 log_transaction(
-                    balance, -stake,
+                    balance,
+                    -stake,
                     BalanceTransaction.Type.BET_PLACEMENT,
                     f"Bet on {match_label}",
                 )
@@ -266,7 +281,9 @@ class PlaceBetView(LoginRequiredMixin, View):
                 )
         except UserBalance.DoesNotExist:
             # Auto-create balance if missing (shouldn't happen with signup flow)
-            balance = UserBalance.objects.create(user=request.user, balance=Decimal("1000.00") - stake)
+            balance = UserBalance.objects.create(
+                user=request.user, balance=Decimal("1000.00") - stake
+            )
             BalanceTransaction.objects.create(
                 user=request.user,
                 amount=Decimal("1000.00"),
@@ -293,8 +310,15 @@ class PlaceBetView(LoginRequiredMixin, View):
 
         # Update challenge progress (runs after any active transaction commits)
         _user = request.user
-        _ctx = {"match": match, "odds": best_odds_val, "stake": stake, "selection": selection}
-        transaction.on_commit(lambda: update_challenge_progress(_user, "bet_placed", _ctx))
+        _ctx = {
+            "match": match,
+            "odds": best_odds_val,
+            "stake": stake,
+            "selection": selection,
+        }
+        transaction.on_commit(
+            lambda: update_challenge_progress(_user, "bet_placed", _ctx)
+        )
 
         return render(
             request,
@@ -316,14 +340,12 @@ class MyBetsView(LoginRequiredMixin, TemplateView):
         ctx = super().get_context_data(**kwargs)
         user = self.request.user
 
-        bets = (
-            BetSlip.objects.filter(user=user)
-            .select_related("match__home_team", "match__away_team")
+        bets = BetSlip.objects.filter(user=user).select_related(
+            "match__home_team", "match__away_team"
         )
 
-        parlays = (
-            Parlay.objects.filter(user=user)
-            .prefetch_related("legs__match__home_team", "legs__match__away_team")
+        parlays = Parlay.objects.filter(user=user).prefetch_related(
+            "legs__match__home_team", "legs__match__away_team"
         )
 
         bet_totals = bets.aggregate(
@@ -334,29 +356,31 @@ class MyBetsView(LoginRequiredMixin, TemplateView):
             parlay_staked=Sum("stake"),
             parlay_payout=Sum("payout"),
         )
-        total_staked = (bet_totals["total_staked"] or Decimal("0")) + (parlay_totals["parlay_staked"] or Decimal("0"))
-        total_payout = (bet_totals["total_payout"] or Decimal("0")) + (parlay_totals["parlay_payout"] or Decimal("0"))
+        total_staked = (bet_totals["total_staked"] or Decimal("0")) + (
+            parlay_totals["parlay_staked"] or Decimal("0")
+        )
+        total_payout = (bet_totals["total_payout"] or Decimal("0")) + (
+            parlay_totals["parlay_payout"] or Decimal("0")
+        )
 
         balance = getattr(user, "balance", None)
         current_balance = balance.balance if balance else Decimal("1000.00")
 
-        reward_distributions = (
-            RewardDistribution.objects.filter(user=user)
-            .select_related("reward")
-        )
-        total_rewards = (
-            reward_distributions.aggregate(
-                total=Sum("reward__amount")
-            )["total"]
-            or Decimal("0")
-        )
+        reward_distributions = RewardDistribution.objects.filter(
+            user=user
+        ).select_related("reward")
+        total_rewards = reward_distributions.aggregate(total=Sum("reward__amount"))[
+            "total"
+        ] or Decimal("0")
 
         # Build unified activity feed sorted by date descending
         activity = []
         for bet in bets:
             activity.append({"type": "bet", "date": bet.created_at, "item": bet})
         for parlay in parlays:
-            activity.append({"type": "parlay", "date": parlay.created_at, "item": parlay})
+            activity.append(
+                {"type": "parlay", "date": parlay.created_at, "item": parlay}
+            )
         for dist in reward_distributions:
             activity.append({"type": "reward", "date": dist.created_at, "item": dist})
         activity.sort(key=lambda a: a["date"], reverse=True)
@@ -425,7 +449,9 @@ class ProfileView(TemplateView):
         # Badge grid — all badges with earned date (or None if locked)
         earned_map = {
             ub.badge_id: ub.earned_at
-            for ub in UserBadge.objects.filter(user=profile_user).select_related("badge")
+            for ub in UserBadge.objects.filter(user=profile_user).select_related(
+                "badge"
+            )
         }
         all_badges = []
         for badge in Badge.objects.all():
@@ -539,7 +565,11 @@ class BailoutView(LoginRequiredMixin, View):
                 user=request.user, status=Parlay.Status.PENDING
             ).count()
 
-            if balance.balance >= self.MIN_BET or pending_count > 0 or pending_parlays > 0:
+            if (
+                balance.balance >= self.MIN_BET
+                or pending_count > 0
+                or pending_parlays > 0
+            ):
                 return JsonResponse({"error": "You are not bankrupt."}, status=400)
 
             bankruptcy = Bankruptcy.objects.create(
@@ -556,16 +586,19 @@ class BailoutView(LoginRequiredMixin, View):
             )
 
             log_transaction(
-                balance, Decimal(amount),
+                balance,
+                Decimal(amount),
                 BalanceTransaction.Type.BAILOUT,
                 "Bankruptcy bailout",
             )
 
-        return JsonResponse({
-            "success": True,
-            "amount": amount,
-            "new_balance": str(balance.balance),
-        })
+        return JsonResponse(
+            {
+                "success": True,
+                "amount": amount,
+                "new_balance": str(balance.balance),
+            }
+        )
 
 
 # ── Parlay helpers ────────────────────────────────────────────────────────────
@@ -594,6 +627,7 @@ def _build_slip_context(request):
 
 
 # ── Parlay slip management views ──────────────────────────────────────────────
+
 
 class AddToParlayView(LoginRequiredMixin, View):
     """Add a selection to the session parlay slip."""
@@ -646,7 +680,10 @@ class AddToParlayView(LoginRequiredMixin, View):
             return render(
                 request,
                 "betting/partials/parlay_slip.html",
-                {**_build_slip_context(request), "parlay_error": "Match not available for betting."},
+                {
+                    **_build_slip_context(request),
+                    "parlay_error": "Match not available for betting.",
+                },
             )
 
         slip.append({"match_id": match.pk, "selection": selection})
@@ -786,10 +823,13 @@ class PlaceParlayView(LoginRequiredMixin, View):
                 balance = UserBalance.objects.select_for_update().get(user=request.user)
 
                 if balance.balance < stake:
-                    return _error(f"Insufficient balance. You have {format_currency(balance.balance, request.user.currency)}.")
+                    return _error(
+                        f"Insufficient balance. You have {format_currency(balance.balance, request.user.currency)}."
+                    )
 
                 log_transaction(
-                    balance, -stake,
+                    balance,
+                    -stake,
                     BalanceTransaction.Type.PARLAY_PLACEMENT,
                     f"Parlay with {len(leg_data)} legs",
                 )
@@ -800,27 +840,37 @@ class PlaceParlayView(LoginRequiredMixin, View):
                     combined_odds=combined_odds,
                     max_payout=PARLAY_MAX_PAYOUT,
                 )
-                ParlayLeg.objects.bulk_create([
-                    ParlayLeg(
-                        parlay=parlay,
-                        match=ld["match"],
-                        selection=ld["selection"],
-                        odds_at_placement=ld["odds"],
-                    )
-                    for ld in leg_data
-                ])
+                ParlayLeg.objects.bulk_create(
+                    [
+                        ParlayLeg(
+                            parlay=parlay,
+                            match=ld["match"],
+                            selection=ld["selection"],
+                            odds_at_placement=ld["odds"],
+                        )
+                        for ld in leg_data
+                    ]
+                )
         except UserBalance.DoesNotExist:
             return _error("Balance not found. Please refresh and try again.")
         except IntegrityError:
-            return _error("Duplicate match detected in parlay. Please clear and rebuild your slip.")
+            return _error(
+                "Duplicate match detected in parlay. Please clear and rebuild your slip."
+            )
 
         # Clear session slip
         _save_slip(request, [])
 
         # Update challenge progress
         _user = request.user
-        _ctx = {"stake": stake, "leg_count": len(leg_data), "combined_odds": combined_odds}
-        transaction.on_commit(lambda: update_challenge_progress(_user, "parlay_placed", _ctx))
+        _ctx = {
+            "stake": stake,
+            "leg_count": len(leg_data),
+            "combined_odds": combined_odds,
+        }
+        transaction.on_commit(
+            lambda: update_challenge_progress(_user, "parlay_placed", _ctx)
+        )
 
         return render(
             request,

@@ -1,7 +1,7 @@
 from django.contrib import admin
+from matches.models import Odds
 
 from betting.models import BetSlip, Parlay, ParlayLeg
-from matches.models import Odds
 from vinosports.betting.models import Badge, UserBadge, UserBalance
 
 
@@ -15,7 +15,15 @@ class OddsAdmin(admin.ModelAdmin):
 
 @admin.register(BetSlip)
 class BetSlipAdmin(admin.ModelAdmin):
-    list_display = ["user", "match", "selection", "odds_at_placement", "stake", "status", "payout"]
+    list_display = [
+        "user",
+        "match",
+        "selection",
+        "odds_at_placement",
+        "stake",
+        "status",
+        "payout",
+    ]
     list_filter = ["status", "selection"]
     search_fields = ["user__email"]
     raw_id_fields = ["user", "match"]

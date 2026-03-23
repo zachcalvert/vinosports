@@ -1,11 +1,11 @@
 from decimal import Decimal
 
-from django.contrib.auth import get_user_model
-from django.core.management.base import BaseCommand
-
 from bots.models import BotProfile
 from bots.personas import BOT_PERSONA_PROMPTS
 from bots.registry import BOT_PROFILES, STRATEGY_TYPE_TO_CLASS
+from django.contrib.auth import get_user_model
+from django.core.management.base import BaseCommand
+
 from vinosports.betting.models import UserBalance
 
 User = get_user_model()

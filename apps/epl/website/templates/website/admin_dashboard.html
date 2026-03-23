@@ -36,22 +36,6 @@
     </div>
 </div>
 
-<!-- Activity Event Queue -->
-<div class="bg-surface rounded-lg border border-border p-5 lg:col-span-2">
-    <h2 class="text-lg font-bold mb-4 flex items-center gap-2" style="font-family: 'Oswald', sans-serif;">
-        <i class="ph-duotone ph-queue text-accent"></i> Activity Event Queue
-    </h2>
-    <p class="text-xs text-muted mb-3">Events waiting to be broadcast (one released every 20s)</p>
-    <div id="admin-activity-queue"
-            hx-get="{% url 'website:admin_dashboard_activity_queue' %}"
-            hx-trigger="load"
-            hx-swap="innerHTML">
-        <div class="flex justify-center py-8">
-            <span class="spinner text-accent"></span>
-        </div>
-    </div>
-</div>
-
 <!-- Panels Grid -->
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
     <!-- Bets & Parlays -->
@@ -84,15 +68,16 @@
         </div>
     </div>
 
-    <!-- Task Runs -->
-    <div class="bg-surface rounded-lg border border-border p-5">
+    <!-- Activity Event Queue -->
+    <div class="bg-surface rounded-lg border border-border p-5 lg:col-span-3">
         <h2 class="text-lg font-bold mb-4 flex items-center gap-2" style="font-family: 'Oswald', sans-serif;">
-            <i class="ph-duotone ph-gear-six text-accent"></i> Task Runs
+            <i class="ph-duotone ph-queue text-accent"></i> Activity Event Queue
         </h2>
-        <div id="admin-tasks"
-             hx-get="{% url 'website:admin_dashboard_tasks' %}"
-             hx-trigger="load"
-             hx-swap="innerHTML">
+        <p class="text-xs text-muted mb-3">Events waiting to be broadcast (one released every 20s)</p>
+        <div id="admin-activity-queue"
+                hx-get="{% url 'website:admin_dashboard_activity_queue' %}"
+                hx-trigger="load"
+                hx-swap="innerHTML">
             <div class="flex justify-center py-8">
                 <span class="spinner text-accent"></span>
             </div>

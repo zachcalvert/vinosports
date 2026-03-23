@@ -1,3 +1,5 @@
+from betting.forms import PlaceBetForm
+from betting.models import BetSlip
 from django.conf import settings
 from django.contrib.auth.mixins import UserPassesTestMixin
 from django.db.models import Case, Count, IntegerField, Min, Q, Sum, Value, When
@@ -7,12 +9,14 @@ from django.template.loader import render_to_string
 from django.utils import timezone
 from django.views.generic import DetailView, TemplateView, View
 
-from betting.forms import PlaceBetForm
-from betting.models import BetSlip
-from vinosports.betting.leaderboard import BOARD_TYPES, get_leaderboard_entries, get_user_rank
 from matches.forms import MatchNotesForm
 from matches.models import Match, MatchNotes, Odds, Standing
 from matches.services import fetch_match_hype_data
+from vinosports.betting.leaderboard import (
+    BOARD_TYPES,
+    get_leaderboard_entries,
+    get_user_rank,
+)
 
 
 def _get_default_matchday(season):
@@ -149,7 +153,6 @@ class LeaderboardView(TemplateView):
         return ctx
 
 
-
 class LeagueTableView(TemplateView):
     template_name = "matches/league_table.html"
 
@@ -249,7 +252,9 @@ def _get_recap_context(match, home_standing, away_standing):
         winner_name = winner.short_name or winner.name
         loser_name = loser.short_name or loser.name
         if is_upset:
-            headline = f"{winner_name} pull off the upset against {loser_name} ({score_line})"
+            headline = (
+                f"{winner_name} pull off the upset against {loser_name} ({score_line})"
+            )
         else:
             headline = f"{winner_name} beat {loser_name} ({score_line})"
     elif winner:
@@ -429,7 +434,12 @@ class MatchNotesView(UserPassesTestMixin, View):
 
         html = render_to_string(
             "matches/partials/match_notes_panel.html",
-            {"match": match, "match_notes_form": form, "match_notes": notes, "saved": saved},
+            {
+                "match": match,
+                "match_notes_form": form,
+                "match_notes": notes,
+                "saved": saved,
+            },
             request=request,
         )
         return HttpResponse(html, status=status)

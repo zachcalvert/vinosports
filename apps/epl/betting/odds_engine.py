@@ -7,7 +7,6 @@ import logging
 from decimal import ROUND_HALF_UP, Decimal
 
 from django.conf import settings
-
 from matches.models import Match, Standing
 
 logger = logging.getLogger(__name__)
@@ -35,8 +34,12 @@ def _team_strength(standing):
 
 
 def generate_match_odds(home_standing, away_standing):
-    home_strength = _team_strength(home_standing) if home_standing else FALLBACK_STRENGTH
-    away_strength = _team_strength(away_standing) if away_standing else FALLBACK_STRENGTH
+    home_strength = (
+        _team_strength(home_standing) if home_standing else FALLBACK_STRENGTH
+    )
+    away_strength = (
+        _team_strength(away_standing) if away_standing else FALLBACK_STRENGTH
+    )
 
     home_strength = home_strength * HOME_ADVANTAGE
 
@@ -106,10 +109,12 @@ def generate_all_upcoming_odds(season=None):
         away_standing = standings_map.get(match.away_team_id)
 
         odds = generate_match_odds(home_standing, away_standing)
-        results.append({
-            "match": match,
-            **odds,
-        })
+        results.append(
+            {
+                "match": match,
+                **odds,
+            }
+        )
 
     logger.info(
         "generate_all_upcoming_odds: generated odds for %d matches (season %s)",

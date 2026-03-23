@@ -3,12 +3,12 @@
 import logging
 import random
 
+from activity.services import queue_activity_event
 from celery import shared_task
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 from django.utils import timezone
 
-from activity.services import queue_activity_event
 from bots.models import BotComment
 from bots.registry import get_strategy_for_bot
 from bots.services import (
@@ -104,7 +104,12 @@ def execute_bot_strategy(self, bot_user_id):
             # Post-bet comment (~50% chance, staggered 30s-5min)
             if random.random() < 0.5:
                 generate_bot_comment_task.apply_async(
-                    args=[user.pk, pick.match_id, BotComment.TriggerType.POST_BET, result.pk],
+                    args=[
+                        user.pk,
+                        pick.match_id,
+                        BotComment.TriggerType.POST_BET,
+                        result.pk,
+                    ],
                     countdown=random.randint(30, 300),
                 )
 
@@ -118,7 +123,10 @@ def execute_bot_strategy(self, bot_user_id):
             queue_activity_event(
                 "bot_bet",
                 f"{user.display_name} placed a {len(pp.legs)}-leg parlay",
-                url=reverse("matches:match_detail", kwargs={"slug": slug_map[pp.legs[0]["match_id"]]}),
+                url=reverse(
+                    "matches:match_detail",
+                    kwargs={"slug": slug_map[pp.legs[0]["match_id"]]},
+                ),
                 icon="coins",
             )
 
@@ -136,8 +144,9 @@ def execute_bot_strategy(self, bot_user_id):
 def generate_bot_comment_task(bot_user_id, match_id, trigger_type, bet_slip_id=None):
     """Generate and post a single bot comment. Dedup-safe via BotComment constraint."""
     from betting.models import BetSlip
-    from bots.comment_service import generate_bot_comment
     from matches.models import Match
+
+    from bots.comment_service import generate_bot_comment
 
     try:
         bot_user = User.objects.get(pk=bot_user_id, is_bot=True, is_active=True)
@@ -177,9 +186,10 @@ def generate_bot_comment_task(bot_user_id, match_id, trigger_type, bet_slip_id=N
 @shared_task
 def generate_bot_reply_task(bot_user_id, match_id, parent_comment_id):
     """Generate and post a bot reply to an existing comment."""
-    from bots.comment_service import generate_bot_comment
     from discussions.models import Comment as DiscussionComment
     from matches.models import Match
+
+    from bots.comment_service import generate_bot_comment
 
     try:
         bot_user = User.objects.get(pk=bot_user_id, is_bot=True, is_active=True)
@@ -193,13 +203,17 @@ def generate_bot_reply_task(bot_user_id, match_id, parent_comment_id):
 
     try:
         parent = DiscussionComment.objects.select_related("user").get(
-            pk=parent_comment_id, match=match,
+            pk=parent_comment_id,
+            match=match,
         )
     except DiscussionComment.DoesNotExist:
         return "parent comment not found"
 
     comment = generate_bot_comment(
-        bot_user, match, BotComment.TriggerType.REPLY, parent_comment=parent,
+        bot_user,
+        match,
+        BotComment.TriggerType.REPLY,
+        parent_comment=parent,
     )
     if comment:
         return f"replied: {comment.body[:60]}"
@@ -209,12 +223,16 @@ def generate_bot_reply_task(bot_user_id, match_id, parent_comment_id):
 @shared_task
 def maybe_reply_to_human_comment(comment_id):
     """Maybe dispatch a bot reply to a human-authored comment."""
-    from bots.comment_service import select_reply_bot
     from discussions.models import Comment as DiscussionComment
+
+    from bots.comment_service import select_reply_bot
 
     try:
         comment = DiscussionComment.objects.select_related(
-            "user", "match", "match__home_team", "match__away_team",
+            "user",
+            "match",
+            "match__home_team",
+            "match__away_team",
         ).get(pk=comment_id)
     except DiscussionComment.DoesNotExist:
         return "comment not found"
@@ -245,8 +263,9 @@ MAX_POSTMATCH_DISPATCHES = 30
 @shared_task
 def generate_prematch_comments():
     """Find upcoming matches and dispatch pre-match hype comments for 1-2 bots each."""
-    from bots.comment_service import select_bots_for_match
     from matches.models import Match
+
+    from bots.comment_service import select_bots_for_match
 
     now = timezone.now()
     upcoming = Match.objects.filter(
@@ -276,7 +295,11 @@ def generate_prematch_comments():
             )
             dispatched += 1
 
-    logger.info("Dispatched %d pre-match comment tasks (cap %d)", dispatched, MAX_PREMATCH_DISPATCHES)
+    logger.info(
+        "Dispatched %d pre-match comment tasks (cap %d)",
+        dispatched,
+        MAX_PREMATCH_DISPATCHES,
+    )
     return f"dispatched {dispatched} pre-match comments"
 
 
@@ -284,8 +307,9 @@ def generate_prematch_comments():
 def generate_postmatch_comments():
     """Find recently finished matches and dispatch post-match reaction comments."""
     from betting.models import BetSlip
-    from bots.comment_service import select_bots_for_match
     from matches.models import Match
+
+    from bots.comment_service import select_bots_for_match
 
     now = timezone.now()
     recently_finished = Match.objects.filter(
@@ -319,7 +343,8 @@ def generate_postmatch_comments():
             seen_user_ids.add(bet.user_id)
 
             if BotComment.objects.filter(
-                user=bet.user, match=match,
+                user=bet.user,
+                match=match,
                 trigger_type=BotComment.TriggerType.POST_MATCH,
             ).exists():
                 continue
@@ -335,7 +360,9 @@ def generate_postmatch_comments():
 
         # Pick 1 non-betting bot for color commentary, excluding bots already enqueued
         color_bots = select_bots_for_match(
-            match, BotComment.TriggerType.POST_MATCH, max_bots=1,
+            match,
+            BotComment.TriggerType.POST_MATCH,
+            max_bots=1,
             exclude_user_ids=seen_user_ids,
         )
         for bot in color_bots:
@@ -347,7 +374,11 @@ def generate_postmatch_comments():
             )
             dispatched += 1
 
-    logger.info("Dispatched %d post-match comment tasks (cap %d)", dispatched, MAX_POSTMATCH_DISPATCHES)
+    logger.info(
+        "Dispatched %d post-match comment tasks (cap %d)",
+        dispatched,
+        MAX_POSTMATCH_DISPATCHES,
+    )
     return f"dispatched {dispatched} post-match comments"
 
 
@@ -371,5 +402,7 @@ def _maybe_dispatch_reply(match, comment):
     )
     logger.info(
         "Dispatched reply from %s to %s's comment on %s",
-        bot.display_name, comment.user.display_name, match,
+        bot.display_name,
+        comment.user.display_name,
+        match,
     )

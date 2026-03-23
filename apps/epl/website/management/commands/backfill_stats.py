@@ -1,10 +1,10 @@
 from decimal import Decimal
 
+from betting.models import BetSlip
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
 from django.db.models import Count, Q, Sum
 
-from betting.models import BetSlip
 from vinosports.betting.models import BetStatus, UserStats
 
 User = get_user_model()
@@ -14,12 +14,9 @@ class Command(BaseCommand):
     help = "Recalculate UserStats from settled bet history (safe no-op if no bets)"
 
     def handle(self, *args, **options):
-        users_with_bets = (
-            User.objects.filter(
-                bet_slips__status__in=[BetStatus.WON, BetStatus.LOST],
-            )
-            .distinct()
-        )
+        users_with_bets = User.objects.filter(
+            bet_slips__status__in=[BetStatus.WON, BetStatus.LOST],
+        ).distinct()
 
         count = users_with_bets.count()
         if not count:

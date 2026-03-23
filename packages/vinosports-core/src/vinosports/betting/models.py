@@ -8,7 +8,6 @@ from vinosports.core.models import BaseModel
 
 from .constants import PARLAY_MAX_PAYOUT
 
-
 # ---------------------------------------------------------------------------
 # Concrete models — identical across all leagues
 # ---------------------------------------------------------------------------
@@ -49,15 +48,11 @@ class BalanceTransaction(BaseModel):
         related_name="balance_transactions",
         verbose_name=_("user"),
     )
-    amount = models.DecimalField(
-        _("amount"), max_digits=10, decimal_places=2
-    )
+    amount = models.DecimalField(_("amount"), max_digits=10, decimal_places=2)
     balance_after = models.DecimalField(
         _("balance after"), max_digits=10, decimal_places=2
     )
-    transaction_type = models.CharField(
-        _("type"), max_length=20, choices=Type.choices
-    )
+    transaction_type = models.CharField(_("type"), max_length=20, choices=Type.choices)
     description = models.CharField(
         _("description"), max_length=200, blank=True, default=""
     )
@@ -70,7 +65,9 @@ class BalanceTransaction(BaseModel):
 
     def __str__(self):
         sign = "+" if self.amount >= 0 else ""
-        return f"{self.user}: {sign}{self.amount} ({self.get_transaction_type_display()})"
+        return (
+            f"{self.user}: {sign}{self.amount} ({self.get_transaction_type_display()})"
+        )
 
 
 class UserStats(BaseModel):

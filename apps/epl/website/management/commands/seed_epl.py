@@ -1,14 +1,15 @@
+from betting.odds_engine import generate_all_upcoming_odds
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.utils import timezone
-
-from betting.odds_engine import generate_all_upcoming_odds
 from matches.models import Odds
 from matches.services import sync_matches, sync_standings, sync_teams
 
 
 class Command(BaseCommand):
-    help = "Seed the database with EPL data from football-data.org and generate house odds"
+    help = (
+        "Seed the database with EPL data from football-data.org and generate house odds"
+    )
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -54,9 +55,7 @@ class Command(BaseCommand):
         self.stdout.write("Syncing standings...")
         created, updated = sync_standings(season, offline=offline)
         self.stdout.write(
-            self.style.SUCCESS(
-                f"  Standings: {created} created, {updated} updated"
-            )
+            self.style.SUCCESS(f"  Standings: {created} created, {updated} updated")
         )
 
         # Odds
