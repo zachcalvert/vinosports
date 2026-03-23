@@ -5,9 +5,8 @@ from activity.models import ActivityEvent
 from betting.forms import CurrencyForm, DisplayNameForm
 from betting.models import BetSlip, Parlay
 from discussions.models import Comment
-from django.contrib.auth import authenticate, get_user_model, login, logout
+from django.contrib.auth import get_user_model, logout
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.db import transaction
 from django.db.models import Sum
 from django.http import Http404, HttpResponse
 from django.shortcuts import redirect, render
@@ -27,13 +26,10 @@ from vinosports.betting.leaderboard import (
 )
 from vinosports.betting.models import (
     Badge,
-    BalanceTransaction,
     UserBadge,
     UserBalance,
     UserStats,
 )
-from website.forms import LoginForm, SignupForm
-from website.models import SiteSettings
 from website.theme import THEME_SESSION_KEY, get_theme, normalize_theme
 
 ARCHITECTURE_COMPONENTS = {
@@ -180,83 +176,6 @@ class ComponentDetailView(View):
                 "component": component,
             },
         )
-
-
-class SignupView(View):
-    def _registration_closed(self):
-        site = SiteSettings.load()
-        if site.max_users == 0:
-            return False
-        User = get_user_model()
-        return User.objects.count() >= site.max_users
-
-    def _closed_context(self):
-        site = SiteSettings.load()
-        return {
-            "registration_closed": True,
-            "closed_message": site.registration_closed_message,
-        }
-
-    def get(self, request):
-        if request.user.is_authenticated:
-            return redirect("matches:dashboard")
-        if self._registration_closed():
-            return render(request, "website/signup.html", self._closed_context())
-        return render(request, "website/signup.html", {"form": SignupForm()})
-
-    def post(self, request):
-        if self._registration_closed():
-            return render(request, "website/signup.html", self._closed_context())
-
-        form = SignupForm(request.POST)
-        if not form.is_valid():
-            return render(request, "website/signup.html", {"form": form})
-
-        User = get_user_model()
-        with transaction.atomic():
-            site = SiteSettings.load_for_update()
-            if site.max_users and User.objects.count() >= site.max_users:
-                return render(request, "website/signup.html", self._closed_context())
-            user = User.objects.create_user(
-                email=form.cleaned_data["email"],
-                password=form.cleaned_data["password"],
-            )
-            balance = UserBalance.objects.create(user=user)
-            BalanceTransaction.objects.create(
-                user=user,
-                amount=balance.balance,
-                balance_after=balance.balance,
-                transaction_type=BalanceTransaction.Type.SIGNUP,
-                description="Initial signup bonus",
-            )
-        login(request, user)
-        return redirect("matches:dashboard")
-
-
-class LoginView(View):
-    def get(self, request):
-        if request.user.is_authenticated:
-            return redirect("matches:dashboard")
-        return render(request, "website/login.html", {"form": LoginForm()})
-
-    def post(self, request):
-        form = LoginForm(request.POST)
-        if not form.is_valid():
-            return render(request, "website/login.html", {"form": form})
-
-        user = authenticate(
-            request,
-            email=form.cleaned_data["email"],
-            password=form.cleaned_data["password"],
-        )
-        if user is None:
-            form.add_error(None, "Invalid email or password.")
-            return render(request, "website/login.html", {"form": form})
-
-        login(request, user)
-        next_url = request.GET.get("next", "matches:dashboard")
-        # Only redirect to URL names, not arbitrary paths
-        return redirect(next_url if "/" in next_url else next_url)
 
 
 class LogoutView(View):

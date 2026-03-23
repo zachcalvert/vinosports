@@ -22,12 +22,18 @@
                     <span class="text-muted">{{ user.display_name|default:user.email }}</span>
                     <span class="font-mono text-accent font-semibold">{{ user.balance.balance|currency:user }}</span>
                 </a>
+                <form method="post" action="{% url 'hub:logout' %}">
+                    {% csrf_token %}
+                    <button type="submit" class="rounded-lg px-3 py-1.5 text-sm font-medium text-red-400 transition-colors hover:bg-white/10">
+                        Log Out
+                    </button>
+                </form>
                 {% else %}
-                <a href="{{ leagues.epl.url }}/login/"
+                <a href="{% url 'hub:login' %}"
                    class="nav-action-link">
                     Log In
                 </a>
-                <a href="{{ leagues.epl.url }}/signup/"
+                <a href="{% url 'hub:signup' %}"
                    class="px-3 py-1.5 rounded-md text-sm font-medium bg-accent text-white hover:bg-accent/90 transition-colors">
                     Sign Up
                 </a>

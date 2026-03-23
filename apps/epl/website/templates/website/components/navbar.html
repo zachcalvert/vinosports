@@ -111,11 +111,11 @@
                 </div>
                 {% endwith %}
                 {% else %}
-                <a href="{% url 'website:login' %}"
+                <a href="{{ hub_url }}/login/"
                    class="nav-action-link">
                     Log In
                 </a>
-                <a href="{% url 'website:signup' %}"
+                <a href="{{ hub_url }}/signup/"
                    class="px-3 py-1.5 rounded-md text-sm font-medium bg-accent text-dark hover:bg-accent/90 transition-colors">
                     Sign Up
                 </a>
@@ -199,8 +199,8 @@
             {% else %}
             <div class="my-3 border-t border-border"></div>
             <div class="space-y-1">
-                <a href="{% url 'website:login' %}" class="mobile-nav-link">Log In</a>
-                <a href="{% url 'website:signup' %}" class="block px-3 py-2 rounded-md text-base font-medium text-accent hover:bg-accent/10">Sign Up</a>
+                <a href="{{ hub_url }}/login/" class="mobile-nav-link">Log In</a>
+                <a href="{{ hub_url }}/signup/" class="block px-3 py-2 rounded-md text-base font-medium text-accent hover:bg-accent/10">Sign Up</a>
             </div>
             {% endif %}
             {% endwith %}

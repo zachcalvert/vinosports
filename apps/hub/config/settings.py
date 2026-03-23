@@ -111,5 +111,4 @@ LEAGUE_URLS = {
 # Hub URL (for league apps to link back)
 HUB_URL = os.environ.get("HUB_URL", "http://localhost:7999")
 
-# Auth — hub doesn't have its own login forms, redirect to EPL
-LOGIN_URL = LEAGUE_URLS["epl"]["url"] + "/login/"
+LOGIN_URL = "/login/"

@@ -118,7 +118,9 @@ STATICFILES_DIRS = [BASE_DIR / "static"] if (BASE_DIR / "static").exists() else 
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-LOGIN_URL = "/login/"
+HUB_URL = os.environ.get("HUB_URL", "http://localhost:7999")
+
+LOGIN_URL = HUB_URL + "/login/"
 LOGIN_REDIRECT_URL = "/"
 LOGOUT_REDIRECT_URL = "/"
 
@@ -208,6 +210,3 @@ SPORTSDATA_API_KEY = os.environ.get("SPORTSDATA_API_KEY", "")
 ODDS_API_KEY = os.environ.get("ODDS_API_KEY", "")
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
 API_TIMEOUT = 30
-
-# Hub URL (for linking back to the homepage)
-HUB_URL = os.environ.get("HUB_URL", "http://localhost:7999")

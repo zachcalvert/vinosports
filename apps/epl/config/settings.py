@@ -210,3 +210,5 @@ CURRENT_SEASON = "2025"
 
 # Hub URL (for linking back to the homepage)
 HUB_URL = os.environ.get("HUB_URL", "http://localhost:7999")
+
+LOGIN_URL = HUB_URL + "/login/"

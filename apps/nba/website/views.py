@@ -1,14 +1,11 @@
 from betting.forms import CurrencyForm, DisplayNameForm
-from django.contrib.auth import authenticate, get_user_model, login, logout
+from django.contrib.auth import get_user_model, logout
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db import transaction
 from django.shortcuts import redirect, render
-from django.utils.http import url_has_allowed_host_and_scheme
 from django.views import View
 from games.models import Game, GameStatus
 
 from vinosports.betting.models import BalanceTransaction, UserBalance, UserStats
-from website.forms import LoginForm, SignupForm
 from website.theme import THEME_SESSION_KEY, get_theme, normalize_theme
 
 User = get_user_model()
@@ -45,66 +42,14 @@ class DashboardView(LoginRequiredMixin, View):
         )
 
 
-class SignupView(View):
-    def get(self, request):
-        if request.user.is_authenticated:
-            return redirect("/")
-        return render(request, "website/signup.html", {"form": SignupForm()})
-
-    def post(self, request):
-        form = SignupForm(request.POST)
-        if not form.is_valid():
-            return render(request, "website/signup.html", {"form": form})
-
-        with transaction.atomic():
-            user = User.objects.create_user(
-                email=form.cleaned_data["email"],
-                password=form.cleaned_data["password"],
-            )
-            UserBalance.objects.create(user=user)
-            UserStats.objects.create(user=user)
-
-        login(request, user)
-        return redirect("/")
-
-
-class LoginView(View):
-    def get(self, request):
-        if request.user.is_authenticated:
-            return redirect("/")
-        return render(request, "website/login.html", {"form": LoginForm()})
-
-    def post(self, request):
-        form = LoginForm(request.POST)
-        if not form.is_valid():
-            return render(request, "website/login.html", {"form": form})
-
-        user = authenticate(
-            request,
-            email=form.cleaned_data["email"],
-            password=form.cleaned_data["password"],
-        )
-        if user is None:
-            form.add_error(None, "Invalid email or password.")
-            return render(request, "website/login.html", {"form": form})
-
-        login(request, user)
-        next_url = request.GET.get("next", "/")
-        if not url_has_allowed_host_and_scheme(
-            next_url, allowed_hosts={request.get_host()}
-        ):
-            next_url = "/"
-        return redirect(next_url)
-
-
 class LogoutView(View):
     def post(self, request):
         logout(request)
-        return redirect("/login/")
+        return redirect("/")
 
     def get(self, request):
         logout(request)
-        return redirect("/login/")
+        return redirect("/")
 
 
 class AccountView(LoginRequiredMixin, View):
