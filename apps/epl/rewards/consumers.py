@@ -104,9 +104,7 @@ class NotificationConsumer(WebsocketConsumer):
         try:
             user = self.scope.get("user")
             distribution = (
-                RewardDistribution.objects.filter(
-                    pk=distribution_id, user=user
-                )
+                RewardDistribution.objects.filter(pk=distribution_id, user=user)
                 .select_related("reward")
                 .first()
             )

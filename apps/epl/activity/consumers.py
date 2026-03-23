@@ -12,9 +12,7 @@ class ActivityConsumer(WebsocketConsumer):
 
     def connect(self):
         self.group_name = "site_activity"
-        async_to_sync(self.channel_layer.group_add)(
-            self.group_name, self.channel_name
-        )
+        async_to_sync(self.channel_layer.group_add)(self.group_name, self.channel_name)
         self.accept()
 
     def disconnect(self, close_code):

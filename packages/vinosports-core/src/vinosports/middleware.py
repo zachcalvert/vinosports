@@ -46,7 +46,9 @@ class BotScannerBlockMiddleware:
 
     def __call__(self, request):
         path = request.path.lower()
-        if any(path.startswith(p) for p in BLOCKED_PATH_PREFIXES) or BLOCKED_PATH_RE.search(path):
+        if any(
+            path.startswith(p) for p in BLOCKED_PATH_PREFIXES
+        ) or BLOCKED_PATH_RE.search(path):
             return HttpResponse("Forbidden", status=403)
         return self.get_response(request)
 

@@ -134,10 +134,14 @@ def _get_balance_rank(user):
     except UserBalance.DoesNotExist:
         return None
 
-    higher_ranked_count = UserBalance.objects.filter(
-        Q(balance__gt=balance.balance)
-        | Q(balance=balance.balance, user_id__lt=user.id)
-    ).filter(user__is_superuser=False).count()
+    higher_ranked_count = (
+        UserBalance.objects.filter(
+            Q(balance__gt=balance.balance)
+            | Q(balance=balance.balance, user_id__lt=user.id)
+        )
+        .filter(user__is_superuser=False)
+        .count()
+    )
 
     balance.display_identity = get_public_identity(user)
     balance.rank = higher_ranked_count + 1
@@ -154,17 +158,23 @@ def _get_stats_rank(user, board_type):
         return None
 
     if board_type == "profit":
-        higher = UserStats.objects.filter(
-            Q(net_profit__gt=stats.net_profit)
-            | Q(net_profit=stats.net_profit, user_id__lt=user.id)
-        ).filter(total_bets__gt=0, user__is_superuser=False).count()
+        higher = (
+            UserStats.objects.filter(
+                Q(net_profit__gt=stats.net_profit)
+                | Q(net_profit=stats.net_profit, user_id__lt=user.id)
+            )
+            .filter(total_bets__gt=0, user__is_superuser=False)
+            .count()
+        )
     elif board_type == "win_rate":
         if stats.total_bets < WIN_RATE_MIN_BETS:
             return None
         user_wins = stats.total_wins
         user_bets = stats.total_bets
         higher = (
-            UserStats.objects.filter(total_bets__gte=WIN_RATE_MIN_BETS, user__is_superuser=False)
+            UserStats.objects.filter(
+                total_bets__gte=WIN_RATE_MIN_BETS, user__is_superuser=False
+            )
             .annotate(
                 _cross_theirs=F("total_wins") * Value(user_bets),
                 _cross_user=Value(user_wins) * F("total_bets"),
@@ -184,15 +194,22 @@ def _get_stats_rank(user, board_type):
             .count()
         )
     elif board_type == "streak":
-        higher = UserStats.objects.filter(
-            Q(best_streak__gt=stats.best_streak)
-            | Q(best_streak=stats.best_streak, current_streak__gt=stats.current_streak)
-            | Q(
-                best_streak=stats.best_streak,
-                current_streak=stats.current_streak,
-                user_id__lt=user.id,
+        higher = (
+            UserStats.objects.filter(
+                Q(best_streak__gt=stats.best_streak)
+                | Q(
+                    best_streak=stats.best_streak,
+                    current_streak__gt=stats.current_streak,
+                )
+                | Q(
+                    best_streak=stats.best_streak,
+                    current_streak=stats.current_streak,
+                    user_id__lt=user.id,
+                )
             )
-        ).filter(total_bets__gt=0, user__is_superuser=False).count()
+            .filter(total_bets__gt=0, user__is_superuser=False)
+            .count()
+        )
     else:
         return None
 

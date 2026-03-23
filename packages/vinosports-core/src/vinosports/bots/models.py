@@ -22,7 +22,9 @@ class AbstractBotProfile(BaseModel):
     )
     persona_prompt = models.TextField(
         _("persona prompt"),
-        help_text=_("Full system prompt sent to the LLM. Edit to tweak personality and voice."),
+        help_text=_(
+            "Full system prompt sent to the LLM. Edit to tweak personality and voice."
+        ),
     )
     avatar_icon = models.CharField(
         _("avatar icon"),

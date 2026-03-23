@@ -62,7 +62,9 @@ STATUS_BADGE_MAP = {
 @register.simple_tag
 def status_badge(match):
     status = match.status
-    _, classes, label = STATUS_BADGE_MAP.get(status, ("gray", "text-gray-400 bg-gray-400/10", status))
+    _, classes, label = STATUS_BADGE_MAP.get(
+        status, ("gray", "text-gray-400 bg-gray-400/10", status)
+    )
 
     if status in ("SCHEDULED", "TIMED"):
         iso = match.kickoff.isoformat()
@@ -101,7 +103,9 @@ def ordinal(value):
         n = int(value)
     except (ValueError, TypeError):
         return value
-    suffix = "th" if 11 <= (n % 100) <= 13 else {1: "st", 2: "nd", 3: "rd"}.get(n % 10, "th")
+    suffix = (
+        "th" if 11 <= (n % 100) <= 13 else {1: "st", 2: "nd", 3: "rd"}.get(n % 10, "th")
+    )
     return f"{n}{suffix}"
 
 

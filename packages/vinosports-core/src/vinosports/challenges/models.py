@@ -28,12 +28,8 @@ class ChallengeTemplate(BaseModel):
     title = models.CharField(max_length=200)
     description = models.CharField(max_length=500)
     icon = models.CharField(max_length=50, help_text=_("Phosphor icon name"))
-    challenge_type = models.CharField(
-        max_length=10, choices=ChallengeType.choices
-    )
-    criteria_type = models.CharField(
-        max_length=25, choices=CriteriaType.choices
-    )
+    challenge_type = models.CharField(max_length=10, choices=ChallengeType.choices)
+    criteria_type = models.CharField(max_length=25, choices=CriteriaType.choices)
     criteria_params = models.JSONField(
         default=dict,
         help_text=_('e.g. {"target": 3, "odds_min": "3.00"}'),

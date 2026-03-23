@@ -23,9 +23,7 @@ class LiveUpdatesConsumer(WebsocketConsumer):
         else:
             self.group_name = f"match_{self.scope_param}"
 
-        async_to_sync(self.channel_layer.group_add)(
-            self.group_name, self.channel_name
-        )
+        async_to_sync(self.channel_layer.group_add)(self.group_name, self.channel_name)
         self.accept()
 
     def disconnect(self, close_code):

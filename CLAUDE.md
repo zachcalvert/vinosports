@@ -74,6 +74,7 @@ make test              # run all test suites
 - Web services use `runserver` in dev (auto-reload). Dockerfiles keep Daphne for prod
 - Worker/beat services mount code too but need manual container restart for changes
 - Pre-commit hooks run ruff on every commit
+- **Host dependency**: `ruff` must be installed locally for `make lint` / `make format` (`pip install ruff` or `brew install ruff`)
 
 ## Testing
 

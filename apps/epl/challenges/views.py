@@ -10,10 +10,7 @@ logger = logging.getLogger(__name__)
 
 def _get_user_challenges(user, status_filter=None):
     """Return UserChallenge queryset for a user with optional status filter."""
-    qs = (
-        UserChallenge.objects.filter(user=user)
-        .select_related("challenge__template")
-    )
+    qs = UserChallenge.objects.filter(user=user).select_related("challenge__template")
     if status_filter:
         qs = qs.filter(status=status_filter)
     return qs

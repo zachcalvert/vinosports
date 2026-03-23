@@ -154,8 +154,7 @@ def _high_roller(stats, ctx):
 
 def _sharp_eye(stats, ctx):
     return (
-        stats.total_bets >= SHARP_EYE_MIN_BETS
-        and stats.win_rate >= SHARP_EYE_WIN_RATE
+        stats.total_bets >= SHARP_EYE_MIN_BETS and stats.win_rate >= SHARP_EYE_WIN_RATE
     )
 
 

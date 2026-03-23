@@ -65,7 +65,11 @@ class Match(BaseModel):
         verbose_name_plural = "matches"
 
     def __str__(self):
-        score = f" {self.home_score}-{self.away_score}" if self.home_score is not None else ""
+        score = (
+            f" {self.home_score}-{self.away_score}"
+            if self.home_score is not None
+            else ""
+        )
         return f"{self.home_team.short_name or self.home_team.name} vs {self.away_team.short_name or self.away_team.name}{score}"
 
     def generate_slug(self):
@@ -74,8 +78,13 @@ class Match(BaseModel):
         kickoff = self.kickoff
         if isinstance(kickoff, str):
             from django.utils.dateparse import parse_datetime
+
             kickoff = parse_datetime(kickoff) or kickoff
-        date_str = kickoff.strftime("%Y-%m-%d") if hasattr(kickoff, "strftime") else kickoff[:10]
+        date_str = (
+            kickoff.strftime("%Y-%m-%d")
+            if hasattr(kickoff, "strftime")
+            else kickoff[:10]
+        )
         base = f"{home}-{away}-{date_str}"
         slug = base
         counter = 2

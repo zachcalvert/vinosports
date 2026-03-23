@@ -21,7 +21,11 @@ urlpatterns = [
     path("partial/", OddsBoardPartialView.as_view(), name="odds_partial"),
     path("place/<slug:match_slug>/", PlaceBetView.as_view(), name="place_bet"),
     path("my-bets/", MyBetsView.as_view(), name="my_bets"),
-    path("quick-bet/<slug:match_slug>/", QuickBetFormView.as_view(), name="quick_bet_form"),
+    path(
+        "quick-bet/<slug:match_slug>/",
+        QuickBetFormView.as_view(),
+        name="quick_bet_form",
+    ),
     path("bailout/", BailoutView.as_view(), name="bailout"),
     # Parlay slip management
     path("parlay/add/", AddToParlayView.as_view(), name="parlay_add"),

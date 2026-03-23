@@ -17,19 +17,28 @@ class BotProfileAdmin(admin.ModelAdmin):
         return ()
 
     fieldsets = (
-        (_("Identity"), {
-            "fields": ("user", "strategy_type", "team_tla", "is_active"),
-        }),
-        (_("Appearance"), {
-            "fields": ("avatar_icon", "avatar_bg"),
-        }),
-        (_("Persona"), {
-            "fields": ("persona_prompt",),
-            "description": _(
-                "The full system prompt sent to Claude when this bot generates "
-                "comments or board posts. Edit to tweak personality and voice."
-            ),
-        }),
+        (
+            _("Identity"),
+            {
+                "fields": ("user", "strategy_type", "team_tla", "is_active"),
+            },
+        ),
+        (
+            _("Appearance"),
+            {
+                "fields": ("avatar_icon", "avatar_bg"),
+            },
+        ),
+        (
+            _("Persona"),
+            {
+                "fields": ("persona_prompt",),
+                "description": _(
+                    "The full system prompt sent to Claude when this bot generates "
+                    "comments or board posts. Edit to tweak personality and voice."
+                ),
+            },
+        ),
     )
 
     @admin.display(description="Bot", ordering="user__display_name")

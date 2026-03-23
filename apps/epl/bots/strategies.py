@@ -74,7 +74,9 @@ class FrontrunnerStrategy(BotStrategy):
                 continue  # No clear favorite
 
             pct = Decimal(str(random.uniform(0.05, 0.15)))
-            stake = _clamp_stake((balance * pct).quantize(Decimal("0.01")), ceiling=Decimal("100"))
+            stake = _clamp_stake(
+                (balance * pct).quantize(Decimal("0.01")), ceiling=Decimal("100")
+            )
 
             picks.append(BetPick(match_id=match.pk, selection=favorite, stake=stake))
 
@@ -109,7 +111,9 @@ class UnderdogStrategy(BotStrategy):
                 continue
 
             pct = Decimal(str(random.uniform(0.02, 0.05)))
-            stake = _clamp_stake((balance * pct).quantize(Decimal("0.01")), ceiling=Decimal("50"))
+            stake = _clamp_stake(
+                (balance * pct).quantize(Decimal("0.01")), ceiling=Decimal("50")
+            )
 
             picks.append(BetPick(match_id=match.pk, selection=underdog, stake=stake))
 
@@ -144,7 +148,9 @@ class ParlayStrategy(BotStrategy):
             ]:
                 val = odds[key]
                 if self.MIN_ODDS <= val <= self.MAX_ODDS:
-                    candidates.append({"match_id": match.pk, "selection": selection, "odds": val})
+                    candidates.append(
+                        {"match_id": match.pk, "selection": selection, "odds": val}
+                    )
                     break  # One candidate per match
 
         if len(candidates) < self.MIN_LEGS:
@@ -154,12 +160,19 @@ class ParlayStrategy(BotStrategy):
         legs = random.sample(candidates, num_legs)
 
         pct = Decimal(str(random.uniform(0.03, 0.08)))
-        stake = _clamp_stake((balance * pct).quantize(Decimal("0.01")), ceiling=Decimal("30"))
+        stake = _clamp_stake(
+            (balance * pct).quantize(Decimal("0.01")), ceiling=Decimal("30")
+        )
 
-        return [ParlayPick(
-            legs=[{"match_id": lg["match_id"], "selection": lg["selection"]} for lg in legs],
-            stake=stake,
-        )]
+        return [
+            ParlayPick(
+                legs=[
+                    {"match_id": lg["match_id"], "selection": lg["selection"]}
+                    for lg in legs
+                ],
+                stake=stake,
+            )
+        ]
 
 
 class DrawSpecialistStrategy(BotStrategy):
@@ -183,7 +196,9 @@ class DrawSpecialistStrategy(BotStrategy):
                 continue
 
             pct = Decimal(str(random.uniform(0.05, 0.10)))
-            stake = _clamp_stake((balance * pct).quantize(Decimal("0.01")), ceiling=Decimal("75"))
+            stake = _clamp_stake(
+                (balance * pct).quantize(Decimal("0.01")), ceiling=Decimal("75")
+            )
 
             picks.append(BetPick(match_id=match.pk, selection="DRAW", stake=stake))
 
@@ -227,9 +242,13 @@ class ValueHunterStrategy(BotStrategy):
                 continue
 
             pct = Decimal(str(random.uniform(0.08, 0.12)))
-            stake = _clamp_stake((balance * pct).quantize(Decimal("0.01")), ceiling=Decimal("80"))
+            stake = _clamp_stake(
+                (balance * pct).quantize(Decimal("0.01")), ceiling=Decimal("80")
+            )
 
-            picks.append(BetPick(match_id=match.pk, selection=best_selection, stake=stake))
+            picks.append(
+                BetPick(match_id=match.pk, selection=best_selection, stake=stake)
+            )
 
         return picks
 
@@ -248,7 +267,9 @@ class HomerBotStrategy(BotStrategy):
     AWAY_PCT = (0.10, 0.20)
     MAX_STAKE = Decimal("150")
 
-    def __init__(self, team_id: int, draw_underdog_threshold: Decimal = Decimal("3.50")):
+    def __init__(
+        self, team_id: int, draw_underdog_threshold: Decimal = Decimal("3.50")
+    ):
         self.team_id = team_id
         self.draw_underdog_threshold = draw_underdog_threshold
 

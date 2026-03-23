@@ -75,22 +75,16 @@ def _eval_total_staked(uc, event_type, ctx):
 
     user = uc.user
     challenge = uc.challenge
-    singles_total = (
-        BetSlip.objects.filter(
-            user=user,
-            created_at__gte=challenge.starts_at,
-            created_at__lte=challenge.ends_at,
-        ).aggregate(total=models.Sum("stake"))["total"]
-        or Decimal("0")
-    )
-    parlays_total = (
-        Parlay.objects.filter(
-            user=user,
-            created_at__gte=challenge.starts_at,
-            created_at__lte=challenge.ends_at,
-        ).aggregate(total=models.Sum("stake"))["total"]
-        or Decimal("0")
-    )
+    singles_total = BetSlip.objects.filter(
+        user=user,
+        created_at__gte=challenge.starts_at,
+        created_at__lte=challenge.ends_at,
+    ).aggregate(total=models.Sum("stake"))["total"] or Decimal("0")
+    parlays_total = Parlay.objects.filter(
+        user=user,
+        created_at__gte=challenge.starts_at,
+        created_at__lte=challenge.ends_at,
+    ).aggregate(total=models.Sum("stake"))["total"] or Decimal("0")
     new_progress = int(singles_total + parlays_total)
     return new_progress - uc.progress
 
@@ -161,18 +155,13 @@ def update_challenge_progress(user, event_type, context):
                 )
             )
     if new_user_challenges:
-        UserChallenge.objects.bulk_create(
-            new_user_challenges, ignore_conflicts=True
-        )
+        UserChallenge.objects.bulk_create(new_user_challenges, ignore_conflicts=True)
 
-    user_challenges = (
-        UserChallenge.objects.filter(
-            user=user,
-            challenge__in=active_challenges,
-            status=UserChallenge.Status.IN_PROGRESS,
-        )
-        .select_related("challenge__template")
-    )
+    user_challenges = UserChallenge.objects.filter(
+        user=user,
+        challenge__in=active_challenges,
+        status=UserChallenge.Status.IN_PROGRESS,
+    ).select_related("challenge__template")
 
     for uc in user_challenges:
         criteria_type = uc.challenge.template.criteria_type
@@ -204,9 +193,8 @@ def update_challenge_progress(user, event_type, context):
 
 def _apply_progress(uc, increment):
     with transaction.atomic():
-        uc_locked = (
-            UserChallenge.objects.select_for_update()
-            .get(pk=uc.pk, status=UserChallenge.Status.IN_PROGRESS)
+        uc_locked = UserChallenge.objects.select_for_update().get(
+            pk=uc.pk, status=UserChallenge.Status.IN_PROGRESS
         )
 
         new_progress = max(uc_locked.progress + increment, 0)
@@ -221,7 +209,8 @@ def _apply_progress(uc, increment):
                 user=uc_locked.user
             )
             log_transaction(
-                balance, reward,
+                balance,
+                reward,
                 BalanceTransaction.Type.CHALLENGE_REWARD,
                 f"Challenge: {uc_locked.challenge.template.title}",
             )

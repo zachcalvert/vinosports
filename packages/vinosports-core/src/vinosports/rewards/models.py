@@ -44,7 +44,9 @@ class Reward(BaseModel):
 
         with transaction.atomic():
             existing = set(
-                self.distributions.filter(user__in=users).values_list("user_id", flat=True)
+                self.distributions.filter(user__in=users).values_list(
+                    "user_id", flat=True
+                )
             )
             for user in users:
                 if user.pk in existing:
@@ -57,15 +59,14 @@ class Reward(BaseModel):
                     user=user, defaults={"balance": Decimal("1000.00")}
                 )
                 log_transaction(
-                    balance, self.amount,
+                    balance,
+                    self.amount,
                     BalanceTransaction.Type.REWARD,
                     f"Reward: {self.name}",
                 )
 
         if new_distributions:
-            transaction.on_commit(
-                lambda: _broadcast_rewards(new_distributions)
-            )
+            transaction.on_commit(lambda: _broadcast_rewards(new_distributions))
 
         return new_distributions
 
@@ -143,10 +144,13 @@ def _broadcast_rewards(distributions):
     for dist in distributions:
         group = f"user_notifications_{dist.user_id}"
         try:
-            send(group, {
-                "type": "reward_notification",
-                "distribution_id": dist.pk,
-            })
+            send(
+                group,
+                {
+                    "type": "reward_notification",
+                    "distribution_id": dist.pk,
+                },
+            )
         except Exception:
             logger.exception(
                 "Failed to broadcast reward notification for distribution %s",

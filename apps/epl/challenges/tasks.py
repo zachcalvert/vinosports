@@ -125,7 +125,9 @@ def rotate_daily_challenges():
         )
         created.append(challenge)
 
-    logger.info("Created %d daily challenges: %s", len(created), [c.pk for c in created])
+    logger.info(
+        "Created %d daily challenges: %s", len(created), [c.pk for c in created]
+    )
     return f"created: {len(created)}"
 
 

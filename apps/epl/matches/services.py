@@ -56,7 +56,9 @@ class FootballDataClient:
         return self._normalize_match(data, data.get("season", {}).get("id", ""))
 
     def get_head_to_head(self, match_external_id, home_team_id, away_team_id, limit=5):
-        data = self._get(f"matches/{match_external_id}/head2head", params={"limit": limit})
+        data = self._get(
+            f"matches/{match_external_id}/head2head", params={"limit": limit}
+        )
         matches = [self._normalize_h2h_match(m) for m in data.get("matches", [])]
         home_wins = away_wins = draws = 0
         for m in data.get("matches", []):
@@ -119,8 +121,10 @@ class FootballDataClient:
         full_time = score.get("fullTime", {})
         return {
             "date": m.get("utcDate", "")[:10],
-            "home_team": m.get("homeTeam", {}).get("shortName") or m.get("homeTeam", {}).get("name", ""),
-            "away_team": m.get("awayTeam", {}).get("shortName") or m.get("awayTeam", {}).get("name", ""),
+            "home_team": m.get("homeTeam", {}).get("shortName")
+            or m.get("homeTeam", {}).get("name", ""),
+            "away_team": m.get("awayTeam", {}).get("shortName")
+            or m.get("awayTeam", {}).get("name", ""),
             "home_score": full_time.get("home"),
             "away_score": full_time.get("away"),
         }
@@ -291,14 +295,16 @@ def get_team_form(team, limit=5):
                 result = "W" if as_ > hs else ("D" if as_ == hs else "L")
         else:
             result = None
-        results.append({
-            "date": m.kickoff.date().isoformat() if m.kickoff else "",
-            "home_team": m.home_team.short_name or m.home_team.name,
-            "away_team": m.away_team.short_name or m.away_team.name,
-            "home_score": hs,
-            "away_score": as_,
-            "result": result,
-        })
+        results.append(
+            {
+                "date": m.kickoff.date().isoformat() if m.kickoff else "",
+                "home_team": m.home_team.short_name or m.home_team.name,
+                "away_team": m.away_team.short_name or m.away_team.name,
+                "home_score": hs,
+                "away_score": as_,
+                "result": result,
+            }
+        )
     return results
 
 

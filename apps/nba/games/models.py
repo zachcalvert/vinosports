@@ -36,8 +36,12 @@ class Team(BaseModel):
 
 class Game(BaseModel):
     external_id = models.IntegerField(unique=True)
-    home_team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name="home_games")
-    away_team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name="away_games")
+    home_team = models.ForeignKey(
+        Team, on_delete=models.CASCADE, related_name="home_games"
+    )
+    away_team = models.ForeignKey(
+        Team, on_delete=models.CASCADE, related_name="away_games"
+    )
     home_score = models.IntegerField(null=True, blank=True)
     away_score = models.IntegerField(null=True, blank=True)
     status = models.CharField(

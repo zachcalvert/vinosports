@@ -86,7 +86,5 @@ class CurrencyForm(forms.ModelForm):
         model = User
         fields = ("currency",)
         widgets = {
-            "currency": forms.Select(
-                attrs={"class": "themed-input themed-input-sm"}
-            )
+            "currency": forms.Select(attrs={"class": "themed-input themed-input-sm"})
         }

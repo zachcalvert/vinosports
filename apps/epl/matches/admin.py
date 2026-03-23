@@ -19,7 +19,17 @@ class MatchAdmin(admin.ModelAdmin):
 
 @admin.register(Standing)
 class StandingAdmin(admin.ModelAdmin):
-    list_display = ["position", "team", "played", "won", "drawn", "lost", "goal_difference", "points", "season"]
+    list_display = [
+        "position",
+        "team",
+        "played",
+        "won",
+        "drawn",
+        "lost",
+        "goal_difference",
+        "points",
+        "season",
+    ]
     list_filter = ["season"]
     search_fields = ["team__name"]
 
@@ -37,7 +47,13 @@ class MatchStatsAdmin(admin.ModelAdmin):
     list_display = ["match", "fetched_at", "is_stale"]
     list_select_related = ["match__home_team", "match__away_team"]
     search_fields = ["match__home_team__name", "match__away_team__name"]
-    readonly_fields = ["fetched_at", "h2h_json", "h2h_summary_json", "home_form_json", "away_form_json"]
+    readonly_fields = [
+        "fetched_at",
+        "h2h_json",
+        "h2h_summary_json",
+        "home_form_json",
+        "away_form_json",
+    ]
 
     @admin.display(boolean=True, description="Stale?")
     def is_stale(self, obj):
