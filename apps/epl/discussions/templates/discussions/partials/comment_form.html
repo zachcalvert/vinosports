@@ -7,7 +7,7 @@
     {% csrf_token %}
     {{ form.body }}
     {% if form.body.errors %}
-    <p class="text-red-400 text-xs mt-1">{{ form.body.errors.0 }}</p>
+    <p class="text-danger text-xs mt-1">{{ form.body.errors.0 }}</p>
     {% endif %}
     <div class="flex justify-between items-center mt-2">
         <span class="text-xs text-muted">Max 1000 characters</span>

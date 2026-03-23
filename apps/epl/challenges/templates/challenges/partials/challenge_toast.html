@@ -8,7 +8,7 @@
         <i class="ph-duotone ph-{{ user_challenge.challenge.template.icon }} text-2xl shrink-0 text-accent" aria-hidden="true"></i>
         <div class="flex-1 min-w-0">
             <p class="reward-toast-title">Challenge Complete!</p>
-            <p class="text-sm font-semibold text-white">{{ user_challenge.challenge.template.title }}</p>
+            <p class="text-sm font-semibold">{{ user_challenge.challenge.template.title }}</p>
             <p class="reward-toast-amount">+{{ user_challenge.challenge.template.reward_amount|currency:user }}</p>
         </div>
         <button

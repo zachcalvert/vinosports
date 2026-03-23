@@ -1,16 +1,16 @@
 {% load match_tags %}
-<tr class="border-b border-gray-700/50 hover:bg-surface/50">
+<tr class="border-b border-border/50 hover:bg-surface/50">
     <td class="px-3 py-2 text-sm text-muted whitespace-nowrap">{{ odds.bookmaker }}</td>
     <td class="px-3 py-2 text-sm text-center font-mono
-        {% if odds.home_win == best_home %}text-accent font-bold{% else %}text-gray-300{% endif %}">
+        {% if odds.home_win == best_home %}text-accent font-bold{% else %}text-muted{% endif %}">
         {{ odds.home_win|format_odds }}
     </td>
     <td class="px-3 py-2 text-sm text-center font-mono
-        {% if odds.draw == best_draw %}text-accent font-bold{% else %}text-gray-300{% endif %}">
+        {% if odds.draw == best_draw %}text-accent font-bold{% else %}text-muted{% endif %}">
         {{ odds.draw|format_odds }}
     </td>
     <td class="px-3 py-2 text-sm text-center font-mono
-        {% if odds.away_win == best_away %}text-accent font-bold{% else %}text-gray-300{% endif %}">
+        {% if odds.away_win == best_away %}text-accent font-bold{% else %}text-muted{% endif %}">
         {{ odds.away_win|format_odds }}
     </td>
 </tr>

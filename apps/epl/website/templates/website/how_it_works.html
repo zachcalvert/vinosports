@@ -331,22 +331,22 @@
 
 {% block content %}
 <div class="mb-6">
-    <h1 class="text-3xl font-bold text-white mb-1">How It Works</h1>
+    <h1 class="text-3xl font-bold mb-1">How It Works</h1>
     <p class="text-muted text-sm">An interactive look at the architecture behind EPL Bets</p>
 </div>
 
 <div class="space-y-6">
     <div class="hidden md:flex flex-wrap gap-2">
         <span class="text-xs text-muted uppercase tracking-wider self-center mr-2">Trace a flow:</span>
-        <button class="flow-btn px-3 py-1.5 rounded border border-gray-600 text-sm text-gray-300 hover:text-white"
+        <button class="flow-btn px-3 py-1.5 rounded border border-border text-sm text-muted hover:text-accent"
                 onclick="toggleFlow('http')" id="flow-btn-http">
             HTTP Request
         </button>
-        <button class="flow-btn px-3 py-1.5 rounded border border-gray-600 text-sm text-gray-300 hover:text-white"
+        <button class="flow-btn px-3 py-1.5 rounded border border-border text-sm text-muted hover:text-accent"
                 onclick="toggleFlow('websocket')" id="flow-btn-websocket">
             WebSocket
         </button>
-        <button class="flow-btn px-3 py-1.5 rounded border border-gray-600 text-sm text-gray-300 hover:text-white"
+        <button class="flow-btn px-3 py-1.5 rounded border border-border text-sm text-muted hover:text-accent"
                 onclick="toggleFlow('celery')" id="flow-btn-celery">
             Celery Task
         </button>
@@ -354,25 +354,25 @@
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div class="lg:col-span-2">
-            <div class="md:hidden arch-shell arch-stage-panel mobile-stage-grid rounded-[1.75rem] border border-gray-700/80 px-4 py-5 shadow-[0_24px_60px_rgba(0,0,0,0.28)]">
+            <div class="md:hidden arch-shell arch-stage-panel mobile-stage-grid rounded-[1.75rem] border border-border/80 px-4 py-5 shadow-[0_24px_60px_rgba(0,0,0,0.28)]">
                 <div class="relative z-10">
                     <div class="mb-4 flex items-start justify-between gap-3">
                         <div>
                             <p class="text-[0.68rem] font-semibold uppercase tracking-[0.28em] text-accent/80">Architecture Flows</p>
-                            <h2 class="mt-1 text-xl font-bold text-white">Follow the live path, not just the parts</h2>
+                            <h2 class="mt-1 text-xl font-bold">Follow the live path, not just the parts</h2>
                         </div>
                     </div>
 
                     <div class="mb-5 flex flex-wrap gap-2">
-                        <button class="flow-btn px-3 py-2 rounded-full border border-gray-600 text-sm text-gray-300 hover:text-white"
+                        <button class="flow-btn px-3 py-2 rounded-full border border-border text-sm text-muted hover:text-accent"
                                 onclick="toggleFlow('http')" id="flow-btn-mobile-http">
                             HTTP Request
                         </button>
-                        <button class="flow-btn px-3 py-2 rounded-full border border-gray-600 text-sm text-gray-300 hover:text-white"
+                        <button class="flow-btn px-3 py-2 rounded-full border border-border text-sm text-muted hover:text-accent"
                                 onclick="toggleFlow('websocket')" id="flow-btn-mobile-websocket">
                             WebSocket
                         </button>
-                        <button class="flow-btn px-3 py-2 rounded-full border border-gray-600 text-sm text-gray-300 hover:text-white"
+                        <button class="flow-btn px-3 py-2 rounded-full border border-border text-sm text-muted hover:text-accent"
                                 onclick="toggleFlow('celery')" id="flow-btn-mobile-celery">
                             Celery Task
                         </button>
@@ -380,9 +380,9 @@
 
                     <div class="space-y-4">
                         <div class="mobile-flow" data-mobile-flow="http">
-                            <div class="rounded-2xl border border-accent/20 bg-dark/60 p-4">
+                            <div class="rounded-2xl border border-accent/20 bg-accent-light p-4">
                                 <p class="text-xs font-semibold uppercase tracking-[0.24em] text-accent/80">HTTP Request Flow</p>
-                                <p class="mt-2 text-sm leading-relaxed text-gray-300">A tap turns into a Django view, an ORM read, and fresh HTML streamed right back into the page.</p>
+                                <p class="mt-2 text-sm leading-relaxed text-muted">A tap turns into a Django view, an ORM read, and fresh HTML streamed right back into the page.</p>
                             </div>
                             <div class="mobile-flow-track mt-4">
                                 <div class="mobile-flow-node">
@@ -392,7 +392,7 @@
                                          hx-swap="innerHTML"
                                          onclick="selectComponent(this)">
                                         <div class="mobile-flow-kicker text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-accent/80">Starts Here</div>
-                                        <div class="mt-1 text-lg font-bold text-white">Browser</div>
+                                        <div class="mt-1 text-lg font-bold">Browser</div>
                                         <div class="text-sm text-muted">User action or HTMX event kicks off the request.</div>
                                     </div>
                                 </div>
@@ -404,7 +404,7 @@
                                          hx-swap="innerHTML"
                                          onclick="selectComponent(this)">
                                         <div class="mobile-flow-kicker text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-accent/80">Server Render</div>
-                                        <div class="mt-1 text-lg font-bold text-white">Django</div>
+                                        <div class="mt-1 text-lg font-bold">Django</div>
                                         <div class="text-sm text-muted">Views decide the response and prepare the template payload.</div>
                                     </div>
                                 </div>
@@ -416,7 +416,7 @@
                                          hx-swap="innerHTML"
                                          onclick="selectComponent(this)">
                                         <div class="mobile-flow-kicker text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-accent/80">Source of Truth</div>
-                                        <div class="mt-1 text-lg font-bold text-white">PostgreSQL</div>
+                                        <div class="mt-1 text-lg font-bold">PostgreSQL</div>
                                         <div class="text-sm text-muted">Match, odds, and balance data are read safely from storage.</div>
                                     </div>
                                 </div>
@@ -428,7 +428,7 @@
                                          hx-swap="innerHTML"
                                          onclick="selectComponent(this)">
                                         <div class="mobile-flow-kicker text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-accent/80">Visible Update</div>
-                                        <div class="mt-1 text-lg font-bold text-white">Back in the Browser</div>
+                                        <div class="mt-1 text-lg font-bold">Back in the Browser</div>
                                         <div class="text-sm text-muted">A full page or partial swaps into place without a SPA framework.</div>
                                     </div>
                                 </div>
@@ -436,9 +436,9 @@
                         </div>
 
                         <div class="mobile-flow" data-mobile-flow="websocket">
-                            <div class="rounded-2xl border border-accent/20 bg-dark/60 p-4">
+                            <div class="rounded-2xl border border-accent/20 bg-accent-light p-4">
                                 <p class="text-xs font-semibold uppercase tracking-[0.24em] text-accent/80">WebSocket Flow</p>
-                                <p class="mt-2 text-sm leading-relaxed text-gray-300">The page stays subscribed while Redis and Channels push live score HTML back down the line.</p>
+                                <p class="mt-2 text-sm leading-relaxed text-muted">The page stays subscribed while Redis and Channels push live score HTML back down the line.</p>
                             </div>
                             <div class="mobile-flow-track mt-4">
                                 <div class="mobile-flow-node">
@@ -448,7 +448,7 @@
                                          hx-swap="innerHTML"
                                          onclick="selectComponent(this)">
                                         <div class="mobile-flow-kicker text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-accent/80">Connected Client</div>
-                                        <div class="mt-1 text-lg font-bold text-white">Browser</div>
+                                        <div class="mt-1 text-lg font-bold">Browser</div>
                                         <div class="text-sm text-muted">The dashboard keeps a live socket open in the background.</div>
                                     </div>
                                 </div>
@@ -460,7 +460,7 @@
                                          hx-swap="innerHTML"
                                          onclick="selectComponent(this)">
                                         <div class="mobile-flow-kicker text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-accent/80">Real-Time Gateway</div>
-                                        <div class="mt-1 text-lg font-bold text-white">Daphne / Channels</div>
+                                        <div class="mt-1 text-lg font-bold">Daphne / Channels</div>
                                         <div class="text-sm text-muted">Consumers fan updates out to every subscribed match or dashboard group.</div>
                                     </div>
                                 </div>
@@ -472,7 +472,7 @@
                                          hx-swap="innerHTML"
                                          onclick="selectComponent(this)">
                                         <div class="mobile-flow-kicker text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-accent/80">Broadcast Bus</div>
-                                        <div class="mt-1 text-lg font-bold text-white">Redis</div>
+                                        <div class="mt-1 text-lg font-bold">Redis</div>
                                         <div class="text-sm text-muted">Messages move through pub/sub so live score fragments can fan out fast.</div>
                                     </div>
                                 </div>
@@ -484,7 +484,7 @@
                                          hx-swap="innerHTML"
                                          onclick="selectComponent(this)">
                                         <div class="mobile-flow-kicker text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-accent/80">Instant Update</div>
-                                        <div class="mt-1 text-lg font-bold text-white">Browser Refreshes in Place</div>
+                                        <div class="mt-1 text-lg font-bold">Browser Refreshes in Place</div>
                                         <div class="text-sm text-muted">Scores and status chips update without the user ever reloading.</div>
                                     </div>
                                 </div>
@@ -492,9 +492,9 @@
                         </div>
 
                         <div class="mobile-flow" data-mobile-flow="celery">
-                            <div class="rounded-2xl border border-accent/20 bg-dark/60 p-4">
+                            <div class="rounded-2xl border border-accent/20 bg-accent-light p-4">
                                 <p class="text-xs font-semibold uppercase tracking-[0.24em] text-accent/80">Celery Task Flow</p>
-                                <p class="mt-2 text-sm leading-relaxed text-gray-300">Background jobs keep odds, fixtures, and live scores moving even when nobody is clicking.</p>
+                                <p class="mt-2 text-sm leading-relaxed text-muted">Background jobs keep odds, fixtures, and live scores moving even when nobody is clicking.</p>
                             </div>
                             <div class="mobile-flow-track mt-4">
                                 <div class="mobile-flow-node">
@@ -504,15 +504,15 @@
                                          hx-swap="innerHTML"
                                          onclick="selectComponent(this)">
                                         <div class="mobile-flow-kicker text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-accent/80">Scheduled Work</div>
-                                        <div class="mt-1 text-lg font-bold text-white">Celery Worker</div>
+                                        <div class="mt-1 text-lg font-bold">Celery Worker</div>
                                         <div class="text-sm text-muted">Beat schedules background tasks and workers pull them off Redis.</div>
                                     </div>
                                 </div>
                                 <div class="mobile-flow-arrow"><span class="mobile-flow-packet" aria-hidden="true"></span><span class="mobile-flow-arrow-label">Fetch External Data</span></div>
                                 <div class="mobile-flow-node">
-                                    <div class="mobile-flow-node-card arch-node-surface passive rounded-2xl border-2 border-gray-700 px-4 py-4">
+                                    <div class="mobile-flow-node-card arch-node-surface passive rounded-2xl border-2 border-border px-4 py-4">
                                         <div class="mobile-flow-kicker text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-warning/80">Outside the Stack</div>
-                                        <div class="mt-1 text-lg font-bold text-white">External APIs</div>
+                                        <div class="mt-1 text-lg font-bold">External APIs</div>
                                         <div class="text-sm text-muted">football-data.org supplies fixtures and scores. Odds are generated algorithmically from standings data.</div>
                                     </div>
                                 </div>
@@ -524,7 +524,7 @@
                                          hx-swap="innerHTML"
                                          onclick="selectComponent(this)">
                                         <div class="mobile-flow-kicker text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-accent/80">Stored State</div>
-                                        <div class="mt-1 text-lg font-bold text-white">PostgreSQL</div>
+                                        <div class="mt-1 text-lg font-bold">PostgreSQL</div>
                                         <div class="text-sm text-muted">Fresh data is written so the rest of the app can render from one source.</div>
                                     </div>
                                 </div>
@@ -536,7 +536,7 @@
                                          hx-swap="innerHTML"
                                          onclick="selectComponent(this)">
                                         <div class="mobile-flow-kicker text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-accent/80">Message Core</div>
-                                        <div class="mt-1 text-lg font-bold text-white">Redis</div>
+                                        <div class="mt-1 text-lg font-bold">Redis</div>
                                         <div class="text-sm text-muted">Queues drive the workers and channel messages can trigger live UI updates.</div>
                                     </div>
                                 </div>
@@ -548,7 +548,7 @@
                                          hx-swap="innerHTML"
                                          onclick="selectComponent(this)">
                                         <div class="mobile-flow-kicker text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-accent/80">Realtime Fan-Out</div>
-                                        <div class="mt-1 text-lg font-bold text-white">Daphne / Channels</div>
+                                        <div class="mt-1 text-lg font-bold">Daphne / Channels</div>
                                         <div class="text-sm text-muted">If a match changed, subscribers receive the new HTML almost immediately.</div>
                                     </div>
                                 </div>
@@ -558,7 +558,7 @@
                 </div>
             </div>
 
-            <div class="hidden md:block relative arch-stage-panel rounded-lg border border-gray-700 p-6">
+            <div class="hidden md:block relative arch-stage-panel rounded-lg border border-border p-6">
                 <svg viewBox="0 0 600 420" class="w-full" id="arch-svg">
                     <line x1="200" y1="70" x2="150" y2="160" class="arch-line" data-flow="http"/>
                     <text x="145" y="115" class="arch-line-label">HTTP/HTMX</text>
@@ -581,7 +581,7 @@
                          hx-swap="innerHTML"
                          onclick="selectComponent(this)">
                         <div class="text-accent text-xs font-semibold uppercase tracking-wider">Client</div>
-                        <div class="text-sm font-bold text-white">Browser</div>
+                        <div class="text-sm font-bold">Browser</div>
                         <div class="text-xs text-muted">Templates + HTMX + WS</div>
                     </div>
 
@@ -592,7 +592,7 @@
                          hx-swap="innerHTML"
                          onclick="selectComponent(this)">
                         <div class="text-accent text-xs font-semibold uppercase tracking-wider">Server</div>
-                        <div class="text-sm font-bold text-white">Django</div>
+                        <div class="text-sm font-bold">Django</div>
                         <div class="text-xs text-muted">Views + ORM + Admin</div>
                     </div>
 
@@ -603,7 +603,7 @@
                          hx-swap="innerHTML"
                          onclick="selectComponent(this)">
                         <div class="text-accent text-xs font-semibold uppercase tracking-wider">ASGI</div>
-                        <div class="text-sm font-bold text-white">Daphne / Channels</div>
+                        <div class="text-sm font-bold">Daphne / Channels</div>
                         <div class="text-xs text-muted">WebSocket Consumers</div>
                     </div>
 
@@ -614,7 +614,7 @@
                          hx-swap="innerHTML"
                          onclick="selectComponent(this)">
                         <div class="text-accent text-xs font-semibold uppercase tracking-wider">In-Memory</div>
-                        <div class="text-sm font-bold text-white">Redis</div>
+                        <div class="text-sm font-bold">Redis</div>
                         <div class="text-xs text-muted">Cache + Broker + Channels</div>
                     </div>
 
@@ -625,7 +625,7 @@
                          hx-swap="innerHTML"
                          onclick="selectComponent(this)">
                         <div class="text-accent text-xs font-semibold uppercase tracking-wider">Database</div>
-                        <div class="text-sm font-bold text-white">PostgreSQL</div>
+                        <div class="text-sm font-bold">PostgreSQL</div>
                         <div class="text-xs text-muted">Persistent Storage</div>
                     </div>
 
@@ -636,7 +636,7 @@
                          hx-swap="innerHTML"
                          onclick="selectComponent(this)">
                         <div class="text-accent text-xs font-semibold uppercase tracking-wider">Workers</div>
-                        <div class="text-sm font-bold text-white">Celery</div>
+                        <div class="text-sm font-bold">Celery</div>
                         <div class="text-xs text-muted">Tasks + Beat Scheduler</div>
                     </div>
                 </div>
@@ -644,7 +644,7 @@
         </div>
 
         <div class="lg:col-span-1">
-            <div class="bg-surface rounded-lg border border-gray-700 p-6 sticky top-24" id="component-detail">
+            <div class="bg-surface rounded-lg border border-border p-6 sticky top-24" id="component-detail">
                 <div class="text-center py-8">
                     <svg class="w-10 h-10 mx-auto mb-3 text-muted/50" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M15.042 21.672L13.684 16.6m0 0l-2.51 2.225.569-9.47 5.227 7.917-3.286-.672zM12 2.25V4.5m5.834.166l-1.591 1.591M20.25 10.5H18M7.757 14.743l-1.59 1.59M6 10.5H3.75m4.007-4.243l-1.59-1.59"/>
@@ -654,9 +654,9 @@
                 </div>
             </div>
 
-            <div id="flow-description" class="bg-surface rounded-lg border border-gray-700 p-6 mt-4 hidden">
-                <h4 class="text-sm font-bold text-white mb-2" id="flow-title"></h4>
-                <p class="text-sm text-gray-400" id="flow-text"></p>
+            <div id="flow-description" class="bg-surface rounded-lg border border-border p-6 mt-4 hidden">
+                <h4 class="text-sm font-bold mb-2" id="flow-title"></h4>
+                <p class="text-sm text-muted" id="flow-text"></p>
             </div>
         </div>
     </div>

@@ -1,5 +1,5 @@
 {% load currency_tags %}
-<div class="bg-dark rounded-md border border-gray-600 p-3 my-1">
+<div class="bg-accent-light rounded-md border border-border p-3 my-1">
     {% if error %}
     <div class="bg-danger/10 border border-danger/30 rounded-md p-2 mb-2">
         <p class="text-danger text-xs">{{ error }}</p>
@@ -18,11 +18,11 @@
         <input type="hidden" name="container_id" value="{{ container_id }}">
 
         <div class="flex items-center justify-between">
-            <span class="text-sm text-gray-300">
+            <span class="text-sm text-muted">
                 <span class="text-accent font-semibold">
                     {% if selection == "HOME_WIN" %}{{ match.home_team.short_name|default:match.home_team.name }} Win{% elif selection == "DRAW" %}Draw{% else %}{{ match.away_team.short_name|default:match.away_team.name }} Win{% endif %}
                 </span>
-                <span class="text-gray-400 font-mono text-xs">@ {{ selected_odds }}</span>
+                <span class="text-muted font-mono text-xs">@ {{ selected_odds }}</span>
             </span>
         </div>
 
@@ -30,7 +30,7 @@
             <div class="flex items-center gap-2 flex-1">
                 <label class="text-xs text-muted">Stake:</label>
                 <input type="number" name="stake"
-                       class="w-full bg-surface border border-gray-600 rounded px-2 py-1 text-white font-mono text-base sm:text-sm text-right focus:outline-none focus:border-accent"
+                       class="w-full bg-surface border border-border rounded px-2 py-1 font-mono text-base sm:text-sm text-right focus:outline-none focus:border-accent"
                        placeholder="0.00" step="0.50" min="0.50" max="10000.00" required>
             </div>
 
@@ -44,7 +44,7 @@
             </button>
 
             <button type="button"
-                    class="text-muted hover:text-white text-sm px-2 transition-colors"
+                    class="text-muted hover:text-accent text-sm px-2 transition-colors"
                     onclick="document.getElementById('{{ container_id }}').innerHTML = ''">
                 &times;
             </button>

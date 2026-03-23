@@ -1,6 +1,6 @@
-<section id="avatar-settings-card" class="rounded-lg border border-gray-700 bg-surface p-5">
+<section id="avatar-settings-card" class="rounded-lg border border-border bg-surface p-5">
     <p class="text-xs font-semibold uppercase tracking-wider text-accent mb-1">Avatar</p>
-    <h2 class="text-xl font-bold text-white">Customize your look</h2>
+    <h2 class="text-xl font-bold">Customize your look</h2>
     <p class="mt-2 text-sm text-muted">Pick an icon or team crest, a color, and a frame. Frames unlock when you earn badges.</p>
 
     {# Live preview #}
@@ -9,7 +9,7 @@
             {% include "website/components/avatar.html" with avatar_user=request.user avatar_size="lg" %}
         </div>
         <div>
-            <p class="text-sm font-semibold text-white">Preview</p>
+            <p class="text-sm font-semibold">Preview</p>
             <p class="text-xs text-muted">Changes update live</p>
         </div>
     </div>
@@ -29,7 +29,7 @@
         <input type="hidden" name="avatar_crest_url" id="avatar-crest-input" value="{{ request.user.avatar_crest_url }}">
         {# ── Icon picker ───────────────────────────────── #}
         <div>
-            <label class="block text-sm font-medium text-gray-300 mb-2">Icon</label>
+            <label class="block text-sm font-medium text-muted mb-2">Icon</label>
             <div class="avatar-picker-grid">
                 {% for icon in avatar_icons %}
                 <button
@@ -48,7 +48,7 @@
         {# ── Team crest picker ─────────────────────────── #}
         {% if avatar_teams %}
         <div>
-            <label class="block text-sm font-medium text-gray-300 mb-2">Team Crest</label>
+            <label class="block text-sm font-medium text-muted mb-2">Team Crest</label>
             <div class="avatar-picker-grid" style="grid-template-columns: repeat(auto-fill, minmax(48px, 1fr));">
                 {% for team in avatar_teams %}
                 <button
@@ -68,7 +68,7 @@
 
         {# ── Color picker ──────────────────────────────── #}
         <div>
-            <label class="block text-sm font-medium text-gray-300 mb-2">Background color</label>
+            <label class="block text-sm font-medium text-muted mb-2">Background color</label>
             <div class="flex flex-wrap gap-2">
                 {% for color in avatar_colors %}
                 <button
@@ -85,7 +85,7 @@
 
         {# ── Frame picker ──────────────────────────────── #}
         <div>
-            <label class="block text-sm font-medium text-gray-300 mb-2">Frame</label>
+            <label class="block text-sm font-medium text-muted mb-2">Frame</label>
             <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
                 {# No-frame option #}
                 <button

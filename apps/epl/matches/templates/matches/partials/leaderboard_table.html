@@ -1,6 +1,6 @@
 {% load currency_tags %}
 {# Tab bar — included here so HTMX responses update the active tab state #}
-<div class="flex gap-1 mb-6 bg-dark/40 rounded-lg p-1 overflow-x-auto">
+<div class="flex gap-1 mb-6 bg-accent-light rounded-lg p-1 overflow-x-auto">
     {% for bt in board_types %}
     <button
         hx-get="{% url 'matches:leaderboard' %}?type={{ bt }}"
@@ -8,7 +8,7 @@
         hx-swap="innerHTML"
         hx-push-url="true"
         class="px-4 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap
-            {% if bt == board_type %}bg-accent/20 text-accent{% else %}text-muted hover:text-white hover:bg-surface/50{% endif %}"
+            {% if bt == board_type %}bg-accent/20 text-accent{% else %}text-muted hover:text-accent hover:bg-accent-light/50{% endif %}"
     >
         {% if bt == "balance" %}Balance
         {% elif bt == "profit" %}Profit
@@ -23,7 +23,7 @@
 <div class="overflow-x-auto">
     <table class="w-full" id="leaderboard-table">
         <thead>
-            <tr class="border-b border-gray-600 text-xs text-muted uppercase tracking-wider">
+            <tr class="border-b border-border text-xs text-muted uppercase tracking-wider">
                 <th class="px-2 sm:px-3 py-3 text-left w-12">#</th>
                 <th class="px-2 sm:px-3 py-3 text-left">Player</th>
 
@@ -47,14 +47,14 @@
         </thead>
         <tbody>
             {% for entry in leaderboard %}
-            <tr class="border-b border-gray-700/50 hover:bg-surface/50 transition-colors{% if request.user.is_authenticated and entry.user_id == request.user.id %} bg-accent/5{% endif %}">
+            <tr class="border-b border-border/50 hover:bg-surface/50 transition-colors{% if request.user.is_authenticated and entry.user_id == request.user.id %} bg-accent/5{% endif %}">
                 <td class="px-2 sm:px-3 py-3">
-                    <div class="flex h-7 w-7 items-center justify-center rounded-full bg-dark/40 text-muted text-xs font-bold">
+                    <div class="flex h-7 w-7 items-center justify-center rounded-full bg-accent-light text-muted text-xs font-bold">
                         {{ forloop.counter }}
                     </div>
                 </td>
                 <td class="px-2 sm:px-3 py-3">
-                    <a href="{% url 'profile' entry.user.slug %}" class="flex items-center gap-2 text-sm font-semibold text-white hover:text-accent transition-colors">
+                    <a href="{% url 'profile' entry.user.slug %}" class="flex items-center gap-2 text-sm font-semibold hover:text-accent transition-colors">
                         {% include "website/components/avatar.html" with avatar_user=entry.user avatar_size="sm" %}
                         {{ entry.display_identity }}
                     </a>
@@ -70,7 +70,7 @@
 
                 {% elif board_type == "profit" %}
                 <td class="px-2 sm:px-3 py-3 text-right">
-                    <span class="font-mono text-sm font-bold {% if entry.net_profit > 0 %}text-green-400{% elif entry.net_profit < 0 %}text-red-400{% else %}text-muted{% endif %}">
+                    <span class="font-mono text-sm font-bold {% if entry.net_profit > 0 %}text-positive{% elif entry.net_profit < 0 %}text-danger{% else %}text-muted{% endif %}">
                         {% if entry.net_profit > 0 %}+{% endif %}{{ entry.net_profit|currency:request.user }}
                     </span>
                 </td>
@@ -92,9 +92,9 @@
                 </td>
                 <td class="px-2 sm:px-3 py-3 text-right hidden sm:table-cell">
                     {% if entry.current_streak > 0 %}
-                    <span class="text-xs font-semibold text-green-400">{{ entry.current_streak }}W</span>
+                    <span class="text-xs font-semibold text-positive">{{ entry.current_streak }}W</span>
                     {% elif entry.current_streak < 0 %}
-                    <span class="text-xs text-red-400">{{ entry.current_streak|cut:"-" }}L</span>
+                    <span class="text-xs text-danger">{{ entry.current_streak|cut:"-" }}L</span>
                     {% else %}
                     <span class="text-xs text-muted">—</span>
                     {% endif %}
@@ -112,20 +112,20 @@
         <div class="flex items-center justify-between gap-3">
             <div class="min-w-0">
                 <p class="text-xs font-semibold uppercase tracking-wider text-accent">Your rank</p>
-                <p class="text-sm text-white">You are currently #{{ user_rank.rank }}</p>
+                <p class="text-sm">You are currently #{{ user_rank.rank }}</p>
             </div>
             <div class="shrink-0 text-right">
                 {% if board_type == "balance" %}
-                <p class="font-mono text-sm font-bold text-white">{{ user_rank.balance|currency:request.user }}</p>
+                <p class="font-mono text-sm font-bold text-accent">{{ user_rank.balance|currency:request.user }}</p>
                 {% elif board_type == "profit" %}
-                <p class="font-mono text-sm font-bold {% if user_rank.net_profit > 0 %}text-green-400{% elif user_rank.net_profit < 0 %}text-red-400{% else %}text-white{% endif %}">
+                <p class="font-mono text-sm font-bold {% if user_rank.net_profit > 0 %}text-positive{% elif user_rank.net_profit < 0 %}text-danger{% else %}text-accent{% endif %}">
                     {% if user_rank.net_profit > 0 %}+{% endif %}{{ user_rank.net_profit|currency:request.user }}
                 </p>
                 {% elif board_type == "win_rate" %}
-                <p class="font-mono text-sm font-bold text-white">{{ user_rank.win_rate }}%</p>
+                <p class="font-mono text-sm font-bold text-accent">{{ user_rank.win_rate }}%</p>
                 <p class="text-[11px] uppercase tracking-wider text-muted">win rate</p>
                 {% elif board_type == "streak" %}
-                <p class="font-mono text-sm font-bold text-white">{{ user_rank.best_streak }}W</p>
+                <p class="font-mono text-sm font-bold text-accent">{{ user_rank.best_streak }}W</p>
                 <p class="text-[11px] uppercase tracking-wider text-muted">best streak</p>
                 {% endif %}
             </div>

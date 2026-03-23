@@ -4,10 +4,10 @@
 {% if matches %}
 <!-- Desktop table -->
 <div class="hidden md:block">
-    <div class="mb-3 flex items-center justify-between gap-3 rounded-xl border border-gray-700/70 bg-dark/40 px-4 py-3">
+    <div class="mb-3 flex items-center justify-between gap-3 rounded-xl border border-border/70 bg-accent-light px-4 py-3">
         <div>
             <p class="text-xs font-semibold uppercase tracking-[0.22em] text-accent/80">Market freshness</p>
-            <p class="mt-1 text-sm text-white">
+            <p class="mt-1 text-sm">
                 {% if last_odds_refresh %}
                     Odds generated {{ last_odds_refresh|relative_time }}
                 {% else %}
@@ -19,7 +19,7 @@
     </div>
     <table class="w-full">
         <thead>
-            <tr class="border-b border-gray-600 text-xs text-muted uppercase tracking-wider">
+            <tr class="border-b border-border text-xs text-muted uppercase tracking-wider">
                 <th class="px-3 py-3 text-left">Kickoff</th>
                 <th class="px-3 py-3 text-left">Home</th>
                 <th class="px-3 py-3 text-center">H</th>
@@ -30,7 +30,7 @@
         </thead>
         <tbody>
             {% for match in matches %}
-            <tr class="border-b border-gray-700/50 hover:bg-surface/50">
+            <tr class="border-b border-border/50 hover:bg-surface/50">
                 <td class="px-3 py-3 text-sm text-muted whitespace-nowrap">
                     <time datetime="{{ match.kickoff|date:'c' }}" data-format="short">{{ match.kickoff|date:"D d M, H:i" }}</time>
                 </td>
@@ -137,9 +137,9 @@
 
 <!-- Mobile card list -->
 <div class="md:hidden space-y-3">
-    <div class="rounded-2xl border border-accent/20 bg-gradient-to-br from-surface to-dark px-4 py-4 shadow-[0_18px_45px_rgba(0,0,0,0.22)]">
+    <div class="rounded-2xl border border-accent/20 bg-surface px-4 py-4 shadow-[0_18px_45px_rgba(0,0,0,0.22)]">
         <p class="text-[0.68rem] font-semibold uppercase tracking-[0.24em] text-accent/80">Odds board</p>
-        <p class="mt-1 text-sm font-semibold text-white">
+        <p class="mt-1 text-sm font-semibold">
             {% if last_odds_refresh %}
                 Odds generated {{ last_odds_refresh|relative_time }}
             {% else %}
@@ -148,10 +148,10 @@
         </p>
     </div>
     {% for match in matches %}
-    <div class="overflow-hidden rounded-2xl border border-gray-700/60 bg-gradient-to-br from-surface to-dark shadow-[0_16px_40px_rgba(0,0,0,0.2)]">
-        <div class="flex items-center justify-between border-b border-gray-700/60 px-4 py-3">
+    <div class="overflow-hidden rounded-2xl border border-border/60 bg-surface shadow-[0_16px_40px_rgba(0,0,0,0.2)]">
+        <div class="flex items-center justify-between border-b border-border/60 px-4 py-3">
             <div class="text-xs font-medium text-muted"><time datetime="{{ match.kickoff|date:'c' }}" data-format="short">{{ match.kickoff|date:"D d M, H:i" }}</time></div>
-            <div class="rounded-full bg-dark/70 px-2.5 py-1 text-[0.68rem] uppercase tracking-[0.18em] text-muted">Tap for details</div>
+            <div class="rounded-full bg-accent-light px-2.5 py-1 text-[0.68rem] uppercase tracking-[0.18em] text-muted">Tap for details</div>
         </div>
         <a href="{% url 'matches:match_detail' match.slug %}" class="block px-4 py-4 hover:text-accent transition-colors">
             <div class="space-y-3">
@@ -178,7 +178,7 @@
         <div class="grid grid-cols-3 gap-2 px-4 pb-4">
             <div class="text-center">
                 {% if match.best_home_odds %}
-                <button class="w-full font-mono text-sm text-accent font-bold py-2 rounded border border-gray-600 hover:bg-accent/10 transition-colors"
+                <button class="w-full font-mono text-sm text-accent font-bold py-2 rounded border border-border hover:bg-accent/10 transition-colors"
                         hx-get="{% url 'betting:quick_bet_form' match.slug %}?selection=HOME_WIN&container=quick-bet-mobile-{{ match.pk }}"
                         hx-target="#quick-bet-mobile-{{ match.pk }}"
                         hx-swap="innerHTML">
@@ -201,7 +201,7 @@
             </div>
             <div class="text-center">
                 {% if match.best_draw_odds %}
-                <button class="w-full font-mono text-sm text-accent font-bold py-2 rounded border border-gray-600 hover:bg-accent/10 transition-colors"
+                <button class="w-full font-mono text-sm text-accent font-bold py-2 rounded border border-border hover:bg-accent/10 transition-colors"
                         hx-get="{% url 'betting:quick_bet_form' match.slug %}?selection=DRAW&container=quick-bet-mobile-{{ match.pk }}"
                         hx-target="#quick-bet-mobile-{{ match.pk }}"
                         hx-swap="innerHTML">
@@ -224,7 +224,7 @@
             </div>
             <div class="text-center">
                 {% if match.best_away_odds %}
-                <button class="w-full font-mono text-sm text-accent font-bold py-2 rounded border border-gray-600 hover:bg-accent/10 transition-colors"
+                <button class="w-full font-mono text-sm text-accent font-bold py-2 rounded border border-border hover:bg-accent/10 transition-colors"
                         hx-get="{% url 'betting:quick_bet_form' match.slug %}?selection=AWAY_WIN&container=quick-bet-mobile-{{ match.pk }}"
                         hx-target="#quick-bet-mobile-{{ match.pk }}"
                         hx-swap="innerHTML">

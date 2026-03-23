@@ -1,5 +1,5 @@
 THEME_SESSION_KEY = "theme_preference"
-DEFAULT_THEME = "dark"
+DEFAULT_THEME = "light"
 VALID_THEMES = {"dark", "light"}
 
 

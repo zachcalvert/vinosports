@@ -3,23 +3,23 @@
 {% block title %}My Bets{% endblock %}
 
 {% block content %}
-<h1 class="text-3xl font-bold text-white mb-6">My Bets</h1>
+<h1 class="text-3xl font-bold mb-6">My Bets</h1>
 
 <!-- Balance & P&L cards -->
 <div class="grid grid-cols-2 sm:grid-cols-5 gap-4 mb-6">
-    <div class="bg-surface rounded-lg border border-gray-700 p-4 text-center">
+    <div class="bg-surface rounded-lg border border-border p-4 text-center">
         <div class="text-xs text-muted uppercase mb-1">Balance</div>
         <div class="text-2xl font-mono font-bold text-accent">{{ current_balance|currency:user }}</div>
     </div>
-    <div class="bg-surface rounded-lg border border-gray-700 p-4 text-center">
+    <div class="bg-surface rounded-lg border border-border p-4 text-center">
         <div class="text-xs text-muted uppercase mb-1">Total Staked</div>
-        <div class="text-2xl font-mono font-bold text-white">{{ total_staked|currency:user }}</div>
+        <div class="text-2xl font-mono font-bold">{{ total_staked|currency:user }}</div>
     </div>
-    <div class="bg-surface rounded-lg border border-gray-700 p-4 text-center">
+    <div class="bg-surface rounded-lg border border-border p-4 text-center">
         <div class="text-xs text-muted uppercase mb-1">Total Won</div>
-        <div class="text-2xl font-mono font-bold text-white">{{ total_payout|currency:user }}</div>
+        <div class="text-2xl font-mono font-bold">{{ total_payout|currency:user }}</div>
     </div>
-    <div class="bg-surface rounded-lg border border-gray-700 p-4 text-center">
+    <div class="bg-surface rounded-lg border border-border p-4 text-center">
         <div class="text-xs text-muted uppercase mb-1">Net P&amp;L</div>
         <div class="text-2xl font-mono font-bold {% if net_pnl >= 0 %}text-accent{% else %}text-danger{% endif %}">
             {% if net_pnl >= 0 %}+{% endif %}{{ net_pnl|currency:user }}
@@ -37,7 +37,7 @@
 <div class="hidden md:block overflow-x-auto">
     <table class="w-full text-sm">
         <thead>
-            <tr class="border-b border-gray-700 text-left text-muted text-xs uppercase">
+            <tr class="border-b border-border text-left text-muted text-xs uppercase">
                 <th class="py-3 px-2">Activity</th>
                 <th class="py-3 px-2">Detail</th>
                 <th class="py-3 px-2 text-right">Odds</th>
@@ -47,20 +47,20 @@
                 <th class="py-3 px-2 text-right">Date</th>
             </tr>
         </thead>
-        <tbody class="divide-y divide-gray-700/50">
+        <tbody class="divide-y divide-border/50">
             {% for entry in activity %}
             {% if entry.type == "bet" %}
-            <tr class="hover:bg-dark/50 transition-colors">
+            <tr class="hover:bg-accent-light transition-colors">
                 <td class="py-3 px-2">
-                    <a href="{% url 'matches:match_detail' entry.item.match.slug %}" class="text-white hover:text-accent transition-colors">
+                    <a href="{% url 'matches:match_detail' entry.item.match.slug %}" class="hover:text-accent transition-colors">
                         {{ entry.item.match.home_team.short_name|default:entry.item.match.home_team.tla }}
                         vs
                         {{ entry.item.match.away_team.short_name|default:entry.item.match.away_team.tla }}
                     </a>
                 </td>
-                <td class="py-3 px-2 text-gray-300">{{ entry.item.get_selection_display }}</td>
-                <td class="py-3 px-2 text-right font-mono text-gray-300">{{ entry.item.odds_at_placement|floatformat:2 }}</td>
-                <td class="py-3 px-2 text-right font-mono text-white">{{ entry.item.stake|currency:user }}</td>
+                <td class="py-3 px-2 text-muted">{{ entry.item.get_selection_display }}</td>
+                <td class="py-3 px-2 text-right font-mono text-muted">{{ entry.item.odds_at_placement|floatformat:2 }}</td>
+                <td class="py-3 px-2 text-right font-mono">{{ entry.item.stake|currency:user }}</td>
                 <td class="py-3 px-2 text-right font-mono {% if entry.item.payout %}text-accent{% else %}text-muted{% endif %}">
                     {% if entry.item.payout != None %}{{ entry.item.payout|currency:user }}{% else %}&mdash;{% endif %}
                 </td>
@@ -78,20 +78,20 @@
                 <td class="py-3 px-2 text-right text-muted text-xs">{{ entry.date|date:"d M H:i" }}</td>
             </tr>
             {% elif entry.type == "parlay" %}
-            <tr class="hover:bg-dark/50 transition-colors border-l-2 border-l-purple-500/40" id="parlay-row-{{ entry.item.id_hash }}">
+            <tr class="hover:bg-accent-light transition-colors border-l-2 border-l-purple-500/40" id="parlay-row-{{ entry.item.id_hash }}">
                 <td class="py-3 px-2">
                     <button class="text-left text-purple-300 hover:text-purple-200 transition-colors font-medium"
                             onclick="document.getElementById('parlay-legs-{{ entry.item.id_hash }}').classList.toggle('hidden')">
                         Parlay &bull; {{ entry.item.legs.count }} legs &#9660;
                     </button>
                 </td>
-                <td class="py-3 px-2 text-gray-400 text-xs">
+                <td class="py-3 px-2 text-muted text-xs">
                     {% for leg in entry.item.legs.all %}
                         {% if leg.selection == "HOME_WIN" %}{{ leg.match.home_team.short_name|default:leg.match.home_team.tla }} Win{% elif leg.selection == "DRAW" %}Draw{% else %}{{ leg.match.away_team.short_name|default:leg.match.away_team.tla }} Win{% endif %}{% if not forloop.last %}, {% endif %}
                     {% endfor %}
                 </td>
-                <td class="py-3 px-2 text-right font-mono text-gray-300">{{ entry.item.combined_odds|floatformat:2 }}x</td>
-                <td class="py-3 px-2 text-right font-mono text-white">{{ entry.item.stake|currency:user }}</td>
+                <td class="py-3 px-2 text-right font-mono text-muted">{{ entry.item.combined_odds|floatformat:2 }}x</td>
+                <td class="py-3 px-2 text-right font-mono">{{ entry.item.stake|currency:user }}</td>
                 <td class="py-3 px-2 text-right font-mono {% if entry.item.payout %}text-accent{% else %}text-muted{% endif %}">
                     {% if entry.item.payout != None %}{{ entry.item.payout|currency:user }}{% else %}&mdash;{% endif %}
                 </td>
@@ -108,7 +108,7 @@
                 </td>
                 <td class="py-3 px-2 text-right text-muted text-xs">{{ entry.date|date:"d M H:i" }}</td>
             </tr>
-            <tr id="parlay-legs-{{ entry.item.id_hash }}" class="hidden bg-dark/30">
+            <tr id="parlay-legs-{{ entry.item.id_hash }}" class="hidden bg-accent-light/50">
                 <td colspan="7" class="px-4 py-2">
                     <ul class="space-y-1">
                         {% for leg in entry.item.legs.all %}
@@ -116,10 +116,10 @@
                             <span class="w-2 h-2 rounded-full inline-block
                                 {% if leg.status == 'WON' %}bg-accent{% elif leg.status == 'LOST' %}bg-danger{% elif leg.status == 'VOID' %}bg-gray-500{% else %}bg-warning{% endif %}">
                             </span>
-                            <span class="text-gray-300">
+                            <span class="text-muted">
                                 {{ leg.match.home_team.short_name|default:leg.match.home_team.tla }} vs {{ leg.match.away_team.short_name|default:leg.match.away_team.tla }}
                             </span>
-                            <span class="text-gray-400">
+                            <span class="text-muted">
                                 {% if leg.selection == "HOME_WIN" %}Home Win{% elif leg.selection == "DRAW" %}Draw{% else %}Away Win{% endif %}
                             </span>
                             <span class="font-mono">@ {{ leg.odds_at_placement }}</span>
@@ -133,11 +133,11 @@
                 </td>
             </tr>
             {% elif entry.type == "reward" %}
-            <tr class="hover:bg-dark/50 transition-colors bg-accent/5">
+            <tr class="hover:bg-accent-light transition-colors bg-accent/5">
                 <td class="py-3 px-2">
                     <span class="text-accent font-medium">{{ entry.item.reward.name }}</span>
                 </td>
-                <td class="py-3 px-2 text-gray-300">
+                <td class="py-3 px-2 text-muted">
                     {% if entry.item.reward.description %}{{ entry.item.reward.description }}{% else %}Reward{% endif %}
                 </td>
                 <td class="py-3 px-2 text-right font-mono text-muted">&mdash;</td>
@@ -159,9 +159,9 @@
     {% for entry in activity %}
     {% if entry.type == "bet" %}
     <a href="{% url 'matches:match_detail' entry.item.match.slug %}"
-       class="block bg-surface/50 rounded-lg border border-gray-700/50 p-4 hover:border-gray-600 transition-colors">
+       class="block bg-surface/50 rounded-lg border border-border/50 p-4 hover:border-border transition-colors">
         <div class="flex items-center justify-between mb-2">
-            <span class="text-sm font-medium text-white">
+            <span class="text-sm font-medium">
                 {{ entry.item.match.home_team.short_name|default:entry.item.match.home_team.tla }}
                 vs
                 {{ entry.item.match.away_team.short_name|default:entry.item.match.away_team.tla }}
@@ -180,11 +180,11 @@
         <div class="grid grid-cols-3 gap-3 text-center">
             <div>
                 <div class="text-xs text-muted">Odds</div>
-                <div class="font-mono text-sm text-gray-300">{{ entry.item.odds_at_placement|floatformat:2 }}</div>
+                <div class="font-mono text-sm text-muted">{{ entry.item.odds_at_placement|floatformat:2 }}</div>
             </div>
             <div>
                 <div class="text-xs text-muted">Stake</div>
-                <div class="font-mono text-sm text-white">{{ entry.item.stake|currency:user }}</div>
+                <div class="font-mono text-sm">{{ entry.item.stake|currency:user }}</div>
             </div>
             <div>
                 <div class="text-xs text-muted">Payout</div>
@@ -216,7 +216,7 @@
                 <span class="w-1.5 h-1.5 rounded-full shrink-0
                     {% if leg.status == 'WON' %}bg-accent{% elif leg.status == 'LOST' %}bg-danger{% elif leg.status == 'VOID' %}bg-gray-500{% else %}bg-warning{% endif %}">
                 </span>
-                <span class="text-gray-300 truncate">
+                <span class="text-muted truncate">
                     {% if leg.selection == "HOME_WIN" %}{{ leg.match.home_team.short_name|default:leg.match.home_team.tla }} Win{% elif leg.selection == "DRAW" %}Draw{% else %}{{ leg.match.away_team.short_name|default:leg.match.away_team.tla }} Win{% endif %}
                     <span class="text-muted font-mono">@ {{ leg.odds_at_placement }}</span>
                 </span>
@@ -226,11 +226,11 @@
         <div class="grid grid-cols-3 gap-3 text-center">
             <div>
                 <div class="text-xs text-muted">Odds</div>
-                <div class="font-mono text-sm text-gray-300">{{ entry.item.combined_odds|floatformat:2 }}x</div>
+                <div class="font-mono text-sm text-muted">{{ entry.item.combined_odds|floatformat:2 }}x</div>
             </div>
             <div>
                 <div class="text-xs text-muted">Stake</div>
-                <div class="font-mono text-sm text-white">{{ entry.item.stake|currency:user }}</div>
+                <div class="font-mono text-sm">{{ entry.item.stake|currency:user }}</div>
             </div>
             <div>
                 <div class="text-xs text-muted">Payout</div>

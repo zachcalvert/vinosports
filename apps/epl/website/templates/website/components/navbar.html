@@ -61,9 +61,9 @@
                             <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
                         </svg>
                     </button>
-                    <div id="user-dropdown" class="user-dropdown hidden absolute right-0 mt-2 w-56 rounded-lg border border-gray-700 bg-surface shadow-xl z-50">
+                    <div id="user-dropdown" class="user-dropdown hidden absolute right-0 mt-2 w-56 rounded-lg border border-border bg-surface shadow-xl z-50">
                         <!-- Balance -->
-                        <div class="px-4 py-3 border-b border-gray-700">
+                        <div class="px-4 py-3 border-b border-border">
                             <div class="text-xs text-muted uppercase tracking-wider">Balance</div>
                             <div class="font-mono text-lg font-bold text-accent">{{ user.balance.balance|currency:user }}</div>
                         </div>
@@ -80,7 +80,7 @@
                             </a>
                         </div>
                         <!-- Theme + Logout -->
-                        <div class="border-t border-gray-700 py-1">
+                        <div class="border-t border-border py-1">
                             <form method="post" action="{% url 'website:theme_toggle' %}">
                                 {% csrf_token %}
                                 <input type="hidden" name="theme" value="{{ ui_theme_toggle_value }}">
@@ -152,7 +152,7 @@
 
             {% if user.is_authenticated %}
             <!-- Divider -->
-            <div class="my-3 border-t border-gray-700"></div>
+            <div class="my-3 border-t border-border"></div>
 
             <!-- Your Account -->
             <div class="px-3 py-1 text-xs font-semibold uppercase tracking-wider text-muted">Your Account</div>
@@ -195,7 +195,7 @@
                 </form>
             </div>
             {% else %}
-            <div class="my-3 border-t border-gray-700"></div>
+            <div class="my-3 border-t border-border"></div>
             <div class="space-y-1">
                 <a href="{% url 'website:login' %}" class="mobile-nav-link">Log In</a>
                 <a href="{% url 'website:signup' %}" class="block px-3 py-2 rounded-md text-base font-medium text-accent hover:bg-accent/10">Sign Up</a>

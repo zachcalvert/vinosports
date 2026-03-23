@@ -8,7 +8,7 @@ Context: match, match_stats
     <div class="flex flex-col gap-2">
         <!-- Home team form -->
         <div class="flex items-center gap-3">
-            <span class="text-sm font-medium text-white shrink-0 w-10">
+            <span class="text-sm font-medium shrink-0 w-10">
                 {{ match.home_team.tla|default:match.home_team.short_name|default:match.home_team.name }}
             </span>
             <div class="flex gap-1">
@@ -28,7 +28,7 @@ Context: match, match_stats
         </div>
         <!-- Away team form -->
         <div class="flex items-center gap-3">
-            <span class="text-sm font-medium text-white shrink-0 w-10">
+            <span class="text-sm font-medium shrink-0 w-10">
                 {{ match.away_team.tla|default:match.away_team.short_name|default:match.away_team.name }}
             </span>
             <div class="flex gap-1">

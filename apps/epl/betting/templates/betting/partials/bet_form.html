@@ -1,6 +1,6 @@
 {% load currency_tags %}
-<div id="bet-form-container" class="bg-surface rounded-lg border border-gray-700 p-6">
-    <h3 class="text-xl font-bold text-white mb-4">Place a Bet</h3>
+<div id="bet-form-container" class="bg-surface rounded-xl border border-border p-6 shadow-sm">
+    <h3 class="text-xl font-bold mb-4">Place a Bet</h3>
 
     {% if error %}
     <div class="bg-danger/10 border border-danger/30 rounded-md p-3 mb-4">
@@ -20,7 +20,7 @@
 
         <!-- Selection buttons -->
         <div>
-            <label class="block text-sm font-medium text-gray-300 mb-2">Your pick</label>
+            <label class="block text-sm font-medium mb-2">Your pick</label>
             <div class="grid grid-cols-3 gap-2">
                 {% for value, label in form.fields.selection.choices %}
                 <label class="cursor-pointer">
@@ -28,8 +28,8 @@
                            class="hidden peer"
                            {% if form.selection.value == value %}checked{% endif %}>
                     <div class="peer-checked:border-accent peer-checked:bg-accent/10 peer-checked:text-accent
-                                border border-gray-600 rounded-md py-3 text-center font-medium
-                                text-gray-300 hover:border-gray-400 transition-colors">
+                                border border-border rounded-md py-3 text-center font-medium
+                                text-muted hover:border-gray-400 transition-colors">
                         {% if value == "HOME_WIN" %}
                             <span class="block text-sm">{{ match.home_team.short_name|default:match.home_team.name }}</span>
                         {% elif value == "DRAW" %}
@@ -48,7 +48,7 @@
 
         <!-- Stake input -->
         <div>
-            <label class="block text-sm font-medium text-gray-300 mb-1">Stake ({% currency_symbol request.user %})</label>
+            <label class="block text-sm font-medium mb-1">Stake ({% currency_symbol request.user %})</label>
             {{ form.stake }}
             {% if form.stake.errors %}
             <p class="text-danger text-xs mt-1">{{ form.stake.errors.0 }}</p>

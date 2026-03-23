@@ -14,21 +14,21 @@ Context expected:
 {% endcomment %}
 {% load currency_tags %}
 
-<div class="rounded-lg border border-gray-700 bg-surface overflow-hidden">
+<div class="rounded-xl border border-border bg-surface overflow-hidden">
     <!-- Header -->
-    <div class="px-5 py-3 border-b border-gray-700 flex items-center justify-between">
-        <h3 class="text-xs font-semibold uppercase tracking-widest text-white">Match Recap</h3>
+    <div class="px-5 py-3 border-b border-border flex items-center justify-between">
+        <h3 class="text-xs font-semibold uppercase tracking-widest">Match Recap</h3>
         {% if match_stats.fetched_at %}
             <span class="text-xs text-muted">Stats via football-data.org</span>
         {% endif %}
     </div>
 
-    <div class="divide-y divide-gray-700">
+    <div class="divide-y divide-border">
 
         <!-- RESULT CONTEXT -->
         {% if result_context %}
         <div class="px-5 py-4">
-            <p class="text-sm text-white font-semibold">{{ result_context.headline }}</p>
+            <p class="text-sm font-semibold">{{ result_context.headline }}</p>
             {% if result_context.is_upset %}
                 <span class="inline-flex items-center mt-1 px-2 py-0.5 rounded text-xs font-medium bg-amber-500/10 text-amber-400">Upset</span>
             {% endif %}
@@ -41,11 +41,11 @@ Context expected:
             <p class="text-xs font-semibold uppercase tracking-widest text-muted mb-3">Betting Outcome</p>
             <div class="grid grid-cols-3 gap-4 text-center text-sm">
                 <div>
-                    <p class="text-2xl font-bold text-white">{{ betting_outcome.total_bets }}</p>
+                    <p class="text-2xl font-bold">{{ betting_outcome.total_bets }}</p>
                     <p class="text-xs text-muted">Bets Placed</p>
                 </div>
                 <div>
-                    <p class="text-2xl font-bold text-green-400">{{ betting_outcome.win_pct }}%</p>
+                    <p class="text-2xl font-bold text-positive">{{ betting_outcome.win_pct }}%</p>
                     <p class="text-xs text-muted">Got It Right</p>
                 </div>
                 <div>
@@ -101,9 +101,9 @@ Context expected:
                     <span class="text-indigo-400 font-semibold">{{ match.away_team.short_name|default:match.away_team.name }} Win</span>
                 {% endif %}
                 {% if sentiment.most_popular == actual_result_label %}
-                    <span class="text-green-400 text-xs">— Community got it right</span>
+                    <span class="text-positive text-xs">— Community got it right</span>
                 {% else %}
-                    <span class="text-red-400 text-xs">— Community got it wrong</span>
+                    <span class="text-danger text-xs">— Community got it wrong</span>
                 {% endif %}
             </div>
         </div>

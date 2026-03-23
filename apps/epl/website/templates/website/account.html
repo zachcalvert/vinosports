@@ -3,7 +3,7 @@
 {% block title %}Profile &amp; Settings{% endblock %}
 
 {% block content %}
-<h1 class="text-3xl font-bold text-white mb-6">Profile &amp; Settings</h1>
+<h1 class="text-3xl font-bold mb-6">Profile &amp; Settings</h1>
 
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6 items-start">
 
@@ -18,15 +18,15 @@
             <div class="flex flex-col gap-4">
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-wider text-accent mb-1">Your leaderboard rank</p>
-                    <h2 class="text-xl font-bold text-white">You are currently #{{ user_rank.rank }}</h2>
+                    <h2 class="text-xl font-bold">You are currently #{{ user_rank.rank }}</h2>
                     <p class="text-sm text-muted">Keep climbing by growing your balance through settled bets.</p>
                 </div>
                 <div class="grid grid-cols-2 gap-3">
-                    <div class="rounded-lg border border-gray-700 bg-surface px-4 py-3 text-center">
+                    <div class="rounded-lg border border-border bg-surface px-4 py-3 text-center">
                         <div class="text-xs uppercase text-muted mb-1">Display</div>
-                        <div class="font-mono text-sm font-bold text-white">{{ user_rank.display_identity }}</div>
+                        <div class="font-mono text-sm font-bold">{{ user_rank.display_identity }}</div>
                     </div>
-                    <div class="rounded-lg border border-gray-700 bg-surface px-4 py-3 text-center">
+                    <div class="rounded-lg border border-border bg-surface px-4 py-3 text-center">
                         <div class="text-xs uppercase text-muted mb-1">Balance</div>
                         <div class="font-mono text-sm font-bold text-accent">{{ user_rank.balance|currency:user }}</div>
                     </div>
@@ -38,28 +38,28 @@
         {# Info panels #}
         <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
             {% if balance is not None %}
-            <div class="bg-surface rounded-lg border border-gray-700 p-4 text-center">
+            <div class="bg-surface rounded-lg border border-border p-4 text-center">
                 <div class="text-xs text-muted uppercase mb-1">Balance</div>
                 <div class="text-xl font-mono font-bold text-accent">{{ balance|currency:user }}</div>
             </div>
             {% endif %}
 
-            <div class="bg-surface rounded-lg border border-gray-700 p-4 text-center">
+            <div class="bg-surface rounded-lg border border-border p-4 text-center">
                 <div class="text-xs text-muted uppercase mb-1">Member Since</div>
-                <div class="text-xl font-bold text-white">{{ user.date_joined|date:"d M Y" }}</div>
+                <div class="text-xl font-bold">{{ user.date_joined|date:"d M Y" }}</div>
             </div>
 
             {% if stats %}
-            <div class="bg-surface rounded-lg border border-gray-700 p-4 text-center">
+            <div class="bg-surface rounded-lg border border-border p-4 text-center">
                 <div class="text-xs text-muted uppercase mb-1">Record</div>
-                <div class="text-xl font-mono font-bold text-white">{{ stats.total_wins }}W&ndash;{{ stats.total_losses }}L</div>
+                <div class="text-xl font-mono font-bold">{{ stats.total_wins }}W&ndash;{{ stats.total_losses }}L</div>
                 {% if stats.total_bets > 0 %}
                 <div class="text-xs text-muted mt-1">{{ stats.win_rate }}% win rate</div>
                 {% endif %}
             </div>
             {% endif %}
 
-            <div class="bg-surface rounded-lg border border-gray-700 p-4 text-center">
+            <div class="bg-surface rounded-lg border border-border p-4 text-center">
                 <div class="text-xs text-muted uppercase mb-1">Theme</div>
                 <form method="post" action="{% url 'website:theme_toggle' %}" class="mt-1">
                     {% csrf_token %}
@@ -84,7 +84,7 @@
                 </form>
             </div>
 
-            <div class="bg-surface rounded-lg border border-gray-700 p-4 text-center">
+            <div class="bg-surface rounded-lg border border-border p-4 text-center">
                 <div class="text-xs text-muted uppercase mb-1">Public Profile</div>
                 <a href="{% url 'profile' user.slug %}" class="text-sm text-accent hover:text-accent/80 transition-colors">
                     View your profile &rarr;
@@ -99,8 +99,8 @@
 </div>
 
 {# Balance history chart #}
-<div class="bg-surface rounded-lg border border-gray-700 p-4 mb-6">
-    <h2 class="text-lg font-bold text-white mb-3">Balance History</h2>
+<div class="bg-surface rounded-lg border border-border p-4 mb-6">
+    <h2 class="text-lg font-bold mb-3">Balance History</h2>
     <div style="position: relative; height: 250px;">
         <canvas id="balanceChart"></canvas>
     </div>
@@ -108,7 +108,7 @@
 
 {# Badges #}
 <div class="mb-6">
-    <h2 class="text-lg font-bold text-white mb-3">Badges</h2>
+    <h2 class="text-lg font-bold mb-3">Badges</h2>
     {% if all_badges %}
     <div class="badge-grid">
         {% for badge in all_badges %}

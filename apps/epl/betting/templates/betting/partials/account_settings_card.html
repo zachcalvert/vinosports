@@ -1,6 +1,6 @@
-<section id="account-settings-card" class="rounded-lg border border-gray-700 bg-surface p-5">
+<section id="account-settings-card" class="rounded-lg border border-border bg-surface p-5">
     <p class="text-xs font-semibold uppercase tracking-wider text-accent mb-1">Account</p>
-    <h2 class="text-xl font-bold text-white">Public display name</h2>
+    <h2 class="text-xl font-bold">Public display name</h2>
     <p class="mt-2 text-sm text-muted">Shown publicly on the leaderboard. Leave blank to keep using your masked email.</p>
 
     <form
@@ -12,7 +12,7 @@
     >
         {% csrf_token %}
         <div>
-            <label for="{{ display_name_form.display_name.id_for_label }}" class="block text-sm font-medium text-gray-300 mb-1">Display name</label>
+            <label for="{{ display_name_form.display_name.id_for_label }}" class="block text-sm font-medium text-muted mb-1">Display name</label>
             <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
                 <div class="flex-1">
                     {{ display_name_form.display_name }}

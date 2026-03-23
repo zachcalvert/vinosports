@@ -1,0 +1,695 @@
+/* ==========================================================================
+   Vinosports Design System — EPL League Stylesheet
+   ==========================================================================
+   CSS custom properties + component classes consumed by Django templates.
+   The Tailwind CDN config in base.html references these variables.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. CSS CUSTOM PROPERTIES (Theme Tokens)
+   -------------------------------------------------------------------------- */
+
+:root,
+[data-theme="light"] {
+    /* Foundation */
+    --color-bg:          250 250 248;   /* #FAFAF8 warm off-white */
+    --color-surface:     255 255 255;   /* #FFFFFF */
+    --color-dark:         28  25  23;   /* #1C1917 warm near-black */
+    --color-text:         28  25  23;   /* #1C1917 */
+    --color-muted:       120 113 108;   /* #78716C warm gray */
+    --color-border:      231 229 228;   /* #E7E5E4 stone-200 */
+
+    /* EPL accent — deep plum/burgundy */
+    --color-accent:       74  32  64;   /* #4A2040 */
+    --color-accent-light: 245 237 242;  /* #F5EDF2 */
+    --color-epl:          61  17  82;   /* #3D1152 PL purple */
+
+    /* Gold brand accent */
+    --color-gold:        184 134  11;   /* #B8860B */
+}
+
+[data-theme="dark"] {
+    --color-bg:           12  10   9;   /* #0C0A09 */
+    --color-surface:      28  25  23;   /* #1C1917 */
+    --color-dark:         12  10   9;   /* #0C0A09 */
+    --color-text:        250 250 245;   /* #FAFAF5 */
+    --color-muted:       168 162 158;   /* #A8A29E */
+    --color-border:       41  37  36;   /* #292524 */
+
+    --color-accent:      168 113 148;   /* #A87194 lighter plum for dark bg */
+    --color-accent-light:  41  30  38;  /* subtle plum tint */
+    --color-epl:          61  17  82;
+    --color-gold:        212 168  67;   /* #D4A843 */
+}
+
+
+/* --------------------------------------------------------------------------
+   2. GLOBAL / PAGE
+   -------------------------------------------------------------------------- */
+
+.theme-page {
+    background-color: rgb(var(--color-bg));
+    color: rgb(var(--color-text));
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+
+/* --------------------------------------------------------------------------
+   3. NAVBAR
+   -------------------------------------------------------------------------- */
+
+.site-nav {
+    background-color: rgb(var(--color-dark));
+    border-bottom: 1px solid rgba(255 255 255 / 0.06);
+    position: sticky;
+    top: 0;
+    z-index: 40;
+}
+
+.nav-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.375rem 0.75rem;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #a8a29e;            /* stone-400 */
+    transition: color 0.15s, background-color 0.15s;
+}
+.nav-link:hover {
+    color: #ffffff;
+    background-color: rgba(255 255 255 / 0.08);
+}
+.nav-link.nav-link-active {
+    color: rgb(var(--color-accent));
+    background-color: rgba(var(--color-accent) / 0.12);
+}
+
+/* Dark-mode override: accent is already lighter, keep active bright */
+[data-theme="dark"] .nav-link.nav-link-active {
+    color: rgb(var(--color-accent));
+}
+
+.nav-action-link {
+    padding: 0.375rem 0.75rem;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #a8a29e;
+    transition: color 0.15s, background-color 0.15s;
+}
+.nav-action-link:hover {
+    color: #ffffff;
+    background-color: rgba(255 255 255 / 0.08);
+}
+
+
+/* --------------------------------------------------------------------------
+   4. DROPDOWN MENU
+   -------------------------------------------------------------------------- */
+
+.dropdown-link {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    color: rgb(var(--color-text));
+    transition: background-color 0.15s;
+}
+.dropdown-link:hover {
+    background-color: rgb(var(--color-accent-light));
+}
+.dropdown-link.dropdown-link-active {
+    color: rgb(var(--color-accent));
+    background-color: rgb(var(--color-accent-light));
+}
+
+
+/* --------------------------------------------------------------------------
+   5. MOBILE MENU
+   -------------------------------------------------------------------------- */
+
+.mobile-menu-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem;
+    border-radius: 0.375rem;
+    color: #a8a29e;
+    transition: color 0.15s, background-color 0.15s;
+}
+.mobile-menu-btn:hover {
+    color: #ffffff;
+    background-color: rgba(255 255 255 / 0.08);
+}
+
+.mobile-menu-shell {
+    background-color: rgb(var(--color-dark));
+    border-top: 1px solid rgba(255 255 255 / 0.06);
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.25s ease;
+}
+.mobile-menu-shell.open {
+    max-height: 100vh;
+}
+
+.mobile-nav-link {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.375rem;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    color: #a8a29e;
+    transition: color 0.15s, background-color 0.15s;
+}
+.mobile-nav-link:hover {
+    color: #ffffff;
+    background-color: rgba(255 255 255 / 0.08);
+}
+.mobile-nav-link.nav-link-active {
+    color: rgb(var(--color-accent));
+    background-color: rgba(var(--color-accent) / 0.12);
+}
+
+.theme-toggle-mobile {
+    justify-content: space-between;
+}
+
+
+/* --------------------------------------------------------------------------
+   6. THEME TOGGLE
+   -------------------------------------------------------------------------- */
+
+.theme-toggle-track {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    width: 2.75rem;
+    height: 1.5rem;
+    border-radius: 9999px;
+    background-color: #d6d3d1;
+    transition: background-color 0.2s ease;
+    flex-shrink: 0;
+}
+.theme-toggle-track.is-dark {
+    background-color: #57534e;
+}
+
+.theme-toggle-track--sm {
+    width: 2rem;
+    height: 1.125rem;
+}
+
+.theme-toggle-thumb {
+    position: absolute;
+    left: 2px;
+    width: 1.25rem;
+    height: 1.25rem;
+    border-radius: 9999px;
+    background-color: #ffffff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    transition: transform 0.2s ease;
+}
+.theme-toggle-thumb.is-dark {
+    transform: translateX(1.25rem);
+}
+
+.theme-toggle-thumb--sm {
+    width: 0.875rem;
+    height: 0.875rem;
+}
+.theme-toggle-thumb--sm.is-dark {
+    transform: translateX(0.875rem);
+}
+
+.theme-toggle-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 0.875rem;
+    height: 0.875rem;
+    flex-shrink: 0;
+    margin: 0 0.25rem;
+}
+.theme-toggle-icon svg {
+    width: 100%;
+    height: 100%;
+}
+.theme-toggle-sun {
+    color: #f59e0b;
+}
+.theme-toggle-moon {
+    color: #94a3b8;
+}
+
+
+/* --------------------------------------------------------------------------
+   7. WEBSOCKET STATUS DOT
+   -------------------------------------------------------------------------- */
+
+.ws-status {
+    display: inline-block;
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 9999px;
+    flex-shrink: 0;
+}
+.ws-status.connected {
+    background-color: #16a34a;
+    box-shadow: 0 0 4px rgba(22, 163, 74, 0.5);
+}
+.ws-status.disconnected {
+    background-color: #a8a29e;
+}
+
+
+/* --------------------------------------------------------------------------
+   8. MATCHDAY TABS (horizontal scrolling)
+   -------------------------------------------------------------------------- */
+
+.matchday-tabs-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.matchday-tabs-scroll {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+.matchday-tabs-scroll::-webkit-scrollbar {
+    display: none;
+}
+
+.matchday-tabs-arrow {
+    position: absolute;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: 9999px;
+    background-color: rgb(var(--color-surface));
+    border: 1px solid rgb(var(--color-border));
+    color: rgb(var(--color-muted));
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    cursor: pointer;
+    transition: opacity 0.2s, color 0.15s, border-color 0.15s;
+}
+.matchday-tabs-arrow:hover {
+    color: rgb(var(--color-text));
+    border-color: rgb(var(--color-accent));
+}
+.matchday-tabs-arrow--left {
+    left: 0;
+}
+.matchday-tabs-arrow--right {
+    right: 0;
+}
+
+.matchday-tabs-fade {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2rem;
+    z-index: 1;
+    pointer-events: none;
+    transition: opacity 0.2s;
+}
+.matchday-tabs-fade--left {
+    left: 1.75rem;
+    background: linear-gradient(to right, rgb(var(--color-bg)), transparent);
+}
+.matchday-tabs-fade--right {
+    right: 1.75rem;
+    background: linear-gradient(to left, rgb(var(--color-bg)), transparent);
+}
+
+
+/* --------------------------------------------------------------------------
+   9. SPINNER
+   -------------------------------------------------------------------------- */
+
+.spinner {
+    display: inline-block;
+    width: 1.5rem;
+    height: 1.5rem;
+    border: 2px solid rgb(var(--color-border));
+    border-top-color: rgb(var(--color-accent));
+    border-radius: 9999px;
+    animation: spin 0.6s linear infinite;
+}
+.spinner-sm {
+    width: 1rem;
+    height: 1rem;
+    border-width: 1.5px;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* HTMX loading indicator — hidden by default, shown during request */
+.htmx-indicator {
+    opacity: 0;
+    transition: opacity 0.15s ease-in;
+}
+.htmx-request .htmx-indicator,
+.htmx-request.htmx-indicator {
+    opacity: 1;
+}
+
+
+/* --------------------------------------------------------------------------
+   10. MATCH CARDS
+   -------------------------------------------------------------------------- */
+
+.live-match-card {
+    border-color: rgb(var(--color-accent)) !important;
+    box-shadow: 0 0 0 1px rgb(var(--color-accent)),
+                0 0 12px rgba(var(--color-accent) / 0.15);
+    animation: live-pulse 2s ease-in-out infinite;
+}
+
+@keyframes live-pulse {
+    0%, 100% { box-shadow: 0 0 0 1px rgb(var(--color-accent)), 0 0 12px rgba(var(--color-accent) / 0.15); }
+    50%      { box-shadow: 0 0 0 1px rgb(var(--color-accent)), 0 0 20px rgba(var(--color-accent) / 0.30); }
+}
+
+
+/* --------------------------------------------------------------------------
+   11. TOAST NOTIFICATIONS
+   -------------------------------------------------------------------------- */
+
+.toast-shell {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.875rem 1rem;
+    border-radius: 0.75rem;
+    background-color: rgb(var(--color-surface));
+    border: 1px solid rgb(var(--color-border));
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.04);
+    max-width: 100%;
+}
+
+.toast-message {
+    font-size: 0.875rem;
+    color: rgb(var(--color-text));
+    flex: 1;
+    min-width: 0;
+}
+
+.toast-dismiss {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.25rem;
+    border-radius: 0.25rem;
+    color: rgb(var(--color-muted));
+    cursor: pointer;
+    transition: color 0.15s, background-color 0.15s;
+}
+.toast-dismiss:hover {
+    color: rgb(var(--color-text));
+    background-color: rgb(var(--color-accent-light));
+}
+
+
+/* --------------------------------------------------------------------------
+   12. REWARD TOASTS
+   -------------------------------------------------------------------------- */
+
+.reward-toast {
+    position: relative;
+    overflow: hidden;
+    border-radius: 0.75rem;
+    border: 1px solid rgb(var(--color-gold));
+    background: linear-gradient(135deg,
+        rgba(var(--color-gold) / 0.08),
+        rgba(var(--color-gold) / 0.02));
+    backdrop-filter: blur(8px);
+}
+
+.reward-toast-confetti {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+}
+.reward-toast-confetti span {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    border-radius: 1px;
+    opacity: 0;
+    animation: confetti-fall 1.8s ease-out forwards;
+}
+.reward-toast-confetti span:nth-child(1)  { left: 10%; background: #B8860B; animation-delay: 0.0s; }
+.reward-toast-confetti span:nth-child(2)  { left: 20%; background: #4A2040; animation-delay: 0.1s; }
+.reward-toast-confetti span:nth-child(3)  { left: 30%; background: #D97706; animation-delay: 0.15s; }
+.reward-toast-confetti span:nth-child(4)  { left: 45%; background: #B8860B; animation-delay: 0.05s; }
+.reward-toast-confetti span:nth-child(5)  { left: 55%; background: #16A34A; animation-delay: 0.2s; }
+.reward-toast-confetti span:nth-child(6)  { left: 65%; background: #4A2040; animation-delay: 0.08s; }
+.reward-toast-confetti span:nth-child(7)  { left: 75%; background: #D97706; animation-delay: 0.12s; }
+.reward-toast-confetti span:nth-child(8)  { left: 82%; background: #B8860B; animation-delay: 0.18s; }
+.reward-toast-confetti span:nth-child(9)  { left: 88%; background: #16A34A; animation-delay: 0.25s; }
+.reward-toast-confetti span:nth-child(10) { left: 95%; background: #4A2040; animation-delay: 0.1s; }
+
+@keyframes confetti-fall {
+    0%   { top: -10%; opacity: 1; transform: rotate(0deg) scale(1); }
+    100% { top: 110%; opacity: 0; transform: rotate(720deg) scale(0.5); }
+}
+
+.reward-toast-inner {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 1rem;
+    z-index: 1;
+}
+
+.reward-toast-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 9999px;
+    background-color: rgba(var(--color-gold) / 0.15);
+    color: rgb(var(--color-gold));
+    flex-shrink: 0;
+}
+
+.reward-toast-title {
+    font-family: 'Oswald', sans-serif;
+    font-weight: 600;
+    font-size: 0.9375rem;
+    color: rgb(var(--color-text));
+}
+
+.reward-toast-amount {
+    font-family: 'Roboto Mono', monospace;
+    font-weight: 700;
+    font-size: 1.125rem;
+    color: rgb(var(--color-gold));
+}
+
+.reward-toast-desc {
+    font-size: 0.75rem;
+    color: rgb(var(--color-muted));
+    margin-top: 0.125rem;
+}
+
+
+/* --------------------------------------------------------------------------
+   13. BADGE TOASTS
+   -------------------------------------------------------------------------- */
+
+.badge-toast {
+    position: relative;
+    overflow: hidden;
+    border-radius: 0.75rem;
+    border: 1px solid rgb(var(--color-border));
+    background-color: rgb(var(--color-surface));
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+/* Rarity borders */
+.badge-toast--common   { border-color: #a8a29e; }
+.badge-toast--rare     { border-color: #3b82f6; }
+.badge-toast--epic     { border-color: #8b5cf6; }
+.badge-toast--legendary { border-color: rgb(var(--color-gold)); }
+
+.badge-toast-shine {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(105deg,
+        transparent 40%,
+        rgba(255 255 255 / 0.15) 45%,
+        rgba(255 255 255 / 0.25) 50%,
+        rgba(255 255 255 / 0.15) 55%,
+        transparent 60%);
+    background-size: 200% 100%;
+    animation: badge-shine 2s ease-in-out;
+    pointer-events: none;
+}
+@keyframes badge-shine {
+    0%   { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+.badge-toast-inner {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 1rem;
+    z-index: 1;
+}
+
+.badge-toast-icon {
+    font-size: 1.75rem;
+    flex-shrink: 0;
+    color: rgb(var(--color-accent));
+}
+.badge-toast--legendary .badge-toast-icon { color: rgb(var(--color-gold)); }
+.badge-toast--epic      .badge-toast-icon { color: #8b5cf6; }
+.badge-toast--rare      .badge-toast-icon { color: #3b82f6; }
+
+.badge-toast-eyebrow {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: rgb(var(--color-accent));
+}
+
+.badge-toast-title {
+    font-family: 'Oswald', sans-serif;
+    font-weight: 600;
+    font-size: 0.9375rem;
+    color: rgb(var(--color-text));
+}
+
+.badge-toast-desc {
+    font-size: 0.75rem;
+    color: rgb(var(--color-muted));
+    margin-top: 0.125rem;
+}
+
+.badge-rarity-pill {
+    display: inline-block;
+    margin-top: 0.375rem;
+    padding: 0.125rem 0.5rem;
+    border-radius: 9999px;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+.badge-rarity-pill--common    { background: #f5f5f4; color: #78716c; }
+.badge-rarity-pill--rare      { background: #eff6ff; color: #2563eb; }
+.badge-rarity-pill--epic      { background: #f5f3ff; color: #7c3aed; }
+.badge-rarity-pill--legendary { background: #fef9ee; color: #b8860b; }
+
+[data-theme="dark"] .badge-rarity-pill--common    { background: #292524; color: #a8a29e; }
+[data-theme="dark"] .badge-rarity-pill--rare      { background: #1e3a5f; color: #60a5fa; }
+[data-theme="dark"] .badge-rarity-pill--epic      { background: #2e1065; color: #a78bfa; }
+[data-theme="dark"] .badge-rarity-pill--legendary { background: #422006; color: #d4a843; }
+
+
+/* --------------------------------------------------------------------------
+   14. ACTIVITY TOASTS (bottom-left feed)
+   -------------------------------------------------------------------------- */
+
+.activity-toast {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.625rem 0.875rem;
+    border-radius: 0.5rem;
+    background-color: rgb(var(--color-surface));
+    border: 1px solid rgb(var(--color-border));
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    font-size: 0.8125rem;
+    text-decoration: none;
+    color: rgb(var(--color-text));
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+a.activity-toast:hover {
+    border-color: rgb(var(--color-accent));
+    box-shadow: 0 2px 8px rgba(var(--color-accent) / 0.1);
+}
+
+.activity-toast--nudge {
+    background: linear-gradient(135deg,
+        rgba(var(--color-accent) / 0.06),
+        rgba(var(--color-accent) / 0.02));
+    border-color: rgba(var(--color-accent) / 0.3);
+}
+
+.activity-toast-icon {
+    font-size: 1rem;
+    color: rgb(var(--color-accent));
+    flex-shrink: 0;
+}
+
+.activity-toast-message {
+    font-size: 0.8125rem;
+    color: rgb(var(--color-text));
+    line-height: 1.4;
+}
+
+
+/* --------------------------------------------------------------------------
+   15. SLIDE ANIMATIONS
+   -------------------------------------------------------------------------- */
+
+@keyframes slide-in-right {
+    from { transform: translateX(100%); opacity: 0; }
+    to   { transform: translateX(0);    opacity: 1; }
+}
+@keyframes slide-out-right {
+    from { transform: translateX(0);    opacity: 1; }
+    to   { transform: translateX(100%); opacity: 0; }
+}
+@keyframes slide-in-left {
+    from { transform: translateX(-100%); opacity: 0; }
+    to   { transform: translateX(0);     opacity: 1; }
+}
+@keyframes slide-out-left {
+    from { transform: translateX(0);     opacity: 1; }
+    to   { transform: translateX(-100%); opacity: 0; }
+}
+
+.animate-slide-in {
+    animation: slide-in-right 0.3s ease-out forwards;
+}
+.animate-slide-out {
+    animation: slide-out-right 0.25s ease-in forwards;
+}
+.animate-slide-in-left {
+    animation: slide-in-left 0.3s ease-out forwards;
+}
+.animate-slide-out-left {
+    animation: slide-out-left 0.25s ease-in forwards;
+}
+
+
+/* --------------------------------------------------------------------------
+   16. FOOTER
+   -------------------------------------------------------------------------- */
+
+.site-footer {
+    background-color: rgb(var(--color-surface));
+    border-top: 1px solid rgb(var(--color-border));
+    margin-top: auto;
+}

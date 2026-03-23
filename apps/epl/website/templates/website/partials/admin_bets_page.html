@@ -1,7 +1,7 @@
 {% load currency_tags %}
 
 {% for item in items %}
-<div class="flex items-center gap-3 py-2.5 text-sm border-t border-gray-700/50">
+<div class="flex items-center gap-3 py-2.5 text-sm border-t border-border/50">
     {% include "website/components/avatar.html" with avatar_user=item.user avatar_size="xs" %}
     <div class="min-w-0 flex-1">
         <div class="flex items-center gap-1.5 flex-wrap">
@@ -20,7 +20,7 @@
             <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium
                 {% if item.status == 'WON' %}bg-green-500/20 text-green-300
                 {% elif item.status == 'LOST' %}bg-red-500/20 text-red-300
-                {% elif item.status == 'VOID' %}bg-gray-500/20 text-gray-300
+                {% elif item.status == 'VOID' %}bg-gray-500/20 text-muted
                 {% else %}bg-yellow-500/20 text-yellow-300{% endif %}">
                 {{ item.status }}
             </span>

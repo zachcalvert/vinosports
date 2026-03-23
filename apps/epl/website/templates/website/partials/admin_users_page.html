@@ -1,5 +1,5 @@
 {% for item in items %}
-<div class="flex items-center gap-3 py-2.5 text-sm border-t border-gray-700/50">
+<div class="flex items-center gap-3 py-2.5 text-sm border-t border-border/50">
     {% include "website/components/avatar.html" with avatar_user=item avatar_size="xs" %}
     <div class="min-w-0 flex-1">
         <span class="truncate">{{ item.display_name|default:item.email }}</span>

@@ -1,13 +1,13 @@
-<div class="rounded-lg border border-gray-700 bg-surface p-4 sm:p-5">
+<div class="rounded-xl border border-border bg-surface p-4 sm:p-5 shadow-sm">
     <div class="flex items-center justify-between mb-4">
-        <h3 class="text-sm font-semibold text-white">League Table</h3>
+        <h3 class="text-sm font-semibold">League Table</h3>
         <a href="{% url 'matches:table' %}" class="text-xs text-accent hover:text-accent/80 transition-colors">View full table</a>
     </div>
     {% if standings %}
     <div class="overflow-x-auto">
         <table class="w-full text-xs">
             <thead>
-                <tr class="border-b border-gray-600 text-muted uppercase tracking-wider">
+                <tr class="border-b border-border text-muted uppercase tracking-wider">
                     <th class="px-2 py-2 text-left">Pos</th>
                     <th class="px-2 py-2 text-left">Team</th>
                     <th class="px-2 py-2 text-center">P</th>
@@ -16,10 +16,10 @@
             </thead>
             <tbody>
                 {% for standing in standings %}
-                <tr class="border-b border-gray-700/50 hover:bg-surface/50
+                <tr class="border-b border-border/50 hover:bg-surface/50
                     {% if standing.position <= 4 %}bg-accent/5{% elif standing.position >= 18 %}bg-danger/5{% endif %}">
                     <td class="px-2 py-2 font-medium
-                        {% if standing.position <= 4 %}text-accent{% elif standing.position >= 18 %}text-danger{% else %}text-gray-300{% endif %}">
+                        {% if standing.position <= 4 %}text-accent{% elif standing.position >= 18 %}text-danger{% else %}text-muted{% endif %}">
                         {{ standing.position }}
                     </td>
                     <td class="px-2 py-2">
@@ -27,11 +27,11 @@
                             {% if standing.team.crest_url %}
                                 <img src="{{ standing.team.crest_url }}" alt="" class="w-4 h-4 object-contain flex-shrink-0">
                             {% endif %}
-                            <span class="font-medium text-gray-300 truncate">{{ standing.team.short_name|default:standing.team.name }}</span>
+                            <span class="font-medium truncate">{{ standing.team.short_name|default:standing.team.name }}</span>
                         </div>
                     </td>
-                    <td class="px-2 py-2 text-center text-gray-400">{{ standing.played }}</td>
-                    <td class="px-2 py-2 text-center font-bold text-white">{{ standing.points }}</td>
+                    <td class="px-2 py-2 text-center text-muted">{{ standing.played }}</td>
+                    <td class="px-2 py-2 text-center font-bold">{{ standing.points }}</td>
                 </tr>
                 {% endfor %}
             </tbody>

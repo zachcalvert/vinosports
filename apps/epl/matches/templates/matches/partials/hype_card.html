@@ -9,16 +9,16 @@ Context expected:
   away_standing  — Standing instance or None
 {% endcomment %}
 
-<div class="rounded-lg border border-gray-700 bg-surface overflow-hidden">
+<div class="rounded-xl border border-border bg-surface overflow-hidden">
     <!-- Header -->
-    <div class="px-5 py-3 border-b border-gray-700 flex items-center justify-between">
+    <div class="px-5 py-3 border-b border-border flex items-center justify-between">
         <h3 class="text-xs font-semibold uppercase tracking-widest text-accent">Match Preview</h3>
         {% if match_stats.fetched_at %}
             <span class="text-xs text-muted">Stats via football-data.org</span>
         {% endif %}
     </div>
 
-    <div class="divide-y divide-gray-700">
+    <div class="divide-y divide-border">
         {% include "matches/partials/_section_form_guide.html" %}
         {% include "matches/partials/community_sentiment.html" %}
     </div><!-- /divide-y -->
