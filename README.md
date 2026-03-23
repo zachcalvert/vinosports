@@ -34,42 +34,62 @@ See [docs/0000-INITIAL_VISION.md](docs/0000-INITIAL_VISION.md) for the full arch
 git clone https://github.com/zachcalvert/vinosports.git
 cd vinosports
 
-# Build and start everything
-docker compose up --build
+# Copy env template and fill in API keys
+cp .env.example .env
 
-# In another terminal, run migrations
-docker compose run --rm epl-web python manage.py migrate --noinput
-docker compose run --rm nba-web python manage.py migrate --noinput
+# Build and start everything
+make up
+
+# Run migrations (both leagues)
+make migrate
 
 # Create a superuser
 docker compose run --rm epl-web python manage.py createsuperuser
+
+# Populate EPL data
+make seed
 ```
 
 The EPL app is at [localhost:8000](http://localhost:8000), NBA at [localhost:8001](http://localhost:8001).
 
 ### Environment Variables
 
-Create a `.env` file in the repo root (git-ignored):
+Create a `.env` file in the repo root (git-ignored) or copy from `.env.example`:
 
 ```bash
 FOOTBALL_DATA_API_KEY=your-key-here
 ANTHROPIC_API_KEY=your-key-here  # For bot comment generation
 ```
 
+### Common Commands
+
+A `Makefile` wraps the most-used workflows:
+
+| Command | Description |
+|---------|-------------|
+| `make up` | Build and start all services |
+| `make down` | Stop all services |
+| `make restart` | Rebuild and restart |
+| `make logs` | Tail all service logs |
+| `make migrate` | Run migrations for both leagues |
+| `make seed` | Populate EPL data (teams, fixtures, standings, odds) |
+| `make shell-epl` | Shell into the EPL container |
+| `make shell-nba` | Shell into the NBA container |
+| `make lint` | Run ruff check + format |
+| `make test` | Run all test suites |
+| `make test-epl` | Run EPL tests only |
+| `make test-nba` | Run NBA tests only |
+| `make test-core` | Run vinosports-core tests only |
+
+### Hot Reload
+
+Docker Compose mounts your local source code into all containers. Web services run Django's `runserver` in dev mode, so Python file changes trigger an automatic restart — no rebuild needed. Worker and beat services also mount source code but need a manual container restart to pick up changes.
+
+Dockerfiles retain Daphne as the production server; the `runserver` override is only in `docker-compose.yml`.
+
 ### Populating Data
 
-See [docs/0002-DATA_POPULATION.md](docs/0002-DATA_POPULATION.md) for the full guide. The short version:
-
-```bash
-docker compose run --rm epl-web python manage.py shell -c "
-from matches.tasks import fetch_teams, fetch_fixtures, fetch_standings
-fetch_teams()
-fetch_fixtures()
-fetch_standings()
-from betting.tasks import generate_odds
-generate_odds()
-"
-```
+See [docs/0002-DATA_POPULATION.md](docs/0002-DATA_POPULATION.md) for the full guide. The short version is `make seed`.
 
 ### Setting Up Bots
 
@@ -81,10 +101,10 @@ See [docs/0003-BOT_SETUP.md](docs/0003-BOT_SETUP.md) for the full guide.
 |---------|------|-------------|
 | `db` | 5432 | PostgreSQL (shared by all leagues) |
 | `redis` | 6379 | Redis (Celery broker + Channels layer) |
-| `epl-web` | 8000 | EPL Daphne server (HTTP + WebSocket) |
+| `epl-web` | 8000 | EPL dev server (auto-reload) |
 | `epl-worker` | — | EPL Celery worker |
 | `epl-beat` | — | EPL Celery beat scheduler |
-| `nba-web` | 8001 | NBA Daphne server |
+| `nba-web` | 8001 | NBA dev server (auto-reload) |
 | `nba-worker` | — | NBA Celery worker |
 | `nba-beat` | — | NBA Celery beat scheduler |
 
@@ -116,14 +136,10 @@ apps/nba/tests/                     # NBA-specific: spread/total settlement, API
 ### Running Tests
 
 ```bash
-# vinosports-core tests
-docker compose run --rm epl-web python -m pytest packages/vinosports-core/tests/
-
-# EPL tests
-docker compose run --rm epl-web python -m pytest
-
-# NBA tests
-docker compose run --rm nba-web python -m pytest
+make test          # All suites
+make test-epl      # EPL tests only
+make test-nba      # NBA tests only
+make test-core     # vinosports-core tests only
 ```
 
 ### Test Guidelines
@@ -142,6 +158,20 @@ Tests run automatically via GitHub Actions with path-based triggers:
 - Changes to `packages/vinosports-core/` trigger **all three** test suites
 - Changes to `apps/epl/` trigger only the EPL + core suites
 - Changes to `apps/nba/` trigger only the NBA + core suites
+
+## Linting
+
+[Ruff](https://docs.astral.sh/ruff/) handles both linting and formatting. Configuration lives in the root `pyproject.toml` (rules: `E`, `F`, `I`; line length not enforced; migrations excluded).
+
+```bash
+make lint    # ruff check --fix + ruff format
+```
+
+A pre-commit hook runs ruff automatically on every commit. Install it with:
+
+```bash
+pre-commit install
+```
 
 ## Contributing
 
