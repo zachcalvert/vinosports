@@ -9,6 +9,9 @@ x-epl-build: &epl-build
   build:
     context: .
     dockerfile: apps/epl/Dockerfile
+  env_file:
+    - path: .env
+      required: false
   environment:
     <<: *common-env
     DJANGO_SETTINGS_MODULE: config.settings
@@ -27,6 +30,9 @@ x-nba-build: &nba-build
   build:
     context: .
     dockerfile: apps/nba/Dockerfile
+  env_file:
+    - path: .env
+      required: false
   environment:
     <<: *common-env
     DJANGO_SETTINGS_MODULE: config.settings
