@@ -27,33 +27,42 @@ logger = logging.getLogger(__name__)
 MAX_REPLIES_PER_MATCH = 4
 
 # Which bots are likely to reply to which — email -> list of emails they have beef with.
-# Homer bots are handled dynamically (reply when their team is mentioned).
+# Homer bots are also handled dynamically (reply when their team is mentioned).
 BOT_REPLY_AFFINITIES = {
-    "valuehunter@bots.eplbets.local": [
-        "chaoscharlie@bots.eplbets.local",  # process vs vibes
-        "allinalice@bots.eplbets.local",  # EV vs YOLO
+    "valuehunter@bots.eplbets.local": [  # hedgefund_fc
+        "chaoscharlie@bots.eplbets.local",  # data vs vibes (jawn_fc)
+        "parlaypete@bots.eplbets.local",  # models vs pub accas (BetslipBarry)
     ],
-    "frontrunner@bots.eplbets.local": [
-        "underdog@bots.eplbets.local",  # chalk vs heart
+    "chaoscharlie@bots.eplbets.local": [  # jawn_fc
+        "valuehunter@bots.eplbets.local",  # vibes vs spreadsheets (hedgefund_fc)
+        "underdog@bots.eplbets.local",  # chaos vs tactics (DerTaktiker)
     ],
-    "underdog@bots.eplbets.local": [
-        "frontrunner@bots.eplbets.local",  # mutual disdain
-        "allinalice@bots.eplbets.local",  # "wow you backed City"
+    "underdog@bots.eplbets.local": [  # DerTaktiker
+        "chaoscharlie@bots.eplbets.local",  # tactical snobbery vs American chaos (jawn_fc)
+        "mancity-homer@bots.eplbets.local",  # German purity vs oil money (oil_money_fc)
     ],
-    "parlaypete@bots.eplbets.local": [
-        "allinalice@bots.eplbets.local",  # single bet resentment
-        "frontrunner@bots.eplbets.local",  # "congrats on your boring bet"
+    "parlaypete@bots.eplbets.local": [  # BetslipBarry
+        "valuehunter@bots.eplbets.local",  # working class vs posh (hedgefund_fc)
     ],
-    "chaoscharlie@bots.eplbets.local": [
-        "valuehunter@bots.eplbets.local",  # suspicious of the stats guy
+    "liverpool-homer@bots.eplbets.local": [  # never_walk_alone
+        "manutd-homer@bots.eplbets.local",  # Liverpool vs United (GlazersOut99)
+        "everton-homer@bots.eplbets.local",  # Merseyside derby (EvertonTilIDie)
     ],
-    "drawdoctor@bots.eplbets.local": [
-        "frontrunner@bots.eplbets.local",  # dismissive of certainty
-        "allinalice@bots.eplbets.local",  # dismissive of YOLO
+    "manutd-homer@bots.eplbets.local": [  # GlazersOut99
+        "liverpool-homer@bots.eplbets.local",  # United vs Liverpool (never_walk_alone)
+        "mancity-homer@bots.eplbets.local",  # Manchester derby (oil_money_fc)
     ],
-    "allinalice@bots.eplbets.local": [
-        "valuehunter@bots.eplbets.local",  # hates the process talk
-        "drawdoctor@bots.eplbets.local",  # boring draws are cowardice
+    "mancity-homer@bots.eplbets.local": [  # oil_money_fc
+        "manutd-homer@bots.eplbets.local",  # smugness at United (GlazersOut99)
+        "spurs-homer@bots.eplbets.local",  # success vs hope (spursy_forever)
+    ],
+    "spurs-homer@bots.eplbets.local": [  # spursy_forever
+        "mancity-homer@bots.eplbets.local",  # jealousy (oil_money_fc)
+        "everton-homer@bots.eplbets.local",  # shared suffering (EvertonTilIDie)
+    ],
+    "everton-homer@bots.eplbets.local": [  # EvertonTilIDie
+        "liverpool-homer@bots.eplbets.local",  # Merseyside seething (never_walk_alone)
+        "spurs-homer@bots.eplbets.local",  # who suffers more (spursy_forever)
     ],
 }
 
