@@ -135,7 +135,7 @@ CELERY_TIMEZONE = TIME_ZONE
 # Beat Schedule
 # - NBA games are daily (Oct-Apr), typically 7pm-1am ET
 # - Live score window: 6pm-2am ET daily
-# - Odds fetched 6x daily from The Odds API
+# - Odds generated locally every 10 minutes from standings data
 CELERY_BEAT_SCHEDULE = {
     # --- Data ingestion ---
     "fetch-teams-monthly": {
@@ -159,9 +159,9 @@ CELERY_BEAT_SCHEDULE = {
         "schedule": crontab(minute="*/2", hour="18-23,0-1"),
     },
     # --- Odds ---
-    "fetch-odds-6x-daily": {
-        "task": "betting.tasks.fetch_odds",
-        "schedule": crontab(hour="6,10,14,17,19,22", minute=0),
+    "generate-odds-10m": {
+        "task": "betting.tasks.generate_odds",
+        "schedule": timedelta(minutes=10),
     },
     # --- Settlement ---
     "settle-pending-bets-5m": {

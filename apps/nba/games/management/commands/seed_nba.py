@@ -41,11 +41,17 @@ class Command(BaseCommand):
             action="store_true",
             help="Only sync teams.",
         )
+        parser.add_argument(
+            "--skip-odds",
+            action="store_true",
+            help="Skip house odds generation.",
+        )
 
     def handle(self, *args, **options):
         offline = options["offline"]
         season = options["season"] or self._current_season()
         teams_only = options["teams_only"]
+        skip_odds = options["skip_odds"]
 
         self.stdout.write(
             self.style.MIGRATE_HEADING(
@@ -57,6 +63,9 @@ class Command(BaseCommand):
             self._seed_offline(season, teams_only)
         else:
             self._seed_live(season, teams_only)
+
+        if not teams_only and not skip_odds:
+            self._generate_odds(season)
 
     def _seed_offline(self, season: int, teams_only: bool):
         from games.models import Team
@@ -114,6 +123,26 @@ class Command(BaseCommand):
         count = sync_standings(season)
         self.stdout.write(
             self.style.SUCCESS(f"  Standings: {count} synced (season={season})")
+        )
+
+    def _generate_odds(self, season: int):
+        from betting.odds_engine import generate_all_upcoming_odds
+
+        from games.models import Odds
+
+        self.stdout.write("  Generating house odds...")
+        results = generate_all_upcoming_odds(season)
+        count = 0
+        for r in results:
+            game = r.pop("game")
+            Odds.objects.update_or_create(
+                game=game,
+                bookmaker="House",
+                defaults={**r, "fetched_at": timezone.now()},
+            )
+            count += 1
+        self.stdout.write(
+            self.style.SUCCESS(f"  Odds: {count} games (season={season})")
         )
 
     def _current_season(self) -> int:
