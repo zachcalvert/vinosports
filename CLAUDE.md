@@ -15,6 +15,7 @@ packages/vinosports-core/src/vinosports/   # Shared pip-installable package
   discussions/   # AbstractComment
   activity/      # AbstractActivityEvent
 
+apps/hub/        # Hub — central homepage + global account settings (no models, reads from core)
 apps/epl/        # EPL — fully featured (matches, betting, bots, discussions, website, etc.)
 apps/nba/        # NBA — skeleton (models defined, no views/templates yet)
 ```
@@ -24,7 +25,8 @@ apps/nba/        # NBA — skeleton (models defined, no views/templates yet)
 - **Concrete models** in core: User, UserBalance, Badge, Challenge, Reward (identical across sports)
 - **Abstract models** in core: BetSlip, Parlay, Comment, BotProfile (sport-specific fields added in league apps)
 - **App labels**: Core apps use simple labels (`users`, `betting`). League apps use prefixed labels (`epl_betting`, `nba_betting`) to avoid collisions
-- **Single shared DB**: Both leagues share one PostgreSQL instance. One user account + balance works across all leagues
+- **Single shared DB**: All apps (hub + leagues) share one PostgreSQL instance. One user account + balance works across all leagues
+- **Hub as entry point**: `apps/hub/` is the central homepage and global account manager. No models — reads User/UserBalance from core. League apps handle league-specific settings (avatar, badges, stats)
 - **HTMX frontend**: Server-rendered templates with HTMX for interactivity. No JS framework
 
 ## Running Locally
@@ -41,6 +43,7 @@ make seed
 ```
 
 ### Ports
+- Hub: localhost:7999
 - EPL: localhost:8000
 - NBA: localhost:8001
 - PostgreSQL: 5432
@@ -106,3 +109,4 @@ See `docs/` for architecture decisions and setup guides:
 - `0002-DATA_POPULATION.md` — Data ingestion
 - `0003-BOT_SETUP.md` — Bot configuration
 - `0004-DESIGN_SYSTEM.md` — Design system
+- `0005-HUB_APPLICATION.md` — Hub architecture and global account management

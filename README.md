@@ -12,11 +12,14 @@ Each league (EPL, NBA, and eventually NFL, World Cup, March Madness) is a standa
 ```
 vinosports/
 ├── packages/vinosports-core/    # Shared Django apps (pip-installable)
+├── apps/hub/                     # Central homepage + global account settings
 ├── apps/epl/                     # EPL betting simulation (fully ported)
 ├── apps/nba/                     # NBA betting simulation (skeleton)
 ├── docker-compose.yml            # Local dev stack
 └── docs/                         # Architecture decisions and plans
 ```
+
+The **hub** (`apps/hub/`) is the top-level entry point. It provides a league directory (EPL, NBA, NFL cards) and manages global account settings (display name, balance, currency). It has no models — it reads from vinosports-core's shared database. See [docs/0005-HUB_APPLICATION.md](docs/0005-HUB_APPLICATION.md) for details.
 
 See [docs/0000-INITIAL_VISION.md](docs/0000-INITIAL_VISION.md) for the full architectural rationale and [docs/0001-SCAFFOLDING_COMPLETE.md](docs/0001-SCAFFOLDING_COMPLETE.md) for what's been built.
 
@@ -50,7 +53,7 @@ docker compose run --rm epl-web python manage.py createsuperuser
 make seed
 ```
 
-The EPL app is at [localhost:8000](http://localhost:8000), NBA at [localhost:8001](http://localhost:8001).
+The hub is at [localhost:7999](http://localhost:7999), EPL at [localhost:8000](http://localhost:8000), NBA at [localhost:8001](http://localhost:8001).
 
 ### Environment Variables
 
@@ -101,6 +104,7 @@ See [docs/0003-BOT_SETUP.md](docs/0003-BOT_SETUP.md) for the full guide.
 |---------|------|-------------|
 | `db` | 5432 | PostgreSQL (shared by all leagues) |
 | `redis` | 6379 | Redis (Celery broker + Channels layer) |
+| `hub-web` | 7999 | Hub homepage + global account settings |
 | `epl-web` | 8000 | EPL dev server (auto-reload) |
 | `epl-worker` | — | EPL Celery worker |
 | `epl-beat` | — | EPL Celery beat scheduler |
