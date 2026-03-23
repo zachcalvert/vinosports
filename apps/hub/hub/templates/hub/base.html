@@ -1,0 +1,64 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Vino Sports{% endblock %}</title>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        surface: 'rgb(var(--color-surface) / <alpha-value>)',
+                        dark: 'rgb(var(--color-dark) / <alpha-value>)',
+                        accent: 'rgb(var(--color-accent) / <alpha-value>)',
+                        'accent-light': 'rgb(var(--color-accent-light) / <alpha-value>)',
+                        danger: '#DC2626',
+                        warning: '#D97706',
+                        positive: '#16A34A',
+                        muted: 'rgb(var(--color-muted) / <alpha-value>)',
+                        gold: 'rgb(var(--color-gold) / <alpha-value>)',
+                        border: 'rgb(var(--color-border) / <alpha-value>)',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Oswald:wght@400;500;600;700&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <!-- Phosphor Icons (duotone) -->
+    <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/duotone/style.css">
+
+    <!-- Custom styles -->
+    <link rel="stylesheet" href="{% static 'hub/css/styles.css' %}">
+
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        h1, h2, h3, h4, h5, h6 { font-family: 'Oswald', sans-serif; }
+        .font-mono { font-family: 'Roboto Mono', 'Courier New', monospace; }
+    </style>
+
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="h-full theme-page" data-theme="dark">
+    <div class="min-h-full flex flex-col">
+        {% include "hub/components/navbar.html" %}
+
+        <main class="flex-1">
+            {% block content %}{% endblock %}
+        </main>
+
+        {% include "hub/components/footer.html" %}
+    </div>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

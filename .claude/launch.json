@@ -6,6 +6,13 @@
       "runtimeExecutable": "docker",
       "runtimeArgs": ["compose", "up", "--build", "--no-deps", "-d", "epl-web"],
       "port": 8000
+    },
+    {
+      "name": "hub",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": ["-c", "docker compose up --build -d hub-web && sleep 5 && docker compose logs -f hub-web"],
+      "port": 7999,
+      "autoPort": false
     }
   ]
 }

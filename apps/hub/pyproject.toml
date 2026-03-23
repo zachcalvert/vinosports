@@ -1,0 +1,14 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "vinosports-hub"
+version = "0.1.0"
+description = "Vinosports homepage — league hub"
+requires-python = ">=3.11"
+dependencies = [
+    "vinosports-core",
+    "psycopg2-binary>=2.9",
+    "whitenoise>=6.7",
+]

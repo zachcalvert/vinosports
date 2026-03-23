@@ -5,14 +5,16 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex items-center justify-between h-16">
             <!-- Logo -->
-            <div class="flex items-center">
-                <a href="{% url 'matches:dashboard' %}" class="flex items-center gap-2.5">
+            <div class="flex items-center gap-3">
+                <a href="{% url 'matches:dashboard' %}" class="flex items-center">
                     <img
-                        src="{% static 'website/epl.png' %}"
-                        alt="EPL Bets logo"
-                        class="h-8 w-8 sm:h-9 sm:w-9 shrink-0"
+                        src="{% static 'img/vinosports_logo.png' %}"
+                        alt="Vino Sports"
+                        class="h-8 sm:h-9 w-auto shrink-0"
                     >
-                    <span class="nav-logo-text text-2xl font-bold" style="font-family: 'Oswald', sans-serif;">EPL BETS</span>
+                </a>
+                <a href="{{ hub_url }}" class="text-xs text-muted hover:text-white transition-colors" title="All Leagues">
+                    All Leagues
                 </a>
             </div>
 

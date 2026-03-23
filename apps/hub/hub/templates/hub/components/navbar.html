@@ -1,0 +1,35 @@
+{% load static %}
+
+<nav class="site-nav">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between h-16">
+            <!-- Logo -->
+            <div class="flex items-center">
+                <a href="{% url 'hub:home' %}" class="flex items-center">
+                    <img
+                        src="{% static 'hub/img/vinosports_logo.png' %}"
+                        alt="Vino Sports"
+                        class="h-8 sm:h-9 w-auto shrink-0"
+                    >
+                </a>
+            </div>
+
+            <!-- Auth -->
+            <div class="flex items-center gap-3">
+                {% if user.is_authenticated %}
+                <span class="text-sm text-muted">{{ user.display_name }}</span>
+                <span class="font-mono text-sm text-accent font-semibold">{{ user.balance.balance|floatformat:0 }} coins</span>
+                {% else %}
+                <a href="{{ leagues.epl.url }}/login/"
+                   class="nav-action-link">
+                    Log In
+                </a>
+                <a href="{{ leagues.epl.url }}/signup/"
+                   class="px-3 py-1.5 rounded-md text-sm font-medium bg-accent text-white hover:bg-accent/90 transition-colors">
+                    Sign Up
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</nav>

@@ -26,6 +26,27 @@ x-epl-build: &epl-build
     redis:
       condition: service_started
 
+x-hub-build: &hub-build
+  build:
+    context: .
+    dockerfile: apps/hub/Dockerfile
+  env_file:
+    - path: .env
+      required: false
+  environment:
+    <<: *common-env
+    DJANGO_SETTINGS_MODULE: config.settings
+    DB_NAME: vinosports
+    DB_USER: vinosports
+    DB_PASSWORD: vinosports
+    DB_HOST: db
+    DB_PORT: "5432"
+    EPL_URL: http://localhost:8000
+    NBA_URL: http://localhost:8001
+  depends_on:
+    db:
+      condition: service_healthy
+
 x-nba-build: &nba-build
   build:
     context: .
@@ -112,6 +133,16 @@ services:
     command: celery -A config beat -l info
     volumes:
       - ./apps/epl:/app
+      - ./packages/vinosports-core/src:/packages/vinosports-core/src
+
+  # --- Hub (Homepage) ---
+  hub-web:
+    <<: *hub-build
+    ports:
+      - "7999:8000"
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - ./apps/hub:/app
       - ./packages/vinosports-core/src:/packages/vinosports-core/src
 
   # --- NBA Services ---

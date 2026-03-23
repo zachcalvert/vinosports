@@ -63,6 +63,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "website.context_processors.hub_url",
                 "website.context_processors.theme",
                 "betting.context_processors.bankruptcy",
                 "betting.context_processors.parlay_slip",
@@ -139,11 +140,15 @@ CELERY_BEAT_SCHEDULE = {
     },
     "fetch-standings-3h-matchdays": {
         "task": "matches.tasks.fetch_standings",
-        "schedule": crontab(hour="0,3,6,9,12,15,18,21", minute=0, day_of_week="fri,sat,sun,mon"),
+        "schedule": crontab(
+            hour="0,3,6,9,12,15,18,21", minute=0, day_of_week="fri,sat,sun,mon"
+        ),
     },
     "fetch-live-scores-15m-on-matchdays": {
         "task": "matches.tasks.fetch_live_scores",
-        "schedule": crontab(minute="0,15,30,45", hour="11-23", day_of_week="fri,sat,sun,mon"),
+        "schedule": crontab(
+            minute="0,15,30,45", hour="11-23", day_of_week="fri,sat,sun,mon"
+        ),
     },
     "generate-odds-10m": {
         "task": "betting.tasks.generate_odds",
@@ -171,7 +176,9 @@ CELERY_BEAT_SCHEDULE = {
     },
     "generate-prematch-comments-2h-thu-sat": {
         "task": "bots.tasks.generate_prematch_comments",
-        "schedule": crontab(hour="8,10,12,14,16,18,20,22", minute=0, day_of_week="thu,fri,sat"),
+        "schedule": crontab(
+            hour="8,10,12,14,16,18,20,22", minute=0, day_of_week="thu,fri,sat"
+        ),
     },
     "generate-postmatch-comments-30m-matchdays": {
         "task": "bots.tasks.generate_postmatch_comments",
@@ -192,3 +199,6 @@ FOOTBALL_DATA_API_KEY = os.environ.get("FOOTBALL_DATA_API_KEY", "")
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
 API_TIMEOUT = 30
 CURRENT_SEASON = "2025"
+
+# Hub URL (for linking back to the homepage)
+HUB_URL = os.environ.get("HUB_URL", "http://localhost:7999")

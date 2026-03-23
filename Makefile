@@ -1,4 +1,4 @@
-.PHONY: up down restart logs shell-epl shell-nba migrate migrate-epl migrate-nba seed lint format test
+.PHONY: up down restart logs shell-epl shell-nba shell-hub migrate migrate-epl migrate-nba seed lint format test
 
 up:
 	docker compose up --build -d
@@ -17,6 +17,9 @@ shell-epl:
 
 shell-nba:
 	docker compose exec nba-web bash
+
+shell-hub:
+	docker compose exec hub-web bash
 
 migrate: migrate-epl migrate-nba
 
