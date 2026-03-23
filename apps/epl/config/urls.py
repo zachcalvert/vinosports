@@ -15,6 +15,7 @@ urlpatterns = [
     path("profile/<slug:slug>/", ProfileView.as_view(), name="profile"),
     path("", include("challenges.urls")),
     path("", include("discussions.urls")),
+    path("activity/", include("activity.urls")),
     path("", include("website.urls")),
     path("", include("matches.urls")),
 ]
