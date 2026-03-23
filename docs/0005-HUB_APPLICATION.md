@@ -11,23 +11,28 @@ The hub (`apps/hub/`) is the centralized entry point for vinosports. It runs as 
 
 ## Architecture
 
-The hub is a thin Django project. It has no models of its own — it reads from vinosports-core's `User` and `UserBalance` tables in the shared PostgreSQL database.
+The hub is a Django project that owns global user management. It reads from vinosports-core's `User` and `UserBalance` tables and defines its own `SiteSettings` model for registration caps.
 
 ```
 apps/hub/
 ├── config/             # Django settings, urls, wsgi
-│   ├── settings.py     # LEAGUE_URLS registry, LOGIN_URL redirect
+│   ├── settings.py     # LEAGUE_URLS registry, LOGIN_URL
 │   ├── urls.py
 │   └── wsgi.py
 ├── hub/                # The hub Django app
+│   ├── admin.py                # UserAdmin, SiteSettingsAdmin
 │   ├── context_processors.py   # Injects league URLs + hub URL into all templates
-│   ├── forms.py                # DisplayNameForm, CurrencyForm
-│   ├── views.py                # HomeView, AccountView, CurrencyUpdateView
+│   ├── forms.py                # DisplayNameForm, CurrencyForm, SignupForm, LoginForm
+│   ├── models.py               # SiteSettings (registration caps, singleton)
+│   ├── views.py                # HomeView, SignupView, LoginView, LogoutView, AccountView
+│   ├── migrations/
 │   ├── templatetags/
 │   │   └── currency_tags.py    # Currency formatting filters ({{ amount|currency:user }})
 │   ├── templates/hub/
 │   │   ├── base.html           # Shared layout (navbar, footer, Tailwind, Oswald font)
 │   │   ├── home.html           # League directory cards
+│   │   ├── signup.html         # Registration form
+│   │   ├── login.html          # Login form
 │   │   ├── account.html        # Global account settings
 │   │   └── components/
 │   │       ├── navbar.html     # Auth-aware navbar (display name + balance when logged in)
@@ -42,13 +47,15 @@ apps/hub/
 
 ## Key Design Decisions
 
-### No models, no migrations
+### SiteSettings model
 
-The hub installs `vinosports.core`, `vinosports.users`, and `vinosports.betting` from the shared package but defines no models itself. It reads user profiles and balances directly from the shared DB. This keeps it lightweight and ensures there's exactly one source of truth for account data.
+The hub's only model is `SiteSettings` — a singleton (`pk=1`) that controls registration caps (`max_users`) and the closed-registration message. Uses `select_for_update()` inside `transaction.atomic()` to prevent race conditions during signup.
 
-### No auth forms
+### Hub owns auth
 
-Login and signup are handled by the league apps (currently EPL at `/login/` and `/signup/`). The hub's `LOGIN_URL` redirects unauthenticated users to EPL's login page. Sessions are shared across all apps via the same `SECRET_KEY` and `SESSION_COOKIE_DOMAIN`.
+Signup, login, and logout all live in the hub. League apps redirect their `/login/` and `/signup/` URLs to the hub. Each league keeps a thin local `LogoutView` because CSRF tokens cannot be validated cross-port (different Origin headers). Sessions are shared across all apps via the same `SECRET_KEY` and `django_session` table — login on hub:7999 authenticates on epl:8000 and nba:8001.
+
+See `docs/0007-CENTRALIZED_AUTH.md` for the full migration rationale.
 
 ### League registry in settings
 

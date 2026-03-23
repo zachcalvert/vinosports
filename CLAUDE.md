@@ -15,7 +15,7 @@ packages/vinosports-core/src/vinosports/   # Shared pip-installable package
   discussions/   # AbstractComment
   activity/      # AbstractActivityEvent
 
-apps/hub/        # Hub — central homepage + global account settings (no models, reads from core)
+apps/hub/        # Hub — central homepage, auth (signup/login/logout), SiteSettings, global account management
 apps/epl/        # EPL — fully featured (matches, betting, bots, discussions, website, etc.)
 apps/nba/        # NBA — skeleton (models defined, no views/templates yet)
 ```
@@ -26,7 +26,9 @@ apps/nba/        # NBA — skeleton (models defined, no views/templates yet)
 - **Abstract models** in core: BetSlip, Parlay, Comment, BotProfile (sport-specific fields added in league apps)
 - **App labels**: Core apps use simple labels (`users`, `betting`). League apps use prefixed labels (`epl_betting`, `nba_betting`) to avoid collisions
 - **Single shared DB**: All apps (hub + leagues) share one PostgreSQL instance. One user account + balance works across all leagues
-- **Hub as entry point**: `apps/hub/` is the central homepage and global account manager. No models — reads User/UserBalance from core. League apps handle league-specific settings (avatar, badges, stats)
+- **Hub owns auth**: Signup, login, logout live in hub. League apps redirect `/login/` and `/signup/` to hub. Each league keeps a thin local `LogoutView` (CSRF tokens can't cross ports). Sessions are shared across all apps (same DB, same `SECRET_KEY`, same `sessionid` cookie on localhost)
+- **Hub as entry point**: `apps/hub/` is the central homepage, auth provider, and global account manager. Owns `SiteSettings` (registration caps) and `UserAdmin`. League apps handle league-specific settings (avatar, badges, stats)
+- **Cross-app sessions**: All apps share one `django_session` table and `SECRET_KEY`. Cookies on `localhost` are shared across ports, so login on hub:7999 authenticates on epl:8000 and nba:8001. Logout from any app logs out everywhere. CSRF tokens do NOT work cross-port — keep logout as a local POST in each app
 - **HTMX frontend**: Server-rendered templates with HTMX for interactivity. No JS framework
 
 ## Running Locally
@@ -62,6 +64,7 @@ make down              # docker compose down
 make logs              # docker compose logs -f
 make shell-epl         # exec into EPL container
 make shell-nba         # exec into NBA container
+# Hub: docker compose exec hub-web python manage.py <cmd>
 make migrate           # run migrations for both leagues
 make seed              # populate EPL data
 make lint              # ruff check + format
@@ -111,3 +114,4 @@ See `docs/` for architecture decisions and setup guides:
 - `0003-BOT_SETUP.md` — Bot configuration
 - `0004-DESIGN_SYSTEM.md` — Design system
 - `0005-HUB_APPLICATION.md` — Hub architecture and global account management
+- `0007-CENTRALIZED_AUTH.md` — Auth centralization into hub
