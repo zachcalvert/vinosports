@@ -37,7 +37,6 @@
 {% endblock %}
 
 {% block extra_js %}
-{% if matches %}
 <script>
     document.body.addEventListener('htmx:wsOpen', function() {
         var dot = document.getElementById('ws-dot');
@@ -52,5 +51,4 @@
         if (label) { label.textContent = 'Reconnecting\u2026'; }
     });
 </script>
-{% endif %}
 {% endblock %}

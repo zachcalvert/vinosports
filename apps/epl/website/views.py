@@ -423,12 +423,12 @@ class AdminDashboardView(SuperuserRequiredMixin, TemplateView):
         ctx = super().get_context_data(**kwargs)
         User = get_user_model()
         ctx["total_users"] = User.objects.count()
-        ctx["active_bets"] = BetSlip.objects.filter(status=BetSlip.Status.PENDING).count()
-        ctx["active_parlays"] = Parlay.objects.filter(status=Parlay.Status.PENDING).count()
+        ctx["active_bets"] = BetSlip.objects.filter(status="PENDING").count()
+        ctx["active_parlays"] = Parlay.objects.filter(status="PENDING").count()
         ctx["total_comments"] = Comment.objects.filter(is_deleted=False).count()
         ctx["total_bets_all_time"] = BetSlip.objects.count() + Parlay.objects.count()
         ctx["total_in_play"] = (
-            BetSlip.objects.filter(status=BetSlip.Status.PENDING).aggregate(
+            BetSlip.objects.filter(status="PENDING").aggregate(
                 total=Sum("stake")
             )["total"]
             or 0
