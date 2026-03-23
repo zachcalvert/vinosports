@@ -125,7 +125,13 @@ CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
 CELERY_TIMEZONE = TIME_ZONE
 
+# Beat Schedule
+# - Data ingestion runs at off-peak UTC hours (3-5am)
+# - Live/matchday tasks scoped to Fri-Mon windows (typical EPL schedule)
+# - Interval tasks (odds, activity) run continuously
+# - Bot/challenge tasks on predictable daily/weekly cadence
 CELERY_BEAT_SCHEDULE = {
+    # --- Data ingestion ---
     "fetch-teams-monthly": {
         "task": "matches.tasks.fetch_teams",
         "schedule": crontab(hour=3, minute=0, day_of_month=1),
@@ -144,20 +150,20 @@ CELERY_BEAT_SCHEDULE = {
             hour="0,3,6,9,12,15,18,21", minute=0, day_of_week="fri,sat,sun,mon"
         ),
     },
-    "fetch-live-scores-15m-on-matchdays": {
+    "fetch-live-scores-5m-on-matchdays": {
         "task": "matches.tasks.fetch_live_scores",
-        "schedule": crontab(
-            minute="0,15,30,45", hour="11-23", day_of_week="fri,sat,sun,mon"
-        ),
-    },
-    "generate-odds-10m": {
-        "task": "betting.tasks.generate_odds",
-        "schedule": timedelta(minutes=10),
+        "schedule": crontab(minute="*/5", hour="11-23", day_of_week="fri,sat,sun,mon"),
     },
     "prefetch-hype-data-6h": {
         "task": "matches.tasks.prefetch_upcoming_hype_data",
         "schedule": timedelta(hours=6),
     },
+    # --- Odds ---
+    "generate-odds-10m": {
+        "task": "betting.tasks.generate_odds",
+        "schedule": timedelta(minutes=10),
+    },
+    # --- Challenges ---
     "rotate-daily-challenges": {
         "task": "challenges.tasks.rotate_daily_challenges",
         "schedule": crontab(hour=5, minute=0),
@@ -166,10 +172,11 @@ CELERY_BEAT_SCHEDULE = {
         "task": "challenges.tasks.rotate_weekly_challenges",
         "schedule": crontab(hour=4, minute=0, day_of_week="friday"),
     },
-    "expire-challenges-15m": {
+    "expire-challenges-30m": {
         "task": "challenges.tasks.expire_challenges",
-        "schedule": timedelta(minutes=15),
+        "schedule": timedelta(minutes=30),
     },
+    # --- Bots ---
     "run-bot-strategies-daily-thu-sat": {
         "task": "bots.tasks.run_bot_strategies",
         "schedule": crontab(hour=8, minute=0, day_of_week="thu,fri,sat"),
@@ -184,9 +191,10 @@ CELERY_BEAT_SCHEDULE = {
         "task": "bots.tasks.generate_postmatch_comments",
         "schedule": crontab(minute="0,30", hour="14-23", day_of_week="fri,sat,sun,mon"),
     },
+    # --- Activity feed ---
     "broadcast-activity-event-20s": {
         "task": "activity.tasks.broadcast_next_activity_event",
-        "schedule": 20.0,
+        "schedule": timedelta(seconds=20),
     },
     "cleanup-old-activity-events-daily": {
         "task": "activity.tasks.cleanup_old_activity_events",

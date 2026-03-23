@@ -103,7 +103,7 @@ ARCHITECTURE_COMPONENTS = {
             "Match, Team, Standing — core football data",
             "Odds — bookmaker odds snapshots",
             "BetSlip, UserBalance — betting state",
-            "Celery Beat schedule (django-celery-beat)",
+            "Celery Beat (code-based schedule)",
         ],
     },
     "celery": {
@@ -113,14 +113,14 @@ ARCHITECTURE_COMPONENTS = {
         "tech": [
             "Celery 5.x",
             "Celery Beat",
-            "django-celery-beat",
+            "celery[redis]",
             "httpx (async HTTP)",
         ],
         "pages": [
-            "fetch_fixtures — every 6 hours",
-            "fetch_standings — every 6 hours",
+            "fetch_fixtures — daily at 3am UTC",
+            "fetch_standings — midweek + 3h on matchdays",
             "generate_odds — every 10 minutes",
-            "fetch_live_scores — every 60s during matches",
+            "fetch_live_scores — every 5m on matchdays",
             "settle_bets — triggered on match completion",
         ],
     },
