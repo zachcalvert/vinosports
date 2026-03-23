@@ -1,0 +1,116 @@
+{% extends "website/base.html" %}
+{% block title %}My Bets{% endblock %}
+
+{% block content %}
+<h1 class="text-3xl font-bold mb-6">My Bets</h1>
+
+<!-- Tabs -->
+<div class="flex gap-1 mb-6 border-b border-border">
+    <button
+        class="px-4 py-2.5 text-sm font-medium border-b-2 transition-colors
+            {% if tab == 'pending' %}border-accent text-accent{% else %}border-transparent text-muted hover:text-accent{% endif %}"
+        hx-get="{% url 'betting:my_bets' %}?tab=pending"
+        hx-target="#bet-list"
+        hx-swap="outerHTML"
+        hx-push-url="{% url 'betting:my_bets' %}?tab=pending"
+        onclick="document.querySelectorAll('[data-tab-btn]').forEach(b => {b.classList.remove('border-accent','text-accent');b.classList.add('border-transparent','text-muted')});this.classList.remove('border-transparent','text-muted');this.classList.add('border-accent','text-accent')"
+        data-tab-btn
+    >
+        Pending
+    </button>
+    <button
+        class="px-4 py-2.5 text-sm font-medium border-b-2 transition-colors
+            {% if tab == 'won' %}border-accent text-accent{% else %}border-transparent text-muted hover:text-accent{% endif %}"
+        hx-get="{% url 'betting:my_bets' %}?tab=won"
+        hx-target="#bet-list"
+        hx-swap="outerHTML"
+        hx-push-url="{% url 'betting:my_bets' %}?tab=won"
+        onclick="document.querySelectorAll('[data-tab-btn]').forEach(b => {b.classList.remove('border-accent','text-accent');b.classList.add('border-transparent','text-muted')});this.classList.remove('border-transparent','text-muted');this.classList.add('border-accent','text-accent')"
+        data-tab-btn
+    >
+        Won
+    </button>
+    <button
+        class="px-4 py-2.5 text-sm font-medium border-b-2 transition-colors
+            {% if tab == 'lost' %}border-accent text-accent{% else %}border-transparent text-muted hover:text-accent{% endif %}"
+        hx-get="{% url 'betting:my_bets' %}?tab=lost"
+        hx-target="#bet-list"
+        hx-swap="outerHTML"
+        hx-push-url="{% url 'betting:my_bets' %}?tab=lost"
+        onclick="document.querySelectorAll('[data-tab-btn]').forEach(b => {b.classList.remove('border-accent','text-accent');b.classList.add('border-transparent','text-muted')});this.classList.remove('border-transparent','text-muted');this.classList.add('border-accent','text-accent')"
+        data-tab-btn
+    >
+        Lost
+    </button>
+</div>
+
+<!-- Bet list -->
+{% include "betting/partials/bet_list.html" %}
+
+<!-- Parlays -->
+{% if parlays %}
+<div class="mt-8">
+    <h2 class="text-xl font-bold mb-4">Parlays</h2>
+    <div class="space-y-3">
+        {% for parlay in parlays %}
+        <div class="bg-surface/50 rounded-lg border border-purple-500/30 p-4">
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-sm font-medium text-purple-300">Parlay &bull; {{ parlay.legs.count }} legs</span>
+                {% if parlay.status == "PENDING" %}
+                    <span class="inline-block px-2 py-0.5 rounded text-xs font-medium bg-warning/10 text-warning">Pending</span>
+                {% elif parlay.status == "WON" %}
+                    <span class="inline-block px-2 py-0.5 rounded text-xs font-medium bg-accent/10 text-accent">Won</span>
+                {% elif parlay.status == "LOST" %}
+                    <span class="inline-block px-2 py-0.5 rounded text-xs font-medium bg-danger/10 text-danger">Lost</span>
+                {% elif parlay.status == "VOID" %}
+                    <span class="inline-block px-2 py-0.5 rounded text-xs font-medium bg-gray-500/10 text-muted">Void</span>
+                {% endif %}
+            </div>
+            <div class="text-xs text-muted mb-3">{{ parlay.created_at|date:"d M H:i" }}</div>
+
+            <!-- Leg summary -->
+            <ul class="space-y-1 mb-3">
+                {% for leg in parlay.legs.all %}
+                <li class="flex items-center gap-2 text-xs">
+                    <span class="w-1.5 h-1.5 rounded-full shrink-0
+                        {% if leg.status == 'WON' %}bg-accent{% elif leg.status == 'LOST' %}bg-danger{% elif leg.status == 'VOID' %}bg-gray-500{% else %}bg-warning{% endif %}">
+                    </span>
+                    <span class="text-muted truncate">
+                        {{ leg.game.away_team.abbreviation }} @ {{ leg.game.home_team.abbreviation }}
+                        &middot;
+                        {{ leg.get_market_display }}
+                        &middot;
+                        {{ leg.get_selection_display }}
+                        {% if leg.line %}({{ leg.line }}){% endif %}
+                    </span>
+                    <span class="font-mono ml-auto shrink-0">
+                        {% if leg.odds_at_placement > 0 %}+{% endif %}{{ leg.odds_at_placement }}
+                    </span>
+                </li>
+                {% endfor %}
+            </ul>
+
+            <div class="grid grid-cols-3 gap-3 text-center">
+                <div>
+                    <div class="text-xs text-muted">Odds</div>
+                    <div class="font-mono text-sm text-muted">
+                        {% if parlay.combined_odds > 0 %}+{% endif %}{{ parlay.combined_odds }}
+                    </div>
+                </div>
+                <div>
+                    <div class="text-xs text-muted">Stake</div>
+                    <div class="font-mono text-sm">${{ parlay.stake }}</div>
+                </div>
+                <div>
+                    <div class="text-xs text-muted">Payout</div>
+                    <div class="font-mono text-sm {% if parlay.payout %}text-accent{% else %}text-muted{% endif %}">
+                        {% if parlay.payout != None %}${{ parlay.payout }}{% else %}&mdash;{% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+{% endblock %}

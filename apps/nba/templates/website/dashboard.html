@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — NBA Bets{% endblock %}
+
+{% block content %}
+<div class="mb-6 flex items-center justify-between">
+    <div>
+        <h1 class="text-3xl font-bold mb-1">Today's Games</h1>
+        <p class="text-sm text-muted">
+            {% if game_date %}
+                {{ game_date|date:"l, F j, Y" }}
+            {% else %}
+                NBA Schedule
+            {% endif %}
+        </p>
+    </div>
+    <div id="ws-status-container" class="flex items-center gap-2 text-xs text-muted">
+        <span class="ws-status disconnected" id="ws-dot"></span>
+        <span id="ws-label">Connecting&hellip;</span>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_24rem] gap-6 items-start">
+    <div class="order-2 xl:order-1" id="game-grid"
+         hx-ext="ws" ws-connect="/ws/live/dashboard/">
+
+        {# Live Games #}
+        {% if live_games %}
+        <div class="mb-8">
+            <div class="flex items-center gap-2 mb-3">
+                <span class="inline-block w-2 h-2 rounded-full bg-danger animate-pulse"></span>
+                <h2 class="text-lg font-bold uppercase tracking-wider">Live</h2>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="live-games">
+                {% for game in live_games %}
+                <a href="{% url 'games:game_detail' game.id_hash %}"
+                   class="block bg-surface rounded-lg border border-border p-4 live-game-card hover:border-accent transition-colors">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs text-danger font-semibold uppercase">{{ game.period_display }}</span>
+                        {% if game.arena %}
+                        <span class="text-xs text-muted">{{ game.arena }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <div class="flex-1">
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="font-semibold">{{ game.away_team }}</span>
+                                <span class="font-mono font-bold text-lg">{{ game.away_score }}</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="font-semibold">{{ game.home_team }}</span>
+                                <span class="font-mono font-bold text-lg">{{ game.home_score }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    {% if game.conference %}
+                    <div class="mt-2 text-xs text-muted">{{ game.conference }}</div>
+                    {% endif %}
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        {# Upcoming Games #}
+        {% if upcoming_games %}
+        <div class="mb-8">
+            <h2 class="text-lg font-bold uppercase tracking-wider mb-3">Upcoming</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="upcoming-games">
+                {% for game in upcoming_games %}
+                <a href="{% url 'games:game_detail' game.id_hash %}"
+                   class="block bg-surface rounded-lg border border-border p-4 hover:border-accent/50 transition-colors">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs text-accent font-semibold">
+                            <time class="local-time" datetime="{{ game.start_time|date:'c' }}">
+                                {{ game.start_time|date:"g:i A" }}
+                            </time>
+                        </span>
+                        {% if game.arena %}
+                        <span class="text-xs text-muted">{{ game.arena }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <div class="flex-1">
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="font-semibold">{{ game.away_team }}</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="font-semibold">{{ game.home_team }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    {% if game.conference %}
+                    <div class="mt-2 text-xs text-muted">{{ game.conference }}</div>
+                    {% endif %}
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        {# Final Games #}
+        {% if final_games %}
+        <div class="mb-8">
+            <h2 class="text-lg font-bold uppercase tracking-wider mb-3 text-muted">Final</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="final-games">
+                {% for game in final_games %}
+                <a href="{% url 'games:game_detail' game.id_hash %}"
+                   class="block bg-surface rounded-lg border border-border p-4 opacity-75 hover:opacity-100 hover:border-accent/30 transition-all">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs text-muted font-semibold uppercase">Final</span>
+                        {% if game.arena %}
+                        <span class="text-xs text-muted">{{ game.arena }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <div class="flex-1">
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="font-semibold {% if game.away_score > game.home_score %}text-accent{% endif %}">{{ game.away_team }}</span>
+                                <span class="font-mono font-bold text-lg {% if game.away_score > game.home_score %}text-accent{% endif %}">{{ game.away_score }}</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="font-semibold {% if game.home_score > game.away_score %}text-accent{% endif %}">{{ game.home_team }}</span>
+                                <span class="font-mono font-bold text-lg {% if game.home_score > game.away_score %}text-accent{% endif %}">{{ game.home_score }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    {% if game.conference %}
+                    <div class="mt-2 text-xs text-muted">{{ game.conference }}</div>
+                    {% endif %}
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        {# No games #}
+        {% if not live_games and not upcoming_games and not final_games %}
+            {% include "website/components/empty_state.html" with icon="calendar" title="No games today" message="Check back later or browse the full schedule." cta_url="/games/schedule/" cta_text="View Schedule" %}
+        {% endif %}
+    </div>
+
+    {# Sidebar: standings preview + leaderboard #}
+    <div class="hidden xl:block order-1 xl:order-2 space-y-6">
+        {# Conference standings preview #}
+        {% if standings %}
+        <div class="bg-surface rounded-lg border border-border p-4">
+            <div class="flex items-center justify-between mb-3">
+                <h3 class="text-sm font-bold uppercase tracking-wider">Standings</h3>
+                <a href="{% url 'games:standings' %}" class="text-xs text-accent hover:underline">Full Standings &rarr;</a>
+            </div>
+            {% for conf_name, teams in standings.items %}
+            <div class="{% if not forloop.first %}mt-4{% endif %}">
+                <div class="text-xs text-muted font-semibold uppercase tracking-wider mb-2">{{ conf_name }}</div>
+                <div class="space-y-1">
+                    {% for team in teams|slice:":5" %}
+                    <div class="flex items-center justify-between text-sm py-1">
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs text-muted w-4 text-right">{{ forloop.counter }}</span>
+                            <span>{{ team.name }}</span>
+                        </div>
+                        <span class="font-mono text-xs text-muted">{{ team.wins }}-{{ team.losses }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {# Leaderboard preview #}
+        {% if leaderboard %}
+        <div class="bg-surface rounded-lg border border-border p-4">
+            <div class="flex items-center justify-between mb-3">
+                <h3 class="text-sm font-bold uppercase tracking-wider">Leaderboard</h3>
+            </div>
+            <div class="space-y-1">
+                {% for entry in leaderboard|slice:":5" %}
+                <div class="flex items-center justify-between text-sm py-1">
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs text-muted w-4 text-right">{{ forloop.counter }}</span>
+                        <span>{{ entry.display_identity }}</span>
+                    </div>
+                    <span class="font-mono text-xs text-accent">${{ entry.balance|floatformat:0 }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.body.addEventListener('htmx:wsOpen', function() {
+        var dot = document.getElementById('ws-dot');
+        var label = document.getElementById('ws-label');
+        if (dot) { dot.className = 'ws-status connected'; }
+        if (label) { label.textContent = 'Live'; }
+    });
+    document.body.addEventListener('htmx:wsClose', function() {
+        var dot = document.getElementById('ws-dot');
+        var label = document.getElementById('ws-label');
+        if (dot) { dot.className = 'ws-status disconnected'; }
+        if (label) { label.textContent = 'Reconnecting\u2026'; }
+    });
+</script>
+{% endblock %}

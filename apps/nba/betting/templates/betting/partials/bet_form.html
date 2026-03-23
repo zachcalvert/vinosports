@@ -1,0 +1,147 @@
+<div id="bet-form-container">
+    <div class="bg-surface rounded-lg border border-border p-4">
+        <h3 class="text-sm font-semibold mb-3">Place a Bet</h3>
+
+        {% if game.moneyline_home or game.moneyline_away %}
+        <!-- Moneyline -->
+        <div class="mb-4">
+            <div class="text-xs text-muted uppercase tracking-wider mb-2">Moneyline</div>
+            <div class="grid grid-cols-2 gap-2">
+                <button type="button"
+                        class="bet-option-btn rounded-lg border border-border p-3 text-center hover:border-accent transition-colors cursor-pointer"
+                        data-market="MONEYLINE" data-selection="HOME"
+                        data-odds="{{ game.moneyline_home }}" data-line="">
+                    <div class="text-xs text-muted mb-1">{{ game.home_team.abbreviation }}</div>
+                    <div class="font-mono font-bold text-sm">
+                        {% if game.moneyline_home > 0 %}+{% endif %}{{ game.moneyline_home }}
+                    </div>
+                </button>
+                <button type="button"
+                        class="bet-option-btn rounded-lg border border-border p-3 text-center hover:border-accent transition-colors cursor-pointer"
+                        data-market="MONEYLINE" data-selection="AWAY"
+                        data-odds="{{ game.moneyline_away }}" data-line="">
+                    <div class="text-xs text-muted mb-1">{{ game.away_team.abbreviation }}</div>
+                    <div class="font-mono font-bold text-sm">
+                        {% if game.moneyline_away > 0 %}+{% endif %}{{ game.moneyline_away }}
+                    </div>
+                </button>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if game.spread_home_line %}
+        <!-- Spread -->
+        <div class="mb-4">
+            <div class="text-xs text-muted uppercase tracking-wider mb-2">Spread</div>
+            <div class="grid grid-cols-2 gap-2">
+                <button type="button"
+                        class="bet-option-btn rounded-lg border border-border p-3 text-center hover:border-accent transition-colors cursor-pointer"
+                        data-market="SPREAD" data-selection="HOME"
+                        data-odds="{{ game.spread_home_odds }}" data-line="{{ game.spread_home_line }}">
+                    <div class="text-xs text-muted mb-1">{{ game.home_team.abbreviation }} {{ game.spread_home_line }}</div>
+                    <div class="font-mono font-bold text-sm">
+                        {% if game.spread_home_odds > 0 %}+{% endif %}{{ game.spread_home_odds }}
+                    </div>
+                </button>
+                <button type="button"
+                        class="bet-option-btn rounded-lg border border-border p-3 text-center hover:border-accent transition-colors cursor-pointer"
+                        data-market="SPREAD" data-selection="AWAY"
+                        data-odds="{{ game.spread_away_odds }}" data-line="{{ game.spread_away_line }}">
+                    <div class="text-xs text-muted mb-1">{{ game.away_team.abbreviation }} {{ game.spread_away_line }}</div>
+                    <div class="font-mono font-bold text-sm">
+                        {% if game.spread_away_odds > 0 %}+{% endif %}{{ game.spread_away_odds }}
+                    </div>
+                </button>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if game.total_line %}
+        <!-- Total -->
+        <div class="mb-4">
+            <div class="text-xs text-muted uppercase tracking-wider mb-2">Total ({{ game.total_line }})</div>
+            <div class="grid grid-cols-2 gap-2">
+                <button type="button"
+                        class="bet-option-btn rounded-lg border border-border p-3 text-center hover:border-accent transition-colors cursor-pointer"
+                        data-market="TOTAL" data-selection="OVER"
+                        data-odds="{{ game.over_odds }}" data-line="{{ game.total_line }}">
+                    <div class="text-xs text-muted mb-1">Over {{ game.total_line }}</div>
+                    <div class="font-mono font-bold text-sm">
+                        {% if game.over_odds > 0 %}+{% endif %}{{ game.over_odds }}
+                    </div>
+                </button>
+                <button type="button"
+                        class="bet-option-btn rounded-lg border border-border p-3 text-center hover:border-accent transition-colors cursor-pointer"
+                        data-market="TOTAL" data-selection="UNDER"
+                        data-odds="{{ game.under_odds }}" data-line="{{ game.total_line }}">
+                    <div class="text-xs text-muted mb-1">Under {{ game.total_line }}</div>
+                    <div class="font-mono font-bold text-sm">
+                        {% if game.under_odds > 0 %}+{% endif %}{{ game.under_odds }}
+                    </div>
+                </button>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Bet placement form (hidden until selection) -->
+        <form id="bet-placement-form"
+              class="hidden border-t border-border pt-3 mt-3"
+              hx-post="{% url 'betting:place_bet' game.id_hash %}"
+              hx-target="#bet-form-container"
+              hx-swap="outerHTML"
+              hx-disabled-elt="find button[type='submit']">
+            {% csrf_token %}
+            <input type="hidden" name="market" id="bet-market">
+            <input type="hidden" name="selection" id="bet-selection">
+            <input type="hidden" name="odds" id="bet-odds">
+            <input type="hidden" name="line" id="bet-line">
+
+            <div class="flex items-center gap-2 mb-2">
+                <span id="bet-summary" class="text-xs text-accent font-medium"></span>
+                <span id="bet-odds-display" class="text-xs font-mono text-muted"></span>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <label class="text-xs text-muted shrink-0">Stake $</label>
+                {{ form.stake }}
+            </div>
+
+            <button type="submit"
+                    class="w-full mt-3 bg-accent text-dark font-bold text-sm py-2 px-4 rounded-lg hover:bg-accent/90 transition-colors disabled:opacity-50">
+                <span class="htmx-indicator"><span class="spinner spinner-sm mr-1"></span></span>
+                Place Bet
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+(function() {
+    var btns = document.querySelectorAll('.bet-option-btn');
+    var form = document.getElementById('bet-placement-form');
+    var marketInput = document.getElementById('bet-market');
+    var selectionInput = document.getElementById('bet-selection');
+    var oddsInput = document.getElementById('bet-odds');
+    var lineInput = document.getElementById('bet-line');
+    var summary = document.getElementById('bet-summary');
+    var oddsDisplay = document.getElementById('bet-odds-display');
+
+    btns.forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            btns.forEach(function(b) { b.classList.remove('border-accent', 'bg-accent/10'); });
+            btn.classList.add('border-accent', 'bg-accent/10');
+
+            marketInput.value = btn.dataset.market;
+            selectionInput.value = btn.dataset.selection;
+            oddsInput.value = btn.dataset.odds;
+            lineInput.value = btn.dataset.line || '';
+
+            var odds = parseInt(btn.dataset.odds);
+            var oddsStr = odds > 0 ? '+' + odds : '' + odds;
+            summary.textContent = btn.dataset.market + ' - ' + btn.dataset.selection;
+            oddsDisplay.textContent = oddsStr;
+            form.classList.remove('hidden');
+        });
+    });
+})();
+</script>

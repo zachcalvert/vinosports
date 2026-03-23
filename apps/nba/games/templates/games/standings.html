@@ -1,0 +1,43 @@
+{% extends "website/base.html" %}
+{% block title %}Standings{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <h1 class="text-3xl font-bold mb-1">NBA Standings</h1>
+    <p class="text-muted text-sm">{{ season }}&ndash;{{ season|add:"1" }} Season</p>
+</div>
+
+<!-- Conference tabs -->
+<div class="flex items-center gap-2 mb-6 text-sm">
+    <a href="?tab=east"
+       class="px-4 py-2 rounded-lg border transition-colors
+              {% if tab == 'east' %}bg-accent text-dark font-bold border-accent{% else %}border-border bg-surface hover:bg-accent-light text-muted{% endif %}"
+       hx-get="{% url 'games:standings' %}?tab=east"
+       hx-target="#standings-content"
+       hx-swap="innerHTML"
+       hx-push-url="?tab=east"
+       hx-indicator="#standings-loading">
+        Eastern Conference
+    </a>
+    <a href="?tab=west"
+       class="px-4 py-2 rounded-lg border transition-colors
+              {% if tab == 'west' %}bg-accent text-dark font-bold border-accent{% else %}border-border bg-surface hover:bg-accent-light text-muted{% endif %}"
+       hx-get="{% url 'games:standings' %}?tab=west"
+       hx-target="#standings-content"
+       hx-swap="innerHTML"
+       hx-push-url="?tab=west"
+       hx-indicator="#standings-loading">
+        Western Conference
+    </a>
+</div>
+
+<!-- Standings table -->
+<div class="relative">
+    <div id="standings-loading" class="htmx-indicator pointer-events-none absolute inset-x-0 top-3 z-10 text-center">
+        <span class="spinner text-accent"></span>
+    </div>
+    <div id="standings-content">
+        {% include "games/partials/standings_table.html" %}
+    </div>
+</div>
+{% endblock %}

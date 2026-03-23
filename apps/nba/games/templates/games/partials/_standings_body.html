@@ -1,0 +1,64 @@
+{% if standings %}
+<div class="overflow-x-auto">
+    <table class="w-full">
+        <thead>
+            <tr class="border-b border-border text-xs text-muted uppercase tracking-wider">
+                <th class="px-2 sm:px-3 py-3 text-left w-8">#</th>
+                <th class="px-2 sm:px-3 py-3 text-left">Team</th>
+                <th class="px-2 sm:px-3 py-3 text-center">W</th>
+                <th class="px-2 sm:px-3 py-3 text-center">L</th>
+                <th class="px-2 sm:px-3 py-3 text-center">PCT</th>
+                <th class="px-2 sm:px-3 py-3 text-center">GB</th>
+                <th class="px-2 sm:px-3 py-3 text-center hidden sm:table-cell">Streak</th>
+                <th class="px-2 sm:px-3 py-3 text-center hidden md:table-cell">Home</th>
+                <th class="px-2 sm:px-3 py-3 text-center hidden md:table-cell">Away</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for standing in standings %}
+            <tr class="border-b border-border/50 hover:bg-surface/50
+                {% if standing.conference_rank <= 6 %}bg-accent/5{% elif standing.conference_rank == 7 or standing.conference_rank == 8 or standing.conference_rank == 9 or standing.conference_rank == 10 %}bg-accent-light/30{% endif %}">
+                <td class="px-2 sm:px-3 py-2 text-sm font-medium
+                    {% if standing.conference_rank <= 6 %}text-accent{% elif standing.conference_rank <= 10 %}text-muted{% else %}text-muted{% endif %}">
+                    {{ standing.conference_rank }}
+                </td>
+                <td class="px-2 sm:px-3 py-2">
+                    <div class="flex items-center gap-2">
+                        {% if standing.team.logo_url %}
+                            <img src="{{ standing.team.logo_url }}" alt="" class="w-5 h-5 object-contain">
+                        {% endif %}
+                        <span class="text-sm font-medium">{{ standing.team.short_name }}</span>
+                        <span class="text-xs text-muted hidden lg:inline">{{ standing.team.abbreviation }}</span>
+                    </div>
+                </td>
+                <td class="px-2 sm:px-3 py-2 text-sm text-center font-medium">{{ standing.wins }}</td>
+                <td class="px-2 sm:px-3 py-2 text-sm text-center text-muted">{{ standing.losses }}</td>
+                <td class="px-2 sm:px-3 py-2 text-sm text-center font-mono">{{ standing.win_pct|floatformat:3 }}</td>
+                <td class="px-2 sm:px-3 py-2 text-sm text-center text-muted font-mono">
+                    {% if standing.games_behind == 0 %}&mdash;{% else %}{{ standing.games_behind|floatformat:1 }}{% endif %}
+                </td>
+                <td class="px-2 sm:px-3 py-2 text-sm text-center hidden sm:table-cell
+                    {% if standing.streak|first == 'W' %}text-positive{% elif standing.streak|first == 'L' %}text-danger{% else %}text-muted{% endif %}">
+                    {{ standing.streak|default:"&mdash;" }}
+                </td>
+                <td class="px-2 sm:px-3 py-2 text-sm text-center text-muted hidden md:table-cell">{{ standing.home_record|default:"&mdash;" }}</td>
+                <td class="px-2 sm:px-3 py-2 text-sm text-center text-muted hidden md:table-cell">{{ standing.away_record|default:"&mdash;" }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="mt-4 flex gap-4 text-xs text-muted">
+    <div class="flex items-center gap-1">
+        <span class="w-2 h-2 rounded-full bg-accent"></span> Playoff seeding (1-6)
+    </div>
+    <div class="flex items-center gap-1">
+        <span class="w-2 h-2 rounded-full bg-accent/30"></span> Play-in (7-10)
+    </div>
+</div>
+{% else %}
+<div class="text-center py-12">
+    <p class="text-muted text-sm">No standings data available yet.</p>
+</div>
+{% endif %}

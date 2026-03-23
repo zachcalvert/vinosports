@@ -1,0 +1,68 @@
+<div id="game-{{ game.id_hash }}"
+     class="bg-surface rounded-xl border border-border p-4 shadow-sm hover:border-accent/50 hover:bg-accent-light/30 transition-colors
+            {% if game.is_live %}ring-1 ring-accent/30{% endif %}">
+    <a href="{% url 'games:game_detail' game.id_hash %}" class="block">
+        <div class="flex items-center justify-between mb-3">
+            {% if game.status == "FINAL" %}
+                <span class="inline-flex items-center rounded-full bg-border/40 px-2 py-0.5 text-xs font-medium text-muted">Final</span>
+            {% elif game.is_live %}
+                <span class="inline-flex items-center gap-1 rounded-full bg-danger/10 px-2 py-0.5 text-xs font-bold text-danger">
+                    <span class="h-1.5 w-1.5 rounded-full bg-danger animate-pulse"></span>
+                    {{ game.get_status_display }}
+                </span>
+            {% elif game.status == "POSTPONED" %}
+                <span class="inline-flex items-center rounded-full bg-warning/10 px-2 py-0.5 text-xs font-medium text-warning">Postponed</span>
+            {% else %}
+                <span class="inline-flex items-center rounded-full bg-accent-light px-2 py-0.5 text-xs font-medium text-muted">
+                    {% if game.tip_off %}
+                        <time datetime="{{ game.tip_off|date:'c' }}">{{ game.tip_off|date:"g:i A" }}</time>
+                    {% else %}
+                        Scheduled
+                    {% endif %}
+                </span>
+            {% endif %}
+            {% if game.postseason %}
+                <span class="text-[10px] uppercase tracking-wider font-bold text-accent">Playoffs</span>
+            {% endif %}
+        </div>
+
+        <div class="space-y-2 mb-3">
+            <!-- Away team (visitor listed first, NBA convention) -->
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    {% if game.away_team.logo_url %}
+                        <img src="{{ game.away_team.logo_url }}" alt="" class="w-5 h-5 object-contain">
+                    {% endif %}
+                    <span class="text-sm font-medium">{{ game.away_team.abbreviation }}</span>
+                    <span class="text-xs text-muted hidden sm:inline">{{ game.away_team.short_name }}</span>
+                </div>
+                {% if game.away_score is not None %}
+                    <span class="text-lg font-bold font-mono {% if game.is_final and game.winner == game.away_team %}text-accent{% endif %}">
+                        {{ game.away_score }}
+                    </span>
+                {% endif %}
+            </div>
+            <!-- Home team -->
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    {% if game.home_team.logo_url %}
+                        <img src="{{ game.home_team.logo_url }}" alt="" class="w-5 h-5 object-contain">
+                    {% endif %}
+                    <span class="text-sm font-medium">{{ game.home_team.abbreviation }}</span>
+                    <span class="text-xs text-muted hidden sm:inline">{{ game.home_team.short_name }}</span>
+                </div>
+                {% if game.home_score is not None %}
+                    <span class="text-lg font-bold font-mono {% if game.is_final and game.winner == game.home_team %}text-accent{% endif %}">
+                        {{ game.home_score }}
+                    </span>
+                {% endif %}
+            </div>
+        </div>
+    </a>
+
+    {% if game.arena %}
+    <div class="text-xs text-muted border-t border-border pt-2">
+        {{ game.arena }}
+    </div>
+    {% endif %}
+</div>

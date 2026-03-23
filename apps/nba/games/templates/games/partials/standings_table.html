@@ -1,0 +1,9 @@
+{% if tab == "east" %}
+    {% with standings=east_standings %}
+    {% include "games/partials/_standings_body.html" %}
+    {% endwith %}
+{% else %}
+    {% with standings=west_standings %}
+    {% include "games/partials/_standings_body.html" %}
+    {% endwith %}
+{% endif %}

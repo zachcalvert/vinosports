@@ -1,0 +1,310 @@
+{% extends "website/base.html" %}
+{% block title %}{{ game }}{% endblock %}
+
+{% block content %}
+<!-- Game header -->
+<div class="bg-surface rounded-xl border border-border p-6 shadow-sm mb-6">
+    <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div class="flex items-center gap-3">
+            {% if game.status == "FINAL" %}
+                <span class="inline-flex items-center rounded-full bg-border/40 px-2.5 py-1 text-xs font-medium text-muted">Final</span>
+            {% elif game.is_live %}
+                <span class="inline-flex items-center gap-1 rounded-full bg-danger/10 px-2.5 py-1 text-xs font-bold text-danger">
+                    <span class="h-1.5 w-1.5 rounded-full bg-danger animate-pulse"></span>
+                    {{ game.get_status_display }}
+                </span>
+            {% elif game.status == "POSTPONED" %}
+                <span class="inline-flex items-center rounded-full bg-warning/10 px-2.5 py-1 text-xs font-medium text-warning">Postponed</span>
+            {% else %}
+                <span class="inline-flex items-center rounded-full bg-accent-light px-2.5 py-1 text-xs font-medium text-muted">Scheduled</span>
+            {% endif %}
+            {% if game.postseason %}
+                <span class="text-xs uppercase tracking-wider font-bold text-accent">Playoffs</span>
+            {% endif %}
+        </div>
+        <span class="text-xs text-muted">{{ game.season }}&ndash;{{ game.season|add:"1" }} Season</span>
+    </div>
+
+    <div class="flex items-center justify-center gap-8 md:gap-16">
+        <!-- Away team -->
+        <div class="text-center flex-1">
+            {% if game.away_team.logo_url %}
+                <img src="{{ game.away_team.logo_url }}" alt="" class="w-16 h-16 mx-auto mb-2 object-contain">
+            {% endif %}
+            <h2 class="text-lg font-bold">{{ game.away_team.short_name }}</h2>
+            <p class="text-sm text-muted mt-0.5">{{ game.away_team.abbreviation }}</p>
+        </div>
+
+        <!-- Score / vs -->
+        <div class="text-center">
+            {% if game.home_score is not None and game.away_score is not None %}
+                <div class="flex items-center gap-3">
+                    <span class="text-4xl font-bold font-mono {% if game.is_final and game.winner == game.away_team %}text-accent{% endif %}">{{ game.away_score }}</span>
+                    <span class="text-lg text-muted">&ndash;</span>
+                    <span class="text-4xl font-bold font-mono {% if game.is_final and game.winner == game.home_team %}text-accent{% endif %}">{{ game.home_score }}</span>
+                </div>
+            {% else %}
+                <span class="text-3xl font-bold text-muted">vs</span>
+            {% endif %}
+        </div>
+
+        <!-- Home team -->
+        <div class="text-center flex-1">
+            {% if game.home_team.logo_url %}
+                <img src="{{ game.home_team.logo_url }}" alt="" class="w-16 h-16 mx-auto mb-2 object-contain">
+            {% endif %}
+            <h2 class="text-lg font-bold">{{ game.home_team.short_name }}</h2>
+            <p class="text-sm text-muted mt-0.5">{{ game.home_team.abbreviation }}</p>
+        </div>
+    </div>
+
+    <div class="text-center mt-4 text-sm text-muted">
+        {% if game.tip_off %}
+            <time datetime="{{ game.tip_off|date:'c' }}">{{ game.tip_off|date:"l, F j, Y — g:i A" }}</time>
+        {% else %}
+            {{ game.game_date|date:"l, F j, Y" }}
+        {% endif %}
+        {% if game.arena %}
+            &middot; {{ game.arena }}
+        {% endif %}
+    </div>
+</div>
+
+<!-- Two-column layout: bet form | odds + discussion -->
+<div class="grid grid-cols-1 lg:grid-cols-[26rem_minmax(0,1fr)] gap-6 mb-6">
+
+    <!-- Bet form sidebar -->
+    <div class="lg:sticky lg:top-6 lg:self-start space-y-4">
+        {% if user.is_authenticated %}
+            {% if game.status == "SCHEDULED" %}
+                {% if best_odds %}
+                <!-- Odds summary -->
+                <div class="bg-surface rounded-xl border border-border p-5 shadow-sm">
+                    <h3 class="text-sm font-bold uppercase tracking-wider text-muted mb-4">Best Odds</h3>
+
+                    <!-- Moneyline -->
+                    {% if best_odds.home_moneyline is not None and best_odds.away_moneyline is not None %}
+                    <div class="mb-4">
+                        <p class="text-xs text-muted mb-2">Moneyline</p>
+                        <div class="flex gap-2">
+                            <div class="flex-1 text-center py-2 rounded-lg bg-accent-light">
+                                <span class="text-xs text-muted block">{{ game.away_team.abbreviation }}</span>
+                                <span class="text-sm font-bold font-mono text-accent">
+                                    {% if best_odds.away_moneyline > 0 %}+{{ best_odds.away_moneyline }}{% else %}{{ best_odds.away_moneyline }}{% endif %}
+                                </span>
+                            </div>
+                            <div class="flex-1 text-center py-2 rounded-lg bg-accent-light">
+                                <span class="text-xs text-muted block">{{ game.home_team.abbreviation }}</span>
+                                <span class="text-sm font-bold font-mono text-accent">
+                                    {% if best_odds.home_moneyline > 0 %}+{{ best_odds.home_moneyline }}{% else %}{{ best_odds.home_moneyline }}{% endif %}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Spread -->
+                    {% if best_odds.spread_line is not None %}
+                    <div class="mb-4">
+                        <p class="text-xs text-muted mb-2">Spread</p>
+                        <div class="flex gap-2">
+                            <div class="flex-1 text-center py-2 rounded-lg bg-accent-light">
+                                <span class="text-xs text-muted block">{{ game.away_team.abbreviation }}</span>
+                                <span class="text-sm font-bold font-mono">
+                                    {% if best_odds.spread_line > 0 %}+{% endif %}{{ best_odds.spread_line|floatformat:1 }}
+                                </span>
+                                {% if best_odds.spread_away is not None %}
+                                <span class="text-xs font-mono text-muted block">
+                                    ({% if best_odds.spread_away > 0 %}+{{ best_odds.spread_away }}{% else %}{{ best_odds.spread_away }}{% endif %})
+                                </span>
+                                {% endif %}
+                            </div>
+                            <div class="flex-1 text-center py-2 rounded-lg bg-accent-light">
+                                <span class="text-xs text-muted block">{{ game.home_team.abbreviation }}</span>
+                                <span class="text-sm font-bold font-mono">
+                                    {% if best_odds.spread_line > 0 %}-{% elif best_odds.spread_line < 0 %}+{% endif %}{{ best_odds.spread_line|floatformat:1 }}
+                                </span>
+                                {% if best_odds.spread_home is not None %}
+                                <span class="text-xs font-mono text-muted block">
+                                    ({% if best_odds.spread_home > 0 %}+{{ best_odds.spread_home }}{% else %}{{ best_odds.spread_home }}{% endif %})
+                                </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Totals -->
+                    {% if best_odds.total_line is not None %}
+                    <div>
+                        <p class="text-xs text-muted mb-2">Total &mdash; {{ best_odds.total_line|floatformat:1 }}</p>
+                        <div class="flex gap-2">
+                            <div class="flex-1 text-center py-2 rounded-lg bg-accent-light">
+                                <span class="text-xs text-muted block">Over</span>
+                                <span class="text-sm font-bold font-mono">
+                                    {% if best_odds.over_odds is not None %}
+                                        {% if best_odds.over_odds > 0 %}+{{ best_odds.over_odds }}{% else %}{{ best_odds.over_odds }}{% endif %}
+                                    {% else %}&mdash;{% endif %}
+                                </span>
+                            </div>
+                            <div class="flex-1 text-center py-2 rounded-lg bg-accent-light">
+                                <span class="text-xs text-muted block">Under</span>
+                                <span class="text-sm font-bold font-mono">
+                                    {% if best_odds.under_odds is not None %}
+                                        {% if best_odds.under_odds > 0 %}+{{ best_odds.under_odds }}{% else %}{{ best_odds.under_odds }}{% endif %}
+                                    {% else %}&mdash;{% endif %}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if best_odds.bookmaker %}
+                    <p class="text-[11px] text-muted mt-3 text-center">via {{ best_odds.bookmaker }}</p>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                <!-- Bet form -->
+                {% include "betting/partials/bet_form.html" %}
+            {% else %}
+                <div class="bg-surface rounded-xl border border-border p-6 shadow-sm text-center text-muted">
+                    <p class="text-sm">Betting is closed for this game.</p>
+                </div>
+            {% endif %}
+        {% else %}
+            <div class="bg-surface rounded-lg border border-border border-dashed p-6 text-center">
+                <p class="text-muted text-sm mb-3">Log in to place a bet on this game.</p>
+                <a href="{% url 'website:login' %}?next={{ request.path }}"
+                   class="inline-block bg-accent text-dark font-bold py-2 px-6 rounded-md hover:bg-accent/90 transition-colors text-sm">
+                    Log In
+                </a>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Main column — discussion -->
+    <div class="space-y-4">
+        <!-- Comments -->
+        <div class="bg-surface rounded-xl border border-border shadow-sm">
+            <div class="px-5 py-4 border-b border-border">
+                <h3 class="text-lg font-bold">Discussion</h3>
+            </div>
+            <div class="px-5 py-4">
+                {% if user.is_authenticated %}
+                <form method="post" action="{% url 'games:game_detail' game.id_hash %}" class="mb-6">
+                    {% csrf_token %}
+                    <div class="flex gap-3">
+                        <div class="flex-1">
+                            {{ comment_form.body }}
+                        </div>
+                        <button type="submit"
+                                class="self-end bg-accent text-dark font-bold py-2 px-4 rounded-md hover:bg-accent/90 transition-colors text-sm">
+                            Post
+                        </button>
+                    </div>
+                </form>
+                {% endif %}
+
+                {% if comments %}
+                <div class="space-y-4">
+                    {% for comment in comments %}
+                    <div class="flex gap-3">
+                        <div class="w-8 h-8 rounded-full bg-accent-light flex items-center justify-center text-xs font-bold text-accent shrink-0">
+                            {{ comment.user.email|first|upper }}
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="text-sm font-medium">{{ comment.user.email }}</span>
+                                <span class="text-xs text-muted">{{ comment.created_at|timesince }} ago</span>
+                            </div>
+                            <p class="text-sm text-muted">{{ comment.body }}</p>
+
+                            {% if comment.replies.all %}
+                            <div class="mt-3 ml-4 space-y-3 border-l border-border pl-4">
+                                {% for reply in comment.replies.all %}
+                                <div class="flex gap-2">
+                                    <div class="w-6 h-6 rounded-full bg-accent-light/50 flex items-center justify-center text-[10px] font-bold text-accent shrink-0">
+                                        {{ reply.user.email|first|upper }}
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex items-center gap-2 mb-0.5">
+                                            <span class="text-xs font-medium">{{ reply.user.email }}</span>
+                                            <span class="text-[11px] text-muted">{{ reply.created_at|timesince }} ago</span>
+                                        </div>
+                                        <p class="text-xs text-muted">{{ reply.body }}</p>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-sm text-muted text-center py-6">No comments yet. Be the first to weigh in.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Odds history -->
+{% if odds_list %}
+<details class="mb-6 rounded-lg border border-border bg-surface shadow-sm">
+    <summary class="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4 sm:px-6">
+        <div>
+            <h3 class="text-lg font-bold">Odds History</h3>
+            <p class="mt-0.5 text-xs text-muted">Recent odds snapshots</p>
+        </div>
+        <span class="shrink-0 text-xs uppercase tracking-[0.18em] text-muted">Expand</span>
+    </summary>
+
+    <div class="border-t border-border px-5 py-4 sm:px-6">
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="border-b border-border text-xs text-muted uppercase tracking-wider">
+                        <th class="px-2 py-2 text-left">Book</th>
+                        <th class="px-2 py-2 text-center">ML Away</th>
+                        <th class="px-2 py-2 text-center">ML Home</th>
+                        <th class="px-2 py-2 text-center">Spread</th>
+                        <th class="px-2 py-2 text-center">Total</th>
+                        <th class="px-2 py-2 text-right">Updated</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for odds in odds_list %}
+                    <tr class="border-b border-border/50">
+                        <td class="px-2 py-2 font-medium">{{ odds.bookmaker }}</td>
+                        <td class="px-2 py-2 text-center font-mono">
+                            {% if odds.away_moneyline is not None %}
+                                {% if odds.away_moneyline > 0 %}+{{ odds.away_moneyline }}{% else %}{{ odds.away_moneyline }}{% endif %}
+                            {% else %}&mdash;{% endif %}
+                        </td>
+                        <td class="px-2 py-2 text-center font-mono">
+                            {% if odds.home_moneyline is not None %}
+                                {% if odds.home_moneyline > 0 %}+{{ odds.home_moneyline }}{% else %}{{ odds.home_moneyline }}{% endif %}
+                            {% else %}&mdash;{% endif %}
+                        </td>
+                        <td class="px-2 py-2 text-center font-mono">
+                            {% if odds.spread_line is not None %}
+                                {{ odds.spread_line|floatformat:1 }}
+                            {% else %}&mdash;{% endif %}
+                        </td>
+                        <td class="px-2 py-2 text-center font-mono">
+                            {% if odds.total_line is not None %}
+                                {{ odds.total_line|floatformat:1 }}
+                            {% else %}&mdash;{% endif %}
+                        </td>
+                        <td class="px-2 py-2 text-right text-xs text-muted">{{ odds.fetched_at|timesince }} ago</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</details>
+{% endif %}
+{% endblock %}
