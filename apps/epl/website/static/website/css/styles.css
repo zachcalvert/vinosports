@@ -21,6 +21,7 @@
 
     /* EPL accent — deep plum/burgundy */
     --color-accent:       74  32  64;   /* #4A2040 */
+    --color-accent-nav:  139  74 107;   /* #8B4A6B mid-burgundy for dark navbar surfaces */
     --color-accent-light: 245 237 242;  /* #F5EDF2 */
     --color-epl:          61  17  82;   /* #3D1152 PL purple */
 
@@ -37,6 +38,7 @@
     --color-border:       41  37  36;   /* #292524 */
 
     --color-accent:      168 113 148;   /* #A87194 lighter plum for dark bg */
+    --color-accent-nav:  168 113 148;   /* same as accent — already light enough */
     --color-accent-light:  41  30  38;  /* subtle plum tint */
     --color-epl:          61  17  82;
     --color-gold:        212 168  67;   /* #D4A843 */
@@ -86,9 +88,14 @@
     background-color: rgba(var(--color-accent) / 0.12);
 }
 
-/* Dark-mode override: accent is already lighter, keep active bright */
-[data-theme="dark"] .nav-link.nav-link-active {
-    color: rgb(var(--color-accent));
+/* Navbar active + logo use accent-nav (readable on always-dark navbar) */
+.nav-link.nav-link-active {
+    color: rgb(var(--color-accent-nav));
+    background-color: rgba(var(--color-accent-nav) / 0.12);
+}
+
+.nav-logo-text {
+    color: rgb(var(--color-accent-nav));
 }
 
 .nav-action-link {

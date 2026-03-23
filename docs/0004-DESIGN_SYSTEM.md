@@ -36,12 +36,14 @@
 
 Each league app swaps the `--color-accent` variable to create its own identity while sharing the same layout and component patterns.
 
-| League | Accent          | Accent Light    | League Color       |
-|--------|----------------|-----------------|---------------------|
-| EPL    | `#4A2040` plum  | `#F5EDF2`       | `#3D1152` purple    |
-| NBA    | `#C2410C` burnt orange | `#FFF7ED` | `#1D4ED8` blue     |
+| League | Accent          | Accent Nav       | Accent Light    | League Color       |
+|--------|----------------|------------------|-----------------|---------------------|
+| EPL    | `#4A2040` plum  | `#8B4A6B` wine   | `#F5EDF2`       | `#3D1152` purple    |
+| NBA    | `#C2410C` burnt orange | TBD       | `#FFF7ED`       | `#1D4ED8` blue     |
 
-**Accent usage:** Primary buttons, active nav states, odds buttons, highlighted data, focus rings, links.
+**Accent usage:** Primary buttons, odds buttons, highlighted data, focus rings, links on light surfaces.
+
+**Accent nav usage:** Logo text, active nav link — readable on the always-dark navbar. In dark mode this typically matches accent since accent is already light enough.
 
 **Accent light usage:** Card hover backgrounds, active tab backgrounds, selected row tinting.
 
