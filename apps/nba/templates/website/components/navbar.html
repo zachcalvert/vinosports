@@ -4,16 +4,13 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex items-center justify-between h-16">
             <!-- Logo -->
-            <div class="flex items-center gap-3">
-                <a href="{% url 'dashboard' %}" class="flex items-center">
+            <div class="flex items-center">
+                <a href="{{ hub_url }}" class="flex items-center">
                     <img
                         src="{% static 'img/vinosports_logo.png' %}"
                         alt="Vino Sports"
-                        class="h-8 sm:h-9 w-auto shrink-0"
+                        class="h-32 w-auto shrink-0"
                     >
-                </a>
-                <a href="{{ hub_url }}" class="text-xs text-muted hover:text-white transition-colors" title="All Leagues">
-                    All Leagues
                 </a>
             </div>
 
