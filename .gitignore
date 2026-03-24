@@ -47,3 +47,5 @@ htmlcov/
 # Celery
 celerybeat-schedule
 celerybeat.pid
+
+.env

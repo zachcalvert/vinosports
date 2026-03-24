@@ -11,7 +11,7 @@ RUN pip install /packages/vinosports-core
 
 # Install league-specific deps
 COPY apps/nba/pyproject.toml ./
-RUN pip install psycopg2-binary whitenoise gunicorn
+RUN pip install psycopg2-binary whitenoise gunicorn pytest pytest-django pytest-cov factory-boy
 
 # Copy league project code
 COPY apps/nba/ .
