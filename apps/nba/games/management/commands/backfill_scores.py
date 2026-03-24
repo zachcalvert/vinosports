@@ -1,9 +1,10 @@
 """
-Backfill correct final scores for NBA games from the sportsdata.io API.
+Backfill correct final scores for NBA games using the NBADataClient.
 
-The /Games/{season} endpoint returns unreliable score data, so this command
-fetches scores per-date using the /GamesByDate/{date} endpoint which returns
-accurate final scores.
+This command identifies completed games with suspiciously low combined scores
+and refreshes their box scores by fetching authoritative results per game
+date from the underlying NBA data API (via NBADataClient), using one request
+per date to update all matching games.
 """
 
 import time

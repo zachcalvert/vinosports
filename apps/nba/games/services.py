@@ -260,8 +260,12 @@ def sync_standings(season: int, client: NBADataClient | None = None) -> int:
             season_val = s.pop("season")
             Standing.objects.update_or_create(team=team, season=season_val, defaults=s)
             count += 1
-    except Exception:
-        logger.info("sync_standings: API unavailable, computing from game results")
+    except (httpx.HTTPStatusError, httpx.RequestError) as exc:
+        logger.info(
+            "sync_standings: API unavailable (%s: %s), computing from game results",
+            type(exc).__name__,
+            exc,
+        )
         count = _compute_standings_from_games(season)
 
     # Recompute conference_rank from win_pct.

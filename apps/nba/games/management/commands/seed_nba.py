@@ -120,13 +120,10 @@ class Command(BaseCommand):
         )
 
         self.stdout.write("  Syncing standings...")
-        try:
-            count = sync_standings(season)
-            self.stdout.write(
-                self.style.SUCCESS(f"  Standings: {count} synced (season={season})")
-            )
-        except Exception as exc:
-            self.stdout.write(self.style.WARNING(f"  Standings: skipped ({exc})"))
+        count = sync_standings(season)
+        self.stdout.write(
+            self.style.SUCCESS(f"  Standings: {count} synced (season={season})")
+        )
 
     def _generate_odds(self, season: int):
         from betting.odds_engine import generate_all_upcoming_odds
