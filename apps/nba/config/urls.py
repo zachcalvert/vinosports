@@ -11,6 +11,7 @@ urlpatterns = [
     path("", include("challenges.urls")),
     path("", include("discussions.urls")),
     path("activity/", include("activity.urls")),
+    path("rewards/", include("rewards.urls")),
     path("", include("website.urls")),
     path("", DashboardView.as_view(), name="dashboard"),
 ]

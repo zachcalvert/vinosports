@@ -72,6 +72,23 @@ class SignupForm(forms.Form):
             }
         ),
     )
+    promo_code = forms.CharField(
+        required=False,
+        max_length=100,
+        widget=forms.TextInput(
+            attrs={
+                "class": "themed-input",
+                "placeholder": "Enter a promo code (optional)",
+                "autocomplete": "off",
+            }
+        ),
+    )
+
+    def clean_promo_code(self):
+        code = self.cleaned_data.get("promo_code", "").strip()
+        if code and " " in code:
+            raise forms.ValidationError("Promo code must not contain spaces.")
+        return code
 
     def clean_email(self):
         email = self.cleaned_data["email"].lower()

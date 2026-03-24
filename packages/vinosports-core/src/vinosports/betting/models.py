@@ -40,6 +40,7 @@ class BalanceTransaction(BaseModel):
         CHALLENGE_REWARD = "CHALLENGE_REWARD", _("Challenge reward")
         REWARD = "REWARD", _("Reward")
         BAILOUT = "BAILOUT", _("Bailout")
+        PROMO_CODE = "PROMO_CODE", _("Promo code bonus")
         ADMIN_RESET = "ADMIN_RESET", _("Admin reset")
 
     user = models.ForeignKey(

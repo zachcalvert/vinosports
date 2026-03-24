@@ -1,3 +1,6 @@
+import logging
+from decimal import Decimal
+
 from django.contrib.auth import authenticate, get_user_model, login, logout
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import transaction
@@ -5,10 +8,14 @@ from django.shortcuts import redirect, render
 from django.views import View
 from django.views.generic import TemplateView
 
+from vinosports.betting.balance import log_transaction
 from vinosports.betting.models import BalanceTransaction, UserBalance
 
 from .forms import CurrencyForm, DisplayNameForm, LoginForm, SignupForm
 from .models import SiteSettings
+from .promo import evaluate_promo_code
+
+logger = logging.getLogger(__name__)
 
 
 class HomeView(TemplateView):
@@ -50,9 +57,11 @@ class SignupView(View):
             site = SiteSettings.load_for_update()
             if site.max_users and User.objects.count() >= site.max_users:
                 return render(request, "hub/signup.html", self._closed_context())
+            promo_code = form.cleaned_data.get("promo_code", "")
             user = User.objects.create_user(
                 email=form.cleaned_data["email"],
                 password=form.cleaned_data["password"],
+                promo_code=promo_code,
             )
             balance = UserBalance.objects.create(user=user)
             BalanceTransaction.objects.create(
@@ -62,6 +71,20 @@ class SignupView(View):
                 transaction_type=BalanceTransaction.Type.SIGNUP,
                 description="Initial signup bonus",
             )
+
+        # Evaluate promo code outside the atomic block (network call)
+        if promo_code:
+            bonus = evaluate_promo_code(promo_code)
+            if bonus > 0:
+                with transaction.atomic():
+                    bal = UserBalance.objects.select_for_update().get(user=user)
+                    log_transaction(
+                        bal,
+                        Decimal(str(bonus)),
+                        BalanceTransaction.Type.PROMO_CODE,
+                        f"Promo code bonus: {promo_code}",
+                    )
+
         login(request, user)
         return redirect("hub:home")
 

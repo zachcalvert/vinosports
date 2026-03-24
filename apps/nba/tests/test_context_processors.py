@@ -132,8 +132,20 @@ class TestParlaySlipContextProcessor:
         request.user = user
         request.session = {
             "parlay_slip": [
-                {"game_id": g1.pk, "market": "MONEYLINE", "selection": "HOME", "odds": -150, "line": None},
-                {"game_id": g2.pk, "market": "MONEYLINE", "selection": "AWAY", "odds": 130, "line": None},
+                {
+                    "game_id": g1.pk,
+                    "market": "MONEYLINE",
+                    "selection": "HOME",
+                    "odds": -150,
+                    "line": None,
+                },
+                {
+                    "game_id": g2.pk,
+                    "market": "MONEYLINE",
+                    "selection": "AWAY",
+                    "odds": 130,
+                    "line": None,
+                },
             ]
         }
         result = parlay_slip(request)

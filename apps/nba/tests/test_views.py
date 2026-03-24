@@ -254,6 +254,7 @@ class TestAdminUsersPartialView:
     def test_excludes_bots(self, superuser_client):
         c, user = superuser_client
         from tests.factories import BotUserFactory
+
         BotUserFactory()
         UserFactory()
         response = c.get("/admin-dashboard/users/")

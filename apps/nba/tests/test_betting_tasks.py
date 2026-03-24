@@ -20,32 +20,87 @@ from tests.factories import (
 class TestOddsChanged:
     def test_detects_changed_home_moneyline(self):
         game = GameFactory()
-        existing = OddsFactory(game=game, home_moneyline=-150, away_moneyline=130, spread_line=-3.5, total_line=222.5)
-        new = {"home_moneyline": -160, "away_moneyline": 130, "spread_line": -3.5, "total_line": 222.5}
+        existing = OddsFactory(
+            game=game,
+            home_moneyline=-150,
+            away_moneyline=130,
+            spread_line=-3.5,
+            total_line=222.5,
+        )
+        new = {
+            "home_moneyline": -160,
+            "away_moneyline": 130,
+            "spread_line": -3.5,
+            "total_line": 222.5,
+        }
         assert _odds_changed(existing, new) is True
 
     def test_detects_changed_away_moneyline(self):
         game = GameFactory()
-        existing = OddsFactory(game=game, home_moneyline=-150, away_moneyline=130, spread_line=-3.5, total_line=222.5)
-        new = {"home_moneyline": -150, "away_moneyline": 140, "spread_line": -3.5, "total_line": 222.5}
+        existing = OddsFactory(
+            game=game,
+            home_moneyline=-150,
+            away_moneyline=130,
+            spread_line=-3.5,
+            total_line=222.5,
+        )
+        new = {
+            "home_moneyline": -150,
+            "away_moneyline": 140,
+            "spread_line": -3.5,
+            "total_line": 222.5,
+        }
         assert _odds_changed(existing, new) is True
 
     def test_detects_changed_spread_line(self):
         game = GameFactory()
-        existing = OddsFactory(game=game, home_moneyline=-150, away_moneyline=130, spread_line=-3.5, total_line=222.5)
-        new = {"home_moneyline": -150, "away_moneyline": 130, "spread_line": -5.0, "total_line": 222.5}
+        existing = OddsFactory(
+            game=game,
+            home_moneyline=-150,
+            away_moneyline=130,
+            spread_line=-3.5,
+            total_line=222.5,
+        )
+        new = {
+            "home_moneyline": -150,
+            "away_moneyline": 130,
+            "spread_line": -5.0,
+            "total_line": 222.5,
+        }
         assert _odds_changed(existing, new) is True
 
     def test_detects_changed_total_line(self):
         game = GameFactory()
-        existing = OddsFactory(game=game, home_moneyline=-150, away_moneyline=130, spread_line=-3.5, total_line=222.5)
-        new = {"home_moneyline": -150, "away_moneyline": 130, "spread_line": -3.5, "total_line": 225.0}
+        existing = OddsFactory(
+            game=game,
+            home_moneyline=-150,
+            away_moneyline=130,
+            spread_line=-3.5,
+            total_line=222.5,
+        )
+        new = {
+            "home_moneyline": -150,
+            "away_moneyline": 130,
+            "spread_line": -3.5,
+            "total_line": 225.0,
+        }
         assert _odds_changed(existing, new) is True
 
     def test_unchanged_odds_returns_false(self):
         game = GameFactory()
-        existing = OddsFactory(game=game, home_moneyline=-150, away_moneyline=130, spread_line=-3.5, total_line=222.5)
-        new = {"home_moneyline": -150, "away_moneyline": 130, "spread_line": -3.5, "total_line": 222.5}
+        existing = OddsFactory(
+            game=game,
+            home_moneyline=-150,
+            away_moneyline=130,
+            spread_line=-3.5,
+            total_line=222.5,
+        )
+        new = {
+            "home_moneyline": -150,
+            "away_moneyline": 130,
+            "spread_line": -3.5,
+            "total_line": 222.5,
+        }
         assert _odds_changed(existing, new) is False
 
 
@@ -72,6 +127,7 @@ class TestGenerateOddsTask:
             generate_odds()
 
         from games.models import Odds
+
         assert Odds.objects.filter(game=game, bookmaker="House").exists()
 
     @patch("betting.tasks.generate_all_upcoming_odds")
@@ -131,6 +187,7 @@ class TestGenerateOddsTask:
         ]
 
         from games.models import Odds
+
         count_before = Odds.objects.count()
         generate_odds()
         assert Odds.objects.count() == count_before
