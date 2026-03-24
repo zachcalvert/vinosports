@@ -1,6 +1,5 @@
 """Tests for betting/forms.py and website/forms.py."""
 
-
 import pytest
 from betting.forms import DisplayNameForm, PlaceBetForm, PlaceParlayForm
 from website.forms import LoginForm, SignupForm
@@ -120,7 +119,7 @@ class TestDisplayNameForm:
         assert form.cleaned_data["display_name"] is None
 
     def test_duplicate_display_name_rejected(self):
-        existing = UserFactory(display_name="TakenName")
+        UserFactory(display_name="TakenName")
         new_user = UserFactory()
         form = DisplayNameForm({"display_name": "TakenName"}, instance=new_user)
         assert not form.is_valid()

@@ -69,7 +69,7 @@ class StandingsView(LoginRequiredMixin, View):
             .order_by("conference_rank")
         )
 
-        tab = request.GET.get("tab", "east")
+        tab = request.GET.get("tab", "west")
 
         ctx = {
             "east_standings": east,

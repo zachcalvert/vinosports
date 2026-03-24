@@ -1,10 +1,9 @@
 """Tests for games/services.py (NBADataClient, sync_teams, sync_games, sync_standings, sync_live_scores)."""
 
-from datetime import date, datetime, timezone
+from datetime import date
 from unittest.mock import MagicMock, patch
 
 import pytest
-
 from games.models import Conference, Game, GameStatus, Standing, Team
 from games.services import (
     NBADataClient,
@@ -16,6 +15,7 @@ from games.services import (
     sync_standings,
     sync_teams,
 )
+
 from tests.factories import GameFactory, StandingFactory, TeamFactory
 
 
@@ -288,8 +288,8 @@ class TestSyncTeams:
 @pytest.mark.django_db
 class TestSyncGames:
     def test_creates_games_for_known_teams(self):
-        home = TeamFactory(external_id=1001)
-        away = TeamFactory(external_id=1002)
+        TeamFactory(external_id=1001)
+        TeamFactory(external_id=1002)
         mock_client = MagicMock()
         mock_client.__enter__ = MagicMock(return_value=mock_client)
         mock_client.__exit__ = MagicMock(return_value=False)
@@ -338,7 +338,12 @@ class TestSyncGames:
     def test_updates_existing_game(self):
         home = TeamFactory(external_id=2001)
         away = TeamFactory(external_id=2002)
-        game = GameFactory(external_id=6001, home_team=home, away_team=away, status=GameStatus.SCHEDULED)
+        game = GameFactory(
+            external_id=6001,
+            home_team=home,
+            away_team=away,
+            status=GameStatus.SCHEDULED,
+        )
         mock_client = MagicMock()
         mock_client.__enter__ = MagicMock(return_value=mock_client)
         mock_client.__exit__ = MagicMock(return_value=False)
@@ -510,7 +515,7 @@ class TestSyncLiveScores:
     def test_unchanged_score_does_not_broadcast(self):
         home = TeamFactory(external_id=6001)
         away = TeamFactory(external_id=6002)
-        game = GameFactory(
+        GameFactory(
             external_id=8001,
             home_team=home,
             away_team=away,

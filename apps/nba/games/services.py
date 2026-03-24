@@ -232,6 +232,18 @@ def sync_standings(season: int, client: NBADataClient | None = None) -> int:
         season_val = s.pop("season")
         Standing.objects.update_or_create(team=team, season=season_val, defaults=s)
         count += 1
+
+    # Recompute conference_rank from win_pct. The API returns bogus values
+    # (0/1/2 tiers instead of 1-15) for in-progress seasons.
+    for conf in (Conference.EAST, Conference.WEST):
+        qs = Standing.objects.filter(season=season, conference=conf).order_by(
+            "-win_pct", "games_behind"
+        )
+        for rank, standing in enumerate(qs, start=1):
+            if standing.conference_rank != rank:
+                standing.conference_rank = rank
+                standing.save(update_fields=["conference_rank"])
+
     logger.info("sync_standings: synced %d standings (season=%s)", count, season)
     return count
 

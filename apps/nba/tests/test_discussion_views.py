@@ -1,9 +1,9 @@
 """Tests for discussions/views.py (CreateCommentView, CreateReplyView)."""
 
 import pytest
+from discussions.models import Comment
 from django.test import Client
 
-from discussions.models import Comment
 from tests.factories import CommentFactory, GameFactory, UserFactory
 
 
