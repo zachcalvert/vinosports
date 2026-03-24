@@ -1,15 +1,14 @@
-"""Tests for games/services.py (NBADataClient, sync_teams, sync_games, sync_standings, sync_live_scores)."""
+"""Tests for games/services.py (NBADataClient, sync helpers, standings computation)."""
 
-from datetime import date
 from unittest.mock import MagicMock, patch
 
 import pytest
 from games.models import Conference, Game, GameStatus, Standing, Team
 from games.services import (
     NBADataClient,
+    _compute_standings_from_games,
     _normalize_conference,
     _normalize_status,
-    _sportsdata_date,
     sync_games,
     sync_live_scores,
     sync_standings,
@@ -20,35 +19,26 @@ from tests.factories import GameFactory, StandingFactory, TeamFactory
 
 
 class TestNormalizeStatus:
-    def test_scheduled_maps_correctly(self):
-        assert _normalize_status("Scheduled") == GameStatus.SCHEDULED
-
-    def test_in_progress_maps_correctly(self):
-        assert _normalize_status("InProgress") == GameStatus.IN_PROGRESS
+    def test_final_maps_correctly(self):
+        assert _normalize_status("Final") == GameStatus.FINAL
 
     def test_halftime_maps_correctly(self):
         assert _normalize_status("Halftime") == GameStatus.HALFTIME
 
-    def test_final_maps_correctly(self):
-        assert _normalize_status("Final") == GameStatus.FINAL
+    def test_first_qtr_maps_to_in_progress(self):
+        assert _normalize_status("1st Qtr") == GameStatus.IN_PROGRESS
 
-    def test_f_ot_maps_to_final(self):
-        assert _normalize_status("F/OT") == GameStatus.FINAL
+    def test_second_qtr_maps_to_in_progress(self):
+        assert _normalize_status("2nd Qtr") == GameStatus.IN_PROGRESS
 
-    def test_postponed_maps_correctly(self):
-        assert _normalize_status("Postponed") == GameStatus.POSTPONED
+    def test_third_qtr_maps_to_in_progress(self):
+        assert _normalize_status("3rd Qtr") == GameStatus.IN_PROGRESS
 
-    def test_canceled_maps_correctly(self):
-        assert _normalize_status("Canceled") == GameStatus.CANCELLED
+    def test_fourth_qtr_maps_to_in_progress(self):
+        assert _normalize_status("4th Qtr") == GameStatus.IN_PROGRESS
 
-    def test_forfeit_maps_to_cancelled(self):
-        assert _normalize_status("Forfeit") == GameStatus.CANCELLED
-
-    def test_delayed_maps_to_scheduled(self):
-        assert _normalize_status("Delayed") == GameStatus.SCHEDULED
-
-    def test_suspended_maps_to_scheduled(self):
-        assert _normalize_status("Suspended") == GameStatus.SCHEDULED
+    def test_iso_timestamp_maps_to_scheduled(self):
+        assert _normalize_status("2026-03-24T23:00:00.000Z") == GameStatus.SCHEDULED
 
     def test_unknown_status_defaults_to_scheduled(self):
         assert _normalize_status("UnknownStatus") == GameStatus.SCHEDULED
@@ -58,11 +48,11 @@ class TestNormalizeStatus:
 
 
 class TestNormalizeConference:
-    def test_eastern_maps_correctly(self):
-        assert _normalize_conference("Eastern") == Conference.EAST
+    def test_east_maps_correctly(self):
+        assert _normalize_conference("East") == Conference.EAST
 
-    def test_western_maps_correctly(self):
-        assert _normalize_conference("Western") == Conference.WEST
+    def test_west_maps_correctly(self):
+        assert _normalize_conference("West") == Conference.WEST
 
     def test_unknown_defaults_to_east(self):
         assert _normalize_conference("Unknown") == Conference.EAST
@@ -71,140 +61,121 @@ class TestNormalizeConference:
         assert _normalize_conference("") == Conference.EAST
 
 
-class TestSportsdataDate:
-    def test_formats_date_correctly(self):
-        d = date(2025, 3, 20)
-        assert _sportsdata_date(d) == "2025-MAR-20"
-
-    def test_formats_january_correctly(self):
-        d = date(2025, 1, 5)
-        assert _sportsdata_date(d) == "2025-JAN-05"
-
-    def test_formats_december_correctly(self):
-        d = date(2025, 12, 25)
-        assert _sportsdata_date(d) == "2025-DEC-25"
-
-
 class TestNBADataClientNormalizers:
     def setup_method(self):
-        # Create a client without a real API key for testing normalizers
         self.client = NBADataClient.__new__(NBADataClient)
 
     def test_normalize_team_extracts_fields(self):
         raw = {
-            "TeamID": 100,
-            "Name": "Lakers",
-            "City": "Los Angeles",
-            "Key": "LAL",
-            "WikipediaLogoUrl": "https://example.com/logo.png",
-            "Conference": "Western",
-            "Division": "Pacific",
+            "id": 14,
+            "name": "Lakers",
+            "full_name": "Los Angeles Lakers",
+            "city": "Los Angeles",
+            "abbreviation": "LAL",
+            "conference": "West",
+            "division": "Pacific",
         }
         result = self.client._normalize_team(raw)
-        assert result["external_id"] == 100
+        assert result["external_id"] == 14
         assert result["name"] == "Lakers"
         assert result["short_name"] == "Los Angeles Lakers"
         assert result["abbreviation"] == "LAL"
-        assert result["logo_url"] == "https://example.com/logo.png"
+        assert result["logo_url"] == ""
         assert result["conference"] == Conference.WEST
         assert result["division"] == "Pacific"
 
-    def test_normalize_team_missing_logo_uses_empty_string(self):
-        raw = {
-            "TeamID": 100,
-            "Name": "Lakers",
-            "City": "Los Angeles",
-            "Key": "LAL",
-            "WikipediaLogoUrl": None,
-            "Conference": "Western",
-            "Division": "Pacific",
-        }
-        result = self.client._normalize_team(raw)
-        assert result["logo_url"] == ""
-
     def test_normalize_game_with_datetime(self):
         raw = {
-            "GameID": 1001,
-            "HomeTeamID": 10,
-            "AwayTeamID": 20,
-            "HomeTeamScore": 110,
-            "AwayTeamScore": 100,
-            "Status": "Final",
-            "DateTime": "2025-03-20T20:00:00",
-            "Season": 2025,
-            "SeasonType": 1,
+            "id": 18447232,
+            "home_team": {
+                "id": 20,
+                "abbreviation": "NYK",
+                "city": "New York",
+                "name": "Knicks",
+            },
+            "visitor_team": {
+                "id": 6,
+                "abbreviation": "CLE",
+                "city": "Cleveland",
+                "name": "Cavaliers",
+            },
+            "home_team_score": 126,
+            "visitor_team_score": 124,
+            "status": "Final",
+            "date": "2025-12-25",
+            "datetime": "2025-12-25T17:00:00.000Z",
+            "season": 2025,
+            "postseason": False,
         }
         result = self.client._normalize_game(raw)
-        assert result["external_id"] == 1001
-        assert result["home_team_external_id"] == 10
-        assert result["away_team_external_id"] == 20
-        assert result["home_score"] == 110
-        assert result["away_score"] == 100
+        assert result["external_id"] == 18447232
+        assert result["home_team_external_id"] == 20
+        assert result["away_team_external_id"] == 6
+        assert result["home_score"] == 126
+        assert result["away_score"] == 124
         assert result["status"] == GameStatus.FINAL
-        assert result["game_date"] == "2025-03-20"
+        assert result["game_date"] == "2025-12-25"
         assert result["tip_off"] is not None
         assert result["season"] == 2025
         assert result["postseason"] is False
 
     def test_normalize_game_postseason_flag(self):
         raw = {
-            "GameID": 1002,
-            "HomeTeamID": 10,
-            "AwayTeamID": 20,
-            "HomeTeamScore": None,
-            "AwayTeamScore": None,
-            "Status": "Scheduled",
-            "DateTime": "2025-04-20T20:00:00",
-            "Season": 2025,
-            "SeasonType": 3,
+            "id": 1002,
+            "home_team": {"id": 10},
+            "visitor_team": {"id": 20},
+            "home_team_score": None,
+            "visitor_team_score": None,
+            "status": "2026-04-20T20:00:00.000Z",
+            "date": "2026-04-20",
+            "datetime": "2026-04-20T20:00:00.000Z",
+            "season": 2025,
+            "postseason": True,
         }
         result = self.client._normalize_game(raw)
         assert result["postseason"] is True
 
-    def test_normalize_game_invalid_datetime(self):
+    def test_normalize_game_scheduled_status_from_iso(self):
         raw = {
-            "GameID": 1003,
-            "HomeTeamID": 10,
-            "AwayTeamID": 20,
-            "HomeTeamScore": None,
-            "AwayTeamScore": None,
-            "Status": "Scheduled",
-            "DateTime": "not-a-date",
-            "Season": 2025,
-            "SeasonType": 1,
+            "id": 1003,
+            "home_team": {"id": 10},
+            "visitor_team": {"id": 20},
+            "home_team_score": 0,
+            "visitor_team_score": 0,
+            "status": "2026-03-25T00:00:00.000Z",
+            "date": "2026-03-25",
+            "datetime": "2026-03-25T00:00:00.000Z",
+            "season": 2025,
+            "postseason": False,
         }
         result = self.client._normalize_game(raw)
-        assert result["tip_off"] is None
+        assert result["status"] == GameStatus.SCHEDULED
 
-    def test_normalize_game_missing_datetime_uses_day(self):
+    def test_normalize_game_missing_datetime_uses_date(self):
         raw = {
-            "GameID": 1004,
-            "HomeTeamID": 10,
-            "AwayTeamID": 20,
-            "HomeTeamScore": None,
-            "AwayTeamScore": None,
-            "Status": "Scheduled",
-            "Day": "2025-03-21T00:00:00",
-            "Season": 2025,
-            "SeasonType": 1,
+            "id": 1004,
+            "home_team": {"id": 10},
+            "visitor_team": {"id": 20},
+            "home_team_score": None,
+            "visitor_team_score": None,
+            "status": "Final",
+            "date": "2025-03-21",
+            "season": 2025,
+            "postseason": False,
         }
         result = self.client._normalize_game(raw)
         assert result["game_date"] == "2025-03-21"
+        assert result["tip_off"] is None
 
     def test_normalize_standing_calculates_win_pct(self):
         raw = {
-            "TeamID": 10,
-            "Season": 2025,
-            "Conference": "Eastern",
-            "Wins": 40,
-            "Losses": 20,
-            "GamesBack": 2.5,
-            "StreakDescription": "W3",
-            "HomeWins": 25,
-            "HomeLosses": 5,
-            "AwayWins": 15,
-            "AwayLosses": 15,
-            "ConferenceRank": 2,
+            "team": {"id": 10, "conference": "East"},
+            "season": 2025,
+            "wins": 40,
+            "losses": 20,
+            "home_record": "25-5",
+            "road_record": "15-15",
+            "conference_rank": 2,
         }
         result = self.client._normalize_standing(raw)
         assert result["team_external_id"] == 10
@@ -217,22 +188,16 @@ class TestNBADataClientNormalizers:
 
     def test_normalize_standing_zero_games_win_pct(self):
         raw = {
-            "TeamID": 10,
-            "Season": 2025,
-            "Conference": "Eastern",
-            "Wins": 0,
-            "Losses": 0,
-            "GamesBack": None,
-            "StreakDescription": "",
-            "HomeWins": 0,
-            "HomeLosses": 0,
-            "AwayWins": 0,
-            "AwayLosses": 0,
-            "ConferenceRank": 1,
+            "team": {"id": 10, "conference": "East"},
+            "season": 2025,
+            "wins": 0,
+            "losses": 0,
+            "home_record": "",
+            "road_record": "",
+            "conference_rank": 1,
         }
         result = self.client._normalize_standing(raw)
         assert result["win_pct"] == 0.0
-        assert result["games_behind"] == 0.0
 
 
 @pytest.mark.django_db
@@ -440,6 +405,78 @@ class TestSyncStandings:
         sync_standings(2025, client=mock_client)
         standing.refresh_from_db()
         assert standing.wins == 45
+
+    def test_falls_back_to_computed_standings_on_api_error(self):
+        """When the API raises (e.g. 401), standings are computed from games."""
+        home = TeamFactory(external_id=7001, conference=Conference.EAST)
+        away = TeamFactory(external_id=7002, conference=Conference.WEST)
+        GameFactory(
+            external_id=90001,
+            home_team=home,
+            away_team=away,
+            season=2025,
+            status=GameStatus.FINAL,
+            home_score=110,
+            away_score=100,
+        )
+        mock_client = MagicMock()
+        mock_client.__enter__ = MagicMock(return_value=mock_client)
+        mock_client.__exit__ = MagicMock(return_value=False)
+        mock_client.get_standings.side_effect = Exception("401 Unauthorized")
+
+        count = sync_standings(2025, client=mock_client)
+        assert count == 2
+        assert Standing.objects.filter(
+            team=home, season=2025, wins=1, losses=0
+        ).exists()
+        assert Standing.objects.filter(
+            team=away, season=2025, wins=0, losses=1
+        ).exists()
+
+
+@pytest.mark.django_db
+class TestComputeStandingsFromGames:
+    def test_computes_records_from_final_games(self):
+        home = TeamFactory(external_id=8001, conference=Conference.EAST)
+        away = TeamFactory(external_id=8002, conference=Conference.WEST)
+        GameFactory(
+            external_id=80001,
+            home_team=home,
+            away_team=away,
+            season=2025,
+            status=GameStatus.FINAL,
+            home_score=110,
+            away_score=100,
+        )
+        GameFactory(
+            external_id=80002,
+            home_team=away,
+            away_team=home,
+            season=2025,
+            status=GameStatus.FINAL,
+            home_score=105,
+            away_score=95,
+        )
+        count = _compute_standings_from_games(2025)
+        assert count == 2
+        home_standing = Standing.objects.get(team=home, season=2025)
+        assert home_standing.wins == 1
+        assert home_standing.losses == 1
+        assert home_standing.home_record == "1-0"
+        assert home_standing.away_record == "0-1"
+
+    def test_ignores_non_final_games(self):
+        home = TeamFactory(external_id=8003)
+        away = TeamFactory(external_id=8004)
+        GameFactory(
+            external_id=80003,
+            home_team=home,
+            away_team=away,
+            season=2025,
+            status=GameStatus.SCHEDULED,
+        )
+        count = _compute_standings_from_games(2025)
+        assert count == 0
 
 
 @pytest.mark.django_db

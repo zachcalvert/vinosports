@@ -13,40 +13,40 @@ from games.tasks import (
 )
 
 # ---------------------------------------------------------------------------
-# _current_season
+# _current_season (BDL uses start year: 2025-26 season = 2025)
 # ---------------------------------------------------------------------------
 
 
 class TestCurrentSeason:
     @patch("games.tasks.timezone")
-    def test_oct_returns_next_year(self, mock_tz):
+    def test_oct_returns_current_year(self, mock_tz):
         mock_tz.now.return_value.date.return_value = date(2025, 10, 15)
-        assert _current_season() == 2026
+        assert _current_season() == 2025
 
     @patch("games.tasks.timezone")
-    def test_nov_returns_next_year(self, mock_tz):
+    def test_nov_returns_current_year(self, mock_tz):
         mock_tz.now.return_value.date.return_value = date(2025, 11, 1)
-        assert _current_season() == 2026
+        assert _current_season() == 2025
 
     @patch("games.tasks.timezone")
-    def test_dec_returns_next_year(self, mock_tz):
+    def test_dec_returns_current_year(self, mock_tz):
         mock_tz.now.return_value.date.return_value = date(2025, 12, 31)
-        assert _current_season() == 2026
+        assert _current_season() == 2025
 
     @patch("games.tasks.timezone")
-    def test_jan_returns_current_year(self, mock_tz):
+    def test_jan_returns_previous_year(self, mock_tz):
         mock_tz.now.return_value.date.return_value = date(2026, 1, 15)
-        assert _current_season() == 2026
+        assert _current_season() == 2025
 
     @patch("games.tasks.timezone")
-    def test_june_returns_current_year(self, mock_tz):
+    def test_june_returns_previous_year(self, mock_tz):
         mock_tz.now.return_value.date.return_value = date(2026, 6, 1)
-        assert _current_season() == 2026
+        assert _current_season() == 2025
 
     @patch("games.tasks.timezone")
-    def test_sep_returns_current_year(self, mock_tz):
+    def test_sep_returns_previous_year(self, mock_tz):
         mock_tz.now.return_value.date.return_value = date(2026, 9, 30)
-        assert _current_season() == 2026
+        assert _current_season() == 2025
 
 
 # ---------------------------------------------------------------------------
@@ -82,16 +82,16 @@ class TestFetchSchedule:
         mock_sync.assert_called_once_with(2025)
 
     @patch("games.tasks.sync_games", return_value=82)
-    @patch("games.tasks._current_season", return_value=2026)
+    @patch("games.tasks._current_season", return_value=2025)
     def test_defaults_to_current_season(self, mock_season, mock_sync):
         result = fetch_schedule()
-        assert result == {"synced": 82, "season": 2026}
-        mock_sync.assert_called_once_with(2026)
+        assert result == {"synced": 82, "season": 2025}
+        mock_sync.assert_called_once_with(2025)
 
     @patch("games.tasks.sync_games", side_effect=Exception("timeout"))
     def test_retries_on_failure(self, mock_sync):
         with pytest.raises(Exception, match="timeout"):
-            fetch_schedule(season=2026)
+            fetch_schedule(season=2025)
 
 
 # ---------------------------------------------------------------------------
@@ -108,15 +108,15 @@ class TestFetchStandings:
         mock_sync.assert_called_once_with(2025)
 
     @patch("games.tasks.sync_standings", return_value=30)
-    @patch("games.tasks._current_season", return_value=2026)
+    @patch("games.tasks._current_season", return_value=2025)
     def test_defaults_to_current_season(self, mock_season, mock_sync):
         result = fetch_standings()
-        assert result == {"synced": 30, "season": 2026}
+        assert result == {"synced": 30, "season": 2025}
 
     @patch("games.tasks.sync_standings", side_effect=Exception("fail"))
     def test_retries_on_failure(self, mock_sync):
         with pytest.raises(Exception, match="fail"):
-            fetch_standings(season=2026)
+            fetch_standings(season=2025)
 
 
 # ---------------------------------------------------------------------------

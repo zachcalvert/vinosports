@@ -66,10 +66,17 @@ Add a shared top-level navbar served from the hub app that appears on all three 
 
 Everything here depends on the schema changes being done first.
 
-### 4a. Squash Migrations
+### 4a. Add EPL Test Suite
+The EPL app currently has no tests. The legacy `epl-bets` repo has a test suite that can be ported:
+- Port relevant test modules (services, tasks, settlement, models) from `epl-bets`
+- Update imports and factories to match the current EPL app structure
+- Ensure pytest + factories are in EPL's dev dependencies
+- Target the same patterns used in the NBA test suite (mock API clients, factory-based fixtures, behavior-focused assertions)
+
+### 4b. Squash Migrations
 Both EPL and NBA apps have accumulated dev migrations, plus the new migrations from Phase 2. Squash them all down to clean initial migrations before the first deploy creates a production database. This is the last step before infra — no more schema changes after this.
 
-### 4b. CI Workflows
+### 4c. CI Workflows
 Define and implement the CI pipeline. Decisions needed:
 - **Trigger**: on push to `main`? On PR? Both?
 - **Steps**: lint (ruff), test (pytest across core/epl/nba), build Docker images
@@ -77,7 +84,7 @@ Define and implement the CI pipeline. Decisions needed:
 - **Secrets**: `BDL_API_KEY`, `ANTHROPIC_API_KEY`, `DATABASE_URL`, `REDIS_URL` — managed via Fly secrets
 - **DB migrations**: run as a Fly release command on deploy
 
-### 4c. Fly.io Configuration
+### 4d. Fly.io Configuration
 Set up the single Fly app with multiple processes:
 - `fly.toml` with `[processes]` for hub-web, epl-web, nba-web, epl-worker, epl-beat, nba-worker, nba-beat
 - Reverse proxy (nginx or Caddy) as the entrypoint to route subpaths to the right process
