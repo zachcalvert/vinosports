@@ -2,9 +2,9 @@
 
 ## Current State
 
-**250 tests passing**, **56.1% coverage** (threshold: 55%).
+**379 tests passing**, **76.5% coverage** (threshold: 65%).
 
-Phase 1 completed 2026-03-24 following the plan in this doc.
+Phase 2 completed 2026-03-24 following the plan in this doc.
 
 ### Infrastructure
 
@@ -36,7 +36,11 @@ Phase 1 completed 2026-03-24 following the plan in this doc.
 | `test_signals.py` | 9 | `check_reward_rules` (BET_COUNT + STAKE_AMOUNT) for BetSlip and Parlay |
 | `test_activity_tasks.py` | 9 | `broadcast_next_activity_event`, `cleanup_old_activity_events` |
 | `test_challenges_tasks.py` | 15 | `rotate_daily_challenges`, `rotate_weekly_challenges`, `expire_challenges` |
-| **Total** | **218** | *32 additional non-DB tests bring total to 250* |
+| `test_views.py` | 30 | `DashboardView`, `AccountView`, `ThemeToggleView`, `LogoutView`, admin views |
+| `test_betting_views.py` | 54 | `PlaceBetView`, `MyBetsView`, `BailoutView`, parlay views |
+| `test_games_services.py` | 46 | `NBADataClient` normalizers, `sync_teams`, `sync_games`, `sync_standings`, `sync_live_scores` |
+| `test_discussion_views.py` | 17 | `CreateCommentView`, `CreateReplyView` |
+| **Total** | **379** | *Phase 2 tests bring total to 379* |
 
 ### Module-Level Coverage
 
@@ -56,21 +60,20 @@ Phase 1 completed 2026-03-24 following the plan in this doc.
 | `bots/schedule.py` | 96% | `timezone.localtime()` default path |
 | `discussions/tasks.py` | 88% | `_generate_comment_body` (mocked), some inner branches |
 | `bots/models.py` | 94% | `__str__` methods |
+| `website/views.py` | 98% | Admin partial pagination merge edge case |
+| `games/services.py` | 76% | `NBADataClient` HTTP methods, WebSocket broadcast |
+| `discussions/views.py` | 93% | HTMX render path |
+| `betting/views.py` | ~85% | Core bet/parlay placement covered |
 
-**Uncovered (0% — not yet tested):**
+**Remaining coverage gaps:**
 
 | Module | Lines | Category |
 |--------|-------|----------|
-| `website/views.py` | 121 | Views |
-| `games/services.py` | 147 | Data ingestion (API clients) |
-| `betting/services.py` | 78 | External odds API sync |
-| `betting/views.py` | 127 | Views |
-| `challenges/tasks.py` | 2 remaining | Partially tested (97%) |
 | `games/tasks.py` | 46 | Celery data fetch tasks |
-| `betting/tasks.py` | 6 remaining | Partially tested (91%) |
 | `games/management/commands/seed_nba.py` | 69 | Seed command |
 | `bots/management/commands/seed_bots.py` | 52 | Seed command |
-| Other views/urls/routing | ~80 | Thin glue |
+| `games/consumers.py` | 17 | WebSocket consumers |
+| `games/views.py` | 47 | Schedule, standings, game detail views |
 
 ---
 
@@ -95,7 +98,7 @@ Gap: **~557 lines** to cover.
 
 **Ratchet `fail_under` to 55 after this phase.**
 
-### Phase 2 → 65%: Views & Data Ingestion
+### Phase 2 → 65%: Views & Data Ingestion ✅ COMPLETE
 
 **Est. +230 lines covered**
 
@@ -107,7 +110,7 @@ Gap: **~557 lines** to cover.
 | `test_activity_tasks.py` | `activity/tasks.py` (27 lines) | ~20 | Test `broadcast_activity_event`, `cleanup_old_events` |
 | `test_discussion_views.py` | `discussions/views.py` (30 lines) | ~20 | Test comment creation POST, game thread rendering |
 
-**Ratchet `fail_under` to 65 after this phase.**
+**Ratchet `fail_under` to 65 after this phase.** ✅ Done
 
 ### Phase 3 → 75%: Celery Tasks & Management Commands
 
