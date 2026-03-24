@@ -139,6 +139,8 @@ class RewardRule(BaseModel):
 def _broadcast_rewards(distributions):
     """Send a WebSocket notification to each reward recipient."""
     channel_layer = get_channel_layer()
+    if channel_layer is None:
+        return
     send = async_to_sync(channel_layer.group_send)
 
     for dist in distributions:

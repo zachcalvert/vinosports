@@ -34,6 +34,7 @@ INSTALLED_APPS = [
     "bots",
     "discussions",
     "activity",
+    "rewards",
     "website",
 ]
 
