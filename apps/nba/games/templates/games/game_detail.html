@@ -77,98 +77,6 @@
     <div class="lg:sticky lg:top-6 lg:self-start space-y-4">
         {% if user.is_authenticated %}
             {% if game.status == "SCHEDULED" %}
-                {% if best_odds %}
-                <!-- Odds summary -->
-                <div class="bg-surface rounded-xl border border-border p-5 shadow-sm">
-                    <div class="flex items-center gap-2 mb-4">
-                        <span class="w-1 h-5 rounded-full bg-accent"></span>
-                        <h3 class="text-sm font-bold uppercase tracking-wider text-muted">Best Odds</h3>
-                    </div>
-
-                    <!-- Moneyline -->
-                    {% if best_odds.home_moneyline is not None and best_odds.away_moneyline is not None %}
-                    <div class="mb-4">
-                        <p class="text-xs text-muted mb-2">Moneyline</p>
-                        <div class="flex gap-2">
-                            <div class="flex-1 text-center py-2 rounded-lg bg-accent-light">
-                                <span class="text-xs text-muted block">{{ game.away_team.abbreviation }}</span>
-                                <span class="text-sm font-bold font-mono text-accent">
-                                    {% if best_odds.away_moneyline > 0 %}+{{ best_odds.away_moneyline }}{% else %}{{ best_odds.away_moneyline }}{% endif %}
-                                </span>
-                            </div>
-                            <div class="flex-1 text-center py-2 rounded-lg bg-accent-light">
-                                <span class="text-xs text-muted block">{{ game.home_team.abbreviation }}</span>
-                                <span class="text-sm font-bold font-mono text-accent">
-                                    {% if best_odds.home_moneyline > 0 %}+{{ best_odds.home_moneyline }}{% else %}{{ best_odds.home_moneyline }}{% endif %}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                    {% endif %}
-
-                    <!-- Spread -->
-                    {% if best_odds.spread_line is not None %}
-                    <div class="mb-4">
-                        <p class="text-xs text-muted mb-2">Spread</p>
-                        <div class="flex gap-2">
-                            <div class="flex-1 text-center py-2 rounded-lg bg-accent-light">
-                                <span class="text-xs text-muted block">{{ game.away_team.abbreviation }}</span>
-                                <span class="text-sm font-bold font-mono">
-                                    {% if best_odds.spread_line > 0 %}+{% endif %}{{ best_odds.spread_line|floatformat:1 }}
-                                </span>
-                                {% if best_odds.spread_away is not None %}
-                                <span class="text-xs font-mono text-muted block">
-                                    ({% if best_odds.spread_away > 0 %}+{{ best_odds.spread_away }}{% else %}{{ best_odds.spread_away }}{% endif %})
-                                </span>
-                                {% endif %}
-                            </div>
-                            <div class="flex-1 text-center py-2 rounded-lg bg-accent-light">
-                                <span class="text-xs text-muted block">{{ game.home_team.abbreviation }}</span>
-                                <span class="text-sm font-bold font-mono">
-                                    {% if best_odds.spread_line > 0 %}-{% elif best_odds.spread_line < 0 %}+{% endif %}{{ best_odds.spread_line|floatformat:1 }}
-                                </span>
-                                {% if best_odds.spread_home is not None %}
-                                <span class="text-xs font-mono text-muted block">
-                                    ({% if best_odds.spread_home > 0 %}+{{ best_odds.spread_home }}{% else %}{{ best_odds.spread_home }}{% endif %})
-                                </span>
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
-                    {% endif %}
-
-                    <!-- Totals -->
-                    {% if best_odds.total_line is not None %}
-                    <div>
-                        <p class="text-xs text-muted mb-2">Total &mdash; {{ best_odds.total_line|floatformat:1 }}</p>
-                        <div class="flex gap-2">
-                            <div class="flex-1 text-center py-2 rounded-lg bg-accent-light">
-                                <span class="text-xs text-muted block">Over</span>
-                                <span class="text-sm font-bold font-mono">
-                                    {% if best_odds.over_odds is not None %}
-                                        {% if best_odds.over_odds > 0 %}+{{ best_odds.over_odds }}{% else %}{{ best_odds.over_odds }}{% endif %}
-                                    {% else %}&mdash;{% endif %}
-                                </span>
-                            </div>
-                            <div class="flex-1 text-center py-2 rounded-lg bg-accent-light">
-                                <span class="text-xs text-muted block">Under</span>
-                                <span class="text-sm font-bold font-mono">
-                                    {% if best_odds.under_odds is not None %}
-                                        {% if best_odds.under_odds > 0 %}+{{ best_odds.under_odds }}{% else %}{{ best_odds.under_odds }}{% endif %}
-                                    {% else %}&mdash;{% endif %}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                    {% endif %}
-
-                    {% if best_odds.bookmaker %}
-                    <p class="text-[11px] text-muted mt-3 text-center">via {{ best_odds.bookmaker }}</p>
-                    {% endif %}
-                </div>
-                {% endif %}
-
-                <!-- Bet form -->
                 {% include "betting/partials/bet_form.html" %}
             {% else %}
                 <div class="bg-surface rounded-xl border border-border p-6 shadow-sm text-center text-muted">
@@ -186,8 +94,15 @@
         {% endif %}
     </div>
 
-    <!-- Main column — discussion -->
+    <!-- Main column — status card + discussion -->
     <div class="space-y-4">
+        <!-- Status card: preview or recap -->
+        {% if game.status == "SCHEDULED" and sentiment or spread_sentiment or total_sentiment %}
+            {% include "games/partials/hype_card.html" %}
+        {% elif game.status == "FINAL" %}
+            {% include "games/partials/recap_card.html" %}
+        {% endif %}
+
         <!-- Comments -->
         <div class="bg-surface rounded-xl border border-border shadow-sm">
             <div class="px-5 py-4 border-b border-border flex items-center gap-3">

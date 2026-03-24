@@ -89,8 +89,22 @@ class PlaceBetView(LoginRequiredMixin, View):
         )
 
         if getattr(request, "htmx", False):
+            from games.views import (
+                _get_game_sentiment,
+                _get_spread_sentiment,
+                _get_total_sentiment,
+            )
+
             return render(
-                request, "betting/partials/bet_confirmation.html", {"bet": bet}
+                request,
+                "betting/partials/bet_confirmation.html",
+                {
+                    "bet": bet,
+                    "game": game,
+                    "sentiment": _get_game_sentiment(game),
+                    "spread_sentiment": _get_spread_sentiment(game),
+                    "total_sentiment": _get_total_sentiment(game),
+                },
             )
         return redirect("games:game_detail", id_hash=game.id_hash)
 

@@ -1,0 +1,36 @@
+{% comment %}
+Total Sentiment partial — Over vs Under picks.
+
+Context expected:
+  total_sentiment — dict with total/over_pct/under_pct, or None
+  oob             — if True, adds hx-swap-oob="true"
+{% endcomment %}
+
+<div id="total-sentiment"{% if oob %} hx-swap-oob="true"{% endif %}>
+    {% if total_sentiment %}
+    <div class="px-5 py-4">
+        <div class="flex items-center justify-between mb-3">
+            <p class="text-xs font-semibold uppercase tracking-widest text-muted">Over/Under Sentiment</p>
+            <span class="text-xs text-muted">{{ total_sentiment.total }} bet{{ total_sentiment.total|pluralize }}</span>
+        </div>
+        <div class="flex rounded overflow-hidden h-6 mb-2 text-xs font-semibold">
+            {% if total_sentiment.over_pct %}
+            <div class="flex items-center justify-center bg-emerald-500 text-white"
+                 style="width: {{ total_sentiment.over_pct }}%">
+                {% if total_sentiment.over_pct >= 15 %}{{ total_sentiment.over_pct }}%{% endif %}
+            </div>
+            {% endif %}
+            {% if total_sentiment.under_pct %}
+            <div class="flex items-center justify-center bg-rose-500 text-white"
+                 style="width: {{ total_sentiment.under_pct }}%">
+                {% if total_sentiment.under_pct >= 15 %}{{ total_sentiment.under_pct }}%{% endif %}
+            </div>
+            {% endif %}
+        </div>
+        <div class="flex justify-between text-xs text-muted">
+            <span><span class="inline-block w-2 h-2 rounded-sm bg-emerald-500 mr-1"></span>Over {{ total_sentiment.over_pct }}%</span>
+            <span><span class="inline-block w-2 h-2 rounded-sm bg-rose-500 mr-1"></span>Under {{ total_sentiment.under_pct }}%</span>
+        </div>
+    </div>
+    {% endif %}
+</div>
