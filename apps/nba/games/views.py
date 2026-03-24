@@ -3,6 +3,7 @@ from datetime import timedelta
 from betting.forms import PlaceBetForm
 from discussions.forms import CommentForm
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db.models import Count
 from django.shortcuts import get_object_or_404, render
 from django.utils import timezone
 from django.views import View
@@ -28,6 +29,10 @@ class ScheduleView(LoginRequiredMixin, View):
         games = (
             Game.objects.filter(game_date=target_date)
             .select_related("home_team", "away_team")
+            .annotate(
+                bet_count=Count("bets", distinct=True),
+                comment_count=Count("comments", distinct=True),
+            )
             .order_by("tip_off")
         )
 
@@ -35,6 +40,16 @@ class ScheduleView(LoginRequiredMixin, View):
             games = games.filter(home_team__conference=conference) | games.filter(
                 away_team__conference=conference
             )
+
+        # Build standings lookup for records & seeds
+        team_ids = set()
+        for g in games:
+            team_ids.add(g.home_team_id)
+            team_ids.add(g.away_team_id)
+        standings_qs = Standing.objects.filter(
+            team_id__in=team_ids, season=target_date.year
+        ).select_related("team")
+        standings_by_team = {s.team_id: s for s in standings_qs}
 
         prev_date = target_date - timedelta(days=1)
         next_date = target_date + timedelta(days=1)
@@ -45,6 +60,7 @@ class ScheduleView(LoginRequiredMixin, View):
             "prev_date": prev_date,
             "next_date": next_date,
             "conference": conference,
+            "standings_by_team": standings_by_team,
         }
 
         if getattr(request, "htmx", False):

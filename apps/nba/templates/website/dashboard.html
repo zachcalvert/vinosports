@@ -1,5 +1,4 @@
 {% extends "website/base.html" %}
-{% load dashboard_tags %}
 {% block title %}Dashboard — NBA Bets{% endblock %}
 
 {% block content %}
@@ -36,43 +35,7 @@
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="live-games">
                 {% for game in live_games %}
-                <a href="{% url 'games:game_detail' game.id_hash %}"
-                   class="block bg-surface rounded-lg border border-border p-4 live-game-card hover:border-accent transition-colors">
-                    <div class="flex items-center justify-between mb-2">
-                        <span class="text-xs text-danger font-semibold uppercase">{{ game.period_display }}</span>
-                        {% if game.arena %}
-                        <span class="text-xs text-muted">{{ game.arena }}</span>
-                        {% endif %}
-                    </div>
-                    <div class="flex items-center justify-between">
-                        <div class="flex-1">
-                            <div class="flex items-center justify-between mb-1">
-                                <div class="flex items-center gap-2">
-                                    {% if game.away_team.logo_url %}<img src="{{ game.away_team.logo_url }}" alt="" class="w-5 h-5 object-contain">{% endif %}
-                                    <span class="font-semibold">{{ game.away_team }}</span>
-                                    {% with standing=standings_by_team|get_item:game.away_team_id %}
-                                    {% if standing %}<span class="text-xs text-muted">({{ standing.conference_rank }}) {{ standing.wins }}-{{ standing.losses }}</span>{% endif %}
-                                    {% endwith %}
-                                </div>
-                                <span class="font-mono font-bold text-lg">{{ game.away_score }}</span>
-                            </div>
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center gap-2">
-                                    {% if game.home_team.logo_url %}<img src="{{ game.home_team.logo_url }}" alt="" class="w-5 h-5 object-contain">{% endif %}
-                                    <span class="font-semibold">{{ game.home_team }}</span>
-                                    {% with standing=standings_by_team|get_item:game.home_team_id %}
-                                    {% if standing %}<span class="text-xs text-muted">({{ standing.conference_rank }}) {{ standing.wins }}-{{ standing.losses }}</span>{% endif %}
-                                    {% endwith %}
-                                </div>
-                                <span class="font-mono font-bold text-lg">{{ game.home_score }}</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="mt-3 pt-2 border-t border-border flex items-center gap-4 text-xs text-muted">
-                        <span class="flex items-center gap-1"><i class="ph-duotone ph-ticket text-sm text-accent"></i> {{ game.bet_count }}</span>
-                        <span class="flex items-center gap-1"><i class="ph-duotone ph-chat-circle-text text-sm text-sky-400"></i> {{ game.comment_count }}</span>
-                    </div>
-                </a>
+                    {% include "games/partials/game_card.html" %}
                 {% endfor %}
             </div>
         </div>
@@ -84,49 +47,7 @@
             <h2 class="text-lg font-bold uppercase tracking-wider mb-3">Upcoming</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="upcoming-games">
                 {% for game in upcoming_games %}
-                <a href="{% url 'games:game_detail' game.id_hash %}"
-                   class="block bg-surface rounded-lg border border-border p-4 hover:border-accent/50 transition-colors">
-                    <div class="flex items-center justify-between mb-2">
-                        <span class="text-xs text-accent font-semibold">
-                            {% if game.tip_off %}
-                            <time class="local-time" datetime="{{ game.tip_off|date:'c' }}">
-                                {{ game.tip_off|date:"g:i A" }}
-                            </time>
-                            {% else %}
-                            TBD
-                            {% endif %}
-                        </span>
-                        {% if game.arena %}
-                        <span class="text-xs text-muted">{{ game.arena }}</span>
-                        {% endif %}
-                    </div>
-                    <div class="flex items-center justify-between">
-                        <div class="flex-1">
-                            <div class="flex items-center justify-between mb-1">
-                                <div class="flex items-center gap-2">
-                                    {% if game.away_team.logo_url %}<img src="{{ game.away_team.logo_url }}" alt="" class="w-5 h-5 object-contain">{% endif %}
-                                    <span class="font-semibold">{{ game.away_team }}</span>
-                                    {% with standing=standings_by_team|get_item:game.away_team_id %}
-                                    {% if standing %}<span class="text-xs text-muted">({{ standing.conference_rank }}) {{ standing.wins }}-{{ standing.losses }}</span>{% endif %}
-                                    {% endwith %}
-                                </div>
-                            </div>
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center gap-2">
-                                    {% if game.home_team.logo_url %}<img src="{{ game.home_team.logo_url }}" alt="" class="w-5 h-5 object-contain">{% endif %}
-                                    <span class="font-semibold">{{ game.home_team }}</span>
-                                    {% with standing=standings_by_team|get_item:game.home_team_id %}
-                                    {% if standing %}<span class="text-xs text-muted">({{ standing.conference_rank }}) {{ standing.wins }}-{{ standing.losses }}</span>{% endif %}
-                                    {% endwith %}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="mt-3 pt-2 border-t border-border flex items-center gap-4 text-xs text-muted">
-                        <span class="flex items-center gap-1"><i class="ph-duotone ph-ticket text-sm text-accent"></i> {{ game.bet_count }}</span>
-                        <span class="flex items-center gap-1"><i class="ph-duotone ph-chat-circle-text text-sm text-sky-400"></i> {{ game.comment_count }}</span>
-                    </div>
-                </a>
+                    {% include "games/partials/game_card.html" %}
                 {% endfor %}
             </div>
         </div>
@@ -138,43 +59,7 @@
             <h2 class="text-lg font-bold uppercase tracking-wider mb-3 text-muted">Final</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="final-games">
                 {% for game in final_games %}
-                <a href="{% url 'games:game_detail' game.id_hash %}"
-                   class="block bg-surface rounded-lg border border-border p-4 opacity-75 hover:opacity-100 hover:border-accent/30 transition-all">
-                    <div class="flex items-center justify-between mb-2">
-                        <span class="text-xs text-muted font-semibold uppercase">Final</span>
-                        {% if game.arena %}
-                        <span class="text-xs text-muted">{{ game.arena }}</span>
-                        {% endif %}
-                    </div>
-                    <div class="flex items-center justify-between">
-                        <div class="flex-1">
-                            <div class="flex items-center justify-between mb-1">
-                                <div class="flex items-center gap-2">
-                                    {% if game.away_team.logo_url %}<img src="{{ game.away_team.logo_url }}" alt="" class="w-5 h-5 object-contain">{% endif %}
-                                    <span class="font-semibold {% if game.away_score > game.home_score %}text-accent{% endif %}">{{ game.away_team }}</span>
-                                    {% with standing=standings_by_team|get_item:game.away_team_id %}
-                                    {% if standing %}<span class="text-xs text-muted">({{ standing.conference_rank }}) {{ standing.wins }}-{{ standing.losses }}</span>{% endif %}
-                                    {% endwith %}
-                                </div>
-                                <span class="font-mono font-bold text-lg {% if game.away_score > game.home_score %}text-accent{% endif %}">{{ game.away_score }}</span>
-                            </div>
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center gap-2">
-                                    {% if game.home_team.logo_url %}<img src="{{ game.home_team.logo_url }}" alt="" class="w-5 h-5 object-contain">{% endif %}
-                                    <span class="font-semibold {% if game.home_score > game.away_score %}text-accent{% endif %}">{{ game.home_team }}</span>
-                                    {% with standing=standings_by_team|get_item:game.home_team_id %}
-                                    {% if standing %}<span class="text-xs text-muted">({{ standing.conference_rank }}) {{ standing.wins }}-{{ standing.losses }}</span>{% endif %}
-                                    {% endwith %}
-                                </div>
-                                <span class="font-mono font-bold text-lg {% if game.home_score > game.away_score %}text-accent{% endif %}">{{ game.home_score }}</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="mt-3 pt-2 border-t border-border flex items-center gap-4 text-xs text-muted">
-                        <span class="flex items-center gap-1"><i class="ph-duotone ph-ticket text-sm text-accent"></i> {{ game.bet_count }}</span>
-                        <span class="flex items-center gap-1"><i class="ph-duotone ph-chat-circle-text text-sm text-sky-400"></i> {{ game.comment_count }}</span>
-                    </div>
-                </a>
+                    {% include "games/partials/game_card.html" %}
                 {% endfor %}
             </div>
         </div>
