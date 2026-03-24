@@ -1,6 +1,11 @@
 import json
+import logging
 
+from asgiref.sync import async_to_sync
 from channels.generic.websocket import WebsocketConsumer
+from django.template.loader import render_to_string
+
+logger = logging.getLogger(__name__)
 
 
 class ActivityConsumer(WebsocketConsumer):
@@ -8,41 +13,28 @@ class ActivityConsumer(WebsocketConsumer):
 
     def connect(self):
         self.group_name = "site_activity"
-
-        from asgiref.sync import async_to_sync
-
         async_to_sync(self.channel_layer.group_add)(self.group_name, self.channel_name)
         self.accept()
 
     def disconnect(self, close_code):
-        from asgiref.sync import async_to_sync
-
         async_to_sync(self.channel_layer.group_discard)(
             self.group_name, self.channel_name
         )
 
     def activity_event(self, event):
-        """Handle activity events from Celery tasks.
-
-        Accepts either pre-rendered HTML or structured data.
-        """
-        html = event.get("html")
-        if html:
+        try:
+            html = render_to_string(
+                "activity/partials/activity_toast_oob.html",
+                {
+                    "message": event.get("message", ""),
+                    "url": event.get("url", ""),
+                    "icon": event.get("icon", "lightning"),
+                    "event_type": event.get("event_type", ""),
+                },
+            )
             self.send(text_data=html)
-            return
-
-        # Build a simple toast from structured data
-        message = event.get("message", "")
-        icon = event.get("icon", "lightning")
-
-        toast_html = (
-            f'<div id="activity-toasts" hx-swap-oob="afterbegin">'
-            f'<div class="activity-toast animate-slide-in-left" role="status">'
-            f'<i class="ph-duotone ph-{icon} text-accent text-lg flex-shrink-0"></i>'
-            f'<p class="activity-toast-message">{message}</p>'
-            f"</div></div>"
-        )
-        self.send(text_data=toast_html)
+        except Exception:
+            logger.exception("Error rendering activity_event")
 
 
 class NotificationsConsumer(WebsocketConsumer):
@@ -55,16 +47,11 @@ class NotificationsConsumer(WebsocketConsumer):
             return
 
         self.group_name = f"user_notifications_{user.pk}"
-
-        from asgiref.sync import async_to_sync
-
         async_to_sync(self.channel_layer.group_add)(self.group_name, self.channel_name)
         self.accept()
 
     def disconnect(self, close_code):
         if hasattr(self, "group_name"):
-            from asgiref.sync import async_to_sync
-
             async_to_sync(self.channel_layer.group_discard)(
                 self.group_name, self.channel_name
             )

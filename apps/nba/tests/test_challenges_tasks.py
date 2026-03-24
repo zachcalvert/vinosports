@@ -3,13 +3,13 @@
 from datetime import timedelta
 
 import pytest
-from django.utils import timezone
-
 from challenges.tasks import (
     expire_challenges,
     rotate_daily_challenges,
     rotate_weekly_challenges,
 )
+from django.utils import timezone
+
 from tests.factories import GameFactory
 from vinosports.challenges.models import Challenge, ChallengeTemplate, UserChallenge
 
@@ -79,6 +79,7 @@ class TestRotateDailyChallenges:
     def test_fails_in_progress_user_challenges(self):
         """IN_PROGRESS UserChallenges should be marked FAILED when their challenge expires."""
         from games.models import GameStatus
+
         from tests.factories import UserFactory
 
         GameFactory(status=GameStatus.SCHEDULED, game_date=timezone.localdate())

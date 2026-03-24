@@ -3,10 +3,10 @@
 from decimal import Decimal
 
 import pytest
+from betting.context_processors import bankruptcy, parlay_slip
 from django.contrib.auth.models import AnonymousUser
 from django.test import RequestFactory
 
-from betting.context_processors import bankruptcy, parlay_slip
 from tests.factories import (
     BetSlipFactory,
     GameFactory,

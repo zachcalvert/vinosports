@@ -97,6 +97,7 @@ def generate_pregame_comments():
             ActivityEvent.objects.create(
                 event_type=ActivityEvent.EventType.BOT_COMMENT,
                 message=f"{profile.user.display_name} commented on {matchup}",
+                url=game.get_absolute_url(),
             )
             commented += 1
 
@@ -172,6 +173,7 @@ def generate_postgame_comments():
             ActivityEvent.objects.create(
                 event_type=ActivityEvent.EventType.BOT_COMMENT,
                 message=f"{profile.user.display_name} reacted to {matchup}",
+                url=game.get_absolute_url(),
             )
             commented += 1
 

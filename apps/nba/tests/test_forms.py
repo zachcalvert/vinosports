@@ -1,12 +1,11 @@
 """Tests for betting/forms.py and website/forms.py."""
 
-from decimal import Decimal
 
 import pytest
-
-from betting.forms import CurrencyForm, DisplayNameForm, PlaceBetForm, PlaceParlayForm
-from tests.factories import UserFactory
+from betting.forms import DisplayNameForm, PlaceBetForm, PlaceParlayForm
 from website.forms import LoginForm, SignupForm
+
+from tests.factories import UserFactory
 
 
 class TestPlaceBetForm:

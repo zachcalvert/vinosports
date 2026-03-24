@@ -42,12 +42,23 @@ def place_bot_bets(
             ok = _place_parlay(user, instr)
             if ok:
                 legs_count = len(instr.legs)
+                # Link to the first leg's game, consistent with how the EPL app handles parlays
+                try:
+                    first_game = Game.objects.get(pk=instr.legs[0].game_id)
+                    parlay_url = first_game.get_absolute_url()
+                except (IndexError, Game.DoesNotExist):
+                    logger.warning(
+                        "place_bot_bets: could not resolve game URL for parlay (user=%s)",
+                        user,
+                    )
+                    parlay_url = ""
                 ActivityEvent.objects.create(
                     event_type=ActivityEvent.EventType.BOT_BET,
                     message=(
                         f"{user.display_name} placed a"
                         f" {legs_count}-leg parlay for ${instr.stake}"
                     ),
+                    url=parlay_url,
                 )
         else:
             ok = _place_single_bet(user, instr)
@@ -65,11 +76,14 @@ def place_bot_bets(
                         f"{user.display_name} bet ${instr.stake}"
                         f" on {team_abbr} {instr.market.lower()}"
                     )
+                    game_url = game.get_absolute_url()
                 except Game.DoesNotExist:
                     message = f"{user.display_name} bet ${instr.stake}"
+                    game_url = ""
                 ActivityEvent.objects.create(
                     event_type=ActivityEvent.EventType.BOT_BET,
                     message=message,
+                    url=game_url,
                 )
 
         if ok:

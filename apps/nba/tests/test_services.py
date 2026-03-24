@@ -246,6 +246,5 @@ class TestPlaceBotBets:
         ]
 
         place_bot_bets(user, instructions)
-        assert ActivityEvent.objects.filter(
-            event_type=ActivityEvent.EventType.BOT_BET
-        ).exists()
+        event = ActivityEvent.objects.get(event_type=ActivityEvent.EventType.BOT_BET)
+        assert event.url == game.get_absolute_url()
