@@ -242,26 +242,36 @@ def sync_live_scores(client: NBADataClient | None = None) -> int:
         games = c.get_live_scores()
 
     count = 0
-    updated_game_pks = []
+    changed_game_pks = []
     for g in games:
         external_id = g.pop("external_id")
         g.pop("home_team_external_id", None)
         g.pop("away_team_external_id", None)
-        updated = Game.objects.filter(external_id=external_id).update(
+
+        try:
+            game_obj = Game.objects.get(external_id=external_id)
+        except Game.DoesNotExist:
+            continue
+
+        # Only flag as changed if the score or status actually differs
+        score_changed = (
+            game_obj.home_score != g["home_score"]
+            or game_obj.away_score != g["away_score"]
+            or game_obj.status != g["status"]
+        )
+
+        Game.objects.filter(pk=game_obj.pk).update(
             home_score=g["home_score"],
             away_score=g["away_score"],
             status=g["status"],
         )
-        if updated:
-            try:
-                game_obj = Game.objects.get(external_id=external_id)
-                updated_game_pks.append(game_obj.pk)
-            except Game.DoesNotExist:
-                pass
-        count += updated
+        count += 1
 
-    if updated_game_pks:
-        _broadcast_score_updates(updated_game_pks)
+        if score_changed:
+            changed_game_pks.append(game_obj.pk)
+
+    if changed_game_pks:
+        _broadcast_score_updates(changed_game_pks)
 
     logger.info("sync_live_scores: updated %d games", count)
     return count

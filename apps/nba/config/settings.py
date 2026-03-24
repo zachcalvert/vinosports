@@ -131,6 +131,7 @@ CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
 CELERY_TIMEZONE = TIME_ZONE
+CELERY_TASK_DEFAULT_QUEUE = "nba"
 
 # Beat Schedule
 # - NBA games are daily (Oct-Apr), typically 7pm-1am ET

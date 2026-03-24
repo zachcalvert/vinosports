@@ -124,6 +124,7 @@ CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
 CELERY_TIMEZONE = TIME_ZONE
+CELERY_TASK_DEFAULT_QUEUE = "epl"
 
 # Beat Schedule
 # - Data ingestion runs at off-peak UTC hours (3-5am)
