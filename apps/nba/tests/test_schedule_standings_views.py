@@ -136,12 +136,12 @@ class TestStandingsView:
         assert "games/standings.html" in templates
 
     def test_east_standings_in_context(self, auth_client):
-        standing = StandingFactory(conference=Conference.EAST, season=2026)
+        standing = StandingFactory(conference=Conference.EAST, season=2025)
         response = auth_client.get("/games/standings/")
         assert standing in response.context["east_standings"]
 
     def test_west_standings_in_context(self, auth_client):
-        standing = StandingFactory(conference=Conference.WEST, season=2026)
+        standing = StandingFactory(conference=Conference.WEST, season=2025)
         response = auth_client.get("/games/standings/")
         assert standing in response.context["west_standings"]
 
@@ -155,7 +155,7 @@ class TestStandingsView:
 
     def test_season_in_context(self, auth_client):
         response = auth_client.get("/games/standings/")
-        assert response.context["season"] == 2026
+        assert response.context["season"] == 2025
 
     def test_htmx_returns_partial(self, auth_client):
         response = auth_client.get("/games/standings/", HTTP_HX_REQUEST="true")

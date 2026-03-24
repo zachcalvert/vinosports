@@ -204,7 +204,7 @@ CELERY_BEAT_SCHEDULE = {
 }
 
 # External APIs
-FOOTBALL_DATA_API_KEY = os.environ.get("FOOTBALL_DATA_API_KEY", "")
+BDL_API_KEY = os.environ.get("BDL_API_KEY", "")
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
 API_TIMEOUT = 30
 CURRENT_SEASON = "2025"

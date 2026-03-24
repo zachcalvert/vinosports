@@ -146,6 +146,6 @@ class Command(BaseCommand):
         )
 
     def _current_season(self) -> int:
-        """SportsData uses the end year: 2025-26 season = '2026'."""
+        """BDL uses the start year: 2025-26 season = '2025'."""
         today = timezone.now().date()
-        return today.year + 1 if today.month >= 10 else today.year
+        return today.year if today.month >= 10 else today.year - 1
