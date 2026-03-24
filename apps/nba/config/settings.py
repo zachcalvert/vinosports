@@ -168,18 +168,18 @@ CELERY_BEAT_SCHEDULE = {
         "task": "betting.tasks.settle_pending_bets",
         "schedule": crontab(minute="*/5", hour="19-23,0-2"),
     },
-    # --- Bots ---
-    "run-bot-strategies-daily": {
+    # --- Bots (hourly — each bot's schedule template controls activation) ---
+    "run-bot-strategies-hourly": {
         "task": "bots.tasks.run_bot_strategies",
-        "schedule": crontab(hour=14, minute=0),
+        "schedule": crontab(minute=5),
     },
-    "generate-pregame-comments": {
+    "generate-pregame-comments-hourly": {
         "task": "discussions.tasks.generate_pregame_comments",
-        "schedule": crontab(hour="14,16,18", minute=0),
+        "schedule": crontab(minute=15),
     },
-    "generate-postgame-comments": {
+    "generate-postgame-comments-hourly": {
         "task": "discussions.tasks.generate_postgame_comments",
-        "schedule": crontab(hour="0,1,2,3", minute=30),
+        "schedule": crontab(minute=30),
     },
     # --- Activity feed ---
     "broadcast-activity-event-20s": {

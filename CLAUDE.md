@@ -115,3 +115,4 @@ See `docs/` for architecture decisions and setup guides:
 - `0004-DESIGN_SYSTEM.md` — Design system
 - `0005-HUB_APPLICATION.md` — Hub architecture and global account management
 - `0007-CENTRALIZED_AUTH.md` — Auth centralization into hub
+- `0009-BOT_SCHEDULE_TEMPLATES.md` — Bot schedule template system (NBA) and EPL porting guide

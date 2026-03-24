@@ -1,6 +1,12 @@
 from django.contrib import admin
 
-from bots.models import BotComment, BotProfile
+from bots.models import BotComment, BotProfile, ScheduleTemplate
+
+
+@admin.register(ScheduleTemplate)
+class ScheduleTemplateAdmin(admin.ModelAdmin):
+    list_display = ["name", "slug", "active_from", "active_to"]
+    prepopulated_fields = {"slug": ("name",)}
 
 
 @admin.register(BotProfile)
@@ -12,8 +18,9 @@ class BotProfileAdmin(admin.ModelAdmin):
         "is_active",
         "risk_multiplier",
         "max_daily_bets",
+        "schedule_template",
     ]
-    list_filter = ["strategy_type", "is_active"]
+    list_filter = ["strategy_type", "is_active", "schedule_template"]
     search_fields = ["user__email", "user__display_name"]
     raw_id_fields = ["user", "favorite_team"]
 

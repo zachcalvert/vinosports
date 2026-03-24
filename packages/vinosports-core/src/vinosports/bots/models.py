@@ -50,6 +50,53 @@ class AbstractBotProfile(BaseModel):
         verbose_name_plural = _("bot profiles")
 
 
+class AbstractScheduleTemplate(BaseModel):
+    """Abstract schedule template — defines when a bot is active and what it does.
+
+    The `windows` field is a JSON list of activity windows:
+    [
+      {
+        "days": [0,1,2,3,4,5,6],     # 0=Mon..6=Sun
+        "hours": [8, 9, 17, 18],     # hours when bot is "online"
+        "bet_probability": 0.4,       # 0.0-1.0 chance of betting per hourly tick
+        "comment_probability": 0.7,   # 0.0-1.0 chance of commenting per hourly tick
+        "max_bets": 2,                # cap per window activation
+        "max_comments": 1             # cap per window activation
+      }
+    ]
+    """
+
+    name = models.CharField(_("name"), max_length=100)
+    slug = models.SlugField(_("slug"), unique=True)
+    description = models.TextField(_("description"), blank=True)
+    windows = models.JSONField(
+        _("activity windows"),
+        help_text=_(
+            "JSON list of activity windows defining schedule and probabilities."
+        ),
+    )
+    active_from = models.DateField(
+        _("active from"),
+        null=True,
+        blank=True,
+        help_text=_("Optional start date. Template is inactive before this date."),
+    )
+    active_to = models.DateField(
+        _("active to"),
+        null=True,
+        blank=True,
+        help_text=_("Optional end date. Template is inactive after this date."),
+    )
+
+    class Meta:
+        abstract = True
+        verbose_name = _("schedule template")
+        verbose_name_plural = _("schedule templates")
+
+    def __str__(self):
+        return self.name
+
+
 class AbstractBotComment(BaseModel):
     """Abstract bot comment tracker for dedup and debugging.
 

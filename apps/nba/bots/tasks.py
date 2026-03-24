@@ -1,8 +1,9 @@
 """
 Celery tasks for bot betting.
 
-run_bot_strategies() is the orchestrator — call it daily before tip-off.
-It dispatches execute_bot_strategy() for each active bot with staggered delays.
+run_bot_strategies() is the orchestrator — runs hourly and dispatches
+execute_bot_strategy() only for bots whose schedule template has an active
+window at the current time.
 """
 
 import logging
@@ -15,6 +16,7 @@ from django.utils import timezone
 from games.models import Game, GameStatus, Odds
 
 from bots.models import BotProfile
+from bots.schedule import get_active_window, roll_action
 from bots.services import place_bot_bets
 from bots.strategies import STRATEGY_MAP
 from vinosports.betting.models import UserBalance
@@ -27,30 +29,48 @@ MIN_BALANCE = Decimal("5.00")
 
 @shared_task(bind=True, max_retries=2, default_retry_delay=30)
 def run_bot_strategies(self):
-    """Dispatch execute_bot_strategy for each active bot with staggered delays."""
-    today = timezone.localdate()
-    profiles = BotProfile.objects.filter(is_active=True).select_related("user")
+    """Dispatch execute_bot_strategy for active bots whose schedule window matches now."""
+    now = timezone.localtime()
+    today = now.date()
+    profiles = BotProfile.objects.filter(is_active=True).select_related(
+        "user", "schedule_template"
+    )
     dispatched = 0
+    skipped_schedule = 0
 
     for i, profile in enumerate(profiles):
+        window = get_active_window(profile, now)
+        if window is None:
+            skipped_schedule += 1
+            continue
+
+        if not roll_action(window.get("bet_probability", 0.5)):
+            continue
+
         bets_today = BetSlip.objects.filter(
             user=profile.user, created_at__date=today
         ).count()
         if bets_today >= profile.max_daily_bets:
             continue
 
+        window_max_bets = window.get("max_bets", profile.max_daily_bets)
+
         execute_bot_strategy.apply_async(
-            args=[profile.user_id],
+            args=[profile.user_id, window_max_bets],
             countdown=i * 10,
         )
         dispatched += 1
 
-    logger.info("run_bot_strategies: dispatched %d bots", dispatched)
-    return {"dispatched": dispatched}
+    logger.info(
+        "run_bot_strategies: dispatched %d bots, skipped %d (schedule)",
+        dispatched,
+        skipped_schedule,
+    )
+    return {"dispatched": dispatched, "skipped_schedule": skipped_schedule}
 
 
 @shared_task(bind=True, max_retries=2, default_retry_delay=30)
-def execute_bot_strategy(self, bot_user_id: int):
+def execute_bot_strategy(self, bot_user_id: int, window_max_bets: int | None = None):
     """Run a single bot's strategy and place bets."""
     from django.contrib.auth import get_user_model
 
@@ -98,7 +118,11 @@ def execute_bot_strategy(self, bot_user_id: int):
     )
 
     bets_today = BetSlip.objects.filter(user=user, created_at__date=today).count()
-    remaining = max(0, profile.max_daily_bets - bets_today)
+    daily_remaining = max(0, profile.max_daily_bets - bets_today)
+    # Also respect the window-level cap if provided
+    remaining = (
+        min(daily_remaining, window_max_bets) if window_max_bets else daily_remaining
+    )
     if remaining == 0:
         return {"bets": 0, "reason": "daily_limit"}
 

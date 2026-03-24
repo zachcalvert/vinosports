@@ -1,7 +1,18 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
-from vinosports.bots.models import AbstractBotComment, AbstractBotProfile
+from vinosports.bots.models import (
+    AbstractBotComment,
+    AbstractBotProfile,
+    AbstractScheduleTemplate,
+)
+
+
+class ScheduleTemplate(AbstractScheduleTemplate):
+    """NBA bot schedule template."""
+
+    class Meta(AbstractScheduleTemplate.Meta):
+        app_label = "nba_bots"
 
 
 class BotProfile(AbstractBotProfile):
@@ -40,6 +51,15 @@ class BotProfile(AbstractBotProfile):
         _("max daily bets"),
         default=5,
         help_text=_("Maximum bets this bot can place per day."),
+    )
+    schedule_template = models.ForeignKey(
+        ScheduleTemplate,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="bots",
+        verbose_name=_("schedule template"),
+        help_text=_("Activity schedule. Bots without a template are always eligible."),
     )
 
     def __str__(self):

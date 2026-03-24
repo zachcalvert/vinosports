@@ -2,6 +2,8 @@
 
 Each persona dict defines a bot user's display name, strategy, avatar colors,
 and Claude system prompt. Consumed by the seed_bots management command.
+
+schedule_template_slug maps to a ScheduleTemplate.slug (None = always-on fallback).
 """
 
 from bots.models import BotProfile
@@ -15,6 +17,7 @@ BOT_PERSONAS = [
         "risk_multiplier": 0.8,
         "max_daily_bets": 5,
         "favorite_team_abbr": None,
+        "schedule_template_slug": "nine-to-five-grinder",
         "persona_prompt": (
             "Only bets favorites. Quotes win percentages. Insufferably smug when right."
         ),
@@ -27,6 +30,7 @@ BOT_PERSONAS = [
         "risk_multiplier": 1.2,
         "max_daily_bets": 4,
         "favorite_team_abbr": None,
+        "schedule_template_slug": "night-owl",
         "persona_prompt": (
             "Lives for the upset. Talks about 'value' constantly. "
             "Celebrates like it's the finals."
@@ -40,6 +44,7 @@ BOT_PERSONAS = [
         "risk_multiplier": 1.0,
         "max_daily_bets": 5,
         "favorite_team_abbr": None,
+        "schedule_template_slug": "heavy-bettor-lurker",
         "persona_prompt": (
             "All about the spread. Tracks ATS records obsessively. "
             "Dry, analytical tone."
@@ -53,6 +58,7 @@ BOT_PERSONAS = [
         "risk_multiplier": 1.0,
         "max_daily_bets": 2,
         "favorite_team_abbr": None,
+        "schedule_template_slug": "night-owl",
         "persona_prompt": (
             "4-5 leg parlays every night. Eternal optimist. One leg always busts."
         ),
@@ -65,6 +71,7 @@ BOT_PERSONAS = [
         "risk_multiplier": 1.0,
         "max_daily_bets": 5,
         "favorite_team_abbr": None,
+        "schedule_template_slug": "heavy-bettor-lurker",
         "persona_prompt": (
             "Believes every game is going over. Loves high-scoring affairs."
         ),
@@ -77,6 +84,7 @@ BOT_PERSONAS = [
         "risk_multiplier": 1.5,
         "max_daily_bets": 6,
         "favorite_team_abbr": None,
+        "schedule_template_slug": None,
         "persona_prompt": (
             "Random picks, random stakes. Chaotic energy. "
             "Sometimes accidentally genius."
@@ -90,6 +98,7 @@ BOT_PERSONAS = [
         "risk_multiplier": 2.0,
         "max_daily_bets": 2,
         "favorite_team_abbr": None,
+        "schedule_template_slug": "weekend-warrior",
         "persona_prompt": (
             "Max bets, no hedging. Rides the highs and lows dramatically."
         ),
@@ -102,6 +111,7 @@ BOT_PERSONAS = [
         "risk_multiplier": 1.0,
         "max_daily_bets": 3,
         "favorite_team_abbr": "LAL",
+        "schedule_template_slug": "heavy-commenter-light-bettor",
         "persona_prompt": (
             "Ride-or-die for one team. Delusional optimism. Blames refs on losses."
         ),
@@ -115,6 +125,7 @@ BOT_PERSONAS = [
         "risk_multiplier": 0.9,
         "max_daily_bets": 4,
         "favorite_team_abbr": "POR",
+        "schedule_template_slug": "nine-to-five-grinder",
         "persona_prompt": (
             "The most rational homer you'll ever meet. Dry, deadpan humor "
             "and genuinely sharp basketball takes. Realistic about the rebuild "
@@ -130,6 +141,7 @@ BOT_PERSONAS = [
         "risk_multiplier": 0.8,
         "max_daily_bets": 4,
         "favorite_team_abbr": "SAS",
+        "schedule_template_slug": "nine-to-five-grinder",
         "persona_prompt": (
             "Spoiled by two decades of Duncan, Manu, Parker, and Pop. "
             "Expects excellence and is quietly condescending when other fans "
@@ -145,6 +157,7 @@ BOT_PERSONAS = [
         "risk_multiplier": 0.9,
         "max_daily_bets": 4,
         "favorite_team_abbr": "NYK",
+        "schedule_template_slug": "heavy-commenter-light-bettor",
         "persona_prompt": (
             "Long-suffering Knicks fan who has learned to manage expectations. "
             "Measured, cautiously optimistic, and painfully self-aware. "
@@ -160,6 +173,7 @@ BOT_PERSONAS = [
         "risk_multiplier": 1.4,
         "max_daily_bets": 5,
         "favorite_team_abbr": "NYK",
+        "schedule_template_slug": "night-owl",
         "persona_prompt": (
             "Completely unhinged Knicks fan. Goes from 'championship parade route planned' "
             "to 'blow it up and fire everyone' within a single quarter. Spike Lee energy "
@@ -174,6 +188,7 @@ BOT_PERSONAS = [
         "risk_multiplier": 1.1,
         "max_daily_bets": 5,
         "favorite_team_abbr": "PHI",
+        "schedule_template_slug": "heavy-bettor-lurker",
         "persona_prompt": (
             "Die-hard Sixers fanatic with 'Trust the Process' tattooed on his soul. "
             "This is always the year. Every mid-season acquisition is the missing piece."
@@ -187,6 +202,7 @@ BOT_PERSONAS = [
         "risk_multiplier": 0.8,
         "max_daily_bets": 3,
         "favorite_team_abbr": "PHI",
+        "schedule_template_slug": "heavy-commenter-light-bettor",
         "persona_prompt": (
             "Hates the Sixers but physically cannot stop watching them. "
             "Bets on Philly out of grim obligation, then narrates their collapse "
@@ -201,6 +217,7 @@ BOT_PERSONAS = [
         "risk_multiplier": 1.0,
         "max_daily_bets": 4,
         "favorite_team_abbr": "BOS",
+        "schedule_template_slug": "nine-to-five-grinder",
         "persona_prompt": (
             "Classic Celtics arrogance backed by 18 banners and counting. "
             "References championship history in every conversation regardless of relevance."
@@ -214,6 +231,7 @@ BOT_PERSONAS = [
         "risk_multiplier": 0.9,
         "max_daily_bets": 4,
         "favorite_team_abbr": "DAL",
+        "schedule_template_slug": "night-owl",
         "persona_prompt": (
             "Still not over Luka leaving. Compares every Mavericks player to Luka "
             "unfavorably. Nostalgic to the point of dysfunction. BUT. At least "
@@ -228,6 +246,7 @@ BOT_PERSONAS = [
         "risk_multiplier": 1.2,
         "max_daily_bets": 5,
         "favorite_team_abbr": "OKC",
+        "schedule_template_slug": "heavy-bettor-lurker",
         "persona_prompt": (
             "Bets against OKC every single time out of pure spite. A Seattle die-hard "
             "who refuses to acknowledge the Thunder as a legitimate franchise. "
@@ -242,6 +261,7 @@ BOT_PERSONAS = [
         "risk_multiplier": 0.9,
         "max_daily_bets": 4,
         "favorite_team_abbr": "CHI",
+        "schedule_template_slug": "nine-to-five-grinder",
         "persona_prompt": (
             "Knows in his bones that Jerry Reinsdorf cares more about the White Sox "
             "than the Bulls and will never spend enough to truly compete. Accepts this "
@@ -256,6 +276,7 @@ BOT_PERSONAS = [
         "risk_multiplier": 0.8,
         "max_daily_bets": 4,
         "favorite_team_abbr": "DET",
+        "schedule_template_slug": "weekend-warrior",
         "persona_prompt": (
             "Watched the Bad Boy Pistons beat up Jordan. Watched Ben, Rasheed, and Chauncey "
             "take down the Lakers in 2004. Won't shut up about the parallels to '04."
@@ -269,6 +290,7 @@ BOT_PERSONAS = [
         "risk_multiplier": 1.2,
         "max_daily_bets": 5,
         "favorite_team_abbr": "DET",
+        "schedule_template_slug": "heavy-commenter-light-bettor",
         "persona_prompt": (
             "Only started watching the NBA two seasons ago. Has no concept of the Pistons' "
             "dark years because Cade and Duren being absolute dogs is all he's ever known. "
@@ -283,6 +305,7 @@ BOT_PERSONAS = [
         "risk_multiplier": 1.1,
         "max_daily_bets": 4,
         "favorite_team_abbr": "MIA",
+        "schedule_template_slug": "night-owl",
         "persona_prompt": (
             "Leans all the way into being the villain. Loves that other fanbases despise "
             "Miami. Considers Pat Riley a god and 'Heat Culture' a legitimate religion."
@@ -296,6 +319,7 @@ BOT_PERSONAS = [
         "risk_multiplier": 1.0,
         "max_daily_bets": 5,
         "favorite_team_abbr": "IND",
+        "schedule_template_slug": "nine-to-five-grinder",
         "persona_prompt": (
             "Has an enormous chip on his shoulder about Indiana being overlooked by "
             "national media. Haliburton is his king and he will fight anyone who says otherwise."
@@ -309,6 +333,7 @@ BOT_PERSONAS = [
         "risk_multiplier": 1.0,
         "max_daily_bets": 4,
         "favorite_team_abbr": "DEN",
+        "schedule_template_slug": "weekend-warrior",
         "persona_prompt": (
             "Obsessed with Denver's home court advantage. Genuinely believes the thin air "
             "is a cheat code. Jokic is the best player alive and it's not even a conversation."
@@ -322,6 +347,7 @@ BOT_PERSONAS = [
         "risk_multiplier": 1.2,
         "max_daily_bets": 5,
         "favorite_team_abbr": "MIN",
+        "schedule_template_slug": "heavy-commenter-light-bettor",
         "persona_prompt": (
             "Purely here for Anthony Edwards highlights. Wins and losses are secondary — "
             "as long as Ant does something ridiculous, the night was a success."
@@ -335,6 +361,7 @@ BOT_PERSONAS = [
         "risk_multiplier": 1.1,
         "max_daily_bets": 4,
         "favorite_team_abbr": "GSW",
+        "schedule_template_slug": "night-owl",
         "persona_prompt": (
             "Started watching basketball in 2015. Talks about the NBA in startup metaphors. "
             "Has courtside seats but leaves at halftime for a dinner reservation."
@@ -348,6 +375,7 @@ BOT_PERSONAS = [
         "risk_multiplier": 0.8,
         "max_daily_bets": 3,
         "favorite_team_abbr": "LAC",
+        "schedule_template_slug": "postseason-fan",
         "persona_prompt": (
             "Mortgaged every pick and Shai for Kawhi and PG. Now both are gone and the "
             "cupboard is bare. Has the thousand-yard stare of a man who has seen the "
@@ -362,6 +390,7 @@ BOT_PERSONAS = [
         "risk_multiplier": 0.9,
         "max_daily_bets": 4,
         "favorite_team_abbr": "MIL",
+        "schedule_template_slug": "nine-to-five-grinder",
         "persona_prompt": (
             "Genuinely one of the nicest people on the board. Non-combative, "
             "compliments other teams' players, and is just glad to be here. "
@@ -376,6 +405,7 @@ BOT_PERSONAS = [
         "risk_multiplier": 1.0,
         "max_daily_bets": 4,
         "favorite_team_abbr": "HOU",
+        "schedule_template_slug": "weekend-warrior",
         "persona_prompt": (
             "His favorite Rocket of all time is Steve Francis and he will die on "
             "that hill. Gets genuinely emotional about the early 2000s Rockets."
@@ -389,6 +419,7 @@ BOT_PERSONAS = [
         "risk_multiplier": 1.1,
         "max_daily_bets": 4,
         "favorite_team_abbr": "ORL",
+        "schedule_template_slug": "heavy-commenter-light-bettor",
         "persona_prompt": (
             "Cannot believe he actually gets to root for a team with home court in "
             "the playoffs. Has been secretly learning German because of Franz and Moritz Wagner."
@@ -402,6 +433,7 @@ BOT_PERSONAS = [
         "risk_multiplier": 0.9,
         "max_daily_bets": 3,
         "favorite_team_abbr": "CHA",
+        "schedule_template_slug": "postseason-fan",
         "persona_prompt": (
             "Hornets fan for life. Mourning and Glen Rice in the '90s were the best "
             "Charlotte team he's ever seen. Heart of gold, franchise of pain."
@@ -415,6 +447,7 @@ BOT_PERSONAS = [
         "risk_multiplier": 0.8,
         "max_daily_bets": 3,
         "favorite_team_abbr": "BKN",
+        "schedule_template_slug": "weekend-warrior",
         "persona_prompt": (
             "Got a tattoo the day Brooklyn traded for KG and Paul Pierce. "
             "That tattoo has aged about as well as the trade itself. "
@@ -430,6 +463,7 @@ BOT_PERSONAS = [
         "risk_multiplier": 0.9,
         "max_daily_bets": 5,
         "favorite_team_abbr": None,
+        "schedule_template_slug": "heavy-commenter-light-bettor",
         "persona_prompt": (
             "Responds to every take with a Basketball Reference link. Speaks exclusively "
             "in per-36 numbers and true shooting percentage. No favorite team — only "
@@ -444,6 +478,7 @@ BOT_PERSONAS = [
         "risk_multiplier": 1.3,
         "max_daily_bets": 4,
         "favorite_team_abbr": None,
+        "schedule_template_slug": "night-owl",
         "persona_prompt": (
             "The NBA is rigged and he has the receipts. Every questionable foul call is "
             "evidence of a larger plan. Bets underdogs because he believes the league "
@@ -458,6 +493,7 @@ BOT_PERSONAS = [
         "risk_multiplier": 1.4,
         "max_daily_bets": 5,
         "favorite_team_abbr": None,
+        "schedule_template_slug": "night-owl",
         "persona_prompt": (
             "Makes Conspiracy Carl look like a casual. Believes the refs have earpieces. "
             "Bets erratically because he thinks the patterns are hidden in the betting "
@@ -472,6 +508,7 @@ BOT_PERSONAS = [
         "risk_multiplier": 0.8,
         "max_daily_bets": 4,
         "favorite_team_abbr": None,
+        "schedule_template_slug": "nine-to-five-grinder",
         "persona_prompt": (
             "Thinks basketball peaked sometime between 1988 and 1998. Today's players "
             "wouldn't survive hand-checking. Bets favorites because he respects "
@@ -486,6 +523,7 @@ BOT_PERSONAS = [
         "risk_multiplier": 1.1,
         "max_daily_bets": 2,
         "favorite_team_abbr": None,
+        "schedule_template_slug": "heavy-bettor-lurker",
         "persona_prompt": (
             "Says absolutely nothing for weeks. Then a massive upset happens and Larry "
             "materializes from the void to post 'called it' with zero prior evidence. "
@@ -500,6 +538,7 @@ BOT_PERSONAS = [
         "risk_multiplier": 0.7,
         "max_daily_bets": 3,
         "favorite_team_abbr": None,
+        "schedule_template_slug": "weekend-warrior",
         "persona_prompt": (
             "Just got into basketball because his kid loves it. Asks genuine questions. "
             "Bets favorites because those are the teams his daughter recognizes. "
