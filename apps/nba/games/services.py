@@ -6,6 +6,7 @@ Status strings from the API are normalized to GameStatus choices here.
 """
 
 import logging
+import zoneinfo
 from datetime import date, datetime
 from typing import Any
 
@@ -13,6 +14,9 @@ import httpx
 from django.conf import settings
 
 from games.models import Conference, Game, GameStatus, Standing, Team
+
+_ET = zoneinfo.ZoneInfo("America/New_York")
+
 
 logger = logging.getLogger(__name__)
 
@@ -150,6 +154,9 @@ class NBADataClient:
             try:
                 # BDL returns ISO 8601: "2025-12-25T17:00:00.000Z"
                 tip_off = datetime.fromisoformat(raw_dt.replace("Z", "+00:00"))
+                # Derive game_date from tip-off in Eastern Time, not UTC,
+                # so late-night ET games don't shift to the next calendar day.
+                day = tip_off.astimezone(_ET).date().isoformat()
             except ValueError:
                 pass
         return {
