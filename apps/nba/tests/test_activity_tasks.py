@@ -68,6 +68,7 @@ class TestBroadcastNextActivityEvent:
         older_event = ActivityEventFactory(broadcast_at=None)
         # Force older_event to have an earlier created_at
         from activity.models import ActivityEvent
+
         ActivityEvent.objects.filter(pk=older_event.pk).update(
             created_at=timezone.now() - timedelta(hours=1)
         )
@@ -93,6 +94,7 @@ class TestCleanupOldActivityEvents:
         """Events older than 7 days should be deleted."""
         old_event = ActivityEventFactory()
         from activity.models import ActivityEvent
+
         ActivityEvent.objects.filter(pk=old_event.pk).update(
             created_at=timezone.now() - timedelta(days=8)
         )
@@ -100,6 +102,7 @@ class TestCleanupOldActivityEvents:
         cleanup_old_activity_events()
 
         from activity.models import ActivityEvent as AE
+
         assert not AE.objects.filter(pk=old_event.pk).exists()
 
     def test_keeps_recent_events(self):
@@ -109,11 +112,13 @@ class TestCleanupOldActivityEvents:
         cleanup_old_activity_events()
 
         from activity.models import ActivityEvent as AE
+
         assert AE.objects.filter(pk=recent_event.pk).exists()
 
     def test_keeps_events_exactly_7_days_old(self):
         """Events exactly 7 days old (not past the cutoff) should not be deleted."""
         from activity.models import ActivityEvent
+
         event = ActivityEventFactory()
         # Set to exactly 6 days 23 hours ago (not yet past 7-day cutoff)
         ActivityEvent.objects.filter(pk=event.pk).update(

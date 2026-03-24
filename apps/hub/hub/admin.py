@@ -1,8 +1,15 @@
+from decimal import Decimal
+
+from django import forms
 from django.contrib import admin
 from django.contrib.auth import get_user_model
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
+from django.db import transaction
+from django.db.models import Count
 
-from vinosports.betting.models import UserBalance
+from vinosports.betting.balance import log_transaction
+from vinosports.betting.models import BalanceTransaction, UserBalance
+from vinosports.rewards.models import Reward, RewardDistribution, RewardRule
 
 from .models import SiteSettings
 
@@ -71,3 +78,118 @@ class SiteSettingsAdmin(admin.ModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return False
+
+
+# --- Rewards Admin ---
+
+
+class RewardAdminForm(forms.ModelForm):
+    distribute_to = forms.ModelMultipleChoiceField(
+        queryset=User.objects.filter(is_active=True).order_by("email"),
+        required=False,
+        widget=admin.widgets.FilteredSelectMultiple("users", is_stacked=False),
+        help_text="Select users to distribute this reward to on save.",
+    )
+
+    class Meta:
+        model = Reward
+        fields = ("name", "amount", "description")
+
+
+class RewardDistributionInline(admin.TabularInline):
+    model = RewardDistribution
+    extra = 0
+    readonly_fields = ("user", "seen", "created_at")
+    can_delete = False
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(Reward)
+class RewardAdmin(admin.ModelAdmin):
+    form = RewardAdminForm
+    list_display = ("name", "amount", "recipient_count", "created_by", "created_at")
+    readonly_fields = ("created_by", "created_at")
+    inlines = [RewardDistributionInline]
+    actions = ["distribute_to_all_users"]
+
+    def get_queryset(self, request):
+        return (
+            super()
+            .get_queryset(request)
+            .annotate(_recipient_count=Count("distributions"))
+        )
+
+    def recipient_count(self, obj):
+        return obj._recipient_count
+
+    recipient_count.admin_order_field = "_recipient_count"
+    recipient_count.short_description = "Recipients"
+
+    def save_model(self, request, obj, form, change):
+        if not obj.created_by_id:
+            obj.created_by = request.user
+        super().save_model(request, obj, form, change)
+
+        users = form.cleaned_data.get("distribute_to")
+        if users:
+            with transaction.atomic():
+                obj.distribute_to_users(users)
+
+    @admin.action(description="Distribute selected rewards to all active users")
+    def distribute_to_all_users(self, request, queryset):
+        active_users = list(User.objects.filter(is_active=True, is_bot=False))
+        for reward in queryset:
+            reward.distribute_to_users(active_users)
+        self.message_user(
+            request,
+            f"Distributed {queryset.count()} reward(s) to {len(active_users)} users.",
+        )
+
+
+@admin.register(RewardDistribution)
+class RewardDistributionAdmin(admin.ModelAdmin):
+    list_display = ("reward", "user", "seen", "created_at")
+    list_filter = ("seen", "reward")
+    readonly_fields = ("reward", "user", "created_at")
+
+    def save_model(self, request, obj, form, change):
+        super().save_model(request, obj, form, change)
+        if not change:
+            with transaction.atomic():
+                balance, _ = UserBalance.objects.select_for_update().get_or_create(
+                    user=obj.user, defaults={"balance": Decimal("1000.00")}
+                )
+                log_transaction(
+                    balance,
+                    obj.reward.amount,
+                    BalanceTransaction.Type.REWARD,
+                    f"Reward: {obj.reward.name}",
+                )
+
+
+@admin.register(RewardRule)
+class RewardRuleAdmin(admin.ModelAdmin):
+    list_display = (
+        "rule_type",
+        "threshold",
+        "reward",
+        "is_active",
+        "distribution_count",
+    )
+    list_editable = ("is_active",)
+    list_filter = ("rule_type", "is_active")
+
+    def get_queryset(self, request):
+        return (
+            super()
+            .get_queryset(request)
+            .annotate(_distribution_count=Count("reward__distributions"))
+        )
+
+    def distribution_count(self, obj):
+        return obj._distribution_count
+
+    distribution_count.admin_order_field = "_distribution_count"
+    distribution_count.short_description = "Times awarded"

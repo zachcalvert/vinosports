@@ -3,7 +3,11 @@ import logging
 
 from asgiref.sync import async_to_sync
 from channels.generic.websocket import WebsocketConsumer
+from django.db import close_old_connections
 from django.template.loader import render_to_string
+
+from vinosports.betting.models import UserBalance
+from vinosports.rewards.models import RewardDistribution
 
 logger = logging.getLogger(__name__)
 
@@ -64,3 +68,35 @@ class NotificationsConsumer(WebsocketConsumer):
 
     def badge_notification(self, event):
         self.send(text_data=json.dumps({"type": "badge", "data": event}))
+
+    def reward_notification(self, event):
+        close_old_connections()
+        distribution_id = event["distribution_id"]
+        try:
+            user = self.scope.get("user")
+            distribution = (
+                RewardDistribution.objects.filter(pk=distribution_id, user=user)
+                .select_related("reward")
+                .first()
+            )
+            if not distribution:
+                return
+
+            html = render_to_string(
+                "rewards/partials/reward_toast_oob.html",
+                {"distribution": distribution, "user": user},
+            )
+            try:
+                current_balance = UserBalance.objects.get(user=user).balance
+                html += render_to_string(
+                    "website/components/balance_oob.html",
+                    {"balance": current_balance, "user": user},
+                )
+            except UserBalance.DoesNotExist:
+                pass
+            self.send(text_data=html)
+        except Exception:
+            logger.exception(
+                "Error rendering reward_notification for distribution %s",
+                distribution_id,
+            )
