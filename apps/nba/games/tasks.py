@@ -57,12 +57,12 @@ def fetch_live_scores(self):
 
 
 def _current_season() -> int:
-    """Return the SportsData season year for the current NBA season.
+    """Return the BDL season year for the current NBA season.
 
-    SportsData uses the *end* year: the 2025-26 season is labelled "2026".
-    Oct-Dec → next calendar year; Jan-Sep → current calendar year.
+    BDL uses the *start* year: the 2025-26 season is labelled "2025".
+    Oct-Dec → current calendar year; Jan-Sep → previous calendar year.
     """
     today = timezone.now().date()
     if today.month >= 10:
-        return today.year + 1
-    return today.year
+        return today.year
+    return today.year - 1

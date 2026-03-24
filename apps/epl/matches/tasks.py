@@ -1,5 +1,4 @@
 import logging
-import time
 from datetime import timedelta
 
 from asgiref.sync import async_to_sync
@@ -66,7 +65,9 @@ def fetch_live_scores(self):
             ).values("pk", "home_score", "away_score", "status")
         }
 
-        created, updated = sync_matches(settings.CURRENT_SEASON, status="LIVE")
+        from datetime import date
+
+        created, updated = sync_matches(settings.CURRENT_SEASON, game_date=date.today())
         logger.info("fetch_live_scores: done created=%d updated=%d", created, updated)
 
         still_live_pks = Match.objects.filter(
@@ -201,7 +202,6 @@ def prefetch_upcoming_hype_data():
 
         fetch_match_hype_data(match)
         refreshed += 1
-        time.sleep(20)
 
     logger.info(
         "prefetch_upcoming_hype_data: refreshed=%d skipped=%d", refreshed, skipped

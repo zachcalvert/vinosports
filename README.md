@@ -60,8 +60,8 @@ The hub is at [localhost:7999](http://localhost:7999), EPL at [localhost:8000](h
 Create a `.env` file in the repo root (git-ignored) or copy from `.env.example`:
 
 ```bash
-FOOTBALL_DATA_API_KEY=your-key-here
-ANTHROPIC_API_KEY=your-key-here  # For bot comment generation
+BDL_API_KEY=your-key-here          # BallDontLie (NBA + EPL data)
+ANTHROPIC_API_KEY=your-key-here    # For bot comment generation
 ```
 
 ### Common Commands

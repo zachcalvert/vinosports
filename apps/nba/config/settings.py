@@ -207,6 +207,6 @@ CELERY_BEAT_SCHEDULE = {
 }
 
 # External APIs
-SPORTSDATA_API_KEY = os.environ.get("SPORTSDATA_API_KEY", "")
+BDL_API_KEY = os.environ.get("BDL_API_KEY", "")
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
 API_TIMEOUT = 30

@@ -1,12 +1,12 @@
 """
-NBA data API client (sportsdata.io v3) and sync helpers.
+NBA data API client (BallDontLie) and sync helpers.
 
 All public methods return normalized dicts that map directly to model fields.
 Status strings from the API are normalized to GameStatus choices here.
 """
 
 import logging
-from datetime import date, datetime, timezone
+from datetime import date, datetime
 from typing import Any
 
 import httpx
@@ -16,145 +16,167 @@ from games.models import Conference, Game, GameStatus, Standing, Team
 
 logger = logging.getLogger(__name__)
 
-SPORTSDATA_BASE = "https://api.sportsdata.io/v3/nba/scores/JSON"
+BDL_BASE = "https://api.balldontlie.io/nba/v1"
 
-# Map sportsdata.io status strings → our GameStatus enum
-_STATUS_MAP = {
-    "Scheduled": GameStatus.SCHEDULED,
-    "InProgress": GameStatus.IN_PROGRESS,
-    "Halftime": GameStatus.HALFTIME,
-    "Final": GameStatus.FINAL,
-    "F/OT": GameStatus.FINAL,
-    "Postponed": GameStatus.POSTPONED,
-    "Canceled": GameStatus.CANCELLED,
-    "Delayed": GameStatus.SCHEDULED,
-    "Suspended": GameStatus.SCHEDULED,
-    "Forfeit": GameStatus.CANCELLED,
-}
-
-# Map sportsdata.io conference strings → our Conference enum
 _CONFERENCE_MAP = {
-    "Eastern": Conference.EAST,
-    "Western": Conference.WEST,
+    "East": Conference.EAST,
+    "West": Conference.WEST,
 }
 
 
 def _normalize_status(raw: str) -> str:
-    """Convert API status string to GameStatus. Defaults to SCHEDULED."""
-    return _STATUS_MAP.get(raw, GameStatus.SCHEDULED)
+    """Convert BDL status string to GameStatus.
+
+    BDL uses: ISO timestamp (scheduled), quarter strings (live),
+    "Halftime", "Final".
+    """
+    if raw == "Final":
+        return GameStatus.FINAL
+    if raw == "Halftime":
+        return GameStatus.HALFTIME
+    if raw in ("1st Qtr", "2nd Qtr", "3rd Qtr", "4th Qtr"):
+        return GameStatus.IN_PROGRESS
+    # ISO timestamps and anything else = scheduled
+    return GameStatus.SCHEDULED
 
 
 def _normalize_conference(raw: str) -> str:
     return _CONFERENCE_MAP.get(raw, Conference.EAST)
 
 
-def _sportsdata_date(d: date) -> str:
-    """Format date as YYYY-MMM-DD (e.g. 2025-MAR-20) for sportsdata.io URL paths."""
-    return d.strftime("%Y-%b-%d").upper()
-
-
 class NBADataClient:
-    """Thin httpx wrapper around the sportsdata.io NBA v3 Scores API."""
+    """Thin httpx wrapper around the BallDontLie NBA v1 API."""
 
     def __init__(self, api_key: str | None = None):
-        self.api_key = api_key or settings.SPORTSDATA_API_KEY
+        self.api_key = api_key or settings.BDL_API_KEY
         self._client = httpx.Client(
-            base_url=SPORTSDATA_BASE,
-            headers={"Ocp-Apim-Subscription-Key": self.api_key},
+            base_url=BDL_BASE,
+            headers={"Authorization": self.api_key},
             timeout=15.0,
         )
 
-    def _get(self, path: str) -> Any:
-        response = self._client.get(path)
+    def _get(self, path: str, params: dict | None = None) -> Any:
+        response = self._client.get(path, params=params)
         response.raise_for_status()
         return response.json()
+
+    def _get_all(self, path: str, params: dict | None = None) -> list[dict]:
+        """Paginate through all results for a list endpoint."""
+        params = dict(params or {})
+        params["per_page"] = 100
+        results = []
+        while True:
+            data = self._get(path, params=params)
+            results.extend(data.get("data", []))
+            cursor = data.get("meta", {}).get("next_cursor")
+            if not cursor:
+                break
+            params["cursor"] = cursor
+        return results
 
     # --- Public data methods ---
 
     def get_teams(self) -> list[dict]:
         """Return all active NBA teams, normalized."""
-        raw = self._get("/Teams")
+        raw = self._get_all("/teams")
         return [self._normalize_team(t) for t in raw]
 
     def get_games(self, season: int, game_date: date | None = None) -> list[dict]:
         """Return games for a season. If game_date provided, fetch that day only."""
+        params = {"seasons[]": season}
         if game_date:
-            raw = self._get(f"/GamesByDate/{_sportsdata_date(game_date)}")
-            raw = raw if isinstance(raw, list) else []
-        else:
-            raw = self._get(f"/Games/{season}")
+            params["dates[]"] = game_date.isoformat()
+        raw = self._get_all("/games", params=params)
         return [self._normalize_game(g) for g in raw]
 
     def get_standings(self, season: int) -> list[dict]:
-        """Return standings for a season."""
-        raw = self._get(f"/Standings/{season}")
+        """Return standings for a season (requires All-Star tier)."""
+        data = self._get("/standings", params={"season": season})
+        raw = data.get("data", []) if isinstance(data, dict) else data
         return [self._normalize_standing(s) for s in raw]
 
     def get_live_scores(self) -> list[dict]:
-        """Return currently in-progress games. Skips API call if no games are live."""
-        in_progress = self._get("/AreAnyGamesInProgress")
-        if not in_progress:
-            return []
-        raw = self._get(f"/GamesByDate/{_sportsdata_date(date.today())}")
+        """Return in-progress and recently-finished games for today.
+
+        Checks if we have locally-live games to avoid unnecessary API calls.
+        """
+        local_live = Game.objects.filter(
+            game_date=date.today(),
+            status__in=(GameStatus.IN_PROGRESS, GameStatus.HALFTIME),
+        ).exists()
+        if not local_live:
+            # No games we think are live — skip unless there are scheduled
+            # games today (they might have started since our last check).
+            has_scheduled = Game.objects.filter(
+                game_date=date.today(),
+                status=GameStatus.SCHEDULED,
+            ).exists()
+            if not has_scheduled:
+                return []
+
+        raw = self._get_all("/games", params={"dates[]": date.today().isoformat()})
         return [
             self._normalize_game(g)
-            for g in (raw if isinstance(raw, list) else [])
-            if g.get("Status") in ("InProgress", "Halftime", "Final", "F/OT")
+            for g in raw
+            if _normalize_status(g.get("status", ""))
+            in (GameStatus.IN_PROGRESS, GameStatus.HALFTIME, GameStatus.FINAL)
         ]
 
     # --- Normalizers ---
 
     def _normalize_team(self, t: dict) -> dict:
         return {
-            "external_id": t["TeamID"],
-            "name": t["Name"],
-            "short_name": f"{t['City']} {t['Name']}",
-            "abbreviation": t["Key"],
-            "logo_url": t.get("WikipediaLogoUrl") or "",
-            "conference": _normalize_conference(t.get("Conference", "")),
-            "division": t.get("Division", ""),
+            "external_id": t["id"],
+            "name": t["name"],
+            "short_name": t.get("full_name", f"{t.get('city', '')} {t['name']}"),
+            "abbreviation": t["abbreviation"],
+            "logo_url": "",
+            "conference": _normalize_conference(t.get("conference", "")),
+            "division": t.get("division", ""),
         }
 
     def _normalize_game(self, g: dict) -> dict:
-        raw_dt = g.get("DateTime") or g.get("Day") or ""
+        raw_dt = g.get("datetime") or g.get("date") or ""
         day = raw_dt[:10]
         tip_off = None
-        if raw_dt:
+        if raw_dt and "T" in raw_dt:
             try:
-                tip_off = datetime.fromisoformat(raw_dt).replace(tzinfo=timezone.utc)
+                # BDL returns ISO 8601: "2025-12-25T17:00:00.000Z"
+                tip_off = datetime.fromisoformat(raw_dt.replace("Z", "+00:00"))
             except ValueError:
                 pass
         return {
-            "external_id": g["GameID"],
-            "home_team_external_id": g.get("HomeTeamID"),
-            "away_team_external_id": g.get("AwayTeamID"),
-            "home_score": g.get("HomeTeamScore"),
-            "away_score": g.get("AwayTeamScore"),
-            "status": _normalize_status(g.get("Status", "")),
+            "external_id": g["id"],
+            "home_team_external_id": g["home_team"]["id"],
+            "away_team_external_id": g["visitor_team"]["id"],
+            "home_score": g.get("home_team_score"),
+            "away_score": g.get("visitor_team_score"),
+            "status": _normalize_status(g.get("status", "")),
             "game_date": day,
             "tip_off": tip_off,
-            "season": g.get("Season"),
+            "season": g.get("season"),
             "arena": "",
-            "postseason": g.get("SeasonType", 1) != 1,
+            "postseason": g.get("postseason", False),
         }
 
     def _normalize_standing(self, s: dict) -> dict:
-        wins = s.get("Wins", 0)
-        losses = s.get("Losses", 0)
+        team = s.get("team", {})
+        wins = s.get("wins", 0)
+        losses = s.get("losses", 0)
         total = wins + losses
         win_pct = round(wins / total, 3) if total else 0.0
         return {
-            "team_external_id": s["TeamID"],
-            "season": s.get("Season"),
-            "conference": _normalize_conference(s.get("Conference", "")),
+            "team_external_id": team.get("id") or s.get("team_id"),
+            "season": s.get("season"),
+            "conference": _normalize_conference(team.get("conference", "")),
             "wins": wins,
             "losses": losses,
             "win_pct": win_pct,
-            "games_behind": s.get("GamesBack") or 0.0,
-            "streak": s.get("StreakDescription", ""),
-            "home_record": f"{s.get('HomeWins', 0)}-{s.get('HomeLosses', 0)}",
-            "away_record": f"{s.get('AwayWins', 0)}-{s.get('AwayLosses', 0)}",
-            "conference_rank": s.get("ConferenceRank"),
+            "games_behind": 0.0,
+            "streak": "",
+            "home_record": s.get("home_record", ""),
+            "away_record": s.get("road_record", ""),
+            "conference_rank": s.get("conference_rank"),
         }
 
     def close(self):
@@ -216,25 +238,33 @@ def sync_games(
 
 
 def sync_standings(season: int, client: NBADataClient | None = None) -> int:
-    """Upsert standings for a season. Returns count synced."""
-    with client or NBADataClient() as c:
-        standings = c.get_standings(season)
+    """Upsert standings for a season.
 
-    count = 0
-    for s in standings:
-        team_ext_id = s.pop("team_external_id")
-        try:
-            team = Team.objects.get(external_id=team_ext_id)
-        except Team.DoesNotExist:
-            logger.warning("sync_standings: unknown team external_id=%s", team_ext_id)
-            continue
-        s["team"] = team
-        season_val = s.pop("season")
-        Standing.objects.update_or_create(team=team, season=season_val, defaults=s)
-        count += 1
+    Tries the BDL standings API first; falls back to computing standings
+    from game results if the endpoint is unavailable.
+    """
+    try:
+        with client or NBADataClient() as c:
+            standings = c.get_standings(season)
+        count = 0
+        for s in standings:
+            team_ext_id = s.pop("team_external_id")
+            try:
+                team = Team.objects.get(external_id=team_ext_id)
+            except Team.DoesNotExist:
+                logger.warning(
+                    "sync_standings: unknown team external_id=%s", team_ext_id
+                )
+                continue
+            s["team"] = team
+            season_val = s.pop("season")
+            Standing.objects.update_or_create(team=team, season=season_val, defaults=s)
+            count += 1
+    except Exception:
+        logger.info("sync_standings: API unavailable, computing from game results")
+        count = _compute_standings_from_games(season)
 
-    # Recompute conference_rank from win_pct. The API returns bogus values
-    # (0/1/2 tiers instead of 1-15) for in-progress seasons.
+    # Recompute conference_rank from win_pct.
     for conf in (Conference.EAST, Conference.WEST):
         qs = Standing.objects.filter(season=season, conference=conf).order_by(
             "-win_pct", "games_behind"
@@ -245,6 +275,66 @@ def sync_standings(season: int, client: NBADataClient | None = None) -> int:
                 standing.save(update_fields=["conference_rank"])
 
     logger.info("sync_standings: synced %d standings (season=%s)", count, season)
+    return count
+
+
+def _compute_standings_from_games(season: int) -> int:
+    """Compute standings from FINAL game results for the season."""
+    from collections import defaultdict
+
+    stats = defaultdict(
+        lambda: {
+            "wins": 0,
+            "losses": 0,
+            "home_wins": 0,
+            "home_losses": 0,
+            "away_wins": 0,
+            "away_losses": 0,
+        }
+    )
+
+    games = (
+        Game.objects.filter(season=season, status=GameStatus.FINAL)
+        .exclude(home_score__isnull=True)
+        .select_related("home_team", "away_team")
+    )
+
+    for g in games:
+        home_won = g.home_score > g.away_score
+        ht, at = g.home_team_id, g.away_team_id
+        if home_won:
+            stats[ht]["wins"] += 1
+            stats[ht]["home_wins"] += 1
+            stats[at]["losses"] += 1
+            stats[at]["away_losses"] += 1
+        else:
+            stats[at]["wins"] += 1
+            stats[at]["away_wins"] += 1
+            stats[ht]["losses"] += 1
+            stats[ht]["home_losses"] += 1
+
+    count = 0
+    for team in Team.objects.all():
+        s = stats.get(team.pk)
+        if not s:
+            continue
+        total = s["wins"] + s["losses"]
+        win_pct = round(s["wins"] / total, 3) if total else 0.0
+        Standing.objects.update_or_create(
+            team=team,
+            season=season,
+            defaults={
+                "conference": team.conference,
+                "wins": s["wins"],
+                "losses": s["losses"],
+                "win_pct": win_pct,
+                "games_behind": 0.0,
+                "streak": "",
+                "home_record": f"{s['home_wins']}-{s['home_losses']}",
+                "away_record": f"{s['away_wins']}-{s['away_losses']}",
+            },
+        )
+        count += 1
     return count
 
 

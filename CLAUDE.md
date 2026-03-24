@@ -53,7 +53,7 @@ make seed
 
 ### Environment
 Copy `.env.example` to `.env` and fill in API keys:
-- `FOOTBALL_DATA_API_KEY` — football-data.org (free tier, EPL data)
+- `BDL_API_KEY` — BallDontLie (NBA + EPL data, All-Star tier)
 - `ANTHROPIC_API_KEY` — Claude API (bot commentary)
 
 ## Common Commands
