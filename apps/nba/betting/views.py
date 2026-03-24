@@ -60,6 +60,7 @@ class PlaceBetView(LoginRequiredMixin, View):
         queue_activity_event(
             "user_bet",
             f"{request.user.display_name or request.user.email} bet ${stake} on {game}",
+            url=game.get_absolute_url(),
             icon="coin",
         )
 

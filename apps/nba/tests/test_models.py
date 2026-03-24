@@ -89,6 +89,11 @@ class TestGame:
         game = GameFactory(status=GameStatus.FINAL, home_score=None, away_score=None)
         assert game.winner is None
 
+    def test_get_absolute_url(self):
+        game = GameFactory()
+        url = game.get_absolute_url()
+        assert url == f"/games/{game.id_hash}/"
+
 
 # ---------------------------------------------------------------------------
 # Standing

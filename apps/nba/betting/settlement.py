@@ -188,6 +188,7 @@ def settle_game_bets(game_pk: int) -> dict:
         ActivityEvent.objects.create(
             event_type=ActivityEvent.EventType.BET_SETTLEMENT,
             message=f"Settled {counts['settled']} bets on {game}",
+            url=game.get_absolute_url(),
         )
 
     logger.info(

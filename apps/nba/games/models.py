@@ -1,4 +1,5 @@
 from django.db import models
+from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 
 from vinosports.core.models import BaseModel
@@ -58,6 +59,9 @@ class Game(BaseModel):
 
     def __str__(self):
         return f"{self.away_team.abbreviation} @ {self.home_team.abbreviation} ({self.game_date})"
+
+    def get_absolute_url(self):
+        return reverse("games:game_detail", kwargs={"id_hash": self.id_hash})
 
     @property
     def is_live(self):

@@ -4,9 +4,9 @@ from datetime import timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from activity.tasks import broadcast_next_activity_event, cleanup_old_activity_events
 from django.utils import timezone
 
-from activity.tasks import broadcast_next_activity_event, cleanup_old_activity_events
 from tests.factories import ActivityEventFactory
 
 

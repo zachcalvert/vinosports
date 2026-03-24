@@ -4,9 +4,9 @@ from decimal import Decimal
 from unittest.mock import patch
 
 import pytest
+from betting.tasks import _odds_changed, generate_odds, settle_pending_bets
 from games.models import GameStatus
 
-from betting.tasks import _odds_changed, generate_odds, settle_pending_bets
 from tests.factories import (
     BetSlipFactory,
     GameFactory,

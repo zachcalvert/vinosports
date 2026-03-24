@@ -305,4 +305,5 @@ def _broadcast_score_updates(game_pks: list[int]) -> None:
                 f"{game.away_team.abbreviation} {game.away_score}"
                 f" - {game.home_team.abbreviation} {game.home_score}"
             ),
+            url=game.get_absolute_url(),
         )
