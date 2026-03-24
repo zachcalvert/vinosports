@@ -23,7 +23,27 @@ class BotProfileAdmin(admin.ModelAdmin):
     list_filter = ["strategy_type", "is_active", "schedule_template"]
     search_fields = ["user__email", "user__display_name"]
     raw_id_fields = ["user", "favorite_team"]
-    actions = ["run_bets", "run_pregame_comments", "run_postgame_comments"]
+    actions = [
+        "mark_active",
+        "mark_inactive",
+        "run_bets",
+        "run_pregame_comments",
+        "run_postgame_comments",
+    ]
+
+    @admin.action(description="Mark selected bots as active")
+    def mark_active(self, request, queryset):
+        updated = queryset.update(is_active=True)
+        self.message_user(
+            request, f"Marked {updated} bot(s) as active.", messages.SUCCESS
+        )
+
+    @admin.action(description="Mark selected bots as inactive")
+    def mark_inactive(self, request, queryset):
+        updated = queryset.update(is_active=False)
+        self.message_user(
+            request, f"Marked {updated} bot(s) as inactive.", messages.SUCCESS
+        )
 
     @admin.action(description="Run bets for selected bots")
     def run_bets(self, request, queryset):
