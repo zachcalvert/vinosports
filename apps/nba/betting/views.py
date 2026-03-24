@@ -27,6 +27,18 @@ class PlaceBetView(LoginRequiredMixin, View):
         form = PlaceBetForm(request.POST)
 
         if not form.is_valid():
+            if getattr(request, "htmx", False):
+                best_odds = game.odds.order_by("-fetched_at").first()
+                return render(
+                    request,
+                    "betting/partials/bet_form.html",
+                    {
+                        "game": game,
+                        "best_odds": best_odds,
+                        "bet_form": form,
+                        "error": "Please check your bet details.",
+                    },
+                )
             return HttpResponse("Invalid form", status=400)
 
         market = form.cleaned_data["market"]
@@ -43,6 +55,18 @@ class PlaceBetView(LoginRequiredMixin, View):
                 f"Bet on {game}",
             )
         except ValueError:
+            if getattr(request, "htmx", False):
+                best_odds = game.odds.order_by("-fetched_at").first()
+                return render(
+                    request,
+                    "betting/partials/bet_form.html",
+                    {
+                        "game": game,
+                        "best_odds": best_odds,
+                        "bet_form": PlaceBetForm(request.POST),
+                        "error": "Insufficient balance.",
+                    },
+                )
             return HttpResponse("Insufficient balance", status=400)
 
         bet = BetSlip.objects.create(

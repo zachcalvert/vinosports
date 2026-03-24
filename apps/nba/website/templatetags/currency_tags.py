@@ -45,3 +45,12 @@ def currency_rounded(value, user):
 def currency_symbol(user):
     """Returns just the symbol: $, \u00a3, \u20ac"""
     return get_currency_symbol(user)
+
+
+@register.filter
+def negate(value):
+    """Negate a numeric value. Usage: {{ value|negate }}"""
+    try:
+        return -value
+    except (TypeError, ValueError):
+        return value
