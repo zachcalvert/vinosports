@@ -280,6 +280,10 @@ class GameDetailView(LoginRequiredMixin, View):
         if game.status == GameStatus.FINAL:
             recap_ctx = _get_recap_context(game)
 
+        user_bets = BetSlip.objects.filter(user=request.user, game=game).order_by(
+            "-created_at"
+        )
+
         ctx = {
             "game": game,
             "odds_list": odds[:5],
@@ -287,6 +291,7 @@ class GameDetailView(LoginRequiredMixin, View):
             "comments": comments,
             "bet_form": PlaceBetForm(),
             "comment_form": CommentForm(),
+            "user_bets": user_bets,
             "sentiment": sentiment,
             "spread_sentiment": spread_sentiment,
             "total_sentiment": total_sentiment,

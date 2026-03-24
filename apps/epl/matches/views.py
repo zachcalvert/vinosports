@@ -332,9 +332,12 @@ class MatchDetailView(DetailView):
         ctx["latest_odds_refresh"] = latest_odds_refresh
         ctx["match_updated_at"] = match.updated_at
 
-        # Bet form for authenticated users
+        # Bet form + user's existing bets for authenticated users
         if self.request.user.is_authenticated:
             ctx["form"] = PlaceBetForm()
+            ctx["user_bets"] = BetSlip.objects.filter(
+                user=self.request.user, match=match
+            ).order_by("-created_at")
 
         # Status card is lazy-loaded via HTMX for faster initial render
         ctx["has_status_card"] = match.status in (

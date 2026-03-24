@@ -75,6 +75,9 @@
 
     <!-- Bet form sidebar -->
     <div class="lg:sticky lg:top-6 lg:self-start space-y-4">
+        {% if user_bets %}
+            {% include "betting/partials/your_bets.html" %}
+        {% endif %}
         {% if user.is_authenticated %}
             {% if game.status == "SCHEDULED" %}
                 {% include "betting/partials/bet_form.html" %}

@@ -64,6 +64,9 @@
 
     <!-- Bet form — narrow sticky sidebar on desktop, first on mobile -->
     <div class="lg:sticky lg:top-6 lg:self-start space-y-4">
+        {% if user_bets %}
+            {% include "betting/partials/your_bets.html" %}
+        {% endif %}
         {% if user.is_authenticated %}
             {% if match.status == "SCHEDULED" or match.status == "TIMED" %}
                 {% include "betting/partials/bet_form.html" %}
