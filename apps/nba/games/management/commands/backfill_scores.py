@@ -78,10 +78,7 @@ class Command(BaseCommand):
         with NBADataClient() as client:
             for i, game_date in enumerate(dates):
                 try:
-                    api_games = client.get_games(
-                        season=0,  # ignored when game_date is provided
-                        game_date=game_date,
-                    )
+                    api_games = client.get_games(season=0, game_date=game_date)
                 except Exception as e:
                     self.stderr.write(f"  API error for {game_date}: {e}")
                     errors += 1

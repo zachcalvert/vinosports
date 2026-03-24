@@ -82,10 +82,17 @@ class NBADataClient:
         return [self._normalize_team(t) for t in raw]
 
     def get_games(self, season: int, game_date: date | None = None) -> list[dict]:
-        """Return games for a season. If game_date provided, fetch that day only."""
-        params = {"seasons[]": season}
+        """Return games for a season, or for a specific date.
+
+        When game_date is provided, only the date filter is sent (the BDL
+        dates[] filter is sufficient on its own and avoids needing a valid
+        season value).
+        """
+        params: dict[str, Any] = {}
         if game_date:
             params["dates[]"] = game_date.isoformat()
+        else:
+            params["seasons[]"] = season
         raw = self._get_all("/games", params=params)
         return [self._normalize_game(g) for g in raw]
 

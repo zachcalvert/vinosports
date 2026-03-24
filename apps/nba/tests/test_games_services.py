@@ -408,6 +408,8 @@ class TestSyncStandings:
 
     def test_falls_back_to_computed_standings_on_api_error(self):
         """When the API raises (e.g. 401), standings are computed from games."""
+        import httpx
+
         home = TeamFactory(external_id=7001, conference=Conference.EAST)
         away = TeamFactory(external_id=7002, conference=Conference.WEST)
         GameFactory(
@@ -422,7 +424,12 @@ class TestSyncStandings:
         mock_client = MagicMock()
         mock_client.__enter__ = MagicMock(return_value=mock_client)
         mock_client.__exit__ = MagicMock(return_value=False)
-        mock_client.get_standings.side_effect = Exception("401 Unauthorized")
+        mock_response = MagicMock()
+        mock_response.status_code = 401
+        mock_response.request = httpx.Request("GET", "https://example.com")
+        mock_client.get_standings.side_effect = httpx.HTTPStatusError(
+            "401 Unauthorized", request=mock_response.request, response=mock_response
+        )
 
         count = sync_standings(2025, client=mock_client)
         assert count == 2
