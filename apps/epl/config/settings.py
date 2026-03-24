@@ -179,20 +179,18 @@ CELERY_BEAT_SCHEDULE = {
         "task": "challenges.tasks.expire_challenges",
         "schedule": timedelta(minutes=30),
     },
-    # --- Bots ---
-    "run-bot-strategies-daily-thu-sat": {
+    # --- Bots (hourly dispatch — schedule templates control per-bot activation) ---
+    "run-bot-strategies-hourly": {
         "task": "bots.tasks.run_bot_strategies",
-        "schedule": crontab(hour=8, minute=0, day_of_week="thu,fri,sat"),
+        "schedule": crontab(minute=5),
     },
-    "generate-prematch-comments-2h-thu-sat": {
+    "generate-prematch-comments-hourly": {
         "task": "bots.tasks.generate_prematch_comments",
-        "schedule": crontab(
-            hour="8,10,12,14,16,18,20,22", minute=0, day_of_week="thu,fri,sat"
-        ),
+        "schedule": crontab(minute=15),
     },
-    "generate-postmatch-comments-30m-matchdays": {
+    "generate-postmatch-comments-hourly": {
         "task": "bots.tasks.generate_postmatch_comments",
-        "schedule": crontab(minute="0,30", hour="14-23", day_of_week="fri,sat,sun,mon"),
+        "schedule": crontab(minute=30),
     },
     # --- Activity feed ---
     "broadcast-activity-event-20s": {

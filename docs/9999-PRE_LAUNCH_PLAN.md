@@ -11,42 +11,47 @@ Root cause: sportsdata.io's free trial returns **scrambled data** (scores random
 
 **Resolution:** Migrated both NBA and EPL to **BallDontLie** (All-Star tier, $9.99/mo per sport). Real, unscrambled data with 60 req/min. All 1231 NBA games and 380 EPL matches re-seeded with correct scores. See `docs/0013-BALLDONTLIE_MIGRATION.md` for full details.
 
-### 1b. Prune Bot Roster
-There are too many homer bots in NBA and some EPL bots could be trimmed too. Goals:
-- **NBA**: reduce homer bot count — identify which ones overlap in personality or back less-interesting teams, and deactivate or remove them
-- **EPL**: review the 8 homer bots (ARS, CHE, LIV, MUN, MCI, TOT, NEW, EVE) and decide if all 8 are needed, or if some lower-engagement ones can be cut
-- Pruned bots should be soft-deleted (set `is_active=False` on BotProfile) so their historical bets/comments are preserved
-
-Do this before globalizing bot profiles (Phase 2) — easier to prune while the models are still per-league, and fewer records to migrate.
+### ~~1b. Prune Bot Roster~~ DONE
+Pruned from ~56 league-specific bots (41 NBA + 15 EPL) down to 8 global personality-first bots. Superseded by bot globalization (Phase 2) which replaced the per-league rosters entirely.
 
 ---
 
-## Phase 2: Schema Changes (Bot Globalization)
+## ~~Phase 2: Schema Changes (Bot Globalization)~~ DONE
 
-All the model restructuring that changes the DB schema. Do this while there's no production database to worry about.
+### ~~2a. Globalize Bot Profiles~~ DONE
+Concrete `BotProfile` and `ScheduleTemplate` models now live in `vinosports.bots` (core package, app label `global_bots`). One profile per bot, shared across all leagues.
 
-### 2a. Globalize Bot Profiles
-Currently bot profiles are per-league (EPL `BotProfile` and NBA `BotProfile` are separate models/tables). Refactor so:
-- **One BotProfile per bot, living in core** (or hub) rather than duplicated per league
-- A bot can be **active in EPL, NBA, or both** — controlled by a M2M or flags on the profile
-- A bot can have **favorite teams in both leagues** (e.g., homer for Arsenal in EPL and Celtics in NBA)
-- A bot has **one strategy** — the strategy is cross-league (frontrunner, underdog, homer, etc.) and the league-specific strategy implementations adapt to sport-specific odds/markets
-- Migration path: merge existing EPL + NBA bot profiles into unified records, preserve FKs from existing bets/comments
+**Key decisions:**
+- **Boolean flags** (`active_in_epl`, `active_in_nba`, `active_in_nfl`) instead of M2M — simpler, and only 2-3 leagues in scope
+- **CharField team affiliations** (`nba_team_abbr`, `epl_team_tla`) instead of FKs — keeps core independent of league apps, and team changes are just a string edit in admin
+- **Personality-only persona prompts** — no team references in the prompt. Team context is injected at comment-generation time by each league's tasks, so reassigning a bot's team is a single field change
+- **Unified `StrategyType`** — superset of NBA + EPL strategies (frontrunner, underdog, spread_shark, parlay, total_guru, draw_specialist, value_hunter, chaos_agent, all_in_alice, homer, anti_homer)
+- League apps keep only `BotComment` (concrete, FK to league-specific Game/Match + Comment models)
 
-### 2b. Globalize Schedule Templates
-Same treatment as bot profiles:
-- **One set of schedule templates in core** (or hub), not per-league
-- The window schema (`days`, `hours`, `bet_probability`, `comment_probability`, `max_bets`, `max_comments`) is already sport-neutral
-- Each league's Celery tasks reference the same shared templates
-- League-specific window overrides per bot — a bot gets one base template but leagues can override specific values (e.g., EPL bots go dormant in summer, NBA bots ramp up during playoffs)
-- EPL-specific templates (match-day focused: Thu-Mon) and NBA-specific templates can coexist in the same table
+**The 8 authoritative bots:**
 
-### 2c. Port Schedule Templates to EPL
-With global templates from 2b in place, this becomes: update EPL bot tasks to use the schedule system.
-1. Copy `schedule.py` helpers (`get_active_window`, `is_bot_active_now`, `roll_action`) to EPL — they're sport-agnostic
-2. Refactor EPL bot tasks (`run_bot_strategies`, `generate_prematch_comments`, `generate_postmatch_comments`) to check schedule templates per bot instead of fixed cron times
-3. Switch EPL Celery beat to hourly dispatch (`:05` bet, `:15` prematch, `:30` postmatch)
-4. Assign EPL bots to appropriate templates — match days are Thu-Mon, not every day like NBA
+| Bot | NBA | EPL | Strategy |
+|-----|-----|-----|----------|
+| Tech Bro Chad | GSW | Chelsea | Homer |
+| Dad Dan | OKC | Man City | Frontrunner |
+| Dad Dave | OKC | Man United | Frontrunner |
+| Lurker Larry | WAS | Fulham | Underdog |
+| 90s Norman | CHI | Newcastle | Frontrunner |
+| Deep State Quinn | PHX | West Ham | Chaos Agent |
+| Conspiracy Carl | CHA | Crystal Palace | Underdog |
+| StatSheet Nathan | — | Man United | Spread Shark |
+
+Seeded via `docker compose exec hub-web python manage.py seed_bots`.
+
+### ~~2b. Globalize Schedule Templates~~ DONE
+6 schedule templates live in the global `ScheduleTemplate` model alongside `BotProfile`. Sport-agnostic schedule helpers (`get_active_window`, `is_bot_active_now`, `roll_action`) moved from NBA to `vinosports.bots.schedule` in the core package.
+
+### ~~2c. Port Schedule Templates to EPL~~ DONE
+With global templates from 2b in place, EPL bot tasks now use the schedule system:
+1. ~~Copy `schedule.py` helpers to EPL~~ — helpers now live in core (`vinosports.bots.schedule`), already importable from EPL
+2. ~~Refactor EPL bot tasks~~ — `run_bot_strategies`, `generate_prematch_comments`, and `generate_postmatch_comments` now check `get_active_window()` and `roll_action()` per bot before dispatching, matching the NBA pattern
+3. ~~Switch EPL Celery beat to hourly dispatch~~ — `:05` bet, `:15` prematch, `:30` postmatch (was fixed cron on Thu-Sat/matchdays). Schedule templates now control which days/hours bots are active
+4. ~~Assign EPL bots to appropriate templates~~ — all 8 bots have `schedule_template` set from the global `seed_bots` command
 
 ---
 

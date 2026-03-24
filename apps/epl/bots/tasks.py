@@ -1,4 +1,10 @@
-"""Celery tasks for running bot betting strategies and generating bot comments."""
+"""
+Celery tasks for running bot betting strategies and generating bot comments.
+
+run_bot_strategies() is the orchestrator — runs hourly and dispatches
+execute_bot_strategy() only for bots whose schedule template has an active
+window at the current time.
+"""
 
 import logging
 import random
@@ -19,35 +25,57 @@ from bots.services import (
     place_bot_bet,
     place_bot_parlay,
 )
+from vinosports.bots.models import BotProfile
+from vinosports.bots.schedule import get_active_window, roll_action
 
 User = get_user_model()
 logger = logging.getLogger(__name__)
 
 
 # ---------------------------------------------------------------------------
-# Bot betting tasks (existing)
+# Bot betting tasks
 # ---------------------------------------------------------------------------
 
 
 @shared_task
 def run_bot_strategies():
-    """Dispatch individual bot strategy tasks with staggered delays."""
-    from vinosports.bots.models import BotProfile
+    """Dispatch execute_bot_strategy for active bots whose schedule window matches now."""
+    from betting.models import BetSlip
 
-    bot_user_ids = BotProfile.objects.filter(
+    now = timezone.localtime()
+    today = now.date()
+    profiles = BotProfile.objects.filter(
         is_active=True, active_in_epl=True
-    ).values_list("user_id", flat=True)
+    ).select_related("user", "schedule_template")
 
-    bot_users = User.objects.filter(pk__in=bot_user_ids, is_bot=True, is_active=True)
-    count = 0
+    dispatched = 0
+    skipped_schedule = 0
 
-    for bot in bot_users:
-        delay = random.randint(120, 1800)  # 2-30 minutes
-        execute_bot_strategy.apply_async(args=[bot.pk], countdown=delay)
-        count += 1
+    for i, profile in enumerate(profiles):
+        window = get_active_window(profile, now)
+        if window is None:
+            skipped_schedule += 1
+            continue
 
-    logger.info("Dispatched %d bot strategy tasks", count)
-    return f"dispatched {count} bot tasks"
+        if not roll_action(window.get("bet_probability", 0.5)):
+            continue
+
+        bets_today = BetSlip.objects.filter(
+            user=profile.user, created_at__date=today
+        ).count()
+        if bets_today >= profile.max_daily_bets:
+            continue
+
+        delay = random.randint(120, 1800)  # 2-30 minutes stagger
+        execute_bot_strategy.apply_async(args=[profile.user_id], countdown=delay)
+        dispatched += 1
+
+    logger.info(
+        "run_bot_strategies: dispatched %d bots, skipped %d (schedule)",
+        dispatched,
+        skipped_schedule,
+    )
+    return {"dispatched": dispatched, "skipped_schedule": skipped_schedule}
 
 
 @shared_task(bind=True, max_retries=1)
@@ -268,12 +296,15 @@ MAX_POSTMATCH_DISPATCHES = 30
 
 @shared_task
 def generate_prematch_comments():
-    """Find upcoming matches and dispatch pre-match hype comments for 1-2 bots each."""
+    """Find upcoming matches and dispatch pre-match hype comments for 1-2 bots each.
+
+    Checks each bot's schedule window and rolls comment_probability before dispatching.
+    """
     from matches.models import Match
 
     from bots.comment_service import select_bots_for_match
 
-    now = timezone.now()
+    now = timezone.localtime()
     upcoming = Match.objects.filter(
         status__in=[Match.Status.SCHEDULED, Match.Status.TIMED],
         kickoff__gte=now + timezone.timedelta(hours=1),
@@ -290,6 +321,18 @@ def generate_prematch_comments():
         for bot in bots:
             if dispatched >= MAX_PREMATCH_DISPATCHES:
                 break
+
+            # Check schedule window before dispatching
+            try:
+                profile = bot.bot_profile
+            except BotProfile.DoesNotExist:
+                continue
+            window = get_active_window(profile, now)
+            if window is None:
+                continue
+            if not roll_action(window.get("comment_probability", 0.5)):
+                continue
+
             existing_bet = BetSlip.objects.filter(
                 user=bot, match=match, status=BetSlip.Status.PENDING
             ).first()
@@ -311,13 +354,16 @@ def generate_prematch_comments():
 
 @shared_task
 def generate_postmatch_comments():
-    """Find recently finished matches and dispatch post-match reaction comments."""
+    """Find recently finished matches and dispatch post-match reaction comments.
+
+    Checks each bot's schedule window and rolls comment_probability before dispatching.
+    """
     from betting.models import BetSlip
     from matches.models import Match
 
     from bots.comment_service import select_bots_for_match
 
-    now = timezone.now()
+    now = timezone.localtime()
     recently_finished = Match.objects.filter(
         status=Match.Status.FINISHED,
         updated_at__gte=now - timezone.timedelta(hours=2),
@@ -348,6 +394,17 @@ def generate_postmatch_comments():
                 continue
             seen_user_ids.add(bet.user_id)
 
+            # Check schedule window before dispatching
+            try:
+                profile = bet.user.bot_profile
+            except BotProfile.DoesNotExist:
+                continue
+            window = get_active_window(profile, now)
+            if window is None:
+                continue
+            if not roll_action(window.get("comment_probability", 0.5)):
+                continue
+
             if BotComment.objects.filter(
                 user=bet.user,
                 match=match,
@@ -372,7 +429,17 @@ def generate_postmatch_comments():
             exclude_user_ids=seen_user_ids,
         )
         for bot in color_bots:
-            # Color bots are explicitly excluded bettors, so there's no bet to look up.
+            # Check schedule window for color commentary bots too
+            try:
+                profile = bot.bot_profile
+            except BotProfile.DoesNotExist:
+                continue
+            window = get_active_window(profile, now)
+            if window is None:
+                continue
+            if not roll_action(window.get("comment_probability", 0.5)):
+                continue
+
             delay = random.randint(120, 900)
             generate_bot_comment_task.apply_async(
                 args=[bot.pk, match.pk, BotComment.TriggerType.POST_MATCH, None],
