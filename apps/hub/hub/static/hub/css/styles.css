@@ -75,7 +75,25 @@
 
 
 /* --------------------------------------------------------------------------
-   4. LEAGUE CARDS
+   4. DROPDOWN MENU
+   -------------------------------------------------------------------------- */
+
+.dropdown-link {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    color: rgb(var(--color-text));
+    transition: background-color 0.15s;
+}
+.dropdown-link:hover {
+    background-color: rgb(var(--color-accent-light));
+}
+
+
+/* --------------------------------------------------------------------------
+   5. LEAGUE CARDS
    -------------------------------------------------------------------------- */
 
 .league-card {

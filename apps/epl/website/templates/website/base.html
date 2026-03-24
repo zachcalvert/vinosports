@@ -57,15 +57,39 @@
 </head>
 <body class="h-full theme-page" data-theme="{{ ui_theme_name }}">
     <div class="min-h-full flex flex-col">
-        {% include "website/components/navbar.html" %}
+        {% include "vinosports/components/global_navbar.html" %}
 
-        <main class="flex-1">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-                {% block content %}{% endblock %}
-            </div>
-        </main>
+        <div class="flex flex-1">
+            <!-- Desktop sidebar -->
+            <aside class="league-sidebar hidden lg:flex">
+                {% include "website/components/sidebar.html" %}
+            </aside>
+
+            <!-- Main content -->
+            <main class="flex-1 min-w-0">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                    {% block content %}{% endblock %}
+                </div>
+            </main>
+        </div>
 
         {% include "website/components/footer.html" %}
+    </div>
+
+    <!-- Mobile sidebar overlay -->
+    <div id="sidebar-overlay" class="sidebar-overlay hidden" aria-hidden="true">
+        <div class="sidebar-backdrop"></div>
+        <aside class="sidebar-drawer">
+            <div class="sidebar-drawer-header">
+                <span class="text-sm font-semibold uppercase tracking-wider text-muted">EPL</span>
+                <button id="sidebar-close" type="button" class="sidebar-close-btn" aria-label="Close sidebar">
+                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            {% include "website/components/sidebar.html" %}
+        </aside>
     </div>
 
     {% if is_bankrupt %}
@@ -103,6 +127,19 @@
         window.addEventListener('pageshow', function(e) {
             if (e.persisted) { window.location.reload(); }
         });
+    </script>
+
+    <!-- Mobile sidebar close handlers -->
+    <script>
+    (function() {
+        var overlay = document.getElementById('sidebar-overlay');
+        if (!overlay) return;
+        var backdrop = overlay.querySelector('.sidebar-backdrop');
+        var closeBtn = document.getElementById('sidebar-close');
+        function closeSidebar() { overlay.classList.add('hidden'); overlay.setAttribute('aria-hidden', 'true'); }
+        if (backdrop) backdrop.addEventListener('click', closeSidebar);
+        if (closeBtn) closeBtn.addEventListener('click', closeSidebar);
+    })();
     </script>
 
     <!-- Global HTMX CSRF + error handler -->

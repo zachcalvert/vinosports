@@ -50,10 +50,5 @@ test-epl:
 	docker compose run --rm epl-web python -m pytest
 
 test-nba:
-	docker compose run --rm nba-web python -m pytest
+	docker compose run --rm nba-web python -m pytest --cov-report=term-missing
 
-coverage-nba:
-	docker compose run --rm nba-web python -m pytest --cov-report=html:htmlcov --cov-report=term-missing
-
-test-core:
-	docker compose run --rm epl-web python -m pytest packages/vinosports-core/tests/

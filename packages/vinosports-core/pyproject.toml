@@ -20,3 +20,6 @@ dependencies = [
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/vinosports"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"src/vinosports/templates" = "vinosports/templates"

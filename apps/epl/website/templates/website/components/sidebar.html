@@ -1,0 +1,42 @@
+{# EPL league sidebar — page navigation links #}
+{% with url_name=request.resolver_match.url_name %}
+<nav class="sidebar-nav" aria-label="EPL navigation">
+    <div class="sidebar-links">
+        <a href="{% url 'matches:dashboard' %}"
+           class="sidebar-link {% if url_name == 'dashboard' %}sidebar-link--active{% endif %}">
+            <i class="ph-duotone ph-house text-lg"></i>
+            <span>Dashboard</span>
+        </a>
+        <a href="{% url 'matches:leaderboard' %}"
+           class="sidebar-link {% if url_name == 'leaderboard' %}sidebar-link--active{% endif %}">
+            <i class="ph-duotone ph-ranking text-lg"></i>
+            <span>Leaderboard</span>
+        </a>
+        <a href="{% url 'betting:odds' %}"
+           class="sidebar-link {% if url_name == 'odds' %}sidebar-link--active{% endif %}">
+            <i class="ph-duotone ph-chart-line-up text-lg"></i>
+            <span>Odds</span>
+        </a>
+        {% if user.is_authenticated %}
+        <a href="{% url 'betting:my_bets' %}"
+           class="sidebar-link {% if url_name == 'my_bets' %}sidebar-link--active{% endif %}">
+            <i class="ph-duotone ph-receipt text-lg"></i>
+            <span>My Bets</span>
+        </a>
+        <a href="{% url 'challenges:challenges' %}"
+           class="sidebar-link {% if url_name == 'challenges' %}sidebar-link--active{% endif %}">
+            <i class="ph-duotone ph-trophy text-lg"></i>
+            <span>Challenges</span>
+        </a>
+        {% endif %}
+        {% if user.is_superuser %}
+        <div class="sidebar-divider"></div>
+        <a href="{% url 'website:admin_dashboard' %}"
+           class="sidebar-link {% if url_name == 'admin_dashboard' %}sidebar-link--active{% endif %}">
+            <i class="ph-duotone ph-gauge text-lg"></i>
+            <span>Admin</span>
+        </a>
+        {% endif %}
+    </div>
+</nav>
+{% endwith %}

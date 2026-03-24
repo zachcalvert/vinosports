@@ -1,0 +1,271 @@
+{% load currency_tags %}
+
+<nav class="global-nav">
+    <div class="global-nav-inner">
+        <!-- Left: sidebar toggle (mobile, league apps only) + logo + league tabs -->
+        <div class="flex items-center gap-2">
+            {% if current_league %}
+            <button id="sidebar-toggle" type="button"
+                    class="global-nav-hamburger lg:hidden"
+                    aria-label="Toggle sidebar menu">
+                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
+                </svg>
+            </button>
+            {% endif %}
+
+            <a href="{{ hub_url }}" class="global-nav-logo">
+                <span class="global-nav-logo-text">VINO</span><span class="global-nav-logo-accent">SPORTS</span>
+            </a>
+
+            <div class="flex items-center gap-1 ml-4">
+                {% for key, league in leagues.items %}
+                {% if league.status == "active" %}
+                <a href="{{ league.url }}"
+                   class="global-nav-league {% if current_league == key %}global-nav-league--active{% endif %}">
+                    <i class="{{ league.icon }} text-sm"></i>
+                    <span>{{ league.short }}</span>
+                </a>
+                {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Right: auth -->
+        <div class="flex items-center gap-3">
+            {% if user.is_authenticated %}
+            <div class="global-nav-user relative">
+                <button type="button"
+                        id="global-user-btn"
+                        class="global-nav-user-btn"
+                        aria-label="User menu"
+                        aria-expanded="false"
+                        aria-haspopup="true">
+                    <i class="ph-duotone ph-user-circle text-xl"></i>
+                    <span id="global-user-balance" class="font-mono text-accent font-semibold text-sm">
+                        {{ user.balance.balance|currency:user }}
+                    </span>
+                    <svg class="h-4 w-4 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                </button>
+
+                <div id="global-user-dropdown" class="global-nav-dropdown hidden">
+                    <!-- Balance -->
+                    <div class="px-4 py-3 border-b border-border">
+                        <div class="text-xs text-muted uppercase tracking-wider">Balance</div>
+                        <div class="font-mono text-lg font-bold text-accent">{{ user.balance.balance|currency:user }}</div>
+                    </div>
+                    <!-- Links -->
+                    <div class="py-1">
+                        {% if current_league %}
+                        <a href="{% url 'website:account' %}" class="dropdown-link">
+                            <i class="ph-duotone ph-gear text-base"></i> Profile &amp; Settings
+                        </a>
+                        {% else %}
+                        <a href="{% url 'hub:account' %}" class="dropdown-link">
+                            <i class="ph-duotone ph-gear text-base"></i> Account
+                        </a>
+                        {% endif %}
+                    </div>
+                    <!-- Theme + Logout -->
+                    <div class="border-t border-border py-1">
+                        {% if current_league %}
+                        <form method="post" action="{% url 'website:theme_toggle' %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="theme" value="{{ ui_theme_toggle_value }}">
+                            <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                            <button type="submit" class="dropdown-link w-full flex items-center justify-between">
+                                <span class="flex items-center gap-2">
+                                    {% if ui_theme_is_dark %}
+                                    <i class="ph-duotone ph-moon text-base"></i> Dark Mode
+                                    {% else %}
+                                    <i class="ph-duotone ph-sun text-base"></i> Light Mode
+                                    {% endif %}
+                                </span>
+                            </button>
+                        </form>
+                        <form method="post" action="{% url 'website:logout' %}">
+                            {% csrf_token %}
+                            <button type="submit" class="dropdown-link w-full text-left text-red-400 hover:text-red-300">
+                                <i class="ph-duotone ph-sign-out text-base"></i> Log Out
+                            </button>
+                        </form>
+                        {% else %}
+                        <form method="post" action="{% url 'hub:logout' %}">
+                            {% csrf_token %}
+                            <button type="submit" class="dropdown-link w-full text-left text-red-400 hover:text-red-300">
+                                <i class="ph-duotone ph-sign-out text-base"></i> Log Out
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <a href="{{ hub_url }}/login/" class="global-nav-auth-link">Log In</a>
+            <a href="{{ hub_url }}/signup/" class="global-nav-signup-btn">Sign Up</a>
+            {% endif %}
+        </div>
+    </div>
+</nav>
+
+<script>
+(function() {
+    // User dropdown toggle
+    var userContainer = document.querySelector('.global-nav-user');
+    var userDropdown = document.getElementById('global-user-dropdown');
+    var userBtn = document.getElementById('global-user-btn');
+    if (userContainer && userDropdown && userBtn) {
+        document.addEventListener('click', function(e) {
+            if (userContainer.contains(e.target)) {
+                if (userBtn === e.target || userBtn.contains(e.target)) {
+                    userDropdown.classList.toggle('hidden');
+                    userBtn.setAttribute('aria-expanded', !userDropdown.classList.contains('hidden'));
+                }
+            } else {
+                userDropdown.classList.add('hidden');
+                userBtn.setAttribute('aria-expanded', 'false');
+            }
+        });
+    }
+
+    // Sidebar toggle (mobile)
+    var sidebarToggle = document.getElementById('sidebar-toggle');
+    if (sidebarToggle) {
+        sidebarToggle.addEventListener('click', function() {
+            var overlay = document.getElementById('sidebar-overlay');
+            if (overlay) overlay.classList.toggle('hidden');
+        });
+    }
+})();
+</script>
+
+<style>
+/* Global nav — always dark background regardless of theme */
+.global-nav {
+    background-color: rgb(var(--color-dark));
+    border-bottom: 1px solid rgba(255 255 255 / 0.06);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+}
+.global-nav-inner {
+    max-width: 100%;
+    margin: 0 auto;
+    padding: 0 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 3.5rem;
+}
+@media (min-width: 640px) { .global-nav-inner { padding: 0 1.5rem; } }
+@media (min-width: 1024px) { .global-nav-inner { padding: 0 2rem; } }
+
+.global-nav-logo {
+    font-family: 'Oswald', sans-serif;
+    font-size: 1.25rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-decoration: none;
+    white-space: nowrap;
+}
+.global-nav-logo-text { color: #e7e5e4; }
+.global-nav-logo-accent { color: rgb(var(--color-gold)); }
+
+.global-nav-league {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.375rem 0.75rem;
+    border-radius: 0.375rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #a8a29e;
+    text-decoration: none;
+    transition: color 0.15s, background-color 0.15s;
+}
+.global-nav-league:hover {
+    color: #ffffff;
+    background-color: rgba(255 255 255 / 0.08);
+}
+.global-nav-league--active {
+    color: rgb(var(--color-gold));
+    background-color: rgba(var(--color-gold) / 0.12);
+}
+
+.global-nav-hamburger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.375rem;
+    border-radius: 0.375rem;
+    color: #a8a29e;
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: color 0.15s, background-color 0.15s;
+}
+.global-nav-hamburger:hover {
+    color: #ffffff;
+    background-color: rgba(255 255 255 / 0.08);
+}
+
+.global-nav-user-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.375rem 0.75rem;
+    border-radius: 0.5rem;
+    color: #a8a29e;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 0.875rem;
+    transition: color 0.15s, background-color 0.15s;
+}
+.global-nav-user-btn:hover {
+    background-color: rgba(255 255 255 / 0.08);
+}
+
+.global-nav-dropdown {
+    position: absolute;
+    right: 0;
+    top: 100%;
+    margin-top: 0.5rem;
+    width: 14rem;
+    border-radius: 0.5rem;
+    border: 1px solid rgb(var(--color-border));
+    background-color: rgb(var(--color-surface));
+    box-shadow: 0 10px 15px -3px rgba(0,0,0,.3);
+    z-index: 60;
+}
+
+.global-nav-auth-link {
+    padding: 0.375rem 0.75rem;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #a8a29e;
+    text-decoration: none;
+    transition: color 0.15s, background-color 0.15s;
+}
+.global-nav-auth-link:hover {
+    color: #ffffff;
+    background-color: rgba(255 255 255 / 0.08);
+}
+
+.global-nav-signup-btn {
+    padding: 0.375rem 0.75rem;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    background-color: rgb(var(--color-accent));
+    color: #ffffff;
+    text-decoration: none;
+    transition: background-color 0.15s;
+}
+.global-nav-signup-btn:hover {
+    opacity: 0.9;
+}
+</style>

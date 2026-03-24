@@ -55,15 +55,20 @@ With global templates from 2b in place, EPL bot tasks now use the schedule syste
 
 ---
 
-## Phase 3: UI
+## ~~Phase 3: UI~~ DONE
 
-### 3a. Global Navbar from Hub
-Add a shared top-level navbar served from the hub app that appears on all three apps (hub, EPL, NBA):
-- Hub branding / home link at top level
-- League links (EPL, NBA) as top-level nav items
-- Each league app's existing navigation nests underneath its league section
-- With subpath routing (`vinosports.com/epl/`, `vinosports.com/nba/`), navbar links are just relative paths in prod. In dev (separate ports), use absolute URLs via a settings-driven base URL
-- Implementation: shared template partial in the core package that each app includes via template tag or base template inheritance
+### ~~3a. Global Navbar from Hub~~ DONE
+Added a two-tier navigation system. See `docs/0015-GLOBAL_NAVBAR.md` for full details.
+
+**Tier 1 — Global navbar:** Shared template partial in `vinosports-core` (`vinosports/components/global_navbar.html`). Logo, league tabs with active indicator, user auth dropdown. Appears on all three apps.
+
+**Tier 2 — League sidebar:** Left sidebar on league apps (EPL/NBA) with page-specific links (Dashboard, Leaderboard, Odds, etc.). Sticky on desktop, slide-in drawer on mobile. Hub has no sidebar.
+
+**Key implementation details:**
+- Shared `vinosports.context_processors.global_nav` provides `leagues`, `hub_url`, `current_league` to all apps
+- Each app has `CURRENT_LEAGUE` and `LEAGUE_URLS` in settings
+- Auth URLs respect the cross-port CSRF constraint (login/signup to hub, logout/theme to current app)
+- Template discovery uses Docker volume mount path with site-packages fallback
 
 ---
 

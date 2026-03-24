@@ -59,7 +59,15 @@ ROOT_URLCONF = "config.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [BASE_DIR / "templates"],
+        "DIRS": [
+            BASE_DIR / "templates",
+            # Shared templates from vinosports-core (volume mount in dev, site-packages in prod)
+            *(
+                [Path("/packages/vinosports-core/src/vinosports/templates")]
+                if Path("/packages/vinosports-core/src/vinosports/templates").is_dir()
+                else [Path(__import__("vinosports").__path__[0]) / "templates"]
+            ),
+        ],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -67,7 +75,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
-                "website.context_processors.hub_url",
+                "vinosports.context_processors.global_nav",
                 "website.context_processors.theme",
                 "betting.context_processors.bankruptcy",
                 "betting.context_processors.parlay_slip",
@@ -122,6 +130,25 @@ STATICFILES_DIRS = [BASE_DIR / "static"] if (BASE_DIR / "static").exists() else 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 HUB_URL = os.environ.get("HUB_URL", "http://localhost:7999")
+
+# Global nav
+CURRENT_LEAGUE = "nba"
+LEAGUE_URLS = {
+    "epl": {
+        "name": "English Premier League",
+        "short": "EPL",
+        "url": os.environ.get("EPL_URL", "http://localhost:8000"),
+        "icon": "ph-duotone ph-soccer-ball",
+        "status": "active",
+    },
+    "nba": {
+        "name": "NBA",
+        "short": "NBA",
+        "url": os.environ.get("NBA_URL", "http://localhost:8001"),
+        "icon": "ph-duotone ph-basketball",
+        "status": "active",
+    },
+}
 
 LOGIN_URL = HUB_URL + "/login/"
 LOGIN_REDIRECT_URL = "/"

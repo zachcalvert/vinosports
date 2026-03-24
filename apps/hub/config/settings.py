@@ -44,7 +44,15 @@ ROOT_URLCONF = "config.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [BASE_DIR / "templates"],
+        "DIRS": [
+            BASE_DIR / "templates",
+            # Shared templates from vinosports-core (volume mount in dev, site-packages in prod)
+            *(
+                [Path("/packages/vinosports-core/src/vinosports/templates")]
+                if Path("/packages/vinosports-core/src/vinosports/templates").is_dir()
+                else [Path(__import__("vinosports").__path__[0]) / "templates"]
+            ),
+        ],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -52,7 +60,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
-                "hub.context_processors.league_urls",
+                "vinosports.context_processors.global_nav",
             ],
         },
     },
@@ -112,6 +120,9 @@ LEAGUE_URLS = {
 
 # Hub URL (for league apps to link back)
 HUB_URL = os.environ.get("HUB_URL", "http://localhost:7999")
+
+# Global nav
+CURRENT_LEAGUE = None
 
 LOGIN_URL = "/login/"
 
