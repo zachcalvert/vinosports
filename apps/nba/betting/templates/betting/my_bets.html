@@ -2,7 +2,10 @@
 {% block title %}My Bets{% endblock %}
 
 {% block content %}
-<h1 class="text-3xl font-bold mb-6">My Bets</h1>
+<div class="flex items-center gap-3 mb-6">
+    <span class="w-1.5 h-8 rounded-full bg-accent"></span>
+    <h1 class="text-3xl font-bold">My Bets</h1>
+</div>
 
 <!-- Tabs -->
 <div class="flex gap-1 mb-6 border-b border-border">
@@ -50,12 +53,15 @@
 <!-- Parlays -->
 {% if parlays %}
 <div class="mt-8">
-    <h2 class="text-xl font-bold mb-4">Parlays</h2>
+    <div class="flex items-center gap-2 mb-4">
+        <span class="w-1 h-6 rounded-full bg-nba"></span>
+        <h2 class="text-xl font-bold">Parlays</h2>
+    </div>
     <div class="space-y-3">
         {% for parlay in parlays %}
-        <div class="bg-surface/50 rounded-lg border border-purple-500/30 p-4">
+        <div class="bg-surface/50 rounded-lg border border-nba/30 p-4">
             <div class="flex items-center justify-between mb-2">
-                <span class="text-sm font-medium text-purple-300">Parlay &bull; {{ parlay.legs.count }} legs</span>
+                <span class="text-sm font-medium text-nba">Parlay &bull; {{ parlay.legs.count }} legs</span>
                 {% if parlay.status == "PENDING" %}
                     <span class="inline-block px-2 py-0.5 rounded text-xs font-medium bg-warning/10 text-warning">Pending</span>
                 {% elif parlay.status == "WON" %}

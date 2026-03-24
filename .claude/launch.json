@@ -13,6 +13,13 @@
       "runtimeArgs": ["-c", "docker compose up --build -d hub-web && sleep 5 && docker compose logs -f hub-web"],
       "port": 7999,
       "autoPort": false
+    },
+    {
+      "name": "nba",
+      "runtimeExecutable": "docker",
+      "runtimeArgs": ["compose", "up", "nba-web"],
+      "port": 8001,
+      "autoPort": false
     }
   ]
 }

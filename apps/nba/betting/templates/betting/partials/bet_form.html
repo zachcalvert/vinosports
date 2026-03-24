@@ -1,6 +1,9 @@
 <div id="bet-form-container">
     <div class="bg-surface rounded-lg border border-border p-4">
-        <h3 class="text-sm font-semibold mb-3">Place a Bet</h3>
+        <div class="flex items-center gap-2 mb-3">
+            <span class="w-1 h-5 rounded-full bg-nba"></span>
+            <h3 class="text-sm font-semibold">Place a Bet</h3>
+        </div>
 
         {% if game.moneyline_home or game.moneyline_away %}
         <!-- Moneyline -->

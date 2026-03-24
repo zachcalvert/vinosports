@@ -19,11 +19,11 @@
     --color-muted:       120 113 108;   /* #78716C warm gray */
     --color-border:      231 229 228;   /* #E7E5E4 stone-200 */
 
-    /* NBA accent — orange-red */
-    --color-accent:      200  65  30;   /* #C8411E */
-    --color-accent-nav:  232 108  60;   /* #E86C3C warm orange for dark navbar surfaces */
-    --color-accent-light: 254 241 235;  /* #FEF1EB */
-    --color-nba:          23  64 139;   /* #17408B NBA blue */
+    /* NBA accent — vintage Knicks orange */
+    --color-accent:      240  90  40;   /* #F05A28 Knicks orange */
+    --color-accent-nav:  244 123  82;   /* #F47B52 lighter orange for dark navbar */
+    --color-accent-light: 255 243 238;  /* #FFF3EE soft warm tint */
+    --color-nba:           0 107 182;   /* #006BB6 Knicks royal blue */
 
     /* Gold brand accent */
     --color-gold:        184 134  11;   /* #B8860B */
@@ -37,10 +37,10 @@
     --color-muted:       168 162 158;   /* #A8A29E */
     --color-border:       41  37  36;   /* #292524 */
 
-    --color-accent:      232 108  60;   /* #E86C3C lighter orange for dark bg */
-    --color-accent-nav:  232 108  60;   /* same as accent — already light enough */
-    --color-accent-light:  45  28  22;  /* subtle warm tint */
-    --color-nba:          23  64 139;
+    --color-accent:      244 123  82;   /* #F47B52 warm orange for dark bg */
+    --color-accent-nav:  244 123  82;   /* #F47B52 match accent */
+    --color-accent-light:  40  25  20;  /* subtle warm tint */
+    --color-nba:          61 155 233;   /* #3D9BE9 lighter blue for dark bg */
     --color-gold:        212 168  67;   /* #D4A843 */
 }
 
@@ -308,14 +308,16 @@
 
 .live-game-card {
     border-color: rgb(var(--color-accent)) !important;
+    border-bottom: 3px solid rgb(var(--color-nba)) !important;
     box-shadow: 0 0 0 1px rgb(var(--color-accent)),
-                0 0 12px rgba(var(--color-accent) / 0.15);
+                0 0 12px rgba(var(--color-accent) / 0.15),
+                0 4px 8px rgba(var(--color-nba) / 0.08);
     animation: live-pulse 2s ease-in-out infinite;
 }
 
 @keyframes live-pulse {
-    0%, 100% { box-shadow: 0 0 0 1px rgb(var(--color-accent)), 0 0 12px rgba(var(--color-accent) / 0.15); }
-    50%      { box-shadow: 0 0 0 1px rgb(var(--color-accent)), 0 0 20px rgba(var(--color-accent) / 0.30); }
+    0%, 100% { box-shadow: 0 0 0 1px rgb(var(--color-accent)), 0 0 12px rgba(var(--color-accent) / 0.15), 0 4px 8px rgba(var(--color-nba) / 0.08); }
+    50%      { box-shadow: 0 0 0 1px rgb(var(--color-accent)), 0 0 20px rgba(var(--color-accent) / 0.30), 0 4px 12px rgba(var(--color-nba) / 0.15); }
 }
 
 
@@ -387,16 +389,16 @@
     opacity: 0;
     animation: confetti-fall 1.8s ease-out forwards;
 }
-.reward-toast-confetti span:nth-child(1)  { left: 10%; background: #B8860B; animation-delay: 0.0s; }
-.reward-toast-confetti span:nth-child(2)  { left: 20%; background: #C8411E; animation-delay: 0.1s; }
-.reward-toast-confetti span:nth-child(3)  { left: 30%; background: #D97706; animation-delay: 0.15s; }
-.reward-toast-confetti span:nth-child(4)  { left: 45%; background: #B8860B; animation-delay: 0.05s; }
-.reward-toast-confetti span:nth-child(5)  { left: 55%; background: #16A34A; animation-delay: 0.2s; }
-.reward-toast-confetti span:nth-child(6)  { left: 65%; background: #17408B; animation-delay: 0.08s; }
-.reward-toast-confetti span:nth-child(7)  { left: 75%; background: #D97706; animation-delay: 0.12s; }
-.reward-toast-confetti span:nth-child(8)  { left: 82%; background: #B8860B; animation-delay: 0.18s; }
-.reward-toast-confetti span:nth-child(9)  { left: 88%; background: #16A34A; animation-delay: 0.25s; }
-.reward-toast-confetti span:nth-child(10) { left: 95%; background: #C8411E; animation-delay: 0.1s; }
+.reward-toast-confetti span:nth-child(1)  { left: 10%; background: #F05A28; animation-delay: 0.0s; }
+.reward-toast-confetti span:nth-child(2)  { left: 20%; background: #006BB6; animation-delay: 0.1s; }
+.reward-toast-confetti span:nth-child(3)  { left: 30%; background: #B8860B; animation-delay: 0.15s; }
+.reward-toast-confetti span:nth-child(4)  { left: 45%; background: #F05A28; animation-delay: 0.05s; }
+.reward-toast-confetti span:nth-child(5)  { left: 55%; background: #FFFFFF; animation-delay: 0.2s; }
+.reward-toast-confetti span:nth-child(6)  { left: 65%; background: #006BB6; animation-delay: 0.08s; }
+.reward-toast-confetti span:nth-child(7)  { left: 75%; background: #B8860B; animation-delay: 0.12s; }
+.reward-toast-confetti span:nth-child(8)  { left: 82%; background: #F05A28; animation-delay: 0.18s; }
+.reward-toast-confetti span:nth-child(9)  { left: 88%; background: #006BB6; animation-delay: 0.25s; }
+.reward-toast-confetti span:nth-child(10) { left: 95%; background: #B8860B; animation-delay: 0.1s; }
 
 @keyframes confetti-fall {
     0%   { top: -10%; opacity: 1; transform: rotate(0deg) scale(1); }
@@ -593,7 +595,7 @@ a.activity-toast:hover {
    -------------------------------------------------------------------------- */
 
 .odds-positive {
-    color: #16A34A;
+    color: rgb(var(--color-nba));
 }
 
 .odds-negative {
@@ -610,8 +612,8 @@ a.activity-toast:hover {
 }
 
 .odds-badge-positive {
-    background-color: rgba(22, 163, 74, 0.1);
-    color: #16A34A;
+    background-color: rgba(var(--color-nba) / 0.1);
+    color: rgb(var(--color-nba));
 }
 
 .odds-badge-negative {

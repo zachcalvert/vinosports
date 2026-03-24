@@ -4,8 +4,11 @@
 {% block content %}
 <div class="mb-6 flex items-center justify-between">
     <div>
-        <h1 class="text-3xl font-bold mb-1">Today's Games</h1>
-        <p class="text-sm text-muted">
+        <div class="flex items-center gap-3 mb-1">
+            <span class="w-1.5 h-8 rounded-full bg-accent"></span>
+            <h1 class="text-3xl font-bold">Today's Games</h1>
+        </div>
+        <p class="text-sm text-muted ml-5">
             {% if game_date %}
                 {{ game_date|date:"l, F j, Y" }}
             {% else %}

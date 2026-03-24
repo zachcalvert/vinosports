@@ -17,9 +17,9 @@
         <tbody>
             {% for standing in standings %}
             <tr class="border-b border-border/50 hover:bg-surface/50
-                {% if standing.conference_rank <= 6 %}bg-accent/5{% elif standing.conference_rank == 7 or standing.conference_rank == 8 or standing.conference_rank == 9 or standing.conference_rank == 10 %}bg-accent-light/30{% endif %}">
+                {% if standing.conference_rank <= 6 %}bg-accent/5{% elif standing.conference_rank <= 10 %}bg-nba/5{% endif %}">
                 <td class="px-2 sm:px-3 py-2 text-sm font-medium
-                    {% if standing.conference_rank <= 6 %}text-accent{% elif standing.conference_rank <= 10 %}text-muted{% else %}text-muted{% endif %}">
+                    {% if standing.conference_rank <= 6 %}text-accent{% elif standing.conference_rank <= 10 %}text-nba{% else %}text-muted{% endif %}">
                     {{ standing.conference_rank }}
                 </td>
                 <td class="px-2 sm:px-3 py-2">
@@ -50,11 +50,11 @@
 </div>
 
 <div class="mt-4 flex gap-4 text-xs text-muted">
-    <div class="flex items-center gap-1">
-        <span class="w-2 h-2 rounded-full bg-accent"></span> Playoff seeding (1-6)
+    <div class="flex items-center gap-1.5">
+        <span class="w-2 h-2 rounded-full bg-accent"></span> Playoff seeding (1–6)
     </div>
-    <div class="flex items-center gap-1">
-        <span class="w-2 h-2 rounded-full bg-accent/30"></span> Play-in (7-10)
+    <div class="flex items-center gap-1.5">
+        <span class="w-2 h-2 rounded-full bg-nba"></span> Play-in (7–10)
     </div>
 </div>
 {% else %}

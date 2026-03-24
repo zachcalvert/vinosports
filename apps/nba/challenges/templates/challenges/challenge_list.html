@@ -3,8 +3,11 @@
 
 {% block content %}
 <div class="mb-6">
-    <h1 class="text-3xl font-bold mb-1">Challenges</h1>
-    <p class="text-muted text-sm">Complete challenges to earn bonuses.</p>
+    <div class="flex items-center gap-3 mb-1">
+        <span class="w-1.5 h-8 rounded-full bg-accent"></span>
+        <h1 class="text-3xl font-bold">Challenges</h1>
+    </div>
+    <p class="text-muted text-sm ml-5">Complete challenges to earn bonuses.</p>
 </div>
 
 {% if active_challenges %}
@@ -18,9 +21,9 @@
                 <div class="flex items-center gap-2 mb-0.5">
                     <h3 class="text-sm font-semibold truncate">{{ challenge.template.title }}</h3>
                     <span class="shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider
-                        {% if challenge.template.challenge_type == 'DAILY' %}bg-blue-500/15 text-blue-400
-                        {% elif challenge.template.challenge_type == 'WEEKLY' %}bg-purple-500/15 text-purple-400
-                        {% else %}bg-yellow-500/15 text-yellow-400{% endif %}">
+                        {% if challenge.template.challenge_type == 'DAILY' %}bg-nba/15 text-nba
+                        {% elif challenge.template.challenge_type == 'WEEKLY' %}bg-accent/15 text-accent
+                        {% else %}bg-gold/15 text-gold{% endif %}">
                         {{ challenge.template.get_challenge_type_display }}
                     </span>
                 </div>

@@ -2,7 +2,10 @@
 {% block title %}Profile &amp; Settings — NBA Bets{% endblock %}
 
 {% block content %}
-<h1 class="text-3xl font-bold mb-6">Profile &amp; Settings</h1>
+<div class="flex items-center gap-3 mb-6">
+    <span class="w-1.5 h-8 rounded-full bg-accent"></span>
+    <h1 class="text-3xl font-bold">Profile &amp; Settings</h1>
+</div>
 
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6 items-start">
 
@@ -29,7 +32,7 @@
         {# Info panels #}
         <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
             {% if balance is not None %}
-            <div class="bg-surface rounded-lg border border-border p-4 text-center">
+            <div class="bg-surface rounded-lg border border-border border-t-4 border-t-nba p-4 text-center">
                 <div class="text-xs text-muted uppercase mb-1">Balance</div>
                 <div class="text-xl font-mono font-bold text-accent">${{ balance|floatformat:0 }}</div>
             </div>
@@ -103,7 +106,10 @@
 
 {# Balance history chart #}
 <div class="bg-surface rounded-lg border border-border p-4 mb-6">
-    <h2 class="text-lg font-bold mb-3">Balance History</h2>
+    <div class="flex items-center gap-2 mb-3">
+        <span class="w-1 h-5 rounded-full bg-nba"></span>
+        <h2 class="text-lg font-bold">Balance History</h2>
+    </div>
     <div style="position: relative; height: 250px;">
         <canvas id="balanceChart"></canvas>
     </div>
