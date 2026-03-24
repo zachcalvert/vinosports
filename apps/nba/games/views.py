@@ -64,7 +64,7 @@ class ScheduleView(LoginRequiredMixin, View):
         }
 
         if getattr(request, "htmx", False):
-            return render(request, "games/partials/game_list.html", ctx)
+            return render(request, "games/partials/schedule_content.html", ctx)
         return render(request, "games/schedule.html", ctx)
 
 
