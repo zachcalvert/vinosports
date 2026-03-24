@@ -6,12 +6,10 @@ Everything that needs to happen before the first Fly.io deploy. Ordered by depen
 
 ## Phase 1: Data & Bug Fixes
 
-### 1a. Fix NBA Score Updates
-There are finished games in the local DB with partial/stale scores (e.g., 47-32 for a completed game). Investigate:
-- Is the score update task failing silently or stopping mid-game?
-- Is the API returning partial data that we're treating as final?
-- Are games being marked `FINISHED` before the final score is fetched?
-- Fix the root cause, then backfill correct final scores for affected games
+### 1a. ~~Fix NBA Score Updates~~ DONE
+Root cause: sportsdata.io's free trial returns **scrambled data** (scores randomly fuzzed 5-20%). Additionally, a race condition in `get_live_scores()` meant final scores were missed when `AreAnyGamesInProgress` returned `False` after the last game ended.
+
+**Resolution:** Migrated both NBA and EPL to **BallDontLie** (All-Star tier, $9.99/mo per sport). Real, unscrambled data with 60 req/min. All 1231 NBA games and 380 EPL matches re-seeded with correct scores. See `docs/0013-BALLDONTLIE_MIGRATION.md` for full details.
 
 ### 1b. Prune Bot Roster
 There are too many homer bots in NBA and some EPL bots could be trimmed too. Goals:
@@ -76,7 +74,7 @@ Define and implement the CI pipeline. Decisions needed:
 - **Trigger**: on push to `main`? On PR? Both?
 - **Steps**: lint (ruff), test (pytest across core/epl/nba), build Docker images
 - **Deploy**: auto-deploy to Fly on merge to `main`, or manual promote?
-- **Secrets**: `FOOTBALL_DATA_API_KEY`, `ANTHROPIC_API_KEY`, `DATABASE_URL`, `REDIS_URL` — managed via Fly secrets
+- **Secrets**: `BDL_API_KEY`, `ANTHROPIC_API_KEY`, `DATABASE_URL`, `REDIS_URL` — managed via Fly secrets
 - **DB migrations**: run as a Fly release command on deploy
 
 ### 4c. Fly.io Configuration
