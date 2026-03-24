@@ -4,13 +4,16 @@ from django.utils.translation import gettext_lazy as _
 
 from vinosports.core.models import BaseModel
 
+# ---------------------------------------------------------------------------
+# Abstract base classes (still used by league BotComment models)
+# ---------------------------------------------------------------------------
+
 
 class AbstractBotProfile(BaseModel):
     """Abstract bot profile — persona, avatar, and activation state.
 
-    League projects must add:
-    - strategy_type field with sport-specific choices
-    - Any sport-specific fields (e.g., team_tla, favorite_team)
+    Kept for backwards compatibility. The concrete BotProfile below is the
+    canonical model used by all league apps.
     """
 
     user = models.OneToOneField(
@@ -23,7 +26,8 @@ class AbstractBotProfile(BaseModel):
     persona_prompt = models.TextField(
         _("persona prompt"),
         help_text=_(
-            "Full system prompt sent to the LLM. Edit to tweak personality and voice."
+            "Personality-only system prompt sent to the LLM. "
+            "Do NOT include team references — team context is injected at runtime."
         ),
     )
     avatar_icon = models.CharField(
@@ -137,3 +141,98 @@ class AbstractBotComment(BaseModel):
         abstract = True
         verbose_name = _("bot comment")
         verbose_name_plural = _("bot comments")
+
+
+# ---------------------------------------------------------------------------
+# Concrete models — global, shared across all leagues
+# ---------------------------------------------------------------------------
+
+
+class StrategyType(models.TextChoices):
+    """Unified betting strategy types across all leagues."""
+
+    FRONTRUNNER = "frontrunner", _("Frontrunner")
+    UNDERDOG = "underdog", _("Underdog")
+    SPREAD_SHARK = "spread_shark", _("Spread Shark")
+    PARLAY = "parlay", _("Parlay")
+    TOTAL_GURU = "total_guru", _("Total Guru")
+    DRAW_SPECIALIST = "draw_specialist", _("Draw Specialist")
+    VALUE_HUNTER = "value_hunter", _("Value Hunter")
+    CHAOS_AGENT = "chaos_agent", _("Chaos Agent")
+    ALL_IN_ALICE = "all_in_alice", _("All-In Alice")
+    HOMER = "homer", _("Homer")
+    ANTI_HOMER = "anti_homer", _("Anti-Homer")
+
+
+class ScheduleTemplate(AbstractScheduleTemplate):
+    """Global schedule template — shared across all leagues."""
+
+    class Meta(AbstractScheduleTemplate.Meta):
+        abstract = False
+
+
+class BotProfile(AbstractBotProfile):
+    """Global bot profile — one per bot, active across leagues.
+
+    Persona prompts describe personality only. Team context is injected
+    at comment-generation time by each league's tasks, reading from the
+    team abbreviation fields below.
+    """
+
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="bot_profile",
+        limit_choices_to={"is_bot": True},
+        verbose_name=_("bot user"),
+    )
+
+    # --- Betting behaviour (cross-league) ---
+    strategy_type = models.CharField(
+        _("strategy type"),
+        max_length=30,
+        choices=StrategyType.choices,
+    )
+    risk_multiplier = models.FloatField(
+        _("risk multiplier"),
+        default=1.0,
+        help_text=_("Multiplier applied to base stake percentage."),
+    )
+    max_daily_bets = models.PositiveIntegerField(
+        _("max daily bets"),
+        default=5,
+        help_text=_("Maximum bets this bot can place per day across all leagues."),
+    )
+    schedule_template = models.ForeignKey(
+        ScheduleTemplate,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="bots",
+        verbose_name=_("schedule template"),
+    )
+
+    # --- League activation flags ---
+    active_in_epl = models.BooleanField(_("active in EPL"), default=True)
+    active_in_nba = models.BooleanField(_("active in NBA"), default=True)
+    active_in_nfl = models.BooleanField(_("active in NFL"), default=False)
+
+    # --- League-specific team affiliations (CharFields, no cross-app FKs) ---
+    epl_team_tla = models.CharField(
+        _("EPL team TLA"),
+        max_length=5,
+        blank=True,
+        help_text=_("Three-letter abbreviation of favourite EPL team (e.g. CHE, ARS)."),
+    )
+    nba_team_abbr = models.CharField(
+        _("NBA team abbreviation"),
+        max_length=5,
+        blank=True,
+        help_text=_("Abbreviation of favourite NBA team (e.g. GSW, OKC)."),
+    )
+
+    class Meta(AbstractBotProfile.Meta):
+        abstract = False
+
+    def __str__(self):
+        return f"{self.user.display_name} ({self.get_strategy_type_display()})"

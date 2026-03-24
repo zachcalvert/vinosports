@@ -15,11 +15,11 @@ from celery import shared_task
 from django.utils import timezone
 from games.models import Game, GameStatus, Odds
 
-from bots.models import BotProfile
-from bots.schedule import get_active_window, roll_action
 from bots.services import place_bot_bets
 from bots.strategies import STRATEGY_MAP
 from vinosports.betting.models import UserBalance
+from vinosports.bots.models import BotProfile
+from vinosports.bots.schedule import get_active_window, roll_action
 
 logger = logging.getLogger(__name__)
 
@@ -32,9 +32,9 @@ def run_bot_strategies(self):
     """Dispatch execute_bot_strategy for active bots whose schedule window matches now."""
     now = timezone.localtime()
     today = now.date()
-    profiles = BotProfile.objects.filter(is_active=True).select_related(
-        "user", "schedule_template"
-    )
+    profiles = BotProfile.objects.filter(
+        is_active=True, active_in_nba=True
+    ).select_related("user", "schedule_template")
     dispatched = 0
     skipped_schedule = 0
 
@@ -83,7 +83,7 @@ def execute_bot_strategy(self, bot_user_id: int, window_max_bets: int | None = N
         return {"error": "user_not_found"}
 
     try:
-        profile = user.nba_bots_bot_profile
+        profile = user.bot_profile
     except BotProfile.DoesNotExist:
         logger.warning("No BotProfile for user %d", bot_user_id)
         return {"error": "no_profile"}

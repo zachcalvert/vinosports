@@ -29,8 +29,11 @@ migrate-epl:
 migrate-nba:
 	docker compose run --rm nba-web python manage.py migrate --noinput
 
-seed:
+seed-epl:
 	docker compose exec epl-web python manage.py seed
+
+seed-nba:
+	docker compose exec nba-web python manage.py seed_nba
 
 lint:
 	ruff check . --fix

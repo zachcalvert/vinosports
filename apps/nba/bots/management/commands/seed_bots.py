@@ -11,9 +11,9 @@ from decimal import Decimal
 from django.core.management.base import BaseCommand
 from games.models import Team
 
-from bots.models import BotProfile, ScheduleTemplate
 from bots.personas import BOT_PERSONAS
 from vinosports.betting.models import UserBalance, UserStats
+from vinosports.bots.models import BotProfile, ScheduleTemplate
 from vinosports.users.models import User
 
 SCHEDULE_TEMPLATES = [

@@ -13,7 +13,7 @@ from decimal import Decimal
 
 from betting.models import BetSlip
 
-from bots.models import BotProfile
+from vinosports.bots.models import StrategyType
 
 
 @dataclass
@@ -364,13 +364,24 @@ class AllInAliceStrategy(BaseStrategy):
 class HomerStrategy(BaseStrategy):
     """Always bets on the favorite team regardless of odds."""
 
+    def _resolve_team_id(self):
+        """Resolve the bot's nba_team_abbr to a Team PK."""
+        if not self.profile.nba_team_abbr:
+            return None
+        if not hasattr(self, "_team_id_cache"):
+            from games.models import Team
+
+            team = Team.objects.filter(abbreviation=self.profile.nba_team_abbr).first()
+            self._team_id_cache = team.pk if team else None
+        return self._team_id_cache
+
     def pick_bets(self, odds_qs) -> list[BetInstruction | ParlayInstruction]:
-        if not self.profile.favorite_team_id:
+        fav_team_id = self._resolve_team_id()
+        if not fav_team_id:
             return []
 
         picks = []
         stake = self._stake_amount(0.05)
-        fav_team_id = self.profile.favorite_team_id
 
         for odds in odds_qs:
             game = odds.game
@@ -403,13 +414,24 @@ class HomerStrategy(BaseStrategy):
 class AntiHomerStrategy(BaseStrategy):
     """Bets AGAINST the favorite team every time. Revenge homer."""
 
+    def _resolve_team_id(self):
+        """Resolve the bot's nba_team_abbr to a Team PK."""
+        if not self.profile.nba_team_abbr:
+            return None
+        if not hasattr(self, "_team_id_cache"):
+            from games.models import Team
+
+            team = Team.objects.filter(abbreviation=self.profile.nba_team_abbr).first()
+            self._team_id_cache = team.pk if team else None
+        return self._team_id_cache
+
     def pick_bets(self, odds_qs) -> list[BetInstruction | ParlayInstruction]:
-        if not self.profile.favorite_team_id:
+        fav_team_id = self._resolve_team_id()
+        if not fav_team_id:
             return []
 
         picks = []
         stake = self._stake_amount(0.06)
-        fav_team_id = self.profile.favorite_team_id
 
         for odds in odds_qs:
             game = odds.game
@@ -440,13 +462,13 @@ class AntiHomerStrategy(BaseStrategy):
 
 
 STRATEGY_MAP: dict[str, type[BaseStrategy]] = {
-    BotProfile.StrategyType.FRONTRUNNER: FrontrunnerStrategy,
-    BotProfile.StrategyType.UNDERDOG: UnderdogStrategy,
-    BotProfile.StrategyType.SPREAD_SHARK: SpreadSharkStrategy,
-    BotProfile.StrategyType.PARLAY: ParlayStrategy,
-    BotProfile.StrategyType.TOTAL_GURU: TotalGuruStrategy,
-    BotProfile.StrategyType.CHAOS_AGENT: ChaosAgentStrategy,
-    BotProfile.StrategyType.ALL_IN_ALICE: AllInAliceStrategy,
-    BotProfile.StrategyType.HOMER: HomerStrategy,
-    BotProfile.StrategyType.ANTI_HOMER: AntiHomerStrategy,
+    StrategyType.FRONTRUNNER: FrontrunnerStrategy,
+    StrategyType.UNDERDOG: UnderdogStrategy,
+    StrategyType.SPREAD_SHARK: SpreadSharkStrategy,
+    StrategyType.PARLAY: ParlayStrategy,
+    StrategyType.TOTAL_GURU: TotalGuruStrategy,
+    StrategyType.CHAOS_AGENT: ChaosAgentStrategy,
+    StrategyType.ALL_IN_ALICE: AllInAliceStrategy,
+    StrategyType.HOMER: HomerStrategy,
+    StrategyType.ANTI_HOMER: AntiHomerStrategy,
 }

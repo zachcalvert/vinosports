@@ -5,12 +5,12 @@ from decimal import Decimal
 import factory
 from activity.models import ActivityEvent
 from betting.models import BetSlip, Parlay, ParlayLeg
-from bots.models import BotProfile, ScheduleTemplate
 from discussions.models import Comment
 from django.utils import timezone
 from games.models import Conference, Game, GameStatus, Odds, Standing, Team
 
 from vinosports.betting.models import UserBalance
+from vinosports.bots.models import BotProfile, ScheduleTemplate, StrategyType
 from vinosports.users.models import User
 
 # ---------------------------------------------------------------------------
@@ -184,7 +184,7 @@ class BotProfileFactory(factory.django.DjangoModelFactory):
         model = BotProfile
 
     user = factory.SubFactory(BotUserFactory)
-    strategy_type = BotProfile.StrategyType.FRONTRUNNER
+    strategy_type = StrategyType.FRONTRUNNER
     is_active = True
     risk_multiplier = 1.0
     max_daily_bets = 5

@@ -5,7 +5,6 @@ from unittest.mock import patch
 
 import pytest
 from betting.models import BetSlip
-from bots.models import BotProfile
 from bots.tasks import (
     BAILOUT_AMOUNT,
     execute_bot_strategy,
@@ -21,6 +20,7 @@ from tests.factories import (
     UserBalanceFactory,
 )
 from vinosports.betting.models import Bankruptcy, UserBalance
+from vinosports.bots.models import StrategyType
 
 # ---------------------------------------------------------------------------
 # run_bot_strategies orchestrator
@@ -136,7 +136,7 @@ class TestExecuteBotStrategy:
     def test_places_bets_when_games_available(self):
         profile = BotProfileFactory(
             is_active=True,
-            strategy_type=BotProfile.StrategyType.FRONTRUNNER,
+            strategy_type=StrategyType.FRONTRUNNER,
         )
         UserBalanceFactory(user=profile.user, balance=Decimal("1000.00"))
 

@@ -2,6 +2,8 @@
 
 Each bot can have a ScheduleTemplate with activity windows that define
 when it's "online" and the probability of betting/commenting per hourly tick.
+
+These helpers are sport-agnostic — league tasks import them directly.
 """
 
 import random

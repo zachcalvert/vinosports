@@ -59,13 +59,3 @@ class Command(BaseCommand):
         # 3. Badges
         section("seed_badges")
         call_command("seed_badges", verbosity=verbosity)
-
-        # 4. Bots
-        section("seed_bots")
-        call_command("seed_bots", verbosity=verbosity)
-
-        # 5. Backfill stats (depends on bets existing; safe no-op if none)
-        section("backfill_stats")
-        call_command("backfill_stats", verbosity=verbosity)
-
-        self.stdout.write(self.style.SUCCESS("\nAll seed commands complete."))

@@ -1,69 +1,7 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
-from vinosports.bots.models import (
-    AbstractBotComment,
-    AbstractBotProfile,
-    AbstractScheduleTemplate,
-)
-
-
-class ScheduleTemplate(AbstractScheduleTemplate):
-    """NBA bot schedule template."""
-
-    class Meta(AbstractScheduleTemplate.Meta):
-        app_label = "nba_bots"
-
-
-class BotProfile(AbstractBotProfile):
-    """NBA bot profile with basketball-specific strategy types."""
-
-    class StrategyType(models.TextChoices):
-        FRONTRUNNER = "frontrunner", _("Frontrunner")
-        UNDERDOG = "underdog", _("Underdog")
-        SPREAD_SHARK = "spread_shark", _("Spread Shark")
-        PARLAY = "parlay", _("Parlay")
-        TOTAL_GURU = "total_guru", _("Total Guru")
-        CHAOS_AGENT = "chaos_agent", _("Chaos Agent")
-        ALL_IN_ALICE = "all_in_alice", _("All-In Alice")
-        HOMER = "homer", _("Homer (team-loyal)")
-        ANTI_HOMER = "anti_homer", _("Anti-Homer (revenge)")
-
-    strategy_type = models.CharField(
-        _("strategy type"),
-        max_length=30,
-        choices=StrategyType.choices,
-    )
-    favorite_team = models.ForeignKey(
-        "games.Team",
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="homer_bots",
-        help_text=_("Only for homer bots."),
-    )
-    risk_multiplier = models.FloatField(
-        _("risk multiplier"),
-        default=1.0,
-        help_text=_("Multiplier applied to base stake percentage."),
-    )
-    max_daily_bets = models.PositiveIntegerField(
-        _("max daily bets"),
-        default=5,
-        help_text=_("Maximum bets this bot can place per day."),
-    )
-    schedule_template = models.ForeignKey(
-        ScheduleTemplate,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="bots",
-        verbose_name=_("schedule template"),
-        help_text=_("Activity schedule. Bots without a template are always eligible."),
-    )
-
-    def __str__(self):
-        return f"{self.user.display_name} ({self.get_strategy_type_display()})"
+from vinosports.bots.models import AbstractBotComment
 
 
 class BotComment(AbstractBotComment):

@@ -32,7 +32,13 @@ logger = logging.getLogger(__name__)
 @shared_task
 def run_bot_strategies():
     """Dispatch individual bot strategy tasks with staggered delays."""
-    bot_users = User.objects.filter(is_bot=True, is_active=True)
+    from vinosports.bots.models import BotProfile
+
+    bot_user_ids = BotProfile.objects.filter(
+        is_active=True, active_in_epl=True
+    ).values_list("user_id", flat=True)
+
+    bot_users = User.objects.filter(pk__in=bot_user_ids, is_bot=True, is_active=True)
     count = 0
 
     for bot in bot_users:

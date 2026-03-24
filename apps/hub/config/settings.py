@@ -21,6 +21,7 @@ INSTALLED_APPS = [
     "vinosports.users",
     "vinosports.betting",
     "vinosports.rewards",
+    "vinosports.bots",
     # Hub app
     "hub",
 ]

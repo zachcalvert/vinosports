@@ -3,7 +3,7 @@
 from datetime import date, datetime
 from unittest.mock import MagicMock
 
-from bots.schedule import (
+from vinosports.bots.schedule import (
     DEFAULT_WINDOW,
     get_active_window,
     is_bot_active_now,

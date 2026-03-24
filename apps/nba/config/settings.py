@@ -28,6 +28,7 @@ INSTALLED_APPS = [
     "vinosports.betting",
     "vinosports.challenges",
     "vinosports.rewards",
+    "vinosports.bots",
     # League-specific apps
     "games",
     "betting",

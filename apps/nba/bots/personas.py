@@ -6,13 +6,13 @@ and Claude system prompt. Consumed by the seed_bots management command.
 schedule_template_slug maps to a ScheduleTemplate.slug (None = always-on fallback).
 """
 
-from bots.models import BotProfile
+from vinosports.bots.models import StrategyType
 
 BOT_PERSONAS = [
     {
         "slug": "chalk-charlie",
         "display_name": "Chalk Charlie",
-        "strategy": BotProfile.StrategyType.FRONTRUNNER,
+        "strategy": StrategyType.FRONTRUNNER,
         "avatar_bg": "#22c55e",
         "risk_multiplier": 0.8,
         "max_daily_bets": 5,
@@ -25,7 +25,7 @@ BOT_PERSONAS = [
     {
         "slug": "longshot-lou",
         "display_name": "Longshot Lou",
-        "strategy": BotProfile.StrategyType.UNDERDOG,
+        "strategy": StrategyType.UNDERDOG,
         "avatar_bg": "#f59e0b",
         "risk_multiplier": 1.2,
         "max_daily_bets": 4,
@@ -39,7 +39,7 @@ BOT_PERSONAS = [
     {
         "slug": "spread-steve",
         "display_name": "Spread Steve",
-        "strategy": BotProfile.StrategyType.SPREAD_SHARK,
+        "strategy": StrategyType.SPREAD_SHARK,
         "avatar_bg": "#3b82f6",
         "risk_multiplier": 1.0,
         "max_daily_bets": 5,
@@ -53,7 +53,7 @@ BOT_PERSONAS = [
     {
         "slug": "parlay-pete",
         "display_name": "Parlay Pete",
-        "strategy": BotProfile.StrategyType.PARLAY,
+        "strategy": StrategyType.PARLAY,
         "avatar_bg": "#a855f7",
         "risk_multiplier": 1.0,
         "max_daily_bets": 2,
@@ -66,7 +66,7 @@ BOT_PERSONAS = [
     {
         "slug": "over-ollie",
         "display_name": "Over Ollie",
-        "strategy": BotProfile.StrategyType.TOTAL_GURU,
+        "strategy": StrategyType.TOTAL_GURU,
         "avatar_bg": "#ef4444",
         "risk_multiplier": 1.0,
         "max_daily_bets": 5,
@@ -79,7 +79,7 @@ BOT_PERSONAS = [
     {
         "slug": "chaos-cathy",
         "display_name": "Chaos Cathy",
-        "strategy": BotProfile.StrategyType.CHAOS_AGENT,
+        "strategy": StrategyType.CHAOS_AGENT,
         "avatar_bg": "#f97316",
         "risk_multiplier": 1.5,
         "max_daily_bets": 6,
@@ -93,7 +93,7 @@ BOT_PERSONAS = [
     {
         "slug": "yolo-yolanda",
         "display_name": "YOLO Yolanda",
-        "strategy": BotProfile.StrategyType.ALL_IN_ALICE,
+        "strategy": StrategyType.ALL_IN_ALICE,
         "avatar_bg": "#ec4899",
         "risk_multiplier": 2.0,
         "max_daily_bets": 2,
@@ -106,7 +106,7 @@ BOT_PERSONAS = [
     {
         "slug": "homer-hank",
         "display_name": "Homer Hank",
-        "strategy": BotProfile.StrategyType.HOMER,
+        "strategy": StrategyType.HOMER,
         "avatar_bg": "#eab308",
         "risk_multiplier": 1.0,
         "max_daily_bets": 3,
@@ -120,7 +120,7 @@ BOT_PERSONAS = [
     {
         "slug": "homer-rip-city",
         "display_name": "Rip City Rick",
-        "strategy": BotProfile.StrategyType.HOMER,
+        "strategy": StrategyType.HOMER,
         "avatar_bg": "#e03a3e",
         "risk_multiplier": 0.9,
         "max_daily_bets": 4,
@@ -136,7 +136,7 @@ BOT_PERSONAS = [
     {
         "slug": "homer-spur-sam",
         "display_name": "Spur Sam",
-        "strategy": BotProfile.StrategyType.HOMER,
+        "strategy": StrategyType.HOMER,
         "avatar_bg": "#c4ced4",
         "risk_multiplier": 0.8,
         "max_daily_bets": 4,
@@ -152,7 +152,7 @@ BOT_PERSONAS = [
     {
         "slug": "homer-knicks-kenny",
         "display_name": "Knicks Kenny",
-        "strategy": BotProfile.StrategyType.HOMER,
+        "strategy": StrategyType.HOMER,
         "avatar_bg": "#006bb6",
         "risk_multiplier": 0.9,
         "max_daily_bets": 4,
@@ -168,7 +168,7 @@ BOT_PERSONAS = [
     {
         "slug": "homer-msg-vinnie",
         "display_name": "MSG Vinnie",
-        "strategy": BotProfile.StrategyType.HOMER,
+        "strategy": StrategyType.HOMER,
         "avatar_bg": "#f58426",
         "risk_multiplier": 1.4,
         "max_daily_bets": 5,
@@ -183,7 +183,7 @@ BOT_PERSONAS = [
     {
         "slug": "homer-bejamin-franklinn",
         "display_name": "Benjamin's Franklin",
-        "strategy": BotProfile.StrategyType.HOMER,
+        "strategy": StrategyType.HOMER,
         "avatar_bg": "#006bb6",
         "risk_multiplier": 1.1,
         "max_daily_bets": 5,
@@ -197,7 +197,7 @@ BOT_PERSONAS = [
     {
         "slug": "homer-doomer-debbie",
         "display_name": "Doomer Debbie",
-        "strategy": BotProfile.StrategyType.HOMER,
+        "strategy": StrategyType.HOMER,
         "avatar_bg": "#ed174c",
         "risk_multiplier": 0.8,
         "max_daily_bets": 3,
@@ -212,7 +212,7 @@ BOT_PERSONAS = [
     {
         "slug": "homer-banner-brian",
         "display_name": "Banner Brian",
-        "strategy": BotProfile.StrategyType.HOMER,
+        "strategy": StrategyType.HOMER,
         "avatar_bg": "#007a33",
         "risk_multiplier": 1.0,
         "max_daily_bets": 4,
@@ -226,7 +226,7 @@ BOT_PERSONAS = [
     {
         "slug": "homer-mavs-danny",
         "display_name": "Mavs Danny",
-        "strategy": BotProfile.StrategyType.HOMER,
+        "strategy": StrategyType.HOMER,
         "avatar_bg": "#00538c",
         "risk_multiplier": 0.9,
         "max_daily_bets": 4,
@@ -241,7 +241,7 @@ BOT_PERSONAS = [
     {
         "slug": "homer-sonics-ghost",
         "display_name": "Sonics Ghost",
-        "strategy": BotProfile.StrategyType.ANTI_HOMER,
+        "strategy": StrategyType.ANTI_HOMER,
         "avatar_bg": "#ffc200",
         "risk_multiplier": 1.2,
         "max_daily_bets": 5,
@@ -256,7 +256,7 @@ BOT_PERSONAS = [
     {
         "slug": "homer-bulls-mike",
         "display_name": "Bulls Mike",
-        "strategy": BotProfile.StrategyType.HOMER,
+        "strategy": StrategyType.HOMER,
         "avatar_bg": "#ce1141",
         "risk_multiplier": 0.9,
         "max_daily_bets": 4,
@@ -271,7 +271,7 @@ BOT_PERSONAS = [
     {
         "slug": "homer-pistons-og",
         "display_name": "Pistons OG",
-        "strategy": BotProfile.StrategyType.HOMER,
+        "strategy": StrategyType.HOMER,
         "avatar_bg": "#1d428a",
         "risk_multiplier": 0.8,
         "max_daily_bets": 4,
@@ -285,7 +285,7 @@ BOT_PERSONAS = [
     {
         "slug": "homer-pistons-zach",
         "display_name": "Pistons Zach",
-        "strategy": BotProfile.StrategyType.HOMER,
+        "strategy": StrategyType.HOMER,
         "avatar_bg": "#c8102e",
         "risk_multiplier": 1.2,
         "max_daily_bets": 5,
@@ -300,7 +300,7 @@ BOT_PERSONAS = [
     {
         "slug": "homer-heat-villain",
         "display_name": "South Beach Vic",
-        "strategy": BotProfile.StrategyType.HOMER,
+        "strategy": StrategyType.HOMER,
         "avatar_bg": "#98002e",
         "risk_multiplier": 1.1,
         "max_daily_bets": 4,
@@ -314,7 +314,7 @@ BOT_PERSONAS = [
     {
         "slug": "homer-pacers-chip",
         "display_name": "Pacers Chip",
-        "strategy": BotProfile.StrategyType.HOMER,
+        "strategy": StrategyType.HOMER,
         "avatar_bg": "#002d62",
         "risk_multiplier": 1.0,
         "max_daily_bets": 5,
@@ -328,7 +328,7 @@ BOT_PERSONAS = [
     {
         "slug": "homer-nuggets-nate",
         "display_name": "Mile High Nate",
-        "strategy": BotProfile.StrategyType.HOMER,
+        "strategy": StrategyType.HOMER,
         "avatar_bg": "#0e2240",
         "risk_multiplier": 1.0,
         "max_daily_bets": 4,
@@ -342,7 +342,7 @@ BOT_PERSONAS = [
     {
         "slug": "homer-wolves-antman",
         "display_name": "Ant Hive Andy",
-        "strategy": BotProfile.StrategyType.HOMER,
+        "strategy": StrategyType.HOMER,
         "avatar_bg": "#236192",
         "risk_multiplier": 1.2,
         "max_daily_bets": 5,
@@ -356,7 +356,7 @@ BOT_PERSONAS = [
     {
         "slug": "homer-dubs-chad",
         "display_name": "Dubs Chad",
-        "strategy": BotProfile.StrategyType.HOMER,
+        "strategy": StrategyType.HOMER,
         "avatar_bg": "#ffc72c",
         "risk_multiplier": 1.1,
         "max_daily_bets": 4,
@@ -370,7 +370,7 @@ BOT_PERSONAS = [
     {
         "slug": "homer-clips-carl",
         "display_name": "Clipper Carl",
-        "strategy": BotProfile.StrategyType.HOMER,
+        "strategy": StrategyType.HOMER,
         "avatar_bg": "#c8102e",
         "risk_multiplier": 0.8,
         "max_daily_bets": 3,
@@ -385,7 +385,7 @@ BOT_PERSONAS = [
     {
         "slug": "homer-bucks-barry",
         "display_name": "Bucks Barry",
-        "strategy": BotProfile.StrategyType.HOMER,
+        "strategy": StrategyType.HOMER,
         "avatar_bg": "#00471b",
         "risk_multiplier": 0.9,
         "max_daily_bets": 4,
@@ -400,7 +400,7 @@ BOT_PERSONAS = [
     {
         "slug": "homer-rockets-stevie",
         "display_name": "Franchise Stevie",
-        "strategy": BotProfile.StrategyType.HOMER,
+        "strategy": StrategyType.HOMER,
         "avatar_bg": "#ce1141",
         "risk_multiplier": 1.0,
         "max_daily_bets": 4,
@@ -414,7 +414,7 @@ BOT_PERSONAS = [
     {
         "slug": "homer-magic-marvin",
         "display_name": "Magic Marvin",
-        "strategy": BotProfile.StrategyType.HOMER,
+        "strategy": StrategyType.HOMER,
         "avatar_bg": "#0077c0",
         "risk_multiplier": 1.1,
         "max_daily_bets": 4,
@@ -428,7 +428,7 @@ BOT_PERSONAS = [
     {
         "slug": "homer-wilmington-wally",
         "display_name": "Wilmington Wally",
-        "strategy": BotProfile.StrategyType.HOMER,
+        "strategy": StrategyType.HOMER,
         "avatar_bg": "#1d1160",
         "risk_multiplier": 0.9,
         "max_daily_bets": 3,
@@ -442,7 +442,7 @@ BOT_PERSONAS = [
     {
         "slug": "homer-nets-regret",
         "display_name": "Nets Ned",
-        "strategy": BotProfile.StrategyType.HOMER,
+        "strategy": StrategyType.HOMER,
         "avatar_bg": "#000000",
         "risk_multiplier": 0.8,
         "max_daily_bets": 3,
@@ -458,7 +458,7 @@ BOT_PERSONAS = [
     {
         "slug": "stat-nerd-nathan",
         "display_name": "StatSheet Nathan",
-        "strategy": BotProfile.StrategyType.SPREAD_SHARK,
+        "strategy": StrategyType.SPREAD_SHARK,
         "avatar_bg": "#6b7280",
         "risk_multiplier": 0.9,
         "max_daily_bets": 5,
@@ -473,7 +473,7 @@ BOT_PERSONAS = [
     {
         "slug": "conspiracy-carl",
         "display_name": "Conspiracy Carl",
-        "strategy": BotProfile.StrategyType.UNDERDOG,
+        "strategy": StrategyType.UNDERDOG,
         "avatar_bg": "#4b0082",
         "risk_multiplier": 1.3,
         "max_daily_bets": 4,
@@ -488,7 +488,7 @@ BOT_PERSONAS = [
     {
         "slug": "conspiracy-quinn",
         "display_name": "Deep State Quinn",
-        "strategy": BotProfile.StrategyType.CHAOS_AGENT,
+        "strategy": StrategyType.CHAOS_AGENT,
         "avatar_bg": "#1a1a2e",
         "risk_multiplier": 1.4,
         "max_daily_bets": 5,
@@ -503,7 +503,7 @@ BOT_PERSONAS = [
     {
         "slug": "nostalgia-norman",
         "display_name": "90s Norman",
-        "strategy": BotProfile.StrategyType.FRONTRUNNER,
+        "strategy": StrategyType.FRONTRUNNER,
         "avatar_bg": "#8b4513",
         "risk_multiplier": 0.8,
         "max_daily_bets": 4,
@@ -518,7 +518,7 @@ BOT_PERSONAS = [
     {
         "slug": "lurker-larry",
         "display_name": "Lurker Larry",
-        "strategy": BotProfile.StrategyType.UNDERDOG,
+        "strategy": StrategyType.UNDERDOG,
         "avatar_bg": "#9ca3af",
         "risk_multiplier": 1.1,
         "max_daily_bets": 2,
@@ -533,7 +533,7 @@ BOT_PERSONAS = [
     {
         "slug": "wholesome-dad-dan",
         "display_name": "Dad Dan",
-        "strategy": BotProfile.StrategyType.FRONTRUNNER,
+        "strategy": StrategyType.FRONTRUNNER,
         "avatar_bg": "#2563eb",
         "risk_multiplier": 0.7,
         "max_daily_bets": 3,

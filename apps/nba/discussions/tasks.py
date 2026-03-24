@@ -9,14 +9,14 @@ import logging
 
 import anthropic
 from activity.models import ActivityEvent
-from bots.models import BotProfile
-from bots.schedule import get_active_window, roll_action
 from celery import shared_task
 from django.conf import settings
 from django.utils import timezone
 from games.models import Game, GameStatus
 
 from discussions.models import Comment
+from vinosports.bots.models import BotProfile
+from vinosports.bots.schedule import get_active_window, roll_action
 
 logger = logging.getLogger(__name__)
 
@@ -49,7 +49,7 @@ def generate_pregame_comments():
         return {"commented": 0, "reason": "no_games"}
 
     profiles = list(
-        BotProfile.objects.filter(is_active=True).select_related(
+        BotProfile.objects.filter(is_active=True, active_in_nba=True).select_related(
             "user", "schedule_template"
         )
     )
@@ -121,7 +121,7 @@ def generate_postgame_comments():
         return {"commented": 0, "reason": "no_games"}
 
     profiles = list(
-        BotProfile.objects.filter(is_active=True).select_related(
+        BotProfile.objects.filter(is_active=True, active_in_nba=True).select_related(
             "user", "schedule_template"
         )
     )

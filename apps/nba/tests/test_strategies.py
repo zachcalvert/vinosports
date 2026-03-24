@@ -3,7 +3,6 @@
 from decimal import Decimal
 from unittest.mock import MagicMock
 
-from bots.models import BotProfile
 from bots.strategies import (
     STRATEGY_MAP,
     AllInAliceStrategy,
@@ -20,18 +19,20 @@ from bots.strategies import (
     UnderdogStrategy,
 )
 
+from vinosports.bots.models import StrategyType
+
 
 def _make_profile(
     strategy_type="frontrunner",
     risk_multiplier=1.0,
     max_daily_bets=5,
-    favorite_team_id=None,
+    nba_team_abbr="",
 ):
     p = MagicMock()
     p.strategy_type = strategy_type
     p.risk_multiplier = risk_multiplier
     p.max_daily_bets = max_daily_bets
-    p.favorite_team_id = favorite_team_id
+    p.nba_team_abbr = nba_team_abbr
     return p
 
 
@@ -321,60 +322,65 @@ class TestAllInAliceStrategy:
 
 class TestHomerStrategy:
     def test_bets_home_for_favorite(self):
-        profile = _make_profile(favorite_team_id=100)
+        profile = _make_profile(nba_team_abbr="TST")
         s = HomerStrategy(profile, Decimal("1000.00"))
+        s._team_id_cache = 100  # Mock the team lookup
         odds = [_make_odds(home_team_id=100, away_team_id=200)]
         picks = s.pick_bets(odds)
         assert len(picks) == 1
         assert picks[0].selection == "HOME"
 
     def test_bets_away_for_favorite(self):
-        profile = _make_profile(favorite_team_id=200)
+        profile = _make_profile(nba_team_abbr="TST")
         s = HomerStrategy(profile, Decimal("1000.00"))
+        s._team_id_cache = 200  # Mock the team lookup
         odds = [_make_odds(home_team_id=100, away_team_id=200)]
         picks = s.pick_bets(odds)
         assert len(picks) == 1
         assert picks[0].selection == "AWAY"
 
     def test_no_favorite_team_returns_empty(self):
-        profile = _make_profile(favorite_team_id=None)
+        profile = _make_profile(nba_team_abbr="")
         s = HomerStrategy(profile, Decimal("1000.00"))
         odds = [_make_odds()]
         picks = s.pick_bets(odds)
         assert picks == []
 
     def test_skips_games_without_favorite(self):
-        profile = _make_profile(favorite_team_id=999)
+        profile = _make_profile(nba_team_abbr="TST")
         s = HomerStrategy(profile, Decimal("1000.00"))
+        s._team_id_cache = 999  # Mock — team not in this game
         odds = [_make_odds(home_team_id=100, away_team_id=200)]
         picks = s.pick_bets(odds)
         assert picks == []
 
 
 # ---------------------------------------------------------------------------
-# AntiHomerStrategy — bets against favorite_team
+# AntiHomerStrategy — bets against favorite team
 # ---------------------------------------------------------------------------
 
 
 class TestAntiHomerStrategy:
     def test_bets_against_home_favorite(self):
-        profile = _make_profile(favorite_team_id=100)
+        profile = _make_profile(nba_team_abbr="TST")
         s = AntiHomerStrategy(profile, Decimal("1000.00"))
+        s._team_id_cache = 100
         odds = [_make_odds(home_team_id=100, away_team_id=200)]
         picks = s.pick_bets(odds)
         assert len(picks) == 1
         assert picks[0].selection == "AWAY"
 
     def test_bets_against_away_favorite(self):
-        profile = _make_profile(favorite_team_id=200)
+        profile = _make_profile(nba_team_abbr="TST")
         s = AntiHomerStrategy(profile, Decimal("1000.00"))
+        s._team_id_cache = 200
         odds = [_make_odds(home_team_id=100, away_team_id=200)]
         picks = s.pick_bets(odds)
         assert len(picks) == 1
         assert picks[0].selection == "HOME"
 
     def test_no_favorite_returns_empty(self):
-        profile = _make_profile(favorite_team_id=None)
+        profile = _make_profile(nba_team_abbr="")
         s = AntiHomerStrategy(profile, Decimal("1000.00"))
         picks = s.pick_bets([_make_odds()])
         assert picks == []
@@ -386,8 +392,20 @@ class TestAntiHomerStrategy:
 
 
 class TestStrategyMap:
-    def test_all_strategy_types_mapped(self):
-        for choice_value, _ in BotProfile.StrategyType.choices:
+    def test_all_nba_strategy_types_mapped(self):
+        """All NBA-relevant strategy types should be in STRATEGY_MAP."""
+        nba_strategies = [
+            StrategyType.FRONTRUNNER,
+            StrategyType.UNDERDOG,
+            StrategyType.SPREAD_SHARK,
+            StrategyType.PARLAY,
+            StrategyType.TOTAL_GURU,
+            StrategyType.CHAOS_AGENT,
+            StrategyType.ALL_IN_ALICE,
+            StrategyType.HOMER,
+            StrategyType.ANTI_HOMER,
+        ]
+        for choice_value in nba_strategies:
             assert choice_value in STRATEGY_MAP, f"{choice_value} not in STRATEGY_MAP"
 
     def test_all_subclass_base_strategy(self):

@@ -16,8 +16,9 @@ from django.contrib.auth import get_user_model
 from django.db import IntegrityError, transaction
 from matches.models import MatchNotes, MatchStats, Odds
 
-from bots.models import BotComment, BotProfile
+from bots.models import BotComment
 from bots.services import get_best_odds_map
+from vinosports.bots.models import BotProfile, StrategyType
 
 User = get_user_model()
 logger = logging.getLogger(__name__)
@@ -291,6 +292,7 @@ def select_bots_for_match(match, trigger_type, max_bots=2, exclude_user_ids=None
     candidates = []
     for profile in BotProfile.objects.filter(
         is_active=True,
+        active_in_epl=True,
         user__is_bot=True,
         user__is_active=True,
         persona_prompt__gt="",
@@ -340,6 +342,7 @@ def select_reply_bot(match, target_comment):
         author_email = target_comment.user.email
         for profile in BotProfile.objects.filter(
             is_active=True,
+            active_in_epl=True,
             user__is_bot=True,
             user__is_active=True,
             persona_prompt__gt="",
@@ -364,6 +367,7 @@ def select_reply_bot(match, target_comment):
         match_odds = odds_map.get(match.pk, {})
         for profile in BotProfile.objects.filter(
             is_active=True,
+            active_in_epl=True,
             user__is_bot=True,
             user__is_active=True,
             persona_prompt__gt="",
@@ -385,10 +389,10 @@ _homer_team_cache: dict[str, tuple[str, str, str] | None] = {}
 
 def _homer_team_mentioned(profile, text):
     """Check if a homer bot's team is mentioned in a comment body."""
-    if not profile.team_tla:
+    if not profile.epl_team_tla:
         return False
 
-    tla_key = profile.team_tla
+    tla_key = profile.epl_team_tla
 
     # Lazily populate the cache to avoid repeated DB lookups
     if tla_key not in _homer_team_cache:
@@ -430,32 +434,32 @@ def _is_bot_relevant(profile, match, match_odds):
     away = match_odds.get("away_win")
 
     st = profile.strategy_type
-    if st == BotProfile.StrategyType.FRONTRUNNER:
+    if st == StrategyType.FRONTRUNNER:
         # Relevant when there's a clear favorite
         if home and away:
             return min(home, away) < 1.80
-    elif st == BotProfile.StrategyType.UNDERDOG:
+    elif st == StrategyType.UNDERDOG:
         # Relevant when there's a clear underdog
         if home and away:
             return max(home, away) >= 3.00
-    elif st == BotProfile.StrategyType.DRAW_SPECIALIST:
+    elif st == StrategyType.DRAW_SPECIALIST:
         # Relevant when draw odds are in the sweet spot
         if draw:
             return 2.80 <= float(draw) <= 3.80
-    elif st == BotProfile.StrategyType.VALUE_HUNTER:
+    elif st == StrategyType.VALUE_HUNTER:
         # Relevant when there's odds spread — check if we have multiple bookmakers
         bookmaker_count = Odds.objects.filter(match=match).count()
         return bookmaker_count >= 2
     elif st in (
-        BotProfile.StrategyType.PARLAY,
-        BotProfile.StrategyType.CHAOS_AGENT,
-        BotProfile.StrategyType.ALL_IN_ALICE,
+        StrategyType.PARLAY,
+        StrategyType.CHAOS_AGENT,
+        StrategyType.ALL_IN_ALICE,
     ):
         # Always eligible
         return True
-    elif st == BotProfile.StrategyType.HOMER:
+    elif st == StrategyType.HOMER:
         # Homer bots — only relevant if their team is playing.
-        tla = profile.team_tla
+        tla = profile.epl_team_tla
         if tla:
             return (
                 getattr(match.home_team, "tla", None) == tla
