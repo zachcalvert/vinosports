@@ -29,6 +29,12 @@
                    class="nav-link {% if url_name == 'standings' %}nav-link-active{% endif %}">
                     Standings
                 </a>
+                {% if user.is_superuser %}
+                <a href="{% url 'website:admin_dashboard' %}"
+                   class="nav-link {% if url_name == 'admin_dashboard' %}nav-link-active{% endif %}">
+                    <i class="ph-duotone ph-gauge"></i> Admin
+                </a>
+                {% endif %}
                 {% endwith %}
             </div>
 
@@ -135,6 +141,11 @@
                 <a href="{% url 'dashboard' %}" class="mobile-nav-link {% if url_name == 'dashboard' %}nav-link-active{% endif %}">Dashboard</a>
                 <a href="{% url 'games:schedule' %}" class="mobile-nav-link {% if url_name == 'schedule' %}nav-link-active{% endif %}">Schedule</a>
                 <a href="{% url 'games:standings' %}" class="mobile-nav-link {% if url_name == 'standings' %}nav-link-active{% endif %}">Standings</a>
+                {% if user.is_superuser %}
+                <a href="{% url 'website:admin_dashboard' %}" class="mobile-nav-link {% if url_name == 'admin_dashboard' %}nav-link-active{% endif %}">
+                    <i class="ph-duotone ph-gauge"></i> Admin
+                </a>
+                {% endif %}
             </div>
 
             {% if user.is_authenticated %}

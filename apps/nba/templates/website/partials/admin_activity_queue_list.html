@@ -1,0 +1,31 @@
+<div id="admin-activity-queue-items" class="divide-y divide-border/50">
+    {% for item in items %}
+    <div class="flex items-center gap-3 py-2.5 text-sm">
+        <i class="ph-duotone ph-{{ item.icon }} text-lg text-accent shrink-0"></i>
+        <div class="min-w-0 flex-1">
+            <div class="flex items-center gap-1.5 flex-wrap">
+                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-indigo-500/20 text-indigo-300">{{ item.get_event_type_display }}</span>
+                <span class="truncate">{{ item.message|truncatechars:80 }}</span>
+            </div>
+        </div>
+        <div class="text-xs text-muted whitespace-nowrap">{{ item.created_at|timesince }} ago</div>
+    </div>
+    {% empty %}
+    {% include "website/components/empty_state.html" with icon="queue" title="Queue empty" message="No activity events are waiting to be broadcast." %}
+    {% endfor %}
+</div>
+
+{% if has_more %}
+<div id="load-more-activity-queue" class="text-center mt-3">
+    <button hx-get="{% url 'website:admin_dashboard_activity_queue' %}?offset={{ next_offset }}"
+            hx-target="#admin-activity-queue-items"
+            hx-swap="beforeend"
+            hx-indicator="#activity-queue-loading"
+            class="text-accent text-sm hover:underline">
+        View all
+    </button>
+    <span id="activity-queue-loading" class="htmx-indicator">
+        <span class="spinner spinner-sm text-accent"></span>
+    </span>
+</div>
+{% endif %}

@@ -1,0 +1,48 @@
+{% load currency_tags %}
+
+{% for item in items %}
+<div class="flex items-center gap-3 py-2.5 text-sm border-t border-border/50">
+    {% include "website/components/avatar.html" with avatar_user=item.user avatar_size="xs" %}
+    <div class="min-w-0 flex-1">
+        <div class="flex items-center gap-1.5 flex-wrap">
+            {% if item.legs.all %}
+                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-purple-500/20 text-purple-300">Parlay</span>
+                <span class="text-muted truncate">{{ item.user.display_name|default:item.user.email }}</span>
+            {% else %}
+                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-500/20 text-blue-300">Bet</span>
+                <span class="text-muted truncate">{{ item.user.display_name|default:item.user.email }}</span>
+                <span class="text-xs text-muted">—</span>
+                <span class="text-xs">{{ item.game.home_team.abbreviation }} v {{ item.game.away_team.abbreviation }}</span>
+            {% endif %}
+        </div>
+        <div class="flex items-center gap-2 mt-0.5">
+            <span class="text-xs font-mono">{{ item.stake|currency:item.user }}</span>
+            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium
+                {% if item.status == 'WON' %}bg-green-500/20 text-green-300
+                {% elif item.status == 'LOST' %}bg-red-500/20 text-red-300
+                {% elif item.status == 'VOID' %}bg-gray-500/20 text-muted
+                {% else %}bg-yellow-500/20 text-yellow-300{% endif %}">
+                {{ item.status }}
+            </span>
+        </div>
+    </div>
+    <div class="text-xs text-muted whitespace-nowrap">{{ item.created_at|timesince }} ago</div>
+</div>
+{% endfor %}
+
+{% if has_more %}
+<div id="load-more-bets" hx-swap-oob="true" class="text-center mt-3">
+    <button hx-get="{% url 'website:admin_dashboard_bets' %}?offset={{ next_offset }}"
+            hx-target="#admin-bets-items"
+            hx-swap="beforeend"
+            hx-indicator="#bets-loading"
+            class="text-accent text-sm hover:underline">
+        View all
+    </button>
+    <span id="bets-loading" class="htmx-indicator">
+        <span class="spinner spinner-sm text-accent"></span>
+    </span>
+</div>
+{% else %}
+<div id="load-more-bets" hx-swap-oob="true"></div>
+{% endif %}
