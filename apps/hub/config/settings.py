@@ -112,3 +112,6 @@ LEAGUE_URLS = {
 HUB_URL = os.environ.get("HUB_URL", "http://localhost:7999")
 
 LOGIN_URL = "/login/"
+
+# Anthropic API (promo code evaluation)
+ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")

@@ -36,6 +36,7 @@ class User(AbstractUser):
         default=True,
         help_text="Show live activity feed toasts on every page.",
     )
+    promo_code = models.CharField(max_length=100, blank=True, default="")
     id_hash = models.CharField(
         max_length=8,
         default=generate_short_id,
