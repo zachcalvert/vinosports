@@ -2,16 +2,16 @@
 
 ## Current State
 
-**165 tests passing**, **44.9% coverage** (threshold: 44%).
+**250 tests passing**, **56.1% coverage** (threshold: 55%).
 
-Implemented 2026-03-23 following the plan in `0010-NBA_TEST_SUITE.md`.
+Phase 1 completed 2026-03-24 following the plan in this doc.
 
 ### Infrastructure
 
 | Item | Status |
 |------|--------|
 | `pytest-django`, `pytest-cov`, `factory-boy` | Installed in Dockerfile |
-| `pyproject.toml` coverage config | `fail_under = 44`, HTML + terminal reports |
+| `pyproject.toml` coverage config | `fail_under = 55`, HTML + terminal reports |
 | `conftest.py` | `celery_eager` autouse fixture, `api_client` fixture |
 | `tests/factories.py` | 14 factories covering all NBA models |
 | `make test-nba` | Runs full suite with coverage |
@@ -30,7 +30,13 @@ Implemented 2026-03-23 following the plan in `0010-NBA_TEST_SUITE.md`.
 | `test_tasks.py` | 10 | `run_bot_strategies` orchestration, `execute_bot_strategy` edge cases |
 | `test_discussion_tasks.py` | 11 | Pregame/postgame comment generation, Claude API mocking, cap enforcement |
 | `test_odds_engine.py` | 22 | `_parse_record`, `_team_strength`, `_win_probability`, odds generation |
-| **Total** | **131** | *34 additional tests are from non-DB strategy/schedule/odds tests* |
+| `test_betting_tasks.py` | 14 | `generate_odds`, `settle_pending_bets`, `_odds_changed` |
+| `test_context_processors.py` | 12 | `bankruptcy`, `parlay_slip` (session legs, combined odds, unauthenticated) |
+| `test_forms.py` | 28 | `PlaceBetForm`, `PlaceParlayForm`, `DisplayNameForm`, `SignupForm`, `LoginForm` |
+| `test_signals.py` | 9 | `check_reward_rules` (BET_COUNT + STAKE_AMOUNT) for BetSlip and Parlay |
+| `test_activity_tasks.py` | 9 | `broadcast_next_activity_event`, `cleanup_old_activity_events` |
+| `test_challenges_tasks.py` | 15 | `rotate_daily_challenges`, `rotate_weekly_challenges`, `expire_challenges` |
+| **Total** | **218** | *32 additional non-DB tests bring total to 250* |
 
 ### Module-Level Coverage
 
@@ -57,28 +63,24 @@ Implemented 2026-03-23 following the plan in `0010-NBA_TEST_SUITE.md`.
 |--------|-------|----------|
 | `website/views.py` | 121 | Views |
 | `games/services.py` | 147 | Data ingestion (API clients) |
-| `betting/services.py` | 78 | User-facing bet placement |
+| `betting/services.py` | 78 | External odds API sync |
 | `betting/views.py` | 127 | Views |
-| `challenges/tasks.py` | 76 | Challenge rotation |
+| `challenges/tasks.py` | 2 remaining | Partially tested (97%) |
 | `games/tasks.py` | 46 | Celery data fetch tasks |
-| `betting/tasks.py` | 70 | Celery betting tasks |
-| `betting/context_processors.py` | 47 | Template context |
-| `betting/forms.py` | 31 | Django forms |
+| `betting/tasks.py` | 6 remaining | Partially tested (91%) |
 | `games/management/commands/seed_nba.py` | 69 | Seed command |
 | `bots/management/commands/seed_bots.py` | 52 | Seed command |
-| `activity/tasks.py` | 27 | Broadcast/cleanup tasks |
-| `website/forms.py` | 22 | Forms |
 | Other views/urls/routing | ~80 | Thin glue |
 
 ---
 
 ## Path to 80%
 
-Current: **~45% (1,016 lines covered / 2,263 total)**
-Target: **80% (1,810 lines covered)**
-Gap: **~794 lines** to cover.
+Current: **~56% (1,309 lines covered / 2,333 total)**
+Target: **80% (1,866 lines covered)**
+Gap: **~557 lines** to cover.
 
-### Phase 1 → 55%: Low-Hanging Fruit (no mocking needed)
+### Phase 1 → 55%: ✅ COMPLETE
 
 **Est. +220 lines covered**
 
