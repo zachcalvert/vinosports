@@ -7,13 +7,13 @@ from betting.models import BetSlip, Parlay
 from discussions.models import Comment
 from django.contrib.auth import get_user_model, logout
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.db.models import Sum
+from django.db.models import Count, Sum
 from django.http import HttpResponse
 from django.shortcuts import redirect, render
 from django.template.loader import render_to_string
 from django.views import View
 from django.views.generic import TemplateView
-from games.models import Game, GameStatus
+from games.models import Game, GameStatus, Standing
 
 from vinosports.betting.models import BalanceTransaction, UserBalance, UserStats
 from website.theme import THEME_SESSION_KEY, get_theme, normalize_theme
@@ -29,6 +29,10 @@ class DashboardView(LoginRequiredMixin, View):
         games = (
             Game.objects.filter(game_date=today)
             .select_related("home_team", "away_team")
+            .annotate(
+                bet_count=Count("bets", distinct=True),
+                comment_count=Count("comments", distinct=True),
+            )
             .order_by("tip_off")
         )
 
@@ -40,6 +44,16 @@ class DashboardView(LoginRequiredMixin, View):
         upcoming = [g for g in games if g.status == GameStatus.SCHEDULED]
         final = [g for g in games if g.status == GameStatus.FINAL]
 
+        # Build a lookup of team standings for records & seeds
+        team_ids = set()
+        for g in games:
+            team_ids.add(g.home_team_id)
+            team_ids.add(g.away_team_id)
+        standings_qs = Standing.objects.filter(
+            team_id__in=team_ids, season=today.year
+        ).select_related("team")
+        standings_by_team = {s.team_id: s for s in standings_qs}
+
         return render(
             request,
             "website/dashboard.html",
@@ -48,6 +62,7 @@ class DashboardView(LoginRequiredMixin, View):
                 "upcoming_games": upcoming,
                 "final_games": final,
                 "today": today,
+                "standings_by_team": standings_by_team,
             },
         )
 

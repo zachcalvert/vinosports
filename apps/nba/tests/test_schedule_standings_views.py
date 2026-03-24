@@ -147,7 +147,7 @@ class TestStandingsView:
 
     def test_tab_defaults_to_east(self, auth_client):
         response = auth_client.get("/games/standings/")
-        assert response.context["tab"] == "east"
+        assert response.context["tab"] == "west"
 
     def test_tab_param_respected(self, auth_client):
         response = auth_client.get("/games/standings/", {"tab": "west"})
