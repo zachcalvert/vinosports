@@ -86,9 +86,9 @@ No NFL work before launch. NFL can be added as a third league post-launch follow
 
 ---
 
-## Open Questions
+## Decisions
 
-- **Deploy topology**: One Fly app with multiple processes, or separate Fly apps for hub/epl/nba? Separate apps means separate domains and real cross-origin auth concerns
-- **Domain structure**: `vinosports.com` with subpaths (`/epl/`, `/nba/`) vs. subdomains (`epl.vinosports.com`) vs. separate domains? This affects shared sessions and the global navbar
-- **Bot globalization order**: Should 2b/2c (globalize profiles + templates) happen before or after the first deploy? It's a significant migration. Could deploy with per-league bots first and unify later
-- **Schedule template granularity**: With global templates, should there be league-specific window overrides, or do bots just get one set of windows that applies to all leagues they're active in?
+- **Deploy topology**: One Fly app with multiple processes. Each Django project (hub, epl, nba) and each background service (workers, beat schedulers) runs as a separate process within the single app. This keeps shared sessions simple (one DB, one cookie domain) while still allowing `epl-web`, `nba-beat`, etc. as distinct process types in `fly.toml`
+- **Domain structure**: `vinosports.com` with subpaths (`/epl/`, `/nba/`). Simplest option — one domain means shared cookies work naturally, no CORS issues, and the global navbar links are just relative paths. Likely needs a reverse proxy (Fly's built-in routing or nginx) to fan out subpaths to the right process
+- **Bot globalization order**: Before first deploy. No rush on deploying, so do the migration to global bot profiles and templates cleanly before there's a production DB to worry about
+- **Schedule template granularity**: League-specific window overrides. A bot gets one base set of windows from its template, but leagues can override specific values (e.g., EPL bots go dormant in summer, NBA bots ramp up during playoffs). This keeps the common case simple while handling seasonal differences
