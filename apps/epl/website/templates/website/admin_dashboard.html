@@ -10,28 +10,28 @@
 
 <!-- Stats Summary -->
 <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
-    <div class="bg-surface rounded-lg border border-border p-4 text-center">
-        <div class="text-2xl font-bold text-accent font-mono">{{ total_users }}</div>
+    <div class="bg-surface-container-lowest rounded-xl border-b-4 border-outline-variant p-4 text-center">
+        <div class="text-2xl font-bold text-primary font-mono">{{ total_users }}</div>
         <div class="text-xs text-muted uppercase tracking-wider mt-1">Users</div>
     </div>
-    <div class="bg-surface rounded-lg border border-border p-4 text-center">
-        <div class="text-2xl font-bold text-accent font-mono">{{ active_bets }}</div>
+    <div class="bg-surface-container-lowest rounded-xl border-b-4 border-outline-variant p-4 text-center">
+        <div class="text-2xl font-bold text-primary font-mono">{{ active_bets }}</div>
         <div class="text-xs text-muted uppercase tracking-wider mt-1">Active Bets</div>
     </div>
-    <div class="bg-surface rounded-lg border border-border p-4 text-center">
-        <div class="text-2xl font-bold text-accent font-mono">{{ active_parlays }}</div>
+    <div class="bg-surface-container-lowest rounded-xl border-b-4 border-outline-variant p-4 text-center">
+        <div class="text-2xl font-bold text-primary font-mono">{{ active_parlays }}</div>
         <div class="text-xs text-muted uppercase tracking-wider mt-1">Active Parlays</div>
     </div>
-    <div class="bg-surface rounded-lg border border-border p-4 text-center">
-        <div class="text-2xl font-bold text-accent font-mono">{{ total_comments }}</div>
+    <div class="bg-surface-container-lowest rounded-xl border-b-4 border-outline-variant p-4 text-center">
+        <div class="text-2xl font-bold text-primary font-mono">{{ total_comments }}</div>
         <div class="text-xs text-muted uppercase tracking-wider mt-1">Comments</div>
     </div>
-    <div class="bg-surface rounded-lg border border-border p-4 text-center">
-        <div class="text-2xl font-bold text-accent font-mono">{{ total_bets_all_time }}</div>
+    <div class="bg-surface-container-lowest rounded-xl border-b-4 border-outline-variant p-4 text-center">
+        <div class="text-2xl font-bold text-primary font-mono">{{ total_bets_all_time }}</div>
         <div class="text-xs text-muted uppercase tracking-wider mt-1">Total Bets</div>
     </div>
-    <div class="bg-surface rounded-lg border border-border p-4 text-center">
-        <div class="text-2xl font-bold text-accent font-mono">{{ queued_events }}</div>
+    <div class="bg-surface-container-lowest rounded-xl border-b-4 border-outline-variant p-4 text-center">
+        <div class="text-2xl font-bold text-primary font-mono">{{ queued_events }}</div>
         <div class="text-xs text-muted uppercase tracking-wider mt-1">Queued Events</div>
     </div>
 </div>
@@ -39,39 +39,39 @@
 <!-- Panels Grid -->
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
     <!-- Bets & Parlays -->
-    <div class="bg-surface rounded-lg border border-border p-5">
+    <div class="bg-surface-container-lowest rounded-xl border-b-4 border-outline-variant p-5">
         <h2 class="text-lg font-bold mb-4 flex items-center gap-2" style="font-family: 'Epilogue', sans-serif;">
-            <i class="ph-duotone ph-ticket text-accent"></i> Recent Bets &amp; Parlays
+            <i class="ph-duotone ph-ticket text-primary"></i> Recent Bets &amp; Parlays
         </h2>
         <div id="admin-bets"
              hx-get="{% url 'website:admin_dashboard_bets' %}"
              hx-trigger="load"
              hx-swap="innerHTML">
             <div class="flex justify-center py-8">
-                <span class="spinner text-accent"></span>
+                <span class="spinner text-primary"></span>
             </div>
         </div>
     </div>
 
     <!-- Comments & Posts -->
-    <div class="bg-surface rounded-lg border border-border p-5">
+    <div class="bg-surface-container-lowest rounded-xl border-b-4 border-outline-variant p-5">
         <h2 class="text-lg font-bold mb-4 flex items-center gap-2" style="font-family: 'Epilogue', sans-serif;">
-            <i class="ph-duotone ph-chat-circle-text text-accent"></i> Recent Comments &amp; Posts
+            <i class="ph-duotone ph-chat-circle-text text-primary"></i> Recent Comments &amp; Posts
         </h2>
         <div id="admin-comments"
              hx-get="{% url 'website:admin_dashboard_comments' %}"
              hx-trigger="load"
              hx-swap="innerHTML">
             <div class="flex justify-center py-8">
-                <span class="spinner text-accent"></span>
+                <span class="spinner text-primary"></span>
             </div>
         </div>
     </div>
 
     <!-- Activity Event Queue -->
-    <div class="bg-surface rounded-lg border border-border p-5 lg:col-span-3">
+    <div class="bg-surface-container-lowest rounded-xl border-b-4 border-outline-variant p-5 lg:col-span-3">
         <h2 class="text-lg font-bold mb-4 flex items-center gap-2" style="font-family: 'Epilogue', sans-serif;">
-            <i class="ph-duotone ph-queue text-accent"></i> Activity Event Queue
+            <i class="ph-duotone ph-queue text-primary"></i> Activity Event Queue
         </h2>
         <p class="text-xs text-muted mb-3">Events waiting to be broadcast (one released every 20s)</p>
         <div id="admin-activity-queue"
@@ -79,22 +79,22 @@
                 hx-trigger="load"
                 hx-swap="innerHTML">
             <div class="flex justify-center py-8">
-                <span class="spinner text-accent"></span>
+                <span class="spinner text-primary"></span>
             </div>
         </div>
     </div>
 
     <!-- Recent Signups -->
-    <div class="bg-surface rounded-lg border border-border p-5">
+    <div class="bg-surface-container-lowest rounded-xl border-b-4 border-outline-variant p-5">
         <h2 class="text-lg font-bold mb-4 flex items-center gap-2" style="font-family: 'Epilogue', sans-serif;">
-            <i class="ph-duotone ph-users text-accent"></i> Recent Signups
+            <i class="ph-duotone ph-users text-primary"></i> Recent Signups
         </h2>
         <div id="admin-users"
              hx-get="{% url 'website:admin_dashboard_users' %}"
              hx-trigger="load"
              hx-swap="innerHTML">
             <div class="flex justify-center py-8">
-                <span class="spinner text-accent"></span>
+                <span class="spinner text-primary"></span>
             </div>
         </div>
     </div>

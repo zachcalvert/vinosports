@@ -1,6 +1,6 @@
 {% load currency_tags %}
-<section id="currency-settings-card" class="rounded-lg border border-border bg-surface p-5">
-    <p class="text-xs font-semibold uppercase tracking-wider text-accent mb-1">Preferences</p>
+<section id="currency-settings-card" class="rounded-xl border-b-4 border-outline-variant bg-surface-container-lowest p-5">
+    <p class="text-xs font-semibold uppercase tracking-wider text-primary mb-1">Preferences</p>
     <h2 class="text-xl font-bold">Currency</h2>
     <p class="mt-2 text-sm text-muted">Choose how balances and amounts are displayed across the site.</p>
 
@@ -20,7 +20,7 @@
                 </div>
                 <button
                     type="submit"
-                    class="rounded-md bg-accent px-4 py-2 text-sm font-semibold text-dark transition-colors hover:bg-accent/90 whitespace-nowrap"
+                    class="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-dark transition-colors hover:bg-primary/90 whitespace-nowrap"
                 >
                     Save currency
                 </button>
@@ -28,7 +28,7 @@
         </div>
 
         {% if currency_save_success %}
-        <p class="text-accent text-sm">Currency updated.</p>
+        <p class="text-primary text-sm">Currency updated.</p>
         {% endif %}
 
         <p class="text-xs text-muted">Currently displaying as: <span class="font-mono">{% currency_symbol user %}</span></p>

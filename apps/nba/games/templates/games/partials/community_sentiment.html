@@ -18,7 +18,7 @@ Context expected:
         <!-- Bar -->
         <div class="flex rounded overflow-hidden h-6 mb-2 text-xs font-semibold">
             {% if sentiment.home_pct %}
-            <div class="flex items-center justify-center bg-accent text-dark"
+            <div class="flex items-center justify-center bg-primary text-dark"
                  style="width: {{ sentiment.home_pct }}%">
                 {% if sentiment.home_pct >= 15 %}{{ sentiment.home_pct }}%{% endif %}
             </div>
@@ -32,7 +32,7 @@ Context expected:
         </div>
         <!-- Legend -->
         <div class="flex justify-between text-xs text-muted">
-            <span><span class="inline-block w-2 h-2 rounded-sm bg-accent mr-1"></span>{{ game.home_team.abbreviation }} {{ sentiment.home_pct }}%</span>
+            <span><span class="inline-block w-2 h-2 rounded-sm bg-primary mr-1"></span>{{ game.home_team.abbreviation }} {{ sentiment.home_pct }}%</span>
             <span><span class="inline-block w-2 h-2 rounded-sm bg-indigo-500 mr-1"></span>{{ game.away_team.abbreviation }} {{ sentiment.away_pct }}%</span>
         </div>
         <p class="mt-2 text-xs text-muted">

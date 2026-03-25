@@ -338,15 +338,15 @@
 <div class="space-y-6">
     <div class="hidden md:flex flex-wrap gap-2">
         <span class="text-xs text-muted uppercase tracking-wider self-center mr-2">Trace a flow:</span>
-        <button class="flow-btn px-3 py-1.5 rounded border border-border text-sm text-muted hover:text-accent"
+        <button class="flow-btn px-3 py-1.5 rounded border border-outline-variant text-sm text-muted hover:text-primary"
                 onclick="toggleFlow('http')" id="flow-btn-http">
             HTTP Request
         </button>
-        <button class="flow-btn px-3 py-1.5 rounded border border-border text-sm text-muted hover:text-accent"
+        <button class="flow-btn px-3 py-1.5 rounded border border-outline-variant text-sm text-muted hover:text-primary"
                 onclick="toggleFlow('websocket')" id="flow-btn-websocket">
             WebSocket
         </button>
-        <button class="flow-btn px-3 py-1.5 rounded border border-border text-sm text-muted hover:text-accent"
+        <button class="flow-btn px-3 py-1.5 rounded border border-outline-variant text-sm text-muted hover:text-primary"
                 onclick="toggleFlow('celery')" id="flow-btn-celery">
             Celery Task
         </button>
@@ -354,7 +354,7 @@
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div class="lg:col-span-2">
-            <div class="md:hidden arch-shell arch-stage-panel mobile-stage-grid rounded-[1.75rem] border border-border/80 px-4 py-5 shadow-[0_24px_60px_rgba(0,0,0,0.28)]">
+            <div class="md:hidden arch-shell arch-stage-panel mobile-stage-grid rounded-[1.75rem] border border-outline-variant/80 px-4 py-5 shadow-[0_24px_60px_rgba(0,0,0,0.28)]">
                 <div class="relative z-10">
                     <div class="mb-4 flex items-start justify-between gap-3">
                         <div>
@@ -364,15 +364,15 @@
                     </div>
 
                     <div class="mb-5 flex flex-wrap gap-2">
-                        <button class="flow-btn px-3 py-2 rounded-full border border-border text-sm text-muted hover:text-accent"
+                        <button class="flow-btn px-3 py-2 rounded-full border border-outline-variant text-sm text-muted hover:text-primary"
                                 onclick="toggleFlow('http')" id="flow-btn-mobile-http">
                             HTTP Request
                         </button>
-                        <button class="flow-btn px-3 py-2 rounded-full border border-border text-sm text-muted hover:text-accent"
+                        <button class="flow-btn px-3 py-2 rounded-full border border-outline-variant text-sm text-muted hover:text-primary"
                                 onclick="toggleFlow('websocket')" id="flow-btn-mobile-websocket">
                             WebSocket
                         </button>
-                        <button class="flow-btn px-3 py-2 rounded-full border border-border text-sm text-muted hover:text-accent"
+                        <button class="flow-btn px-3 py-2 rounded-full border border-outline-variant text-sm text-muted hover:text-primary"
                                 onclick="toggleFlow('celery')" id="flow-btn-mobile-celery">
                             Celery Task
                         </button>
@@ -510,7 +510,7 @@
                                 </div>
                                 <div class="mobile-flow-arrow"><span class="mobile-flow-packet" aria-hidden="true"></span><span class="mobile-flow-arrow-label">Fetch External Data</span></div>
                                 <div class="mobile-flow-node">
-                                    <div class="mobile-flow-node-card arch-node-surface passive rounded-2xl border-2 border-border px-4 py-4">
+                                    <div class="mobile-flow-node-card arch-node-surface passive rounded-2xl border-2 border-outline-variant px-4 py-4">
                                         <div class="mobile-flow-kicker text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-warning/80">Outside the Stack</div>
                                         <div class="mt-1 text-lg font-bold">External APIs</div>
                                         <div class="text-sm text-muted">football-data.org supplies fixtures and scores. Odds are generated algorithmically from standings data.</div>
@@ -558,7 +558,7 @@
                 </div>
             </div>
 
-            <div class="hidden md:block relative arch-stage-panel rounded-lg border border-border p-6">
+            <div class="hidden md:block relative arch-stage-panel rounded-xl border border-outline-variant p-6">
                 <svg viewBox="0 0 600 420" class="w-full" id="arch-svg">
                     <line x1="200" y1="70" x2="150" y2="160" class="arch-line" data-flow="http"/>
                     <text x="145" y="115" class="arch-line-label">HTTP/HTMX</text>
@@ -580,7 +580,7 @@
                          hx-target="#component-detail"
                          hx-swap="innerHTML"
                          onclick="selectComponent(this)">
-                        <div class="text-accent text-xs font-semibold uppercase tracking-wider">Client</div>
+                        <div class="text-primary text-xs font-semibold uppercase tracking-wider">Client</div>
                         <div class="text-sm font-bold">Browser</div>
                         <div class="text-xs text-muted">Templates + HTMX + WS</div>
                     </div>
@@ -591,7 +591,7 @@
                          hx-target="#component-detail"
                          hx-swap="innerHTML"
                          onclick="selectComponent(this)">
-                        <div class="text-accent text-xs font-semibold uppercase tracking-wider">Server</div>
+                        <div class="text-primary text-xs font-semibold uppercase tracking-wider">Server</div>
                         <div class="text-sm font-bold">Django</div>
                         <div class="text-xs text-muted">Views + ORM + Admin</div>
                     </div>
@@ -602,7 +602,7 @@
                          hx-target="#component-detail"
                          hx-swap="innerHTML"
                          onclick="selectComponent(this)">
-                        <div class="text-accent text-xs font-semibold uppercase tracking-wider">ASGI</div>
+                        <div class="text-primary text-xs font-semibold uppercase tracking-wider">ASGI</div>
                         <div class="text-sm font-bold">Daphne / Channels</div>
                         <div class="text-xs text-muted">WebSocket Consumers</div>
                     </div>
@@ -613,7 +613,7 @@
                          hx-target="#component-detail"
                          hx-swap="innerHTML"
                          onclick="selectComponent(this)">
-                        <div class="text-accent text-xs font-semibold uppercase tracking-wider">In-Memory</div>
+                        <div class="text-primary text-xs font-semibold uppercase tracking-wider">In-Memory</div>
                         <div class="text-sm font-bold">Redis</div>
                         <div class="text-xs text-muted">Cache + Broker + Channels</div>
                     </div>
@@ -624,7 +624,7 @@
                          hx-target="#component-detail"
                          hx-swap="innerHTML"
                          onclick="selectComponent(this)">
-                        <div class="text-accent text-xs font-semibold uppercase tracking-wider">Database</div>
+                        <div class="text-primary text-xs font-semibold uppercase tracking-wider">Database</div>
                         <div class="text-sm font-bold">PostgreSQL</div>
                         <div class="text-xs text-muted">Persistent Storage</div>
                     </div>
@@ -635,7 +635,7 @@
                          hx-target="#component-detail"
                          hx-swap="innerHTML"
                          onclick="selectComponent(this)">
-                        <div class="text-accent text-xs font-semibold uppercase tracking-wider">Workers</div>
+                        <div class="text-primary text-xs font-semibold uppercase tracking-wider">Workers</div>
                         <div class="text-sm font-bold">Celery</div>
                         <div class="text-xs text-muted">Tasks + Beat Scheduler</div>
                     </div>
@@ -644,7 +644,7 @@
         </div>
 
         <div class="lg:col-span-1">
-            <div class="bg-surface rounded-lg border border-border p-6 sticky top-24" id="component-detail">
+            <div class="bg-surface-container-lowest rounded-xl border-b-4 border-outline-variant p-6 sticky top-24" id="component-detail">
                 <div class="text-center py-8">
                     <svg class="w-10 h-10 mx-auto mb-3 text-muted/50" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M15.042 21.672L13.684 16.6m0 0l-2.51 2.225.569-9.47 5.227 7.917-3.286-.672zM12 2.25V4.5m5.834.166l-1.591 1.591M20.25 10.5H18M7.757 14.743l-1.59 1.59M6 10.5H3.75m4.007-4.243l-1.59-1.59"/>
@@ -654,7 +654,7 @@
                 </div>
             </div>
 
-            <div id="flow-description" class="bg-surface rounded-lg border border-border p-6 mt-4 hidden">
+            <div id="flow-description" class="bg-surface-container-lowest rounded-xl border-b-4 border-outline-variant p-6 mt-4 hidden">
                 <h4 class="text-sm font-bold mb-2" id="flow-title"></h4>
                 <p class="text-sm text-muted" id="flow-text"></p>
             </div>

@@ -1,6 +1,6 @@
 {% load currency_tags %}
 
-<div id="admin-bets-items" class="divide-y divide-border/50">
+<div id="admin-bets-items" class="divide-y divide-outline-variant/50">
     {% for item in items %}
     <div class="flex items-center gap-3 py-2.5 text-sm">
         {% include "website/components/avatar.html" with avatar_user=item.user avatar_size="xs" %}
@@ -40,11 +40,11 @@
             hx-target="#admin-bets-items"
             hx-swap="beforeend"
             hx-indicator="#bets-loading"
-            class="text-accent text-sm hover:underline">
+            class="text-primary text-sm hover:underline">
         View all
     </button>
     <span id="bets-loading" class="htmx-indicator">
-        <span class="spinner spinner-sm text-accent"></span>
+        <span class="spinner spinner-sm text-primary"></span>
     </span>
 </div>
 {% endif %}

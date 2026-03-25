@@ -1,5 +1,5 @@
-<section id="avatar-settings-card" class="rounded-lg border border-border bg-surface p-5">
-    <p class="text-xs font-semibold uppercase tracking-wider text-accent mb-1">Avatar</p>
+<section id="avatar-settings-card" class="rounded-xl border-b-4 border-outline-variant bg-surface-container-lowest p-5">
+    <p class="text-xs font-semibold uppercase tracking-wider text-primary mb-1">Avatar</p>
     <h2 class="text-xl font-bold">Customize your look</h2>
     <p class="mt-2 text-sm text-muted">Pick an icon or team crest, a color, and a frame. Frames unlock when you earn badges.</p>
 
@@ -132,13 +132,13 @@
 
         <button
             type="submit"
-            class="rounded-md bg-accent px-4 py-2 text-sm font-semibold text-dark transition-colors hover:bg-accent/90"
+            class="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-dark transition-colors hover:bg-primary/90"
         >
             Save avatar
         </button>
 
         {% if avatar_save_success %}
-        <p class="text-accent text-sm">Avatar updated!</p>
+        <p class="text-primary text-sm">Avatar updated!</p>
         {% endif %}
     </form>
 

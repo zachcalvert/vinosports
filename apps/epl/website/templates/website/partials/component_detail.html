@@ -1,13 +1,13 @@
 <div class="animate-fade-in">
     <h3 class="text-xl font-bold mb-1">{{ component.label }}</h3>
-    <p class="text-sm text-accent mb-3">{{ component.subtitle }}</p>
+    <p class="text-sm text-primary mb-3">{{ component.subtitle }}</p>
     <p class="text-sm text-muted mb-4 leading-relaxed">{{ component.description }}</p>
 
     <div class="mb-4">
         <h4 class="text-xs text-muted uppercase tracking-wider mb-2">Technologies</h4>
         <div class="flex flex-wrap gap-2">
             {% for tech in component.tech %}
-            <span class="inline-block bg-dark border border-border rounded px-2 py-1 text-xs text-muted">{{ tech }}</span>
+            <span class="inline-block bg-dark border border-outline-variant rounded px-2 py-1 text-xs text-muted">{{ tech }}</span>
             {% endfor %}
         </div>
     </div>
@@ -17,7 +17,7 @@
         <ul class="space-y-1">
             {% for item in component.pages %}
             <li class="text-sm text-muted flex items-start gap-2">
-                <span class="text-accent mt-1">&#8250;</span>
+                <span class="text-primary mt-1">&#8250;</span>
                 <span>{{ item }}</span>
             </li>
             {% endfor %}

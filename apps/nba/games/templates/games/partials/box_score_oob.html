@@ -12,13 +12,13 @@ Context expected:
   home_totals    — dict of summed stats for home team
 {% endcomment %}
 
-<div id="box-score" hx-swap-oob="true" class="rounded-xl border border-border bg-surface overflow-hidden mb-6">
-    <div class="px-5 py-3 border-b border-border flex items-center gap-3">
+<div id="box-score" hx-swap-oob="true" class="rounded-xl border-b-4 border-outline-variant bg-surface-container-lowest overflow-hidden mb-6">
+    <div class="px-5 py-3 border-b border-outline-variant flex items-center gap-3">
         <span class="w-1 h-6 rounded-full bg-nba"></span>
         <h3 class="text-xs font-semibold uppercase tracking-widest">Box Score</h3>
     </div>
 
-    <div class="flex border-b border-border" id="box-score-tabs">
+    <div class="flex border-b border-outline-variant" id="box-score-tabs">
         <button type="button"
                 class="box-tab flex-1 px-4 py-2.5 text-sm font-semibold text-center border-b-2 border-accent"
                 data-team="away"

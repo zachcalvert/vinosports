@@ -14,7 +14,7 @@
                 hx-indicator="#fixture-loading"
                 {% if md == current_matchday %}id="active-matchday"{% endif %}
                 class="flex-shrink-0 px-3 py-1.5 rounded text-sm font-medium transition-colors
-                    {% if md == current_matchday %}bg-accent text-surface font-semibold{% else %}bg-surface text-muted hover:text-accent hover:bg-accent-light{% endif %}">
+                    {% if md == current_matchday %}bg-primary text-surface font-semibold{% else %}bg-surface text-muted hover:text-primary hover:bg-accent-light{% endif %}">
                 {{ md }}
             </button>
         {% endfor %}

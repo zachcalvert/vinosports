@@ -1,7 +1,7 @@
-<div id="match-notes-panel" class="bg-surface rounded-xl border border-border p-5">
+<div id="match-notes-panel" class="bg-surface-container-lowest rounded-xl border-b-4 border-outline-variant p-5">
     <div class="flex items-center justify-between mb-3">
         <h3 class="text-sm font-bold uppercase tracking-wide flex items-center gap-2">
-            <i data-lucide="notebook-pen" class="w-4 h-4 text-accent"></i>
+            <i data-lucide="notebook-pen" class="w-4 h-4 text-primary"></i>
             Match Notes
         </h3>
         {% if match_notes %}
@@ -31,7 +31,7 @@
                 These notes are injected into bot prompts for post-match and reply comments.
             </p>
             <button type="submit"
-                    class="bg-accent text-dark font-bold py-1.5 px-4 rounded-md hover:bg-accent/90 transition-colors text-sm">
+                    class="bg-primary text-dark font-bold py-1.5 px-4 rounded-md hover:bg-primary/90 transition-colors text-sm">
                 Save
             </button>
         </div>

@@ -14,16 +14,16 @@ Context expected:
 {% endcomment %}
 {% load currency_tags %}
 
-<div class="rounded-xl border border-border bg-surface overflow-hidden">
+<div class="rounded-xl border-b-4 border-outline-variant bg-surface-container-lowest overflow-hidden">
     <!-- Header -->
-    <div class="px-5 py-3 border-b border-border flex items-center justify-between">
+    <div class="px-5 py-3 border-b border-outline-variant flex items-center justify-between">
         <h3 class="text-xs font-semibold uppercase tracking-widest">Match Recap</h3>
         {% if match_stats.fetched_at %}
             <span class="text-xs text-muted">Stats via football-data.org</span>
         {% endif %}
     </div>
 
-    <div class="divide-y divide-border">
+    <div class="divide-y divide-outline-variant">
 
         <!-- RESULT CONTEXT -->
         {% if result_context %}
@@ -49,7 +49,7 @@ Context expected:
                     <p class="text-xs text-muted">Got It Right</p>
                 </div>
                 <div>
-                    <p class="text-2xl font-bold text-accent">{{ betting_outcome.total_won_payout|currency_rounded:request.user }}</p>
+                    <p class="text-2xl font-bold text-primary">{{ betting_outcome.total_won_payout|currency_rounded:request.user }}</p>
                     <p class="text-xs text-muted">Won</p>
                 </div>
             </div>
@@ -66,7 +66,7 @@ Context expected:
             <!-- Sentiment bar -->
             <div class="flex rounded overflow-hidden h-6 mb-2 text-xs font-semibold">
                 {% if sentiment.home_pct %}
-                <div class="flex items-center justify-center bg-accent text-dark"
+                <div class="flex items-center justify-center bg-primary text-dark"
                      style="width: {{ sentiment.home_pct }}%">
                     {% if sentiment.home_pct >= 12 %}{{ sentiment.home_pct }}%{% endif %}
                 </div>
@@ -86,7 +86,7 @@ Context expected:
             </div>
             <!-- Legend -->
             <div class="flex justify-between text-xs text-muted">
-                <span><span class="inline-block w-2 h-2 rounded-sm bg-accent mr-1"></span>Home {{ sentiment.home_pct }}%</span>
+                <span><span class="inline-block w-2 h-2 rounded-sm bg-primary mr-1"></span>Home {{ sentiment.home_pct }}%</span>
                 <span><span class="inline-block w-2 h-2 rounded-sm bg-amber-500 mr-1"></span>Draw {{ sentiment.draw_pct }}%</span>
                 <span><span class="inline-block w-2 h-2 rounded-sm bg-indigo-500 mr-1"></span>Away {{ sentiment.away_pct }}%</span>
             </div>
@@ -94,7 +94,7 @@ Context expected:
             <div class="mt-3 flex items-center gap-2 text-sm">
                 <span class="text-muted">Result:</span>
                 {% if actual_result == "HOME_WIN" %}
-                    <span class="text-accent font-semibold">{{ match.home_team.short_name|default:match.home_team.name }} Win</span>
+                    <span class="text-primary font-semibold">{{ match.home_team.short_name|default:match.home_team.name }} Win</span>
                 {% elif actual_result == "DRAW" %}
                     <span class="text-amber-400 font-semibold">Draw</span>
                 {% elif actual_result == "AWAY_WIN" %}

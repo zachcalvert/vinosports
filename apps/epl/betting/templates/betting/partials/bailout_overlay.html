@@ -3,10 +3,10 @@
     <div class="bailout-card">
         <!-- State 1: Request -->
         <div id="bailout-request" class="bailout-state">
-            <i class="ph-duotone ph-bank text-5xl mb-4 text-accent" aria-hidden="true"></i>
+            <i class="ph-duotone ph-bank text-5xl mb-4 text-primary" aria-hidden="true"></i>
             <h2 class="text-2xl font-bold mb-2">You're Bankrupt!</h2>
             <p class="text-muted text-sm mb-1">
-                Balance: <span class="text-accent font-mono">{{ bankrupt_balance|currency:user }}</span>
+                Balance: <span class="text-primary font-mono">{{ bankrupt_balance|currency:user }}</span>
             </p>
             {% if bankruptcy_count > 0 %}
             <p class="text-muted text-xs mb-6">Bankruptcy #{{ bankruptcy_count|add:1 }}</p>
@@ -29,8 +29,8 @@
 
         <!-- State 3: Result -->
         <div id="bailout-result" class="bailout-state hidden">
-            <i class="ph-duotone ph-check-circle text-4xl mb-4 text-accent" aria-hidden="true"></i>
-            <h2 class="text-2xl font-bold text-accent mb-4">Bailout Approved!</h2>
+            <i class="ph-duotone ph-check-circle text-4xl mb-4 text-primary" aria-hidden="true"></i>
+            <h2 class="text-2xl font-bold text-primary mb-4">Bailout Approved!</h2>
             <p id="bailout-amount" class="text-4xl font-bold font-mono text-white mb-2"></p>
             <p class="text-sm text-muted">Reloading...</p>
         </div>

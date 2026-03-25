@@ -10,9 +10,9 @@ Context expected:
 <div id="score-display" hx-swap-oob="true" class="text-center">
     {% if game.home_score is not None and game.away_score is not None %}
         <div class="flex items-center gap-3">
-            <span class="text-4xl font-bold font-mono {% if game.is_final and game.winner == game.away_team %}text-accent{% endif %}">{{ game.away_score }}</span>
+            <span class="text-4xl font-bold font-mono {% if game.is_final and game.winner == game.away_team %}text-primary{% endif %}">{{ game.away_score }}</span>
             <span class="text-lg text-muted">&ndash;</span>
-            <span class="text-4xl font-bold font-mono {% if game.is_final and game.winner == game.home_team %}text-accent{% endif %}">{{ game.home_score }}</span>
+            <span class="text-4xl font-bold font-mono {% if game.is_final and game.winner == game.home_team %}text-primary{% endif %}">{{ game.home_score }}</span>
         </div>
     {% else %}
         <span class="text-3xl font-bold text-muted">vs</span>
