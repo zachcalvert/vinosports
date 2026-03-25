@@ -49,3 +49,5 @@ celerybeat-schedule
 celerybeat.pid
 
 .env
+
+.claude
