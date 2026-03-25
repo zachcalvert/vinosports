@@ -58,6 +58,16 @@ Context expected:
                 </div>
             {% else %}
                 <span class="text-3xl font-bold text-muted">vs</span>
+                {% if best_odds %}
+                <div class="mt-2 flex flex-col items-center gap-1 text-xs text-muted">
+                    {% if best_odds.spread_line is not None %}
+                        <span class="font-mono">Line: {{ game.home_team.abbreviation }} {% if best_odds.spread_line > 0 %}+{% endif %}{{ best_odds.spread_line|floatformat:1 }}</span>
+                    {% endif %}
+                    {% if best_odds.total_line is not None %}
+                        <span class="font-mono">O/U: {{ best_odds.total_line|floatformat:1 }}</span>
+                    {% endif %}
+                </div>
+                {% endif %}
             {% endif %}
         </div>
 
@@ -78,6 +88,9 @@ Context expected:
     <div class="text-center mt-4 text-sm text-muted">
         {% if game.is_live %}
             <span id="last-updated" class="text-xs">Score updated just now</span>
+        {% elif game.status == "SCHEDULED" and game.tip_off %}
+            <time datetime="{{ game.tip_off|date:'c' }}">{{ game.tip_off|date:"l, F j, Y — g:i A" }}</time>
+            <div id="countdown" class="mt-2 text-xs font-mono text-accent" data-tipoff="{{ game.tip_off|date:'c' }}"></div>
         {% elif game.tip_off %}
             <time datetime="{{ game.tip_off|date:'c' }}">{{ game.tip_off|date:"l, F j, Y — g:i A" }}</time>
         {% else %}
@@ -88,3 +101,35 @@ Context expected:
         {% endif %}
     </div>
 </div>
+
+{% if game.status == "SCHEDULED" and game.tip_off %}
+<script>
+(function() {
+    var el = document.getElementById('countdown');
+    if (!el) return;
+    var tipoff = new Date(el.dataset.tipoff).getTime();
+
+    function pad(n) { return n < 10 ? '0' + n : n; }
+
+    function tick() {
+        var diff = tipoff - Date.now();
+        if (diff <= 0) {
+            el.textContent = 'Tip-off!';
+            return;
+        }
+        var d = Math.floor(diff / 86400000);
+        var h = Math.floor((diff % 86400000) / 3600000);
+        var m = Math.floor((diff % 3600000) / 60000);
+        var s = Math.floor((diff % 60000) / 1000);
+
+        if (d > 0) {
+            el.textContent = d + 'd ' + pad(h) + 'h ' + pad(m) + 'm';
+        } else {
+            el.textContent = pad(h) + ':' + pad(m) + ':' + pad(s);
+        }
+        requestAnimationFrame(tick);
+    }
+    tick();
+})();
+</script>
+{% endif %}
