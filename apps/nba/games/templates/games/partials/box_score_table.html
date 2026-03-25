@@ -1,0 +1,61 @@
+{% comment %}
+Box score stats table for a single team.
+Included by box_score.html for each team tab.
+
+Context expected:
+  starters — list of PlayerBoxScore (starters, sorted by -points)
+  bench    — list of PlayerBoxScore (bench, sorted by -points)
+  totals   — dict with summed stats
+  team     — Team instance
+{% endcomment %}
+
+<div class="overflow-x-auto">
+    <table class="w-full text-xs">
+        <thead>
+            <tr class="text-left text-muted border-b border-border">
+                <th class="sticky left-0 bg-surface px-3 py-2 font-semibold min-w-[140px]">Player</th>
+                <th class="px-2 py-2 font-semibold text-right">MIN</th>
+                <th class="px-2 py-2 font-semibold text-right">PTS</th>
+                <th class="px-2 py-2 font-semibold text-right">REB</th>
+                <th class="px-2 py-2 font-semibold text-right">AST</th>
+                <th class="px-2 py-2 font-semibold text-right">STL</th>
+                <th class="px-2 py-2 font-semibold text-right">BLK</th>
+                <th class="px-2 py-2 font-semibold text-right">TO</th>
+                <th class="px-2 py-2 font-semibold text-right">FG</th>
+                <th class="px-2 py-2 font-semibold text-right">3PT</th>
+                <th class="px-2 py-2 font-semibold text-right">FT</th>
+                <th class="px-2 py-2 font-semibold text-right">+/-</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-border/50">
+            {% if starters %}
+            <tr><td colspan="12" class="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-widest text-muted bg-surface-alt">Starters</td></tr>
+            {% for player in starters %}
+                {% include "games/partials/box_score_row.html" %}
+            {% endfor %}
+            {% endif %}
+            {% if bench %}
+            <tr><td colspan="12" class="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-widest text-muted bg-surface-alt">Bench</td></tr>
+            {% for player in bench %}
+                {% include "games/partials/box_score_row.html" %}
+            {% endfor %}
+            {% endif %}
+        </tbody>
+        <tfoot>
+            <tr class="border-t border-border font-semibold text-xs">
+                <td class="sticky left-0 bg-surface px-3 py-2">Totals</td>
+                <td class="px-2 py-2"></td>
+                <td class="px-2 py-2 text-right font-mono">{{ totals.points }}</td>
+                <td class="px-2 py-2 text-right font-mono">{{ totals.reb }}</td>
+                <td class="px-2 py-2 text-right font-mono">{{ totals.ast }}</td>
+                <td class="px-2 py-2 text-right font-mono">{{ totals.stl }}</td>
+                <td class="px-2 py-2 text-right font-mono">{{ totals.blk }}</td>
+                <td class="px-2 py-2 text-right font-mono">{{ totals.turnovers }}</td>
+                <td class="px-2 py-2 text-right font-mono">{{ totals.fgm }}-{{ totals.fga }}</td>
+                <td class="px-2 py-2 text-right font-mono">{{ totals.fg3m }}-{{ totals.fg3a }}</td>
+                <td class="px-2 py-2 text-right font-mono">{{ totals.ftm }}-{{ totals.fta }}</td>
+                <td class="px-2 py-2"></td>
+            </tr>
+        </tfoot>
+    </table>
+</div>

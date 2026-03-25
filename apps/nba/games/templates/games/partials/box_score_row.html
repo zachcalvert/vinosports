@@ -1,0 +1,21 @@
+<tr class="hover:bg-surface-alt/50 {% if not player.minutes %}text-muted{% endif %}">
+    <td class="sticky left-0 bg-surface px-3 py-2 font-medium whitespace-nowrap">
+        {{ player.player_name }}
+        {% if player.player_position %}
+            <span class="text-muted ml-1">{{ player.player_position }}</span>
+        {% endif %}
+    </td>
+    <td class="px-2 py-2 text-right font-mono">{{ player.minutes|default:"—" }}</td>
+    <td class="px-2 py-2 text-right font-mono font-semibold">{{ player.points }}</td>
+    <td class="px-2 py-2 text-right font-mono">{{ player.reb }}</td>
+    <td class="px-2 py-2 text-right font-mono">{{ player.ast }}</td>
+    <td class="px-2 py-2 text-right font-mono">{{ player.stl }}</td>
+    <td class="px-2 py-2 text-right font-mono">{{ player.blk }}</td>
+    <td class="px-2 py-2 text-right font-mono">{{ player.turnovers }}</td>
+    <td class="px-2 py-2 text-right font-mono">{{ player.fgm }}-{{ player.fga }}</td>
+    <td class="px-2 py-2 text-right font-mono">{{ player.fg3m }}-{{ player.fg3a }}</td>
+    <td class="px-2 py-2 text-right font-mono">{{ player.ftm }}-{{ player.fta }}</td>
+    <td class="px-2 py-2 text-right font-mono {% if player.plus_minus > 0 %}text-positive{% elif player.plus_minus < 0 %}text-danger{% endif %}">
+        {% if player.plus_minus > 0 %}+{% endif %}{{ player.plus_minus }}
+    </td>
+</tr>

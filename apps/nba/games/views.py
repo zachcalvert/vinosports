@@ -9,7 +9,7 @@ from django.shortcuts import get_object_or_404, render
 from django.utils import timezone
 from django.views import View
 
-from games.models import Conference, Game, GameStatus, Odds, Standing
+from games.models import Conference, Game, GameStatus, Odds, PlayerBoxScore, Standing
 from vinosports.betting.models import BetStatus
 
 
@@ -251,6 +251,69 @@ def _get_recap_context(game):
     }
 
 
+def _get_box_score_context(game):
+    """Build box score data grouped by team for template rendering."""
+    if game.status not in (
+        GameStatus.IN_PROGRESS,
+        GameStatus.HALFTIME,
+        GameStatus.FINAL,
+    ):
+        return {}
+
+    box_scores = PlayerBoxScore.objects.filter(game=game).select_related("team")
+
+    # On-demand fetch if no data exists yet
+    if not box_scores.exists():
+        from games.services import sync_box_score
+
+        try:
+            sync_box_score(game)
+            box_scores = PlayerBoxScore.objects.filter(game=game).select_related("team")
+        except Exception:
+            return {}
+
+    if not box_scores.exists():
+        return {}
+
+    away_all = list(box_scores.filter(team=game.away_team))
+    home_all = list(box_scores.filter(team=game.home_team))
+    away_starters = [p for p in away_all if p.starter]
+    away_bench = [p for p in away_all if not p.starter]
+    home_starters = [p for p in home_all if p.starter]
+    home_bench = [p for p in home_all if not p.starter]
+
+    def _team_totals(players):
+        totals = {
+            "points": 0,
+            "reb": 0,
+            "ast": 0,
+            "stl": 0,
+            "blk": 0,
+            "turnovers": 0,
+            "pf": 0,
+            "fgm": 0,
+            "fga": 0,
+            "fg3m": 0,
+            "fg3a": 0,
+            "ftm": 0,
+            "fta": 0,
+        }
+        for p in players:
+            for key in totals:
+                totals[key] += getattr(p, key)
+        return totals
+
+    return {
+        "away_starters": away_starters,
+        "away_bench": away_bench,
+        "home_starters": home_starters,
+        "home_bench": home_bench,
+        "away_totals": _team_totals(away_all),
+        "home_totals": _team_totals(home_all),
+        "has_box_score": True,
+    }
+
+
 class GameDetailView(LoginRequiredMixin, View):
     def get(self, request, id_hash):
         game = get_object_or_404(
@@ -306,5 +369,6 @@ class GameDetailView(LoginRequiredMixin, View):
             "away_standing": standings_map.get(game.away_team_id),
         }
         ctx.update(recap_ctx)
+        ctx.update(_get_box_score_context(game))
 
         return render(request, "games/game_detail.html", ctx)

@@ -110,6 +110,45 @@ class GameStats(BaseModel):
         return f"Stats for {self.game}"
 
 
+class PlayerBoxScore(BaseModel):
+    """Per-player stats for a single game (box score line)."""
+
+    game = models.ForeignKey(Game, on_delete=models.CASCADE, related_name="box_scores")
+    team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name="box_scores")
+
+    # Player identity (denormalized — no separate Player table needed)
+    player_external_id = models.IntegerField()
+    player_name = models.CharField(max_length=100)
+    player_position = models.CharField(max_length=10, blank=True)
+
+    # Stats
+    minutes = models.CharField(max_length=10, blank=True)
+    points = models.SmallIntegerField(default=0)
+    fgm = models.SmallIntegerField(default=0)
+    fga = models.SmallIntegerField(default=0)
+    fg3m = models.SmallIntegerField(default=0)
+    fg3a = models.SmallIntegerField(default=0)
+    ftm = models.SmallIntegerField(default=0)
+    fta = models.SmallIntegerField(default=0)
+    oreb = models.SmallIntegerField(default=0)
+    dreb = models.SmallIntegerField(default=0)
+    reb = models.SmallIntegerField(default=0)
+    ast = models.SmallIntegerField(default=0)
+    stl = models.SmallIntegerField(default=0)
+    blk = models.SmallIntegerField(default=0)
+    turnovers = models.SmallIntegerField(default=0)
+    pf = models.SmallIntegerField(default=0)
+    plus_minus = models.SmallIntegerField(default=0)
+    starter = models.BooleanField(default=False)
+
+    class Meta:
+        unique_together = [("game", "player_external_id")]
+        ordering = ["-starter", "-points"]
+
+    def __str__(self):
+        return f"{self.player_name} — {self.points}pts ({self.game})"
+
+
 class Odds(BaseModel):
     """NBA odds — moneyline, spread, and totals in American format."""
 

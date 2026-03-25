@@ -1,0 +1,62 @@
+{% comment %}
+Box Score partial — tabbed player stats table for game_detail.html.
+Shown for IN_PROGRESS, HALFTIME, and FINAL games.
+
+Context expected:
+  game           — Game instance (with home_team, away_team)
+  away_starters  — list of PlayerBoxScore (starters, away)
+  away_bench     — list of PlayerBoxScore (bench, away)
+  home_starters  — list of PlayerBoxScore (starters, home)
+  home_bench     — list of PlayerBoxScore (bench, home)
+  away_totals    — dict of summed stats for away team
+  home_totals    — dict of summed stats for home team
+{% endcomment %}
+
+<div id="box-score" class="rounded-xl border border-border bg-surface overflow-hidden mb-6">
+    <div class="px-5 py-3 border-b border-border flex items-center gap-3">
+        <span class="w-1 h-6 rounded-full bg-nba"></span>
+        <h3 class="text-xs font-semibold uppercase tracking-widest">Box Score</h3>
+    </div>
+
+    <!-- Tabs -->
+    <div class="flex border-b border-border" id="box-score-tabs">
+        <button type="button"
+                class="box-tab flex-1 px-4 py-2.5 text-sm font-semibold text-center border-b-2 border-accent"
+                data-team="away"
+                onclick="switchBoxTab('away')">
+            {{ game.away_team.abbreviation }}
+        </button>
+        <button type="button"
+                class="box-tab flex-1 px-4 py-2.5 text-sm font-semibold text-center border-b-2 border-transparent text-muted hover:text-foreground"
+                data-team="home"
+                onclick="switchBoxTab('home')">
+            {{ game.home_team.abbreviation }}
+        </button>
+    </div>
+
+    <!-- Away team table -->
+    <div id="box-away" class="box-panel">
+        {% include "games/partials/box_score_table.html" with starters=away_starters bench=away_bench totals=away_totals team=game.away_team %}
+    </div>
+
+    <!-- Home team table -->
+    <div id="box-home" class="box-panel hidden">
+        {% include "games/partials/box_score_table.html" with starters=home_starters bench=home_bench totals=home_totals team=game.home_team %}
+    </div>
+</div>
+
+<script>
+function switchBoxTab(team) {
+    document.querySelectorAll('.box-panel').forEach(function(p) { p.classList.add('hidden'); });
+    document.getElementById('box-' + team).classList.remove('hidden');
+    document.querySelectorAll('.box-tab').forEach(function(t) {
+        if (t.dataset.team === team) {
+            t.classList.add('border-accent');
+            t.classList.remove('border-transparent', 'text-muted');
+        } else {
+            t.classList.remove('border-accent');
+            t.classList.add('border-transparent', 'text-muted');
+        }
+    });
+}
+</script>

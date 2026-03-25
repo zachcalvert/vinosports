@@ -32,6 +32,11 @@
 {% include "games/partials/scoreboard.html" %}
 {% endif %}
 
+<!-- Box Score (live + final games) -->
+{% if has_box_score %}
+    {% include "games/partials/box_score.html" %}
+{% endif %}
+
 <!-- Two-column layout: bet form | status card + discussion -->
 <div class="grid grid-cols-1 lg:grid-cols-[26rem_minmax(0,1fr)] gap-6 mb-6">
 

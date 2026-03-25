@@ -13,7 +13,7 @@ from typing import Any
 import httpx
 from django.conf import settings
 
-from games.models import Conference, Game, GameStatus, Standing, Team
+from games.models import Conference, Game, GameStatus, PlayerBoxScore, Standing, Team
 
 _ET = zoneinfo.ZoneInfo("America/New_York")
 
@@ -106,6 +106,11 @@ class NBADataClient:
         raw = data.get("data", []) if isinstance(data, dict) else data
         return [self._normalize_standing(s) for s in raw]
 
+    def get_game_stats(self, game_external_id: int) -> list[dict]:
+        """Return per-player stats for a single game (box score lines)."""
+        raw = self._get_all("/stats", params={"game_ids[]": game_external_id})
+        return [self._normalize_player_stat(s) for s in raw]
+
     def get_live_scores(self) -> list[dict]:
         """Return in-progress and recently-finished games for today.
 
@@ -191,6 +196,35 @@ class NBADataClient:
             "home_record": s.get("home_record", ""),
             "away_record": s.get("road_record", ""),
             "conference_rank": s.get("conference_rank"),
+        }
+
+    def _normalize_player_stat(self, s: dict) -> dict:
+        player = s.get("player", {})
+        team = s.get("team", {})
+        return {
+            "player_external_id": player.get("id"),
+            "player_name": (
+                f"{player.get('first_name', '')} {player.get('last_name', '')}"
+            ).strip(),
+            "player_position": player.get("position", "") or "",
+            "team_external_id": team.get("id"),
+            "minutes": s.get("min", "") or "",
+            "points": s.get("pts", 0) or 0,
+            "fgm": s.get("fgm", 0) or 0,
+            "fga": s.get("fga", 0) or 0,
+            "fg3m": s.get("fg3m", 0) or 0,
+            "fg3a": s.get("fg3a", 0) or 0,
+            "ftm": s.get("ftm", 0) or 0,
+            "fta": s.get("fta", 0) or 0,
+            "oreb": s.get("oreb", 0) or 0,
+            "dreb": s.get("dreb", 0) or 0,
+            "reb": s.get("reb", 0) or 0,
+            "ast": s.get("ast", 0) or 0,
+            "stl": s.get("stl", 0) or 0,
+            "blk": s.get("blk", 0) or 0,
+            "turnovers": s.get("turnover", 0) or 0,
+            "pf": s.get("pf", 0) or 0,
+            "plus_minus": s.get("plus_minus", 0) or 0,
         }
 
     def close(self):
@@ -397,6 +431,68 @@ def sync_live_scores(client: NBADataClient | None = None) -> int:
     return count
 
 
+def sync_box_score(game: Game, client: NBADataClient | None = None) -> int:
+    """Fetch and upsert player stats for a single game. Returns count of rows."""
+    with client or NBADataClient() as c:
+        stats = c.get_game_stats(game.external_id)
+
+    if not stats:
+        return 0
+
+    # Build team lookup
+    team_ext_ids = {s["team_external_id"] for s in stats}
+    teams_by_ext = {
+        t.external_id: t for t in Team.objects.filter(external_id__in=team_ext_ids)
+    }
+
+    # Group by team to infer starters (top 5 by minutes played)
+    from collections import defaultdict
+
+    by_team: dict[int, list[dict]] = defaultdict(list)
+    for s in stats:
+        by_team[s["team_external_id"]].append(s)
+
+    def _minutes_sort_key(s: dict) -> float:
+        """Parse 'MM:SS' into total minutes for sorting."""
+        raw = s.get("minutes", "") or ""
+        if ":" in raw:
+            parts = raw.split(":")
+            try:
+                return int(parts[0]) + int(parts[1]) / 60
+            except (ValueError, IndexError):
+                return 0.0
+        try:
+            return float(raw)
+        except (ValueError, TypeError):
+            return 0.0
+
+    starter_ids: set[int] = set()
+    for team_ext_id, team_stats in by_team.items():
+        sorted_by_min = sorted(team_stats, key=_minutes_sort_key, reverse=True)
+        for s in sorted_by_min[:5]:
+            starter_ids.add(s["player_external_id"])
+
+    count = 0
+    for s in stats:
+        team = teams_by_ext.get(s["team_external_id"])
+        if not team:
+            continue
+        ext_id = s.pop("team_external_id")  # noqa: F841
+        player_ext_id = s["player_external_id"]
+        s["starter"] = player_ext_id in starter_ids
+        s["team"] = team
+        s["game"] = game
+        PlayerBoxScore.objects.update_or_create(
+            game=game,
+            player_external_id=player_ext_id,
+            defaults=s,
+        )
+        count += 1
+
+    logger.info("sync_box_score: synced %d player stats for game %s", count, game)
+    return count
+
+
 def _broadcast_score_updates(game_pks: list[int]) -> None:
     """Broadcast score updates to WebSocket groups and create ActivityEvents."""
     from activity.models import ActivityEvent
@@ -411,6 +507,12 @@ def _broadcast_score_updates(game_pks: list[int]) -> None:
             game = Game.objects.select_related("home_team", "away_team").get(pk=pk)
         except Game.DoesNotExist:
             continue
+
+        # Sync box score for live / just-finished games
+        try:
+            sync_box_score(game)
+        except Exception:
+            logger.exception("Failed to sync box score for game %s", pk)
 
         # Dashboard update
         send("live_scores", {"type": "score_update", "game_pk": pk})

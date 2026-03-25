@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from games.models import Game, GameStats, Odds, Standing, Team
+from games.models import Game, GameStats, Odds, PlayerBoxScore, Standing, Team
 
 
 @admin.register(Team)
@@ -48,6 +48,23 @@ class StandingAdmin(admin.ModelAdmin):
 class GameStatsAdmin(admin.ModelAdmin):
     list_display = ["game", "fetched_at"]
     raw_id_fields = ["game"]
+
+
+@admin.register(PlayerBoxScore)
+class PlayerBoxScoreAdmin(admin.ModelAdmin):
+    list_display = [
+        "player_name",
+        "team",
+        "game",
+        "points",
+        "reb",
+        "ast",
+        "minutes",
+        "starter",
+    ]
+    list_filter = ["starter", "team"]
+    search_fields = ["player_name"]
+    raw_id_fields = ["game", "team"]
 
 
 @admin.register(Odds)
