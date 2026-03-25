@@ -13,18 +13,50 @@
             theme: {
                 extend: {
                     colors: {
+                        /* Legacy token names — backward compat via CSS vars */
                         surface: 'rgb(var(--color-surface) / <alpha-value>)',
                         dark: 'rgb(var(--color-dark) / <alpha-value>)',
                         accent: 'rgb(var(--color-accent) / <alpha-value>)',
                         'accent-light': 'rgb(var(--color-accent-light) / <alpha-value>)',
+                        muted: 'rgb(var(--color-muted) / <alpha-value>)',
+                        gold: 'rgb(var(--color-gold) / <alpha-value>)',
+                        border: 'rgb(var(--color-border) / <alpha-value>)',
+                        epl: 'rgb(var(--color-epl) / <alpha-value>)',
+                        /* Semantic status */
                         danger: '#DC2626',
                         warning: '#D97706',
                         positive: '#16A34A',
-                        muted: 'rgb(var(--color-muted) / <alpha-value>)',
-                        epl: 'rgb(var(--color-epl) / <alpha-value>)',
-                        gold: 'rgb(var(--color-gold) / <alpha-value>)',
-                        border: 'rgb(var(--color-border) / <alpha-value>)',
-                    }
+                        /* New design system tokens */
+                        primary: '#b3262f',
+                        'primary-container': '#d64045',
+                        'primary-fixed': '#ffdad8',
+                        'primary-fixed-dim': '#ffb3b0',
+                        secondary: '#485f84',
+                        'secondary-container': '#bbd3fd',
+                        tertiary: '#765a05',
+                        'tertiary-container': '#917321',
+                        'on-primary': '#ffffff',
+                        'on-secondary': '#ffffff',
+                        'on-tertiary': '#ffffff',
+                        'on-surface': '#161d16',
+                        'on-surface-variant': '#5a403f',
+                        'surface-dim': '#d4ddd1',
+                        'surface-container': '#e7f0e5',
+                        'surface-container-low': '#edf6ea',
+                        'surface-container-high': '#e2ebdf',
+                        'surface-container-highest': '#dce5d9',
+                        'surface-container-lowest': '#ffffff',
+                        'inverse-surface': '#2a322b',
+                        'inverse-on-surface': '#eaf3e7',
+                        outline: '#8d706e',
+                        'outline-variant': '#e2bebc',
+                    },
+                    fontFamily: {
+                        headline: ['Epilogue', 'sans-serif'],
+                        body: ['Public Sans', 'sans-serif'],
+                        label: ['Public Sans', 'sans-serif'],
+                        mono: ['Roboto Mono', 'monospace'],
+                    },
                 }
             }
         }
@@ -33,7 +65,7 @@
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Oswald:wght@400;500;600;700&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Epilogue:ital,wght@0,400;0,700;0,800;0,900;1,900&family=Public+Sans:wght@400;600;700;800&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 
     <link rel="icon" type="image/svg+xml" href="{% static 'website/favicon.svg' %}">
 
@@ -48,14 +80,15 @@
     <link rel="stylesheet" href="{% static 'website/css/styles.css' %}">
 
     <style>
-        body { font-family: 'Inter', sans-serif; }
-        h1, h2, h3, h4, h5, h6 { font-family: 'Oswald', sans-serif; }
+        body { font-family: 'Public Sans', sans-serif; }
+        h1, h2, h3, h4, h5, h6 { font-family: 'Epilogue', sans-serif; }
         .font-mono { font-family: 'Roboto Mono', 'Courier New', monospace; }
     </style>
 
     {% block extra_css %}{% endblock %}
 </head>
-<body class="h-full theme-page" data-theme="{{ ui_theme_name }}">
+<body class="h-full theme-page">
+    <div class="grain-overlay"></div>
     <div class="min-h-full flex flex-col">
         {% include "vinosports/components/global_navbar.html" %}
 

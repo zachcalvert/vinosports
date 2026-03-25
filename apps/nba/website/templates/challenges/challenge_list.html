@@ -4,8 +4,8 @@
 {% block content %}
 <div class="mb-6">
     <div class="flex items-center gap-3 mb-1">
-        <span class="w-1.5 h-8 rounded-full bg-accent"></span>
-        <h1 class="text-3xl font-bold">Challenges</h1>
+        <span class="w-1.5 h-8 rounded-full bg-primary"></span>
+        <h1 class="font-headline font-black text-3xl uppercase tracking-tight">Challenges</h1>
     </div>
     <p class="text-muted text-sm ml-5">Complete challenges to earn bonuses.</p>
 </div>
@@ -14,16 +14,16 @@
 <div class="space-y-3">
     {% for challenge in active_challenges %}
     {% with uc=user_challenges|default_if_none:"" %}
-    <div class="rounded-lg bg-surface border border-border p-4">
+    <div class="rounded-xl bg-surface-container-lowest border-b-4 border-secondary p-4">
         <div class="flex items-start gap-3">
-            <i class="ph-duotone ph-{{ challenge.template.icon }} text-2xl shrink-0 mt-0.5 text-accent" aria-hidden="true"></i>
+            <i class="ph-duotone ph-{{ challenge.template.icon }} text-2xl shrink-0 mt-0.5 text-primary" aria-hidden="true"></i>
             <div class="flex-1 min-w-0">
                 <div class="flex items-center gap-2 mb-0.5">
                     <h3 class="text-sm font-semibold truncate">{{ challenge.template.title }}</h3>
                     <span class="shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider
-                        {% if challenge.template.challenge_type == 'DAILY' %}bg-nba/15 text-nba
-                        {% elif challenge.template.challenge_type == 'WEEKLY' %}bg-accent/15 text-accent
-                        {% else %}bg-gold/15 text-gold{% endif %}">
+                        {% if challenge.template.challenge_type == 'DAILY' %}bg-secondary/15 text-secondary
+                        {% elif challenge.template.challenge_type == 'WEEKLY' %}bg-primary/15 text-primary
+                        {% else %}bg-tertiary/15 text-tertiary{% endif %}">
                         {{ challenge.template.get_challenge_type_display }}
                     </span>
                 </div>
@@ -37,11 +37,11 @@
                 <div class="mb-2">
                     <div class="flex items-center justify-between text-xs mb-1">
                         <span class="text-muted">Progress</span>
-                        <span class="font-mono text-accent">{{ uc_obj.progress }}/{{ challenge.template.target_value }}</span>
+                        <span class="font-mono text-primary">{{ uc_obj.progress }}/{{ challenge.template.target_value }}</span>
                     </div>
-                    <div class="w-full bg-border/50 rounded-full h-2 overflow-hidden">
+                    <div class="w-full bg-surface-container-high rounded-full h-2 overflow-hidden">
                         {% widthratio uc_obj.progress challenge.template.target_value 100 as pct %}
-                        <div class="bg-accent h-2 rounded-full transition-all duration-500"
+                        <div class="bg-primary h-2 rounded-full transition-all duration-500"
                              style="width: {% widthratio uc_obj.progress challenge.template.target_value 100 %}%"></div>
                     </div>
                 </div>
@@ -51,7 +51,7 @@
                 {% endif %}
 
                 <div class="flex items-center gap-3">
-                    <span class="text-xs text-accent font-medium">+${{ challenge.template.reward_amount }}</span>
+                    <span class="text-xs text-primary font-medium">+${{ challenge.template.reward_amount }}</span>
                     <span class="text-xs text-muted">
                         Ends {{ challenge.ends_at|date:"M d, H:i" }}
                     </span>

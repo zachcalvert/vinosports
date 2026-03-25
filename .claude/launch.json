@@ -5,7 +5,8 @@
       "name": "epl",
       "runtimeExecutable": "docker",
       "runtimeArgs": ["compose", "up", "--build", "--no-deps", "-d", "epl-web"],
-      "port": 8000
+      "port": 8000,
+      "autoPort": false
     },
     {
       "name": "hub",

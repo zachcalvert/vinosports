@@ -64,8 +64,7 @@
         <!-- State-specific content -->
         {% if game.status == "FINAL" %}
             {% include "games/partials/recap_card.html" %}
-        {% endif %}
-        {% if sentiment or spread_sentiment or total_sentiment %}
+        {% elif sentiment or spread_sentiment or total_sentiment %}
             {% include "games/partials/hype_card.html" %}
         {% endif %}
 

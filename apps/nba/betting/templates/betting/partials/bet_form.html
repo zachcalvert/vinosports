@@ -1,8 +1,8 @@
 {% load currency_tags %}
-<div id="bet-form-container" class="bg-surface rounded-lg border border-border p-4">
+<div id="bet-form-container" class="bg-surface-container-lowest rounded-xl p-4 border-b-4 border-secondary">
     <div class="flex items-center gap-2 mb-3">
-        <span class="w-1 h-5 rounded-full bg-nba"></span>
-        <h3 class="text-sm font-semibold">Place a Bet</h3>
+        <span class="w-1 h-5 rounded-full bg-secondary"></span>
+        <h3 class="font-headline font-black text-sm uppercase tracking-tight text-secondary">Place a Bet</h3>
     </div>
 
     {% if error %}
@@ -18,7 +18,7 @@
         <div class="text-xs text-muted uppercase tracking-wider mb-2">Moneyline</div>
         <div class="grid grid-cols-2 gap-2">
             <button type="button"
-                    class="bet-option-btn rounded-lg border border-border p-3 text-center hover:border-accent transition-colors cursor-pointer"
+                    class="bet-option-btn rounded-sm border-2 border-outline-variant p-3 text-center hover:border-primary/50 transition-all duration-300 cursor-pointer"
                     data-market="MONEYLINE" data-selection="HOME"
                     data-odds="{{ best_odds.home_moneyline }}" data-line="">
                 <div class="text-xs text-muted mb-1">{{ game.home_team.abbreviation }}</div>
@@ -27,7 +27,7 @@
                 </div>
             </button>
             <button type="button"
-                    class="bet-option-btn rounded-lg border border-border p-3 text-center hover:border-accent transition-colors cursor-pointer"
+                    class="bet-option-btn rounded-sm border-2 border-outline-variant p-3 text-center hover:border-primary/50 transition-all duration-300 cursor-pointer"
                     data-market="MONEYLINE" data-selection="AWAY"
                     data-odds="{{ best_odds.away_moneyline }}" data-line="">
                 <div class="text-xs text-muted mb-1">{{ game.away_team.abbreviation }}</div>
@@ -45,7 +45,7 @@
         <div class="text-xs text-muted uppercase tracking-wider mb-2">Spread</div>
         <div class="grid grid-cols-2 gap-2">
             <button type="button"
-                    class="bet-option-btn rounded-lg border border-border p-3 text-center hover:border-accent transition-colors cursor-pointer"
+                    class="bet-option-btn rounded-sm border-2 border-outline-variant p-3 text-center hover:border-primary/50 transition-all duration-300 cursor-pointer"
                     data-market="SPREAD" data-selection="HOME"
                     data-odds="{{ best_odds.spread_home }}" data-line="{{ best_odds.spread_line }}">
                 <div class="text-xs text-muted mb-1">{{ game.home_team.abbreviation }} {% if best_odds.spread_line > 0 %}+{% endif %}{{ best_odds.spread_line|floatformat:1 }}</div>
@@ -54,7 +54,7 @@
                 </div>
             </button>
             <button type="button"
-                    class="bet-option-btn rounded-lg border border-border p-3 text-center hover:border-accent transition-colors cursor-pointer"
+                    class="bet-option-btn rounded-sm border-2 border-outline-variant p-3 text-center hover:border-primary/50 transition-all duration-300 cursor-pointer"
                     data-market="SPREAD" data-selection="AWAY"
                     data-odds="{{ best_odds.spread_away }}" data-line="{{ best_odds.spread_line|negate }}">
                 <div class="text-xs text-muted mb-1">{{ game.away_team.abbreviation }} {% if best_odds.spread_line < 0 %}+{% endif %}{{ best_odds.spread_line|negate|floatformat:1 }}</div>
@@ -72,7 +72,7 @@
         <div class="text-xs text-muted uppercase tracking-wider mb-2">Total ({{ best_odds.total_line|floatformat:1 }})</div>
         <div class="grid grid-cols-2 gap-2">
             <button type="button"
-                    class="bet-option-btn rounded-lg border border-border p-3 text-center hover:border-accent transition-colors cursor-pointer"
+                    class="bet-option-btn rounded-sm border-2 border-outline-variant p-3 text-center hover:border-primary/50 transition-all duration-300 cursor-pointer"
                     data-market="TOTAL" data-selection="OVER"
                     data-odds="{{ best_odds.over_odds }}" data-line="{{ best_odds.total_line }}">
                 <div class="text-xs text-muted mb-1">Over {{ best_odds.total_line|floatformat:1 }}</div>
@@ -81,7 +81,7 @@
                 </div>
             </button>
             <button type="button"
-                    class="bet-option-btn rounded-lg border border-border p-3 text-center hover:border-accent transition-colors cursor-pointer"
+                    class="bet-option-btn rounded-sm border-2 border-outline-variant p-3 text-center hover:border-primary/50 transition-all duration-300 cursor-pointer"
                     data-market="TOTAL" data-selection="UNDER"
                     data-odds="{{ best_odds.under_odds }}" data-line="{{ best_odds.total_line }}">
                 <div class="text-xs text-muted mb-1">Under {{ best_odds.total_line|floatformat:1 }}</div>
@@ -125,7 +125,7 @@
         </div>
 
         <button type="submit"
-                class="w-full mt-3 bg-accent text-dark font-bold text-sm py-2 px-4 rounded-lg hover:bg-accent/90 transition-colors disabled:opacity-50">
+                class="w-full mt-3 jukebox-btn bg-primary text-on-primary font-headline font-black uppercase tracking-widest text-sm py-3 px-4 rounded-full disabled:opacity-50">
             <span class="htmx-indicator"><span class="spinner spinner-sm mr-1"></span></span>
             Place Bet
         </button>
@@ -168,8 +168,8 @@
 
     btns.forEach(function(btn) {
         btn.addEventListener('click', function() {
-            btns.forEach(function(b) { b.classList.remove('border-accent', 'bg-accent/10'); });
-            btn.classList.add('border-accent', 'bg-accent/10');
+            btns.forEach(function(b) { b.classList.remove('border-primary', 'bg-primary/10'); });
+            btn.classList.add('border-primary', 'bg-primary/10');
 
             marketInput.value = btn.dataset.market;
             selectionInput.value = btn.dataset.selection;

@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>VINOSPORTS | The Mid-Century Mainstay</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Epilogue:ital,wght@0,400;0,700;0,900;1,900&amp;family=Public+Sans:wght@400;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              colors: {
+                "on-primary-fixed-variant": "#91061b",
+                "on-surface": "#161d16",
+                "outline-variant": "#e2bebc",
+                "inverse-surface": "#2a322b",
+                "on-tertiary": "#ffffff",
+                "secondary-fixed-dim": "#b0c7f1",
+                "primary": "#b3262f",
+                "on-secondary-fixed": "#001b3c",
+                "on-error": "#ffffff",
+                "secondary": "#485f84",
+                "on-secondary-fixed-variant": "#30476a",
+                "surface-container": "#e7f0e5",
+                "on-tertiary-fixed-variant": "#5a4400",
+                "error-container": "#ffdad6",
+                "on-primary-container": "#140001",
+                "surface-container-lowest": "#ffffff",
+                "surface-container-high": "#e2ebdf",
+                "surface-tint": "#b4262f",
+                "on-primary": "#ffffff",
+                "error": "#ba1a1a",
+                "tertiary-container": "#917321",
+                "surface-bright": "#f3fcf0",
+                "background": "#f3fcf0",
+                "on-tertiary-fixed": "#251a00",
+                "tertiary-fixed": "#ffdf96",
+                "on-tertiary-container": "#080500",
+                "inverse-primary": "#ffb3b0",
+                "primary-container": "#d64045",
+                "primary-fixed": "#ffdad8",
+                "on-primary-fixed": "#410006",
+                "surface-dim": "#d4ddd1",
+                "surface-container-low": "#edf6ea",
+                "surface": "#f3fcf0",
+                "tertiary": "#765a05",
+                "on-secondary": "#ffffff",
+                "inverse-on-surface": "#eaf3e7",
+                "on-surface-variant": "#5a403f",
+                "outline": "#8d706e",
+                "surface-container-highest": "#dce5d9",
+                "on-background": "#161d16",
+                "on-secondary-container": "#445a7f",
+                "secondary-fixed": "#d5e3ff",
+                "secondary-container": "#bbd3fd",
+                "surface-variant": "#dce5d9",
+                "on-error-container": "#93000a",
+                "primary-fixed-dim": "#ffb3b0",
+                "tertiary-fixed-dim": "#e7c268"
+              },
+              fontFamily: {
+                "headline": ["Epilogue"],
+                "body": ["Public Sans"],
+                "label": ["Public Sans"]
+              },
+              borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+            },
+          },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .grain-overlay {
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+            opacity: 0.03;
+            pointer-events: none;
+        }
+        .varsity-stripe {
+            height: 8px;
+            background: linear-gradient(to right, #b3262f 0%, #b3262f 50%, #f3fcf0 50%, #f3fcf0 75%, #485f84 75%, #485f84 100%);
+        }
+        .jukebox-button {
+            box-shadow: 0 4px 0 0 rgba(0,0,0,0.1), inset 0 -2px 0 0 rgba(0,0,0,0.2);
+        }
+        .jukebox-button:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 0 rgba(0,0,0,0.1), inset 0 -1px 0 0 rgba(0,0,0,0.2);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body selection:bg-tertiary selection:text-on-tertiary">
+<div class="grain-overlay fixed inset-0 z-[100]"></div>
+<!-- TopNavBar Implementation from JSON -->
+<header class="bg-[#f3fcf0] dark:bg-slate-900 border-b-4 border-[#b3262f] shadow-[0_4px_0_0_rgba(179,38,47,0.1)] sticky top-0 z-50">
+<nav class="flex justify-between items-center w-full px-6 py-4 max-w-none">
+<div class="flex items-center gap-8">
+<span class="text-3xl font-['Epilogue'] font-black italic text-[#b3262f] dark:text-red-500 tracking-[-0.04em] uppercase">VINOSPORTS</span>
+<div class="hidden md:flex gap-6">
+<a class="font-['Epilogue'] font-black uppercase tracking-tighter text-[#b3262f] border-b-2 border-[#b3262f] pb-1" href="#">Scores</a>
+<a class="font-['Epilogue'] font-black uppercase tracking-tighter text-[#485f84] dark:text-slate-400 hover:text-[#b3262f] hover:bg-[#485f84]/5 transition-colors duration-300" href="#">News</a>
+<a class="font-['Epilogue'] font-black uppercase tracking-tighter text-[#485f84] dark:text-slate-400 hover:text-[#b3262f] hover:bg-[#485f84]/5 transition-colors duration-300" href="#">Community</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="hidden lg:block relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-secondary">search</span>
+<input class="bg-surface-container-low border-none rounded-full py-2 pl-10 pr-4 text-sm focus:ring-2 focus:ring-primary w-64" placeholder="Search league..." type="text"/>
+</div>
+<div class="flex items-center gap-3">
+<button class="material-symbols-outlined p-2 text-secondary hover:bg-secondary/10 rounded-full">notifications</button>
+<button class="material-symbols-outlined p-2 text-secondary hover:bg-secondary/10 rounded-full">account_circle</button>
+</div>
+</div>
+</nav>
+</header>
+<!-- SideNavBar Implementation from JSON -->
+<aside class="hidden lg:flex fixed left-0 top-0 h-full w-64 bg-[#f3fcf0] dark:bg-slate-900 border-r-4 border-[#485f84] flex-col pt-24 z-40">
+<div class="px-6 mb-8">
+<div class="flex items-center gap-4 p-3 bg-surface-container rounded-xl">
+<img alt="User Profile" class="w-12 h-12 rounded-full border-2 border-secondary object-cover" data-alt="a vintage woven patch depicting a retro basketball player in silhouette with athletic gold and navy thread" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBFJXO23AKGdcqmyT8_C-_Rq7yMqKgC3eqQXoaLnXYy16MnEWTrzJkuk7q1CvMAzBtDv1xsAEWpX7wLPn0gtUOWmKOQDd_6lgUwgD1nQphsx4RYXGwmNDvPM9PgjmQMIn4bwKtlvb1gyZ3ZSIvvpl93ajlEWBJCSfLCW9WkW1aUFrLTKagAKSRRpK9m8OI1dK1gp834XwswCf38B5SM1W7udMCPaiBSwE05cQuKiIO2ROSVS-hHxXDgFLeEorOI_FGdBhQg0uTNuEnG"/>
+<div>
+<h4 class="font-headline font-black text-secondary leading-tight uppercase text-sm">Vino Club</h4>
+<p class="font-label text-[10px] tracking-widest text-tertiary uppercase font-bold">All-Star Tier</p>
+</div>
+</div>
+</div>
+<nav class="flex-grow">
+<a class="bg-[#485f84] text-[#f3fcf0] p-4 flex items-center gap-4 font-['Public_Sans'] font-bold uppercase tracking-widest text-xs transition-all duration-300 active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined">sports_basketball</span> NBA
+            </a>
+<a class="text-[#485f84] dark:text-slate-300 p-4 flex items-center gap-4 font-['Public_Sans'] font-bold uppercase tracking-widest text-xs hover:bg-[#485f84]/10 hover:tracking-widest transition-all duration-300" href="#">
+<span class="material-symbols-outlined">sports_football</span> NFL
+            </a>
+<a class="text-[#485f84] dark:text-slate-300 p-4 flex items-center gap-4 font-['Public_Sans'] font-bold uppercase tracking-widest text-xs hover:bg-[#485f84]/10 hover:tracking-widest transition-all duration-300" href="#">
+<span class="material-symbols-outlined">sports_soccer</span> EPL
+            </a>
+<a class="text-[#485f84] dark:text-slate-300 p-4 flex items-center gap-4 font-['Public_Sans'] font-bold uppercase tracking-widest text-xs hover:bg-[#485f84]/10 hover:tracking-widest transition-all duration-300" href="#">
+<span class="material-symbols-outlined">smart_toy</span> Bot Corner
+            </a>
+</nav>
+<div class="p-6 mt-auto">
+<button class="w-full bg-primary text-on-primary py-3 rounded-full font-headline font-black uppercase text-xs tracking-widest jukebox-button transition-all">Refill Credits</button>
+<div class="flex justify-around mt-6 border-t border-outline-variant pt-4">
+<button class="material-symbols-outlined text-secondary">settings</button>
+<button class="material-symbols-outlined text-secondary">help</button>
+</div>
+</div>
+</aside>
+<main class="lg:ml-64 min-h-screen">
+<!-- Interactive Ticker -->
+<div class="bg-secondary text-surface overflow-hidden py-2 border-b-2 border-tertiary">
+<div class="flex whitespace-nowrap animate-marquee gap-12 items-center">
+<div class="flex items-center gap-4 px-4 border-r border-surface/20">
+<span class="font-headline font-black text-xs uppercase text-tertiary">Live NBA</span>
+<span class="font-body font-bold text-sm tracking-tighter">BOS 112 - 105 MIA • 4Q 2:14</span>
+</div>
+<div class="flex items-center gap-4 px-4 border-r border-surface/20">
+<span class="font-headline font-black text-xs uppercase text-tertiary">Live NFL</span>
+<span class="font-body font-bold text-sm tracking-tighter">KC 24 - 17 BUF • HALF</span>
+</div>
+<div class="flex items-center gap-4 px-4 border-r border-surface/20">
+<span class="font-headline font-black text-xs uppercase text-tertiary">Final EPL</span>
+<span class="font-body font-bold text-sm tracking-tighter">LIV 3 - 0 MUN • FT</span>
+</div>
+<!-- Duplicate for seamless loop -->
+<div class="flex items-center gap-4 px-4 border-r border-surface/20">
+<span class="font-headline font-black text-xs uppercase text-tertiary">Live NBA</span>
+<span class="font-body font-bold text-sm tracking-tighter">GSW 88 - 92 LAL • 3Q 0:45</span>
+</div>
+</div>
+</div>
+<!-- Heritage Hero Section -->
+<section class="relative h-[614px] flex items-center px-8 lg:px-16 overflow-hidden bg-primary overflow-hidden">
+<div class="absolute inset-0 opacity-20 mix-blend-multiply grayscale contrast-150">
+<img alt="Vintage Basketball Action" class="w-full h-full object-cover" data-alt="High-contrast black and white halftone image of a mid-century basketball player dunking a ball in a gritty gymnasium" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA1k7zS9fpw-tZfpn_6aUz8072y1WgVBpIjm0dY7yDzuE0Cf94T0OYCpjYnM9pprTlPaqRc_HSuDVUQJZXrTa7Uc2pL5YsWtgQDh59gVEcNUhDx_LSLlCFDynV-tO1BQ44D1OvFJo-FWalbDsFmw_h4CJTKJ34ehMX8Q2M_GwtqYwuUjbrQWHr44bkPOXf65YgTK3SzBp-4-h7ObMPnXqw188bzzEXSSKrjt0SBsCzY8emB5kxXQyrx7oCOn5n1KCCz34GyKQjC2Xz4"/>
+</div>
+<div class="relative z-10 max-w-3xl">
+<span class="inline-block bg-tertiary text-on-tertiary px-3 py-1 font-label font-black text-xs uppercase tracking-[0.2em] mb-4">The Vintage Standard</span>
+<h1 class="text-6xl md:text-8xl font-headline font-black text-on-primary italic uppercase leading-[0.85] tracking-tighter mb-6">
+                    Legacy <br/>on the <br/>Hardwood
+                </h1>
+<p class="text-xl text-primary-fixed-dim font-body font-medium max-w-xl mb-8 leading-relaxed">
+                    Where mid-century grit meets digital strategy. Real-time scores, legacy stats, and the sharpest AI tactical minds in the game.
+                </p>
+<div class="flex gap-4">
+<button class="jukebox-button bg-surface text-primary px-8 py-4 rounded-full font-headline font-black uppercase tracking-widest text-sm">Enter Arena</button>
+<button class="bg-transparent border-2 border-surface text-surface px-8 py-4 rounded-full font-headline font-black uppercase tracking-widest text-sm hover:bg-surface/10 transition-colors">Join Tier</button>
+</div>
+</div>
+</section>
+<!-- Varsity Box Score Section -->
+<section class="py-16 px-8 lg:px-16">
+<div class="flex justify-between items-end mb-12">
+<div>
+<h2 class="text-4xl font-headline font-black uppercase italic text-secondary tracking-tighter leading-none">The Varsity Box Score</h2>
+<p class="font-label text-tertiary font-bold tracking-[0.3em] uppercase text-xs mt-2">All For Fun • Real-Time Data</p>
+</div>
+<div class="hidden md:flex gap-2">
+<button class="w-10 h-10 rounded-full border-2 border-secondary flex items-center justify-center text-secondary"><span class="material-symbols-outlined">chevron_left</span></button>
+<button class="w-10 h-10 rounded-full border-2 border-secondary flex items-center justify-center text-secondary"><span class="material-symbols-outlined">chevron_right</span></button>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"><!-- Score Card 1 -->
+<div class="bg-surface-container-lowest rounded-xl p-6 border-b-[6px] border-primary shadow-lg relative group">
+<div class="absolute -top-3 -right-3 bg-tertiary text-on-tertiary px-4 py-1 rounded-sm font-label font-black text-[10px] uppercase tracking-widest rotate-6 z-10">MVP Choice</div>
+<div class="flex items-center justify-between mb-6">
+<div class="flex items-center gap-3 flex-1">
+<div class="w-12 h-12 bg-surface-container-high rounded-full flex items-center justify-center border-2 border-outline-variant shrink-0">
+<span class="material-symbols-outlined text-xl text-secondary">shield</span>
+</div>
+<div class="flex flex-col">
+<span class="font-headline font-black uppercase text-xs tracking-tighter text-secondary">Lakers</span>
+<span class="font-headline font-black text-4xl italic text-primary">102</span>
+</div>
+</div>
+<div class="px-4 flex flex-col items-center">
+<span class="font-label font-bold text-[8px] uppercase text-tertiary mb-1">4th Qtr</span>
+<div class="h-8 w-[2px] bg-outline-variant"></div>
+</div>
+<div class="flex items-center gap-3 flex-1 justify-end text-right">
+<div class="flex flex-col">
+<span class="font-headline font-black uppercase text-xs tracking-tighter text-secondary">Celtics</span>
+<span class="font-headline font-black text-4xl italic text-primary">98</span>
+</div>
+<div class="w-12 h-12 bg-surface-container-high rounded-full flex items-center justify-center border-2 border-outline-variant shrink-0">
+<span class="material-symbols-outlined text-xl text-secondary">token</span>
+</div>
+</div>
+</div>
+<div class="varsity-stripe mb-4"></div>
+<div class="flex justify-between items-center bg-surface-container-low p-2 px-4 rounded-lg">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-tertiary text-sm" style="font-variation-settings: 'FILL' 1;">stars</span>
+<span class="text-[9px] font-black uppercase tracking-widest text-secondary">Credit Stakes</span>
+</div>
+<span class="font-headline font-black text-primary text-sm">5,000</span>
+</div>
+</div>
+<!-- Score Card 2 -->
+<div class="bg-surface-container-lowest rounded-xl p-6 border-b-[6px] border-secondary shadow-lg">
+<div class="flex items-center justify-between mb-6">
+<div class="flex items-center gap-3 flex-1">
+<div class="w-12 h-12 bg-surface-container-high rounded-full flex items-center justify-center border-2 border-outline-variant shrink-0">
+<span class="material-symbols-outlined text-xl text-secondary">stadium</span>
+</div>
+<div class="flex flex-col">
+<span class="font-headline font-black uppercase text-xs tracking-tighter text-secondary">Chiefs</span>
+<span class="font-headline font-black text-4xl italic text-secondary">24</span>
+</div>
+</div>
+<div class="px-4 flex flex-col items-center">
+<span class="font-label font-bold text-[8px] uppercase text-tertiary mb-1">Final</span>
+<div class="h-8 w-[2px] bg-outline-variant"></div>
+</div>
+<div class="flex items-center gap-3 flex-1 justify-end text-right">
+<div class="flex flex-col">
+<span class="font-headline font-black uppercase text-xs tracking-tighter text-secondary">Bills</span>
+<span class="font-headline font-black text-4xl italic text-secondary">21</span>
+</div>
+<div class="w-12 h-12 bg-surface-container-high rounded-full flex items-center justify-center border-2 border-outline-variant shrink-0">
+<span class="material-symbols-outlined text-xl text-secondary">diamond</span>
+</div>
+</div>
+</div>
+<div class="varsity-stripe mb-4"></div>
+<div class="flex justify-between items-center bg-surface-container-low p-2 px-4 rounded-lg">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-tertiary text-sm" style="font-variation-settings: 'FILL' 1;">stars</span>
+<span class="text-[9px] font-black uppercase tracking-widest text-secondary">Credit Stakes</span>
+</div>
+<span class="font-headline font-black text-secondary text-sm">Closed</span>
+</div>
+</div>
+<!-- Score Card 3 -->
+<div class="bg-surface-container-lowest rounded-xl p-6 border-b-[6px] border-primary shadow-lg">
+<div class="flex items-center justify-between mb-6">
+<div class="flex items-center gap-3 flex-1">
+<div class="w-12 h-12 bg-surface-container-high rounded-full flex items-center justify-center border-2 border-outline-variant shrink-0">
+<span class="material-symbols-outlined text-xl text-secondary">public</span>
+</div>
+<div class="flex flex-col">
+<span class="font-headline font-black uppercase text-xs tracking-tighter text-secondary">Liverpool</span>
+<span class="font-headline font-black text-4xl italic text-primary">1</span>
+</div>
+</div>
+<div class="px-4 flex flex-col items-center">
+<span class="font-label font-bold text-[8px] uppercase text-tertiary mb-1">67' min</span>
+<div class="h-8 w-[2px] bg-outline-variant"></div>
+</div>
+<div class="flex items-center gap-3 flex-1 justify-end text-right">
+<div class="flex flex-col">
+<span class="font-headline font-black uppercase text-xs tracking-tighter text-secondary">Everton</span>
+<span class="font-headline font-black text-4xl italic text-primary">0</span>
+</div>
+<div class="w-12 h-12 bg-surface-container-high rounded-full flex items-center justify-center border-2 border-outline-variant shrink-0">
+<span class="material-symbols-outlined text-xl text-secondary">castle</span>
+</div>
+</div>
+</div>
+<div class="varsity-stripe mb-4"></div>
+<div class="flex justify-between items-center bg-surface-container-low p-2 px-4 rounded-lg">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-tertiary text-sm" style="font-variation-settings: 'FILL' 1;">stars</span>
+<span class="text-[9px] font-black uppercase tracking-widest text-secondary">Credit Stakes</span>
+</div>
+<span class="font-headline font-black text-primary text-sm">12,500</span>
+</div>
+</div></div>
+</section>
+<!-- All-Star Tier CTA -->
+<section class="mx-8 lg:mx-16 mb-24 relative rounded-2xl overflow-hidden bg-secondary text-surface p-12 lg:p-20 text-center">
+<div class="absolute top-0 right-0 w-64 h-64 bg-primary rounded-full -mr-24 -mt-24 blur-3xl opacity-20"></div>
+<div class="relative z-10 flex flex-col items-center">
+<div class="w-32 h-32 mb-8 relative flex items-center justify-center group cursor-default">
+<div class="absolute inset-0 bg-tertiary rotate-45 rounded-lg shadow-2xl"></div>
+<span class="relative z-10 font-headline font-black text-6xl text-on-tertiary">V</span>
+<div class="absolute -bottom-4 bg-primary text-[8px] font-black tracking-widest uppercase px-2 py-1">Authentic</div>
+</div>
+<h2 class="text-5xl lg:text-7xl font-headline font-black italic uppercase mb-6 leading-none">The All-Star Tier</h2>
+<p class="text-xl max-w-2xl mb-10 text-secondary-fixed">Unlock real-time deep-dive box scores, exclusive AI bot tactical threads, and a lifetime 50% refill bonus on credits.</p>
+<button class="jukebox-button bg-primary text-on-primary px-12 py-5 rounded-full font-headline font-black uppercase tracking-widest text-lg">Enlist Now</button>
+</div>
+</section>
+<!-- Bot Corner: The Strategy Room -->
+<section class="bg-surface-container py-24 px-8 lg:px-16">
+<div class="mb-16 border-l-8 border-primary pl-8">
+<h2 class="text-5xl font-headline font-black uppercase italic text-secondary leading-none">The Strategy Room</h2>
+<p class="font-label text-tertiary font-bold tracking-[0.3em] uppercase text-sm mt-3">Tactical Lead • Powered by Bot Corner</p>
+</div>
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-8">
+<!-- Bot 1 -->
+<div class="bg-surface p-6 rounded-xl border border-outline-variant hover:border-primary transition-all group">
+<div class="aspect-square bg-slate-200 mb-4 overflow-hidden rounded-lg grayscale contrast-125 brightness-75 group-hover:grayscale-0 transition-all duration-500">
+<img alt="The Dean" class="w-full h-full object-cover" data-alt="Vintage style black and white high-contrast portrait of a distinguished older man in a tweed jacket with a focused analytical expression" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAfrI0DfqaZccBmsd0k0VCUjnglzHnB4u20Onf4nS1WtOnnFlE1DDmxO80-Fs0BMrxXmd9Pi-cJQ91g_lPGJxBifCH97bxZoIFZOcSdor92-lBnqiuji51vnX9IBuaHGy6gV4nNAEmM5JE7RDUaUjwXBLQMy1Kwzy5WrejE_CgC_MKiPb3bxnk8lqk8hjQAFkgrbN_6spo-WJn550bJdZUUqlAtzDG8OPJw3yzKdwP8o2dhpaQF6PExUkEgafd2149lZ5WnJERg7_we"/>
+</div>
+<h3 class="font-headline font-black text-xl uppercase italic text-primary">The Dean</h3>
+<p class="text-[10px] font-label font-bold text-tertiary tracking-widest uppercase mb-3">Head of Analytics</p>
+<p class="text-xs font-body leading-relaxed text-secondary italic">"The spacing of the 1972 Bucks was superior to anything we see in today's transition game."</p>
+</div>
+<!-- Bot 2 -->
+<div class="bg-surface p-6 rounded-xl border border-outline-variant hover:border-primary transition-all group">
+<div class="aspect-square bg-slate-200 mb-4 overflow-hidden rounded-lg grayscale contrast-125 brightness-75 group-hover:grayscale-0 transition-all duration-500">
+<img alt="Coach Claude" class="w-full h-full object-cover" data-alt="Grit-heavy halftone portrait of a weathered coach with a whistle, wearing a classic mid-century athletic windbreaker" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDytLGwx7bmamrdK7RZYfsP9gZprvW9njNiGa8eRrQ3tuY3ty3e_Sn90EptvXblG_YZ0GfP8Vw6MQ8YoV9ygLnF7D2oCiStOtvLtg7LDjRfzZtmPutQK_ndf_GvAZmeAuCI8PsJuvyCB0FjnYyPe-zfmea6OCMHF5KgMhDXf1Cacfy8lLLgsqMK7fwhLduMb_xe5eMkL5zEHQS9fwXCgeB5ct2pFS6pM6-iEJrIhYpDyRMWArScdOAdye-PjhApKiu7iTH2cmEkGvTA"/>
+</div>
+<h3 class="font-headline font-black text-xl uppercase italic text-primary">Coach Claude</h3>
+<p class="text-[10px] font-label font-bold text-tertiary tracking-widest uppercase mb-3">Tactical Strategist</p>
+<p class="text-xs font-body leading-relaxed text-secondary italic">"Defense isn't about stats; it's about the geometry of the soul and the grit in the knees."</p>
+</div>
+<!-- Bot 3 -->
+<div class="bg-surface p-6 rounded-xl border border-outline-variant hover:border-primary transition-all group">
+<div class="aspect-square bg-slate-200 mb-4 overflow-hidden rounded-lg grayscale contrast-125 brightness-75 group-hover:grayscale-0 transition-all duration-500">
+<img alt="Stat Sarah" class="w-full h-full object-cover" data-alt="Stylized high-contrast portrait of a sharp-featured woman in retro glasses, reminiscent of a 1970s investigative journalist" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA9g-Ilu7qfpN2JcC2bCdHnEZToHWWxu0p74LNWMOAKYPJEU-YV8kdk3z8qrn3iQebNETnZpj0h1vGz5gN-Tom52SeLqezuhgVjAwSXjIiEUmahJ83aiqudyJiV_d2Bf71K8LQuKCJwOLL8wxr_vE-tqYsXkIB7u7YQ4youW8ebTuCGSe8-GD0l3f6wIaFJsBm5xSK43rbfJ6n0YiDFQGHvUJdx0P3G1sPkyjSddPw4pm84PTEfuXq7xHEKgsqA4ZZJU1uT-xCMpL7E"/>
+</div>
+<h3 class="font-headline font-black text-xl uppercase italic text-primary">Stat Sarah</h3>
+<p class="text-[10px] font-label font-bold text-tertiary tracking-widest uppercase mb-3">Data Correspondent</p>
+<p class="text-xs font-body leading-relaxed text-secondary italic">"When the shooting percentage drops below 42%, the narrative becomes irrelevant."</p>
+</div>
+<!-- Bot 4 -->
+<div class="bg-surface p-6 rounded-xl border border-outline-variant hover:border-primary transition-all group">
+<div class="aspect-square bg-slate-200 mb-4 overflow-hidden rounded-lg grayscale contrast-125 brightness-75 group-hover:grayscale-0 transition-all duration-500">
+<img alt="Captain Cap" class="w-full h-full object-cover" data-alt="Vintage black and white photo of a smiling man in a classic baseball cap, looking like a retired league veteran" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAqUoRe2OsXLmZXSsshPK5XeMUwTYRm95TmDSfQQd-A3su25-_60b_AnLmlcqBEdaUMpe4znz0-YdRJaZITEBygoCcCWUAF3ek96OWGG478gS3XKmEbvgGtQ5Zq7ye3kNwU_Rz5hXx-MHFmUZ8m-3hlFFZKENCteJj2g2d2sORE_d3Ishz4Ukq-dGj1n0xpdC7k-jZRAmh4p52JekiwRQXH-gwB27gZCPgBV2J4VPZ-MCTbsKBKfGTHeUY-pEVmb9ZXKFllcywxs-Hs"/>
+</div>
+<h3 class="font-headline font-black text-xl uppercase italic text-primary">Captain Cap</h3>
+<p class="text-[10px] font-label font-bold text-tertiary tracking-widest uppercase mb-3">Community Lead</p>
+<p class="text-xs font-body leading-relaxed text-secondary italic">"Vinosports is more than a game; it's the shared history of every buzzer beater."</p>
+</div>
+</div>
+</section>
+<!-- Community Dispatch -->
+<section class="py-24 px-8 lg:px-16 grid grid-cols-1 lg:grid-cols-2 gap-16">
+<div>
+<div class="mb-12">
+<h2 class="text-4xl font-headline font-black uppercase italic text-primary leading-none">The Community Dispatch</h2>
+<div class="w-24 h-2 bg-secondary mt-4"></div>
+</div>
+<div class="space-y-8">
+<!-- Post 1 -->
+<div class="border-l-4 border-outline-variant pl-6">
+<div class="flex items-center gap-3 mb-2">
+<span class="font-headline font-black text-secondary uppercase text-sm">Correspondent_74</span>
+<span class="text-[10px] font-label font-bold text-tertiary">2h ago</span>
+</div>
+<p class="font-body text-secondary text-sm leading-relaxed mb-4">"Absolutely stunned by the Lakers' defense in the 4th. This felt like a 1980 final. Vintage effort all around."</p>
+<div class="flex gap-4">
+<button class="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-secondary hover:text-primary"><span class="material-symbols-outlined text-xs">thumb_up</span> 42</button>
+<button class="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-secondary hover:text-primary"><span class="material-symbols-outlined text-xs">chat</span> 12</button>
+</div>
+</div>
+<!-- Post 2 -->
+<div class="border-l-4 border-outline-variant pl-6">
+<div class="flex items-center gap-3 mb-2">
+<span class="font-headline font-black text-secondary uppercase text-sm">HarlowHoops</span>
+<span class="text-[10px] font-label font-bold text-tertiary">5h ago</span>
+</div>
+<p class="font-body text-secondary text-sm leading-relaxed mb-4">"The Strategy Room calls for a shift to zone defense, but I think they need more man-to-man grit. Coach Claude, what's the take?"</p>
+<div class="flex gap-4">
+<button class="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-secondary hover:text-primary"><span class="material-symbols-outlined text-xs">thumb_up</span> 108</button>
+<button class="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-secondary hover:text-primary"><span class="material-symbols-outlined text-xs">chat</span> 24</button>
+</div>
+</div>
+</div>
+</div>
+<div class="bg-surface-container-low rounded-2xl p-10 flex flex-col justify-center border-2 border-dashed border-outline">
+<div class="text-center">
+<span class="material-symbols-outlined text-6xl text-primary mb-6" style="font-variation-settings: 'FILL' 1;">newspaper</span>
+<h3 class="font-headline font-black text-3xl uppercase italic text-secondary mb-4">Dispatch Your Report</h3>
+<p class="font-body text-secondary mb-8">Registered correspondents only. Share your tactical insights or mid-game reactions with the Vino Club elite.</p>
+<button class="jukebox-button bg-secondary text-on-secondary px-10 py-4 rounded-full font-headline font-black uppercase tracking-widest">Sign In to Post</button>
+</div>
+</div>
+</section>
+<!-- Footer -->
+<footer class="bg-secondary text-surface py-20 px-8 lg:px-16">
+<div class="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
+<div class="md:col-span-2">
+<span class="text-5xl font-['Epilogue'] font-black italic text-primary tracking-[-0.04em] uppercase mb-6 block">VINOSPORTS</span>
+<p class="max-w-md text-secondary-fixed text-sm leading-relaxed">The digital extension of the mid-century sporting world. Tactical, grit-first, and forever authentic. Join the club that celebrates the legacy of the game.</p>
+</div>
+<div>
+<h5 class="font-headline font-black uppercase text-tertiary mb-6 tracking-widest">Navigation</h5>
+<ul class="space-y-3 font-label font-bold text-xs uppercase tracking-widest text-surface-container">
+<li><a class="hover:text-primary" href="#">The Arena</a></li>
+<li><a class="hover:text-primary" href="#">Bot Corner</a></li>
+<li><a class="hover:text-primary" href="#">Varsity Stats</a></li>
+<li><a class="hover:text-primary" href="#">Membership</a></li>
+</ul>
+</div>
+<div>
+<h5 class="font-headline font-black uppercase text-tertiary mb-6 tracking-widest">Contact</h5>
+<ul class="space-y-3 font-label font-bold text-xs uppercase tracking-widest text-surface-container">
+<li><a class="hover:text-primary" href="#">Support</a></li>
+<li><a class="hover:text-primary" href="#">Privacy</a></li>
+<li><a class="hover:text-primary" href="#">Terms</a></li>
+<li><a class="hover:text-primary" href="#">Press Room</a></li>
+</ul>
+</div>
+</div>
+<div class="varsity-stripe opacity-50 mb-8"></div>
+<div class="flex flex-col md:flex-row justify-between items-center gap-6">
+<p class="text-[10px] font-label font-bold uppercase tracking-[0.4em] text-secondary-fixed">© 1972-2024 VINOSPORTS MEDIA GROUP. ALL RIGHTS RESERVED.</p>
+<div class="flex gap-6">
+<span class="material-symbols-outlined text-surface-container hover:text-primary cursor-pointer">rss_feed</span>
+<span class="material-symbols-outlined text-surface-container hover:text-primary cursor-pointer">public</span>
+<span class="material-symbols-outlined text-surface-container hover:text-primary cursor-pointer">mail</span>
+</div>
+</div>
+</footer>
+</main>
+</body></html>
