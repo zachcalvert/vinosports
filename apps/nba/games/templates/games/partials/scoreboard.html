@@ -50,7 +50,7 @@ Context expected:
                     <span class="inline-block mt-1 text-xs font-semibold text-danger">L</span>
                 {% endif %}
             {% elif away_standing %}
-                <p class="text-xs text-muted mt-1">{{ away_standing.wins }}-{{ away_standing.losses }}</p>
+                <p class="text-xs text-muted mt-1">{% if away_standing.conference_rank %}#{{ away_standing.conference_rank }} &middot; {% endif %}{{ away_standing.wins }}-{{ away_standing.losses }}</p>
             {% endif %}
         </div>
 
@@ -91,7 +91,7 @@ Context expected:
                     <span class="inline-block mt-1 text-xs font-semibold text-danger">L</span>
                 {% endif %}
             {% elif home_standing %}
-                <p class="text-xs text-muted mt-1">{{ home_standing.wins }}-{{ home_standing.losses }}</p>
+                <p class="text-xs text-muted mt-1">{% if home_standing.conference_rank %}#{{ home_standing.conference_rank }} &middot; {% endif %}{{ home_standing.wins }}-{{ home_standing.losses }}</p>
             {% endif %}
         </div>
     </div>
@@ -100,6 +100,10 @@ Context expected:
     <div class="text-center mt-4 text-sm text-muted">
         {% if game.is_live %}
             <span id="last-updated" class="text-xs">Score updated just now</span>
+            <span class="ws-status mt-1">
+                <span id="ws-dot" class="ws-status-dot connecting"></span>
+                <span id="ws-label">Connecting</span>
+            </span>
         {% elif game.status == "SCHEDULED" and game.tip_off %}
             <time datetime="{{ game.tip_off|date:'c' }}">{{ game.tip_off|date:"l, F j, Y — g:i A" }}</time>
             <div id="countdown" class="mt-2 text-xs font-mono text-accent" data-tipoff="{{ game.tip_off|date:'c' }}"></div>

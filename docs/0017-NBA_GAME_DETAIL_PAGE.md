@@ -275,7 +275,7 @@ Pace calculation: `(current_total / quarters_elapsed) * 4` — rough but useful.
 
 ## Future Ideas
 
-- **Game clock in live scoreboard** — Investigate whether the BDL API (or another source) provides time remaining in the current quarter. If available, display it alongside the quarter badge (e.g., "3rd Qtr · 4:32"). Would make the live experience feel much more real-time.
+- **Game clock in live scoreboard** — BDL does not provide time remaining or game clock data; only quarter-level status strings (`1st Qtr`, `Halftime`, etc.). A different data source would be needed to display "3rd Qtr · 4:32". Not possible with the current API tier.
 
 ## Out of Scope
 

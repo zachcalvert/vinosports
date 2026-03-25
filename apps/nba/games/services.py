@@ -141,7 +141,7 @@ class NBADataClient:
             "name": t["name"],
             "short_name": t.get("full_name", f"{t.get('city', '')} {t['name']}"),
             "abbreviation": t["abbreviation"],
-            "logo_url": "",
+            "logo_url": f"https://cdn.nba.com/logos/nba/{t['id']}/global/L/logo.svg",
             "conference": _normalize_conference(t.get("conference", "")),
             "division": t.get("division", ""),
         }
