@@ -1,214 +1,24 @@
 /* ==========================================================================
-   Vinosports Design System — NBA League Stylesheet
+   NBA League Stylesheet — League-specific overrides only
    ==========================================================================
-   CSS custom properties + component classes consumed by Django templates.
-   The Tailwind CDN config in base.html references these variables.
+   Shared palette, navbar, sidebar, footer, and utility classes live in:
+     vinosports-core → static/vinosports/css/design-system.css
+   This file contains only NBA-specific rules.
    ========================================================================== */
 
+
 /* --------------------------------------------------------------------------
-   1. CSS CUSTOM PROPERTIES (Theme Tokens)
+   1. LEAGUE TOKEN (NBA alias for secondary)
    -------------------------------------------------------------------------- */
 
 :root {
-    /* Foundation — "The Mid-Century Mainstay" palette */
-    --color-bg:          245 240 225;   /* #f5f0e1 warm parchment */
-    --color-surface:     255 255 255;   /* #ffffff surface-container-lowest */
-    --color-dark:         42  50  43;   /* #2a322b inverse-surface */
-    --color-text:         22  29  22;   /* #161d16 on-surface */
-    --color-muted:       141 112 110;   /* #8d706e outline */
-    --color-border:      226 190 188;   /* #e2bebc outline-variant */
-
-    /* Primary — "Sport Red" */
-    --color-accent:      179  38  47;   /* #b3262f */
-    --color-accent-nav:  179  38  47;   /* #b3262f */
-    --color-accent-light: 255 218 216;  /* #ffdad8 primary-fixed */
-    --color-nba:          72  95 132;   /* #485f84 secondary (heritage navy) */
-
-    /* Tertiary — "Boardwalk Gold" */
-    --color-gold:        118  90   5;   /* #765a05 */
-
-    /* Secondary — "Heritage Navy" */
-    --color-secondary:    72  95 132;   /* #485f84 */
+    --color-nba: 72 95 132;  /* #485f84 — same as secondary */
 }
 
 
 /* --------------------------------------------------------------------------
-   2. GLOBAL / PAGE
+   2. HTMX LOADING INDICATOR
    -------------------------------------------------------------------------- */
-
-.theme-page {
-    background-color: rgb(var(--color-bg));
-    color: rgb(var(--color-text));
-    transition: background-color 0.2s ease, color 0.2s ease;
-}
-
-
-/* --------------------------------------------------------------------------
-   3. NAVBAR
-   -------------------------------------------------------------------------- */
-
-.site-nav {
-    background-color: #f5f0e1;
-    border-bottom: 4px solid #b3262f;
-    position: sticky;
-    top: 0;
-    z-index: 40;
-}
-
-.nav-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.375rem;
-    padding: 0.375rem 0.75rem;
-    border-radius: 0.375rem;
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: #485f84;
-    transition: color 0.3s, background-color 0.3s;
-}
-.nav-link:hover {
-    color: #b3262f;
-    background-color: rgba(179, 38, 47, 0.06);
-}
-.nav-link.nav-link-active {
-    color: #b3262f;
-    background-color: rgba(179, 38, 47, 0.1);
-}
-
-.nav-logo-text {
-    color: #b3262f;
-}
-
-.nav-action-link {
-    padding: 0.375rem 0.75rem;
-    border-radius: 0.375rem;
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: #485f84;
-    transition: color 0.3s, background-color 0.3s;
-}
-.nav-action-link:hover {
-    color: #b3262f;
-    background-color: rgba(179, 38, 47, 0.06);
-}
-
-
-/* --------------------------------------------------------------------------
-   4. DROPDOWN MENU
-   -------------------------------------------------------------------------- */
-
-.dropdown-link {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 1rem;
-    font-size: 0.875rem;
-    color: rgb(var(--color-text));
-    transition: background-color 0.15s;
-}
-.dropdown-link:hover {
-    background-color: rgb(var(--color-accent-light));
-}
-.dropdown-link.dropdown-link-active {
-    color: rgb(var(--color-accent));
-    background-color: rgb(var(--color-accent-light));
-}
-
-
-/* --------------------------------------------------------------------------
-   5. MOBILE MENU
-   -------------------------------------------------------------------------- */
-
-.mobile-menu-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0.5rem;
-    border-radius: 0.375rem;
-    color: #485f84;
-    transition: color 0.15s, background-color 0.15s;
-}
-.mobile-menu-btn:hover {
-    color: #b3262f;
-    background-color: rgba(179, 38, 47, 0.06);
-}
-
-.mobile-menu-shell {
-    background-color: #f5f0e1;
-    border-top: 1px solid rgb(var(--color-border));
-    max-height: 0;
-    overflow: hidden;
-    transition: max-height 0.25s ease;
-}
-.mobile-menu-shell.open {
-    max-height: 100vh;
-}
-
-.mobile-nav-link {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 0.75rem;
-    border-radius: 0.375rem;
-    font-size: 0.9375rem;
-    font-weight: 600;
-    color: #485f84;
-    transition: color 0.3s, background-color 0.3s;
-}
-.mobile-nav-link:hover {
-    color: #b3262f;
-    background-color: rgba(179, 38, 47, 0.06);
-}
-.mobile-nav-link.nav-link-active {
-    color: #b3262f;
-    background-color: rgba(179, 38, 47, 0.1);
-}
-
-
-
-
-/* --------------------------------------------------------------------------
-   7. WEBSOCKET STATUS DOT
-   -------------------------------------------------------------------------- */
-
-.ws-status {
-    display: inline-block;
-    width: 0.5rem;
-    height: 0.5rem;
-    border-radius: 9999px;
-    flex-shrink: 0;
-}
-.ws-status.connected {
-    background-color: #16a34a;
-    box-shadow: 0 0 4px rgba(22, 163, 74, 0.5);
-}
-.ws-status.disconnected {
-    background-color: #a8a29e;
-}
-
-
-/* --------------------------------------------------------------------------
-   8. SPINNER
-   -------------------------------------------------------------------------- */
-
-.spinner {
-    display: inline-block;
-    width: 1.5rem;
-    height: 1.5rem;
-    border: 2px solid rgb(var(--color-border));
-    border-top-color: rgb(var(--color-accent));
-    border-radius: 9999px;
-    animation: spin 0.6s linear infinite;
-}
-.spinner-sm {
-    width: 1rem;
-    height: 1rem;
-    border-width: 1.5px;
-}
-
-@keyframes spin {
-    to { transform: rotate(360deg); }
-}
 
 .htmx-indicator {
     opacity: 0;
@@ -221,7 +31,7 @@
 
 
 /* --------------------------------------------------------------------------
-   9. GAME CARDS
+   3. GAME CARDS
    -------------------------------------------------------------------------- */
 
 .live-game-card {
@@ -240,7 +50,7 @@
 
 
 /* --------------------------------------------------------------------------
-   10. TOAST NOTIFICATIONS
+   4. TOAST NOTIFICATIONS
    -------------------------------------------------------------------------- */
 
 .toast-shell {
@@ -279,7 +89,7 @@
 
 
 /* --------------------------------------------------------------------------
-   11. REWARD TOASTS
+   5. REWARD TOASTS
    -------------------------------------------------------------------------- */
 
 .reward-toast {
@@ -366,7 +176,7 @@
 
 
 /* --------------------------------------------------------------------------
-   12. ACTIVITY TOASTS (bottom-left feed)
+   6. ACTIVITY TOASTS (bottom-left feed)
    -------------------------------------------------------------------------- */
 
 .activity-toast {
@@ -409,7 +219,7 @@ a.activity-toast:hover {
 
 
 /* --------------------------------------------------------------------------
-   13. THEMED PANELS & INPUTS
+   7. THEMED PANELS & INPUTS
    -------------------------------------------------------------------------- */
 
 .themed-panel {
@@ -463,7 +273,7 @@ a.activity-toast:hover {
 
 
 /* --------------------------------------------------------------------------
-   14. SLIDE ANIMATIONS
+   8. SLIDE ANIMATIONS
    -------------------------------------------------------------------------- */
 
 @keyframes slide-in-right {
@@ -498,7 +308,7 @@ a.activity-toast:hover {
 
 
 /* --------------------------------------------------------------------------
-   15. LEAGUE SIDEBAR
+   9. LEAGUE SIDEBAR (sticky positioning — link styles in design-system.css)
    -------------------------------------------------------------------------- */
 
 .league-sidebar {
@@ -513,105 +323,9 @@ a.activity-toast:hover {
     padding: 1rem 0;
 }
 
-.sidebar-nav { padding: 0 0.5rem; }
-
-.sidebar-links { display: flex; flex-direction: column; gap: 0.125rem; }
-
-.sidebar-link {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.625rem 0.75rem;
-    border-radius: 0.5rem;
-    font-family: 'Epilogue', sans-serif;
-    font-size: 0.75rem;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: rgb(var(--color-secondary));
-    text-decoration: none;
-    transition: color 0.15s, background-color 0.15s, border-color 0.15s;
-    border-left: 3px solid transparent;
-}
-.sidebar-link:hover {
-    color: rgb(var(--color-accent));
-    background-color: rgba(var(--color-accent-light), 0.3);
-}
-.sidebar-link--active {
-    color: rgb(var(--color-accent));
-    background-color: rgba(var(--color-accent-light), 0.4);
-    border-left-color: rgb(var(--color-accent));
-}
-
-.sidebar-divider {
-    height: 4px;
-    border-radius: 9999px;
-    background: linear-gradient(to right, #b3262f 0%, #b3262f 45%, #f5f0e1 45%, #f5f0e1 55%, #485f84 55%, #485f84 100%);
-    margin: 0.75rem 0.75rem;
-}
-
-/* Mobile sidebar overlay + drawer */
-.sidebar-overlay {
-    position: fixed;
-    inset: 0;
-    z-index: 50;
-}
-.sidebar-backdrop {
-    position: absolute;
-    inset: 0;
-    background-color: rgba(0, 0, 0, 0.5);
-}
-.sidebar-drawer {
-    position: absolute;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    width: 16rem;
-    background-color: rgb(var(--color-surface));
-    border-right: 1px solid rgb(var(--color-border));
-    padding: 1rem 0;
-    overflow-y: auto;
-    animation: slide-in-left 0.2s ease-out;
-}
-.sidebar-drawer-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 1rem 0.75rem;
-    border-bottom: 1px solid rgb(var(--color-border));
-    margin-bottom: 0.75rem;
-}
-.sidebar-close-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0.25rem;
-    border-radius: 0.375rem;
-    color: rgb(var(--color-muted));
-    background: none;
-    border: none;
-    cursor: pointer;
-    transition: color 0.15s, background-color 0.15s;
-}
-.sidebar-close-btn:hover {
-    color: rgb(var(--color-text));
-    background-color: rgb(var(--color-accent-light));
-}
-
 
 /* --------------------------------------------------------------------------
-   16. FOOTER
-   -------------------------------------------------------------------------- */
-
-.site-footer {
-    background-color: #2a322b;
-    color: #eaf3e7;
-    margin-top: auto;
-}
-
-
-/* --------------------------------------------------------------------------
-   16. ODDS DISPLAY HELPERS
+   10. ODDS DISPLAY HELPERS
    -------------------------------------------------------------------------- */
 
 .odds-positive {
@@ -643,7 +357,7 @@ a.activity-toast:hover {
 
 
 /* --------------------------------------------------------------------------
-   17. GAME DETAIL — LIVE UPDATES
+   11. GAME DETAIL — LIVE UPDATES
    -------------------------------------------------------------------------- */
 
 /* Score flash: brief highlight when OOB swap lands */
@@ -655,15 +369,7 @@ a.activity-toast:hover {
     animation: score-flash 1s ease-out;
 }
 
-/* WebSocket connection indicator */
-.ws-status {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.375rem;
-    font-size: 0.6875rem;
-    color: rgb(var(--color-muted));
-    transition: opacity 0.3s ease;
-}
+/* WebSocket connection indicator (game detail variant) */
 .ws-status-dot {
     width: 0.375rem;
     height: 0.375rem;
@@ -691,51 +397,4 @@ a.activity-toast:hover {
     #score-display .flex.items-center.gap-3 {
         gap: 1rem;
     }
-}
-
-
-/* --------------------------------------------------------------------------
-   18. DESIGN SYSTEM UTILITIES — "The Mid-Century Mainstay"
-   -------------------------------------------------------------------------- */
-
-/* Grain overlay — subtle analog texture across the page */
-.grain-overlay {
-    position: fixed;
-    inset: 0;
-    z-index: 100;
-    pointer-events: none;
-    opacity: 0.05;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
-}
-
-/* Varsity stripe — signature triple-stripe divider */
-.varsity-stripe {
-    height: 8px;
-    border-radius: 9999px;
-    background: linear-gradient(to right,
-        #b3262f 0%, #b3262f 45%,
-        #f5f0e1 45%, #f5f0e1 55%,
-        #485f84 55%, #485f84 100%);
-}
-.varsity-stripe-vertical {
-    width: 8px;
-    border-radius: 9999px;
-    background: linear-gradient(to bottom,
-        #b3262f 0%, #b3262f 45%,
-        #f5f0e1 45%, #f5f0e1 55%,
-        #485f84 55%, #485f84 100%);
-}
-
-/* Jukebox button — tactile press effect */
-.jukebox-btn {
-    box-shadow: inset 0 -3px 0 rgba(0,0,0,0.2), 0 4px 6px -1px rgba(0,0,0,0.1);
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
-}
-.jukebox-btn:hover {
-    transform: translateY(-1px);
-    box-shadow: inset 0 -3px 0 rgba(0,0,0,0.2), 0 6px 8px -1px rgba(0,0,0,0.12);
-}
-.jukebox-btn:active {
-    transform: translateY(2px);
-    box-shadow: inset 0 -1px 0 rgba(0,0,0,0.2);
 }

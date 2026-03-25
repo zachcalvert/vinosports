@@ -127,6 +127,15 @@ STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [BASE_DIR / "static"] if (BASE_DIR / "static").exists() else []
 
+# Shared static assets from vinosports-core (volume mount in dev, site-packages in prod)
+_core_static = Path("/packages/vinosports-core/src/vinosports/static")
+if _core_static.is_dir():
+    STATICFILES_DIRS.append(_core_static)
+else:
+    _pkg_static = Path(__import__("vinosports").__path__[0]) / "static"
+    if _pkg_static.is_dir():
+        STATICFILES_DIRS.append(_pkg_static)
+
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 HUB_URL = os.environ.get("HUB_URL", "http://localhost:7999")
