@@ -1,4 +1,4 @@
-.PHONY: up down restart logs shell-epl shell-nba shell-hub migrate migrate-epl migrate-nba seed lint format test
+.PHONY: up down restart logs shell-epl shell-nba shell-hub migrate migrate-epl migrate-nba seed seed-epl seed-nba lint format test
 
 up:
 	docker compose up --build -d
@@ -29,11 +29,14 @@ migrate-epl:
 migrate-nba:
 	docker compose run --rm nba-web python manage.py migrate --noinput
 
+seed: seed-epl seed-nba
+
 seed-epl:
 	docker compose exec epl-web python manage.py seed
 
 seed-nba:
 	docker compose exec nba-web python manage.py seed_nba
+	docker compose exec nba-web python manage.py seed_challenge_templates
 
 lint:
 	ruff check . --fix
