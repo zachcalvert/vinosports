@@ -273,6 +273,10 @@ Pace calculation: `(current_total / quarters_elapsed) * 4` — rough but useful.
 - Redis — already running for channel layer backend
 - HTMX WebSocket extension — may need to add `ws.js` to static assets if not already included
 
+## Future Ideas
+
+- **Game clock in live scoreboard** — Investigate whether the BDL API (or another source) provides time remaining in the current quarter. If available, display it alongside the quarter badge (e.g., "3rd Qtr · 4:32"). Would make the live experience feel much more real-time.
+
 ## Out of Scope
 
 - Player-level stats (BDL v1 doesn't provide per-player data in the games endpoint)

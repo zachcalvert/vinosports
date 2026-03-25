@@ -43,7 +43,13 @@ Context expected:
             {% endif %}
             <h2 class="text-lg font-bold {% if game.is_final and game.winner != game.away_team %}text-muted{% endif %}">{{ game.away_team.short_name }}</h2>
             <p class="text-sm text-muted mt-0.5">{{ game.away_team.abbreviation }}</p>
-            {% if away_standing %}
+            {% if game.is_final %}
+                {% if game.winner == game.away_team %}
+                    <span class="inline-block mt-1 text-xs font-semibold text-positive">W</span>
+                {% else %}
+                    <span class="inline-block mt-1 text-xs font-semibold text-danger">L</span>
+                {% endif %}
+            {% elif away_standing %}
                 <p class="text-xs text-muted mt-1">{{ away_standing.wins }}-{{ away_standing.losses }}</p>
             {% endif %}
         </div>
@@ -78,7 +84,13 @@ Context expected:
             {% endif %}
             <h2 class="text-lg font-bold {% if game.is_final and game.winner != game.home_team %}text-muted{% endif %}">{{ game.home_team.short_name }}</h2>
             <p class="text-sm text-muted mt-0.5">{{ game.home_team.abbreviation }}</p>
-            {% if home_standing %}
+            {% if game.is_final %}
+                {% if game.winner == game.home_team %}
+                    <span class="inline-block mt-1 text-xs font-semibold text-positive">W</span>
+                {% else %}
+                    <span class="inline-block mt-1 text-xs font-semibold text-danger">L</span>
+                {% endif %}
+            {% elif home_standing %}
                 <p class="text-xs text-muted mt-1">{{ home_standing.wins }}-{{ home_standing.losses }}</p>
             {% endif %}
         </div>
