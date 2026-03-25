@@ -7,7 +7,7 @@ WORKDIR /app
 
 # Install vinosports-core first (changes less frequently)
 COPY packages/vinosports-core /packages/vinosports-core
-RUN pip install /packages/vinosports-core
+RUN pip install -e /packages/vinosports-core
 
 # Install league-specific deps
 COPY apps/epl/pyproject.toml ./

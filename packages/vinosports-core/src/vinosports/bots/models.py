@@ -231,6 +231,19 @@ class BotProfile(AbstractBotProfile):
         help_text=_("Abbreviation of favourite NBA team (e.g. GSW, OKC)."),
     )
 
+    # --- Public profile fields ---
+    tagline = models.CharField(
+        _("tagline"),
+        max_length=200,
+        blank=True,
+        help_text=_("Short public-facing quote for the bot's profile page."),
+    )
+    portrait_url = models.URLField(
+        _("portrait URL"),
+        blank=True,
+        help_text=_("URL to a custom portrait image for the bot's profile page."),
+    )
+
     class Meta(AbstractBotProfile.Meta):
         abstract = False
 

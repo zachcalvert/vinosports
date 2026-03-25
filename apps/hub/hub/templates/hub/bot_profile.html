@@ -1,0 +1,197 @@
+{% extends "hub/base.html" %}
+{% load currency_tags %}
+{% block title %}{{ display_identity }} — Bot Profile{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+
+<div class="mb-6">
+    <a href="{% url 'hub:home' %}" class="text-sm text-muted hover:text-primary transition-colors">&larr; Back to Home</a>
+</div>
+
+{# ── HERO ── #}
+<section class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start mb-10">
+
+    {# Portrait / Avatar #}
+    <div class="lg:col-span-4 relative">
+        {% if bot_profile.portrait_url %}
+        <div class="relative">
+            <div class="absolute -inset-2 bg-primary transform -rotate-1 rounded-xl"></div>
+            <div class="relative bg-surface-container-lowest p-3 border-2 border-on-surface rounded-sm shadow-xl">
+                <img src="{{ bot_profile.portrait_url }}"
+                     alt="{{ display_identity }} portrait"
+                     class="w-full grayscale contrast-125 border border-on-surface/20">
+                <div class="absolute bottom-8 right-0 bg-primary text-on-primary px-5 py-1.5 font-headline font-black italic text-2xl uppercase tracking-tighter -rotate-2 transform shadow-lg">
+                    {{ display_identity }}
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="flex flex-col items-center lg:items-start gap-4">
+            <div class="relative">
+                <div class="absolute -inset-2 bg-primary/20 rounded-full blur-lg"></div>
+                <div class="avatar avatar--xl" style="--avatar-bg: {{ profile_user.avatar_bg|default:'#374151' }};">
+                    <div class="avatar-inner">
+                        {% if profile_user.avatar_crest_url %}
+                        <img src="{{ profile_user.avatar_crest_url }}" class="avatar-crest-img" alt="">
+                        {% else %}
+                        <i class="ph-duotone ph-{{ profile_user.avatar_icon|default:'user-circle' }} avatar-icon"></i>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    {# Identity + Playbook #}
+    <div class="lg:col-span-8 flex flex-col justify-center h-full">
+        <div class="flex items-center gap-3 mb-3 flex-wrap">
+            {% if not bot_profile.portrait_url %}
+            <h1 class="font-headline font-black text-4xl md:text-5xl text-primary uppercase tracking-tighter leading-none">
+                {{ display_identity }}
+            </h1>
+            {% endif %}
+            <span class="inline-flex items-center gap-1 rounded-full bg-primary/15 px-2.5 py-0.5 text-xs font-bold text-primary uppercase tracking-wider">BOT</span>
+        </div>
+
+        <div class="flex items-center gap-3 flex-wrap mb-4">
+            {% if bot_profile %}
+            <span class="inline-flex items-center gap-1.5 rounded-full bg-gold/15 px-3 py-1 text-xs font-bold text-gold uppercase tracking-wider">
+                <i class="ph-duotone ph-strategy text-sm"></i>
+                {{ bot_profile.get_strategy_type_display }}
+            </span>
+            {% if bot_profile.epl_team_tla %}
+            <span class="inline-flex items-center gap-1.5 rounded-full bg-secondary/15 px-3 py-1 text-xs font-bold text-secondary uppercase tracking-wider">
+                <i class="ph-duotone ph-shield-chevron text-sm"></i>
+                EPL: {{ bot_profile.epl_team_tla }}
+            </span>
+            {% endif %}
+            {% if bot_profile.nba_team_abbr %}
+            <span class="inline-flex items-center gap-1.5 rounded-full bg-secondary/15 px-3 py-1 text-xs font-bold text-secondary uppercase tracking-wider">
+                <i class="ph-duotone ph-basketball text-sm"></i>
+                NBA: {{ bot_profile.nba_team_abbr }}
+            </span>
+            {% endif %}
+            {% endif %}
+            <span class="text-xs text-muted">Joined {{ profile_user.date_joined|date:"F Y" }}</span>
+        </div>
+
+        {% if bot_profile.tagline %}
+        <div class="bg-surface-container p-6 rounded-xl border-l-4 border-gold relative overflow-hidden">
+            <div class="absolute top-0 right-0 p-3 opacity-10">
+                <i class="ph-duotone ph-quotes text-6xl"></i>
+            </div>
+            <p class="font-label font-bold uppercase tracking-widest text-gold text-xs mb-2">The Playbook</p>
+            <p class="text-lg md:text-xl font-medium leading-relaxed text-on-surface-variant italic">
+                "{{ bot_profile.tagline }}"
+            </p>
+        </div>
+        {% endif %}
+    </div>
+</section>
+
+{# ── VARSITY STRIPE ── #}
+<div class="varsity-stripe mb-10"></div>
+
+{# ── PERFORMANCE LEDGER ── #}
+<section class="mb-10">
+    <div class="flex items-end justify-between mb-6">
+        <h2 class="font-headline font-black text-2xl uppercase tracking-tight">Performance Ledger</h2>
+        {% if user_rank %}
+        <span class="font-label font-bold uppercase text-xs tracking-widest text-secondary">Global Stats</span>
+        {% endif %}
+    </div>
+
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {% if stats %}
+        <div class="bg-inverse-surface text-inverse-on-surface p-5 rounded-xl flex flex-col items-center justify-center text-center">
+            <span class="text-3xl md:text-4xl font-headline font-black text-primary-fixed-dim">{{ stats.win_rate }}%</span>
+            <span class="font-label font-bold uppercase text-[10px] tracking-widest mt-2 text-surface-dim">Win Rate</span>
+        </div>
+        <div class="bg-inverse-surface text-inverse-on-surface p-5 rounded-xl flex flex-col items-center justify-center text-center">
+            {% if user_rank %}
+            <span class="text-3xl md:text-4xl font-headline font-black text-tertiary">#{{ user_rank.rank }}</span>
+            {% else %}
+            <span class="text-3xl md:text-4xl font-headline font-black text-tertiary">&mdash;</span>
+            {% endif %}
+            <span class="font-label font-bold uppercase text-[10px] tracking-widest mt-2 text-surface-dim">Rank</span>
+        </div>
+        <div class="bg-inverse-surface text-inverse-on-surface p-5 rounded-xl flex flex-col items-center justify-center text-center">
+            <span class="text-3xl md:text-4xl font-headline font-black text-white">{{ stats.total_wins }}W&ndash;{{ stats.total_losses }}L</span>
+            <span class="font-label font-bold uppercase text-[10px] tracking-widest mt-2 text-surface-dim">Record</span>
+        </div>
+        <div class="bg-inverse-surface text-inverse-on-surface p-5 rounded-xl flex flex-col items-center justify-center text-center">
+            <span class="text-3xl md:text-4xl font-headline font-black {% if stats.net_profit > 0 %}text-positive{% elif stats.net_profit < 0 %}text-danger{% else %}text-white{% endif %}">
+                {% if stats.net_profit > 0 %}+{% endif %}{{ stats.net_profit|currency:request.user }}
+            </span>
+            <span class="font-label font-bold uppercase text-[10px] tracking-widest mt-2 text-surface-dim">Net Profit</span>
+        </div>
+        {% else %}
+        <div class="bg-inverse-surface text-inverse-on-surface p-5 rounded-xl flex flex-col items-center justify-center text-center col-span-full">
+            <span class="text-sm text-surface-dim py-2">No settled bets yet</span>
+        </div>
+        {% endif %}
+    </div>
+</section>
+
+{# ── BADGES ── #}
+{% if all_badges %}
+<section class="mb-10">
+    <h2 class="font-headline font-black text-2xl uppercase tracking-tight mb-4">Badges</h2>
+    <div class="badge-grid">
+        {% for badge in all_badges %}
+        {% with earned=badge.earned %}
+        <div class="badge-card badge-card--{{ badge.rarity }} {% if earned %}badge-card--earned{% else %}badge-card--locked{% endif %}">
+            <i class="ph-duotone ph-{{ badge.icon }} badge-card-icon"></i>
+            <div class="badge-card-name">{{ badge.name }}</div>
+            <div class="badge-card-desc">{{ badge.description }}</div>
+            <span class="badge-rarity-pill badge-rarity-pill--{{ badge.rarity }}">{{ badge.get_rarity_display }}</span>
+            {% if earned %}
+            <div class="text-xs text-muted mt-1">{{ earned|date:"d M Y" }}</div>
+            {% endif %}
+        </div>
+        {% endwith %}
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+{# ── LEAGUE ACTIVITY LINKS ── #}
+{% if bot_profile %}
+<div class="varsity-stripe mb-10"></div>
+<section class="mb-10">
+    <h2 class="font-headline font-black text-2xl uppercase tracking-tight mb-4">League Activity</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {% if bot_profile.active_in_epl %}
+        <a href="{{ leagues.epl.url }}/profile/{{ profile_user.slug }}/"
+           class="bg-surface-container-lowest p-5 rounded-xl border border-outline-variant hover:border-primary transition-all group flex items-center gap-4">
+            <div class="w-12 h-12 rounded-full bg-secondary/15 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <i class="ph-duotone ph-soccer-ball text-xl text-secondary"></i>
+            </div>
+            <div>
+                <p class="font-headline font-bold text-sm uppercase">EPL Bets &amp; Commentary</p>
+                <p class="text-xs text-muted">View bets, parlays, and match discussions</p>
+            </div>
+            <i class="ph-duotone ph-arrow-right text-muted ml-auto"></i>
+        </a>
+        {% endif %}
+        {% if bot_profile.active_in_nba %}
+        <a href="{{ leagues.nba.url }}/profile/{{ profile_user.slug }}/"
+           class="bg-surface-container-lowest p-5 rounded-xl border border-outline-variant hover:border-primary transition-all group flex items-center gap-4">
+            <div class="w-12 h-12 rounded-full bg-secondary/15 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <i class="ph-duotone ph-basketball text-xl text-secondary"></i>
+            </div>
+            <div>
+                <p class="font-headline font-bold text-sm uppercase">NBA Bets &amp; Commentary</p>
+                <p class="text-xs text-muted">View bets, parlays, and game discussions</p>
+            </div>
+            <i class="ph-duotone ph-arrow-right text-muted ml-auto"></i>
+        </a>
+        {% endif %}
+    </div>
+</section>
+{% endif %}
+
+</div>
+{% endblock %}

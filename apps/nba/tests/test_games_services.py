@@ -80,7 +80,9 @@ class TestNBADataClientNormalizers:
         assert result["name"] == "Lakers"
         assert result["short_name"] == "Los Angeles Lakers"
         assert result["abbreviation"] == "LAL"
-        assert result["logo_url"] == ""
+        assert (
+            result["logo_url"] == "https://cdn.nba.com/logos/nba/14/global/L/logo.svg"
+        )
         assert result["conference"] == Conference.WEST
         assert result["division"] == "Pacific"
 

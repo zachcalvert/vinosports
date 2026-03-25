@@ -2,6 +2,7 @@
 
 from unittest.mock import MagicMock, patch
 
+import pytest
 from games.consumers import LiveUpdatesConsumer
 
 
@@ -19,7 +20,7 @@ class TestLiveUpdatesConsumer:
         consumer.send = MagicMock()
         return consumer
 
-    @patch("games.consumers.async_to_sync" if False else "asgiref.sync.async_to_sync")
+    @patch("games.consumers.async_to_sync")
     def test_connect_dashboard_joins_live_scores_group(self, mock_a2s):
         mock_a2s.return_value = MagicMock()
         consumer = self._make_consumer("dashboard")
@@ -27,7 +28,7 @@ class TestLiveUpdatesConsumer:
         assert consumer.group_name == "live_scores"
         consumer.accept.assert_called_once()
 
-    @patch("asgiref.sync.async_to_sync")
+    @patch("games.consumers.async_to_sync")
     def test_connect_game_scope_joins_game_group(self, mock_a2s):
         mock_a2s.return_value = MagicMock()
         consumer = self._make_consumer("abc123")
@@ -35,7 +36,7 @@ class TestLiveUpdatesConsumer:
         assert consumer.group_name == "game_abc123"
         consumer.accept.assert_called_once()
 
-    @patch("asgiref.sync.async_to_sync")
+    @patch("games.consumers.async_to_sync")
     def test_disconnect_leaves_group(self, mock_a2s):
         mock_a2s.return_value = MagicMock()
         consumer = self._make_consumer("dashboard")
@@ -49,10 +50,11 @@ class TestLiveUpdatesConsumer:
         consumer.score_update({"html": "<div>Score!</div>"})
         consumer.send.assert_called_once_with(text_data="<div>Score!</div>")
 
-    def test_game_score_update_sends_html(self):
+    @pytest.mark.django_db
+    def test_game_score_update_no_game_does_not_send(self):
         consumer = self._make_consumer("game42")
-        consumer.game_score_update({"html": "<div>Updated</div>"})
-        consumer.send.assert_called_once_with(text_data="<div>Updated</div>")
+        consumer.game_score_update({"game_pk": 999999})
+        consumer.send.assert_not_called()
 
     def test_score_update_empty_html(self):
         consumer = self._make_consumer("dashboard")

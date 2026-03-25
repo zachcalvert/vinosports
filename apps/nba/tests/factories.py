@@ -22,10 +22,8 @@ class UserFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = User
 
-    email = factory.LazyAttribute(
-        lambda o: f"{o.display_name.lower().replace(' ', '.')}@test.com"
-    )
-    display_name = factory.Faker("first_name")
+    email = factory.Sequence(lambda n: f"user{n}@test.com")
+    display_name = factory.Sequence(lambda n: f"User{n}")
     is_bot = False
 
     @factory.post_generation

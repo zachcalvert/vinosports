@@ -4,12 +4,20 @@ from decimal import Decimal
 from django.contrib.auth import authenticate, get_user_model, login, logout
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import transaction
-from django.shortcuts import redirect, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.views import View
 from django.views.generic import TemplateView
 
 from vinosports.betting.balance import log_transaction
-from vinosports.betting.models import BalanceTransaction, UserBalance
+from vinosports.betting.leaderboard import get_public_identity, get_user_rank
+from vinosports.betting.models import (
+    Badge,
+    BalanceTransaction,
+    UserBadge,
+    UserBalance,
+    UserStats,
+)
+from vinosports.bots.models import BotProfile
 
 from .forms import CurrencyForm, DisplayNameForm, LoginForm, SignupForm
 from .models import SiteSettings
@@ -20,6 +28,65 @@ logger = logging.getLogger(__name__)
 
 class HomeView(TemplateView):
     template_name = "hub/home.html"
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["bot_profiles"] = (
+            BotProfile.objects.filter(is_active=True)
+            .select_related("user")
+            .order_by("user__date_joined")
+        )
+        return ctx
+
+
+class BotProfileView(TemplateView):
+    """Public profile page for bot users — persona, stats, and badges."""
+
+    template_name = "hub/bot_profile.html"
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        User = get_user_model()
+        profile_user = get_object_or_404(User, slug=self.kwargs["slug"], is_bot=True)
+
+        # Identity
+        ctx["profile_user"] = profile_user
+        ctx["display_identity"] = get_public_identity(profile_user)
+
+        # Bot profile
+        try:
+            ctx["bot_profile"] = profile_user.bot_profile
+        except BotProfile.DoesNotExist:
+            pass
+
+        # Stats
+        try:
+            ctx["stats"] = profile_user.stats
+        except UserStats.DoesNotExist:
+            ctx["stats"] = None
+
+        # Balance & rank
+        try:
+            ctx["balance"] = profile_user.balance.balance
+        except UserBalance.DoesNotExist:
+            ctx["balance"] = Decimal("1000.00")
+
+        ctx["user_rank"] = get_user_rank(profile_user)
+
+        # Badge grid — all badges with earned date (or None if locked)
+        earned_map = {
+            ub.badge_id: ub.earned_at
+            for ub in UserBadge.objects.filter(user=profile_user).select_related(
+                "badge"
+            )
+        }
+        all_badges = []
+        for badge in Badge.objects.all():
+            badge.earned = earned_map.get(badge.pk)
+            all_badges.append(badge)
+        ctx["all_badges"] = all_badges
+
+        return ctx
 
 
 class SignupView(View):

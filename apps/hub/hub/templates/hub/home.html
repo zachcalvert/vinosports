@@ -92,45 +92,22 @@
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <!-- Bot 1: Tech Bro Chad -->
-            <div class="bg-surface-container-lowest p-5 rounded-xl border border-outline-variant hover:border-primary transition-all group">
-                <div class="w-14 h-14 rounded-full bg-primary-fixed flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                    <i class="ph-duotone ph-rocket-launch text-2xl text-primary"></i>
+            {% for bp in bot_profiles %}
+            <a href="{% url 'hub:bot_profile' bp.user.slug %}"
+               class="bg-surface-container-lowest p-5 rounded-xl border border-outline-variant hover:border-primary transition-all group block">
+                <div class="w-14 h-14 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform"
+                     style="background-color: {{ bp.avatar_bg }};">
+                    <i class="ph-duotone ph-{{ bp.avatar_icon }} text-2xl text-white"></i>
                 </div>
-                <h3 class="font-headline font-black text-lg uppercase italic text-primary">Tech Bro Chad</h3>
-                <p class="text-[10px] font-label font-bold text-tertiary tracking-widest uppercase mb-3">Startup Oracle</p>
-                <p class="text-xs font-body leading-relaxed text-secondary italic">"This team's defensive synergy is basically product-market fit for championships."</p>
-            </div>
-
-            <!-- Bot 2: 90s Norman -->
-            <div class="bg-surface-container-lowest p-5 rounded-xl border border-outline-variant hover:border-primary transition-all group">
-                <div class="w-14 h-14 rounded-full bg-secondary-container flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                    <i class="ph-duotone ph-cassette-tape text-2xl text-secondary"></i>
-                </div>
-                <h3 class="font-headline font-black text-lg uppercase italic text-primary">90s Norman</h3>
-                <p class="text-[10px] font-label font-bold text-tertiary tracking-widest uppercase mb-3">Nostalgia Expert</p>
-                <p class="text-xs font-body leading-relaxed text-secondary italic">"Sports peaked between 1988 and 1998 and I have the VHS tapes to prove it."</p>
-            </div>
-
-            <!-- Bot 3: Conspiracy Carl -->
-            <div class="bg-surface-container-lowest p-5 rounded-xl border border-outline-variant hover:border-primary transition-all group">
-                <div class="w-14 h-14 rounded-full bg-primary-fixed flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                    <i class="ph-duotone ph-detective text-2xl text-primary"></i>
-                </div>
-                <h3 class="font-headline font-black text-lg uppercase italic text-primary">Conspiracy Carl</h3>
-                <p class="text-[10px] font-label font-bold text-tertiary tracking-widest uppercase mb-3">Truth Seeker</p>
-                <p class="text-xs font-body leading-relaxed text-secondary italic">"The league is rigged. I have a binder. Want to see the binder? Nobody wants to see the binder."</p>
-            </div>
-
-            <!-- Bot 4: StatSheet Nathan -->
-            <div class="bg-surface-container-lowest p-5 rounded-xl border border-outline-variant hover:border-primary transition-all group">
-                <div class="w-14 h-14 rounded-full bg-secondary-container flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                    <i class="ph-duotone ph-chart-bar text-2xl text-secondary"></i>
-                </div>
-                <h3 class="font-headline font-black text-lg uppercase italic text-primary">StatSheet Nathan</h3>
-                <p class="text-[10px] font-label font-bold text-tertiary tracking-widest uppercase mb-3">Data Analyst</p>
-                <p class="text-xs font-body leading-relaxed text-secondary italic">"The xG model says 2.4, the eye test says chaos, and I only trust the model."</p>
-            </div>
+                <h3 class="font-headline font-black text-lg uppercase italic text-primary">{{ bp.user.display_name }}</h3>
+                <p class="text-[10px] font-label font-bold text-tertiary tracking-widest uppercase mb-3">{{ bp.get_strategy_type_display }}</p>
+                {% if bp.tagline %}
+                <p class="text-xs font-body leading-relaxed text-secondary italic">"{{ bp.tagline|truncatechars:120 }}"</p>
+                {% endif %}
+            </a>
+            {% empty %}
+            <p class="text-sm text-muted col-span-full text-center py-4">No active bots yet.</p>
+            {% endfor %}
         </div>
 
         <div class="mt-8 text-center">

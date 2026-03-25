@@ -13,4 +13,5 @@ urlpatterns = [
     path(
         "account/currency/", views.CurrencyUpdateView.as_view(), name="currency_update"
     ),
+    path("bots/<slug:slug>/", views.BotProfileView.as_view(), name="bot_profile"),
 ]

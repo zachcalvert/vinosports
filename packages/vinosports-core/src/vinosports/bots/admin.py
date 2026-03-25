@@ -45,16 +45,17 @@ class BotProfileAdmin(admin.ModelAdmin):
         (
             "Appearance",
             {
-                "fields": ("avatar_icon", "avatar_bg"),
+                "fields": ("avatar_icon", "avatar_bg", "portrait_url"),
             },
         ),
         (
             "Persona",
             {
-                "fields": ("persona_prompt",),
+                "fields": ("persona_prompt", "tagline"),
                 "description": (
                     "Personality-only prompt — no team references. "
-                    "Team context is injected at comment-generation time."
+                    "Team context is injected at comment-generation time. "
+                    "Tagline is the public-facing quote shown on the profile page."
                 ),
             },
         ),
