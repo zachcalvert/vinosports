@@ -30,7 +30,7 @@ def _recently_used_template_ids(challenge_type, lookback_days):
 def _has_games_today():
     from games.models import Game, GameStatus
 
-    today = timezone.now().date()
+    today = timezone.localdate()
     return Game.objects.filter(
         game_date=today,
         status=GameStatus.SCHEDULED,

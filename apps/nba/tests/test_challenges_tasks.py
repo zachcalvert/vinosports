@@ -1,23 +1,23 @@
 """Tests for challenges/tasks.py (rotate_daily_challenges, rotate_weekly_challenges, expire_challenges)."""
 
+import random
 from datetime import timedelta
 
 import pytest
 from django.utils import timezone
+from games.models import GameStatus
 from website.challenge_tasks import (
     expire_challenges,
     rotate_daily_challenges,
     rotate_weekly_challenges,
 )
 
-from tests.factories import GameFactory
+from tests.factories import GameFactory, UserFactory
 from vinosports.challenges.models import Challenge, ChallengeTemplate, UserChallenge
 
 
 def _make_challenge_template(challenge_type, slug_suffix="", is_active=True):
     """Helper to create a ChallengeTemplate."""
-    import random
-
     suffix = slug_suffix or str(random.randint(1000, 9999))
     return ChallengeTemplate.objects.create(
         slug=f"test-{challenge_type.lower()}-{suffix}",
@@ -42,8 +42,6 @@ class TestRotateDailyChallenges:
 
     def test_creates_challenges_when_games_exist(self):
         """rotate_daily_challenges should create challenges when games are scheduled."""
-        from games.models import GameStatus
-
         GameFactory(status=GameStatus.SCHEDULED, game_date=timezone.localdate())
         _make_challenge_template(ChallengeTemplate.ChallengeType.DAILY, "with-games-1")
         _make_challenge_template(ChallengeTemplate.ChallengeType.DAILY, "with-games-2")
@@ -58,8 +56,6 @@ class TestRotateDailyChallenges:
 
     def test_expires_active_daily_challenges_before_creating(self):
         """Existing ACTIVE daily challenges should be expired before new ones are created."""
-        from games.models import GameStatus
-
         GameFactory(status=GameStatus.SCHEDULED, game_date=timezone.localdate())
         template = _make_challenge_template(
             ChallengeTemplate.ChallengeType.DAILY, "expire-before"
@@ -78,10 +74,6 @@ class TestRotateDailyChallenges:
 
     def test_fails_in_progress_user_challenges(self):
         """IN_PROGRESS UserChallenges should be marked FAILED when their challenge expires."""
-        from games.models import GameStatus
-
-        from tests.factories import UserFactory
-
         GameFactory(status=GameStatus.SCHEDULED, game_date=timezone.localdate())
         template = _make_challenge_template(
             ChallengeTemplate.ChallengeType.DAILY, "fail-user-challenges"
@@ -108,8 +100,6 @@ class TestRotateDailyChallenges:
 
     def test_uses_fallback_when_all_templates_recently_used(self):
         """When all templates were recently used, fall back to using all templates."""
-        from games.models import GameStatus
-
         GameFactory(status=GameStatus.SCHEDULED, game_date=timezone.localdate())
         template = _make_challenge_template(
             ChallengeTemplate.ChallengeType.DAILY, "recently-used"
@@ -125,12 +115,10 @@ class TestRotateDailyChallenges:
         result = rotate_daily_challenges()
 
         # Should still create challenges using the fallback pool
-        assert result.startswith("created:") or result == "created: 0"
+        assert result == "created: 1"
 
     def test_creates_at_most_daily_count_challenges(self):
         """Should create at most 3 daily challenges (DAILY_COUNT)."""
-        from games.models import GameStatus
-
         GameFactory(status=GameStatus.SCHEDULED, game_date=timezone.localdate())
         for i in range(5):
             _make_challenge_template(
@@ -259,8 +247,6 @@ class TestExpireChallenges:
 
     def test_fails_in_progress_user_challenges_on_expire(self):
         """IN_PROGRESS UserChallenges should be FAILED when challenge expires."""
-        from tests.factories import UserFactory
-
         template = _make_challenge_template(
             ChallengeTemplate.ChallengeType.DAILY, "expire-user-challenges"
         )
