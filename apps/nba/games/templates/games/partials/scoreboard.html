@@ -1,0 +1,90 @@
+{% comment %}
+Scoreboard partial — the centerpiece of game_detail.html.
+Renders differently based on game state: SCHEDULED, live (IN_PROGRESS/HALFTIME), FINAL, POSTPONED.
+This partial is the OOB swap target for live WebSocket updates.
+
+Context expected:
+  game            — Game instance (with home_team, away_team)
+  home_standing   — Standing instance or None
+  away_standing   — Standing instance or None
+{% endcomment %}
+
+<div id="scoreboard" class="bg-surface rounded-xl border border-border border-t-4 border-t-nba p-6 shadow-sm mb-6">
+    <!-- Status row -->
+    <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div class="flex items-center gap-3">
+            <div id="game-status">
+            {% if game.status == "FINAL" %}
+                <span class="inline-flex items-center rounded-full bg-border/40 px-2.5 py-1 text-xs font-medium text-muted">Final</span>
+            {% elif game.is_live %}
+                <span class="inline-flex items-center gap-1 rounded-full bg-danger/10 px-2.5 py-1 text-xs font-bold text-danger">
+                    <span class="h-1.5 w-1.5 rounded-full bg-danger animate-pulse"></span>
+                    {{ game.get_status_display }}
+                </span>
+            {% elif game.status == "POSTPONED" %}
+                <span class="inline-flex items-center rounded-full bg-warning/10 px-2.5 py-1 text-xs font-medium text-warning">Postponed</span>
+            {% else %}
+                <span class="inline-flex items-center rounded-full bg-accent-light px-2.5 py-1 text-xs font-medium text-muted">Scheduled</span>
+            {% endif %}
+            </div>
+            {% if game.postseason %}
+                <span class="text-xs uppercase tracking-wider font-bold text-accent">Playoffs</span>
+            {% endif %}
+        </div>
+        <span class="text-xs text-muted">{{ game.season }}&ndash;{{ game.season|add:"1" }} Season</span>
+    </div>
+
+    <!-- Teams + Score -->
+    <div class="flex items-center justify-center gap-8 md:gap-16">
+        <!-- Away team -->
+        <div class="text-center flex-1">
+            {% if game.away_team.logo_url %}
+                <img src="{{ game.away_team.logo_url }}" alt="" class="w-16 h-16 mx-auto mb-2 object-contain">
+            {% endif %}
+            <h2 class="text-lg font-bold {% if game.is_final and game.winner != game.away_team %}text-muted{% endif %}">{{ game.away_team.short_name }}</h2>
+            <p class="text-sm text-muted mt-0.5">{{ game.away_team.abbreviation }}</p>
+            {% if away_standing %}
+                <p class="text-xs text-muted mt-1">{{ away_standing.wins }}-{{ away_standing.losses }}</p>
+            {% endif %}
+        </div>
+
+        <!-- Score / vs -->
+        <div id="score-display" class="text-center">
+            {% if game.home_score is not None and game.away_score is not None %}
+                <div class="flex items-center gap-3">
+                    <span class="text-4xl font-bold font-mono {% if game.is_final and game.winner == game.away_team %}text-accent{% endif %}">{{ game.away_score }}</span>
+                    <span class="text-lg text-muted">&ndash;</span>
+                    <span class="text-4xl font-bold font-mono {% if game.is_final and game.winner == game.home_team %}text-accent{% endif %}">{{ game.home_score }}</span>
+                </div>
+            {% else %}
+                <span class="text-3xl font-bold text-muted">vs</span>
+            {% endif %}
+        </div>
+
+        <!-- Home team -->
+        <div class="text-center flex-1">
+            {% if game.home_team.logo_url %}
+                <img src="{{ game.home_team.logo_url }}" alt="" class="w-16 h-16 mx-auto mb-2 object-contain">
+            {% endif %}
+            <h2 class="text-lg font-bold {% if game.is_final and game.winner != game.home_team %}text-muted{% endif %}">{{ game.home_team.short_name }}</h2>
+            <p class="text-sm text-muted mt-0.5">{{ game.home_team.abbreviation }}</p>
+            {% if home_standing %}
+                <p class="text-xs text-muted mt-1">{{ home_standing.wins }}-{{ home_standing.losses }}</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Footer info -->
+    <div class="text-center mt-4 text-sm text-muted">
+        {% if game.is_live %}
+            <span id="last-updated" class="text-xs">Score updated just now</span>
+        {% elif game.tip_off %}
+            <time datetime="{{ game.tip_off|date:'c' }}">{{ game.tip_off|date:"l, F j, Y — g:i A" }}</time>
+        {% else %}
+            {{ game.game_date|date:"l, F j, Y" }}
+        {% endif %}
+        {% if game.arena %}
+            &middot; {{ game.arena }}
+        {% endif %}
+    </div>
+</div>
