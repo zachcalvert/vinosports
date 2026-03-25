@@ -92,16 +92,15 @@
     align-items: center;
     text-align: center;
     padding: 2rem 1.5rem;
-    border-radius: 1rem;
-    border: 1px solid rgb(var(--color-border));
-    background-color: rgb(var(--color-surface));
+    border-radius: 0.75rem;
+    border-bottom: 4px solid #485f84;
+    background-color: #ffffff;
     transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
 }
 
 .league-card--active:hover {
-    border-color: rgb(var(--color-accent));
-    box-shadow: 0 0 0 1px rgb(var(--color-accent)),
-                0 8px 24px rgba(var(--color-accent) / 0.12);
+    border-bottom-color: #b3262f;
+    box-shadow: 0 8px 24px rgba(179, 38, 47, 0.12);
     transform: translateY(-2px);
 }
 
@@ -116,9 +115,14 @@
     justify-content: center;
     width: 4rem;
     height: 4rem;
-    border-radius: 1rem;
-    background-color: rgb(var(--color-accent-light));
-    color: rgb(var(--color-accent));
+    border-radius: 9999px;
+    background-color: #ffdad8;
+    color: #b3262f;
+}
+
+.league-card-icon--muted {
+    background-color: #e2ebdf;
+    color: #8d706e;
 }
 
 
@@ -157,8 +161,8 @@ select.themed-input {
    -------------------------------------------------------------------------- */
 
 .site-footer {
-    background-color: rgb(var(--color-surface));
-    border-top: 1px solid rgb(var(--color-border));
+    background-color: #2a322b;
+    color: #eaf3e7;
     margin-top: auto;
 }
 

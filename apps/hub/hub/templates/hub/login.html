@@ -2,9 +2,9 @@
 {% block title %}Log In{% endblock %}
 
 {% block content %}
-<div class="max-w-md mx-auto mt-12">
-    <div class="themed-panel p-8">
-        <h1 class="themed-title text-2xl mb-6 text-center">Log In</h1>
+<div class="max-w-md mx-auto mt-12 px-4">
+    <div class="bg-surface-container-lowest rounded-xl border-b-4 border-secondary p-8">
+        <h1 class="font-headline font-black text-2xl uppercase tracking-tight mb-6 text-center">Log In</h1>
 
         {% if form.non_field_errors %}
         <div class="bg-danger/10 border border-danger/30 rounded-md p-3 mb-4">
@@ -18,7 +18,7 @@
             {% csrf_token %}
 
             <div>
-                <label for="id_email" class="themed-label">Email</label>
+                <label for="id_email" class="block text-sm font-label font-bold uppercase tracking-wider text-secondary mb-1">Email</label>
                 {{ form.email }}
                 {% if form.email.errors %}
                 <p class="text-danger text-xs mt-1">{{ form.email.errors.0 }}</p>
@@ -26,7 +26,7 @@
             </div>
 
             <div>
-                <label for="id_password" class="themed-label">Password</label>
+                <label for="id_password" class="block text-sm font-label font-bold uppercase tracking-wider text-secondary mb-1">Password</label>
                 {{ form.password }}
                 {% if form.password.errors %}
                 <p class="text-danger text-xs mt-1">{{ form.password.errors.0 }}</p>
@@ -34,14 +34,14 @@
             </div>
 
             <button type="submit"
-                    class="w-full bg-accent text-dark font-bold py-2 px-4 rounded-md hover:bg-accent/90 transition-colors">
+                    class="w-full jukebox-btn bg-primary text-on-primary font-headline font-black uppercase tracking-widest py-3 px-4 rounded-full">
                 Log In
             </button>
         </form>
 
         <p class="text-center text-sm text-muted mt-4">
             Don't have an account?
-            <a href="{% url 'hub:signup' %}" class="text-accent hover:underline">Sign up</a>
+            <a href="{% url 'hub:signup' %}" class="text-primary font-semibold hover:underline">Sign up</a>
         </p>
     </div>
 </div>
