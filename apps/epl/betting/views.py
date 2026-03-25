@@ -3,7 +3,6 @@ import random
 from datetime import timedelta
 from decimal import Decimal
 
-from challenges.engine import update_challenge_progress
 from discussions.models import Comment
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -16,6 +15,7 @@ from django.utils import timezone
 from django.views import View
 from django.views.generic import TemplateView
 from matches.models import Match, Odds
+from website.challenge_engine import update_challenge_progress
 from website.templatetags.currency_tags import format_currency
 
 from betting.context_processors import parlay_slip as _parlay_slip_ctx

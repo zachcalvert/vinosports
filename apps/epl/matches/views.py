@@ -17,6 +17,7 @@ from vinosports.betting.leaderboard import (
     get_leaderboard_entries,
     get_user_rank,
 )
+from vinosports.betting.models import BetStatus
 
 
 def _get_default_matchday(season):
@@ -273,11 +274,11 @@ def _get_recap_context(match, home_standing, away_standing):
     # Betting outcome aggregates
     agg = BetSlip.objects.filter(match=match).aggregate(
         total_bets=Count("id"),
-        winners=Count("id", filter=Q(status=BetSlip.Status.WON)),
-        losers=Count("id", filter=Q(status=BetSlip.Status.LOST)),
-        voided=Count("id", filter=Q(status=BetSlip.Status.VOID)),
+        winners=Count("id", filter=Q(status=BetStatus.WON)),
+        losers=Count("id", filter=Q(status=BetStatus.LOST)),
+        voided=Count("id", filter=Q(status=BetStatus.VOID)),
         total_staked=Sum("stake"),
-        total_won_payout=Sum("payout", filter=Q(status=BetSlip.Status.WON)),
+        total_won_payout=Sum("payout", filter=Q(status=BetStatus.WON)),
     )
     total = agg["total_bets"] or 0
     betting_outcome = None

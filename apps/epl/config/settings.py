@@ -176,15 +176,15 @@ CELERY_BEAT_SCHEDULE = {
     },
     # --- Challenges ---
     "rotate-daily-challenges": {
-        "task": "challenges.tasks.rotate_daily_challenges",
+        "task": "website.challenge_tasks.rotate_daily_challenges",
         "schedule": crontab(hour=5, minute=0),
     },
     "rotate-weekly-challenges": {
-        "task": "challenges.tasks.rotate_weekly_challenges",
+        "task": "website.challenge_tasks.rotate_weekly_challenges",
         "schedule": crontab(hour=4, minute=0, day_of_week="friday"),
     },
     "expire-challenges-30m": {
-        "task": "challenges.tasks.expire_challenges",
+        "task": "website.challenge_tasks.expire_challenges",
         "schedule": timedelta(minutes=30),
     },
     # --- Bots (hourly dispatch — schedule templates control per-bot activation) ---

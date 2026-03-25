@@ -3,12 +3,12 @@
 from datetime import timedelta
 
 import pytest
-from challenges.tasks import (
+from django.utils import timezone
+from website.challenge_tasks import (
     expire_challenges,
     rotate_daily_challenges,
     rotate_weekly_challenges,
 )
-from django.utils import timezone
 
 from tests.factories import GameFactory
 from vinosports.challenges.models import Challenge, ChallengeTemplate, UserChallenge

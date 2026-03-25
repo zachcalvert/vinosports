@@ -1,6 +1,6 @@
 from django.urls import path
 
-from challenges.views import ChallengesPageView
+from website.challenge_views import ChallengesPageView
 
 app_name = "challenges"
 

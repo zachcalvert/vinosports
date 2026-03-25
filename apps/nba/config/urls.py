@@ -8,7 +8,7 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("games/", include("games.urls")),
     path("odds/", include("betting.urls")),
-    path("", include("challenges.urls")),
+    path("", include("website.challenge_urls")),
     path("", include("discussions.urls")),
     path("activity/", include("activity.urls")),
     path("rewards/", include("rewards.urls")),

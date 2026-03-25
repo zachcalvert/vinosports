@@ -1,6 +1,6 @@
 from django.urls import path
 
-from challenges.views import (
+from website.challenge_views import (
     ActiveChallengesPartial,
     ChallengesPageView,
     ChallengeWidgetPartial,
