@@ -9,7 +9,7 @@ Context expected:
   away_standing   — Standing instance or None
 {% endcomment %}
 
-<div id="scoreboard" class="bg-surface rounded-xl border border-border border-t-4 border-t-nba p-6 shadow-sm mb-6">
+<div id="scoreboard" class="bg-surface-container-lowest rounded-xl border-b-4 border-outline-variant border-t-4 border-t-nba p-6 mb-6">
     <!-- Status row -->
     <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div class="flex items-center gap-3">
@@ -28,7 +28,7 @@ Context expected:
             {% endif %}
             </div>
             {% if game.postseason %}
-                <span class="text-xs uppercase tracking-wider font-bold text-accent">Playoffs</span>
+                <span class="text-xs uppercase tracking-wider font-bold text-primary">Playoffs</span>
             {% endif %}
         </div>
         <span class="text-xs text-muted">{{ game.season }}&ndash;{{ game.season|add:"1" }} Season</span>
@@ -58,9 +58,9 @@ Context expected:
         <div id="score-display" class="text-center">
             {% if game.home_score is not None and game.away_score is not None %}
                 <div class="flex items-center gap-3">
-                    <span class="text-4xl font-bold font-mono {% if game.is_final and game.winner == game.away_team %}text-accent{% endif %}">{{ game.away_score }}</span>
+                    <span class="text-4xl font-bold font-mono {% if game.is_final and game.winner == game.away_team %}text-primary{% endif %}">{{ game.away_score }}</span>
                     <span class="text-lg text-muted">&ndash;</span>
-                    <span class="text-4xl font-bold font-mono {% if game.is_final and game.winner == game.home_team %}text-accent{% endif %}">{{ game.home_score }}</span>
+                    <span class="text-4xl font-bold font-mono {% if game.is_final and game.winner == game.home_team %}text-primary{% endif %}">{{ game.home_score }}</span>
                 </div>
             {% else %}
                 <span class="text-3xl font-bold text-muted">vs</span>
@@ -106,7 +106,7 @@ Context expected:
             </span>
         {% elif game.status == "SCHEDULED" and game.tip_off %}
             <time datetime="{{ game.tip_off|date:'c' }}">{{ game.tip_off|date:"l, F j, Y — g:i A" }}</time>
-            <div id="countdown" class="mt-2 text-xs font-mono text-accent" data-tipoff="{{ game.tip_off|date:'c' }}"></div>
+            <div id="countdown" class="mt-2 text-xs font-mono text-primary" data-tipoff="{{ game.tip_off|date:'c' }}"></div>
         {% elif game.tip_off %}
             <time datetime="{{ game.tip_off|date:'c' }}">{{ game.tip_off|date:"l, F j, Y — g:i A" }}</time>
         {% else %}

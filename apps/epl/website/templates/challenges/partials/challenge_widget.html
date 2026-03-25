@@ -1,23 +1,23 @@
 <section
     id="challenge-widget"
-    class="bg-surface rounded-lg border border-border p-5"
+    class="bg-surface-container-lowest rounded-xl border-b-4 border-outline-variant p-5"
     hx-get="{% url 'challenges:widget_partial' %}"
     hx-trigger="every 30s"
     hx-swap="outerHTML"
 >
     <div class="flex items-center justify-between mb-4">
         <h2 class="text-lg font-bold">Challenges</h2>
-        <a href="{% url 'challenges:challenges' %}" class="text-xs text-accent hover:underline">View all</a>
+        <a href="{% url 'challenges:challenges' %}" class="text-xs text-primary hover:underline">View all</a>
     </div>
 
     {% if active_challenges %}
     <div class="space-y-3">
         {% for uc in active_challenges %}
-        <div class="rounded-lg bg-accent-light border border-border px-3 py-2.5">
+        <div class="rounded-lg bg-accent-light border border-outline-variant px-3 py-2.5">
             <div class="flex items-center gap-2 mb-1">
-                <i class="ph-duotone ph-{{ uc.challenge.template.icon }} text-lg text-accent" aria-hidden="true"></i>
+                <i class="ph-duotone ph-{{ uc.challenge.template.icon }} text-lg text-primary" aria-hidden="true"></i>
                 <span class="text-xs font-semibold truncate">{{ uc.challenge.template.title }}</span>
-                <span class="ml-auto text-[10px] text-accent font-medium shrink-0">+{{ uc.challenge.template.reward_amount|floatformat:0 }}</span>
+                <span class="ml-auto text-[10px] text-primary font-medium shrink-0">+{{ uc.challenge.template.reward_amount|floatformat:0 }}</span>
             </div>
             {% include "challenges/partials/challenge_progress_bar.html" %}
         </div>

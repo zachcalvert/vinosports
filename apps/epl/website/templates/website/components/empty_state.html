@@ -27,6 +27,6 @@
     <p class="text-lg text-muted mb-1">{{ title }}</p>
     {% if message %}<p class="text-sm text-gray-500 mb-3">{{ message }}</p>{% endif %}
     {% if cta_url %}
-    <a href="{{ cta_url }}" class="inline-block text-accent hover:underline text-sm">{{ cta_text|default:"Browse" }} &rarr;</a>
+    <a href="{{ cta_url }}" class="inline-block text-primary hover:underline text-sm">{{ cta_text|default:"Browse" }} &rarr;</a>
     {% endif %}
 </div>

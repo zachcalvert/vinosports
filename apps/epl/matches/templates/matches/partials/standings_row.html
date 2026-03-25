@@ -1,7 +1,7 @@
-<tr class="border-b border-border/50 hover:bg-surface/50
+<tr class="border-b border-outline-variant/50 hover:bg-surface-container-low
     {% if standing.position <= 4 %}bg-accent/5{% elif standing.position >= 18 %}bg-danger/5{% endif %}">
     <td class="px-2 sm:px-3 py-2 text-sm font-medium
-        {% if standing.position <= 4 %}text-accent{% elif standing.position >= 18 %}text-danger{% else %}text-muted{% endif %}">
+        {% if standing.position <= 4 %}text-primary{% elif standing.position >= 18 %}text-danger{% else %}text-muted{% endif %}">
         {{ standing.position }}
     </td>
     <td class="px-2 sm:px-3 py-2">
@@ -19,7 +19,7 @@
     <td class="px-2 sm:px-3 py-2 text-sm text-center text-muted hidden sm:table-cell">{{ standing.goals_for }}</td>
     <td class="px-2 sm:px-3 py-2 text-sm text-center text-muted hidden sm:table-cell">{{ standing.goals_against }}</td>
     <td class="px-2 sm:px-3 py-2 text-sm text-center font-medium
-        {% if standing.goal_difference > 0 %}text-accent{% elif standing.goal_difference < 0 %}text-danger{% else %}text-muted{% endif %}">
+        {% if standing.goal_difference > 0 %}text-primary{% elif standing.goal_difference < 0 %}text-danger{% else %}text-muted{% endif %}">
         {{ standing.goal_difference }}
     </td>
     <td class="px-2 sm:px-3 py-2 text-sm text-center font-bold">{{ standing.points }}</td>

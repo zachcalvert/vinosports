@@ -11,7 +11,7 @@
         </p>
         <p class="text-center text-sm text-muted mt-4">
             Already have an account?
-            <a href="{% url 'website:login' %}" class="text-accent hover:underline">Log in</a>
+            <a href="{% url 'website:login' %}" class="text-primary hover:underline">Log in</a>
         </p>
         {% else %}
         <h1 class="themed-title text-2xl mb-2 text-center">Create Account</h1>
@@ -53,14 +53,14 @@
             </div>
 
             <button type="submit"
-                    class="w-full bg-accent text-dark font-bold py-2 px-4 rounded-md hover:bg-accent/90 transition-colors">
+                    class="w-full bg-primary text-dark font-bold py-2 px-4 rounded-md hover:bg-primary/90 transition-colors">
                 Create Account
             </button>
         </form>
 
         <p class="text-center text-sm text-muted mt-4">
             Already have an account?
-            <a href="{% url 'website:login' %}" class="text-accent hover:underline">Log in</a>
+            <a href="{% url 'website:login' %}" class="text-primary hover:underline">Log in</a>
         </p>
         {% endif %}
     </div>

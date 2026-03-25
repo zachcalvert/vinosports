@@ -5,7 +5,7 @@
 <div class="mb-6 flex items-center justify-between">
     <div>
         <div class="flex items-center gap-3 mb-1">
-            <span class="w-1.5 h-8 rounded-full bg-accent"></span>
+            <span class="w-1.5 h-8 rounded-full bg-primary"></span>
             <h1 class="text-3xl font-bold">Today's Games</h1>
         </div>
         <p class="text-sm text-muted ml-5">
@@ -75,10 +75,10 @@
     <div class="hidden xl:block order-1 xl:order-2 space-y-6">
         {# Conference standings preview #}
         {% if standings %}
-        <div class="bg-surface rounded-lg border border-border p-4">
+        <div class="bg-surface-container-lowest rounded-xl p-4 border-b-4 border-secondary">
             <div class="flex items-center justify-between mb-3">
-                <h3 class="text-sm font-bold uppercase tracking-wider">Standings</h3>
-                <a href="{% url 'games:standings' %}" class="text-xs text-accent hover:underline">Full Standings &rarr;</a>
+                <h3 class="font-headline font-black text-sm uppercase tracking-widest text-secondary">Standings</h3>
+                <a href="{% url 'games:standings' %}" class="text-xs text-primary hover:underline">Full Standings &rarr;</a>
             </div>
             {% for conf_name, teams in standings.items %}
             <div class="{% if not forloop.first %}mt-4{% endif %}">
@@ -101,9 +101,9 @@
 
         {# Leaderboard preview #}
         {% if leaderboard %}
-        <div class="bg-surface rounded-lg border border-border p-4">
+        <div class="bg-surface-container-lowest rounded-xl p-4 border-b-4 border-primary">
             <div class="flex items-center justify-between mb-3">
-                <h3 class="text-sm font-bold uppercase tracking-wider">Leaderboard</h3>
+                <h3 class="font-headline font-black text-sm uppercase tracking-widest text-secondary">Leaderboard</h3>
             </div>
             <div class="space-y-1">
                 {% for entry in leaderboard|slice:":5" %}
@@ -112,7 +112,7 @@
                         <span class="text-xs text-muted w-4 text-right">{{ forloop.counter }}</span>
                         <span>{{ entry.display_identity }}</span>
                     </div>
-                    <span class="font-mono text-xs text-accent">${{ entry.balance|floatformat:0 }}</span>
+                    <span class="font-mono text-xs text-primary">${{ entry.balance|floatformat:0 }}</span>
                 </div>
                 {% endfor %}
             </div>

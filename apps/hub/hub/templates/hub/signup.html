@@ -2,19 +2,19 @@
 {% block title %}Sign Up{% endblock %}
 
 {% block content %}
-<div class="max-w-md mx-auto mt-12">
-    <div class="themed-panel p-8">
+<div class="max-w-md mx-auto mt-12 px-4">
+    <div class="bg-surface-container-lowest rounded-xl border-b-4 border-secondary p-8">
         {% if registration_closed %}
-        <h1 class="themed-title text-2xl mb-2 text-center">Registration Closed</h1>
+        <h1 class="font-headline font-black text-2xl uppercase tracking-tight mb-2 text-center">Registration Closed</h1>
         <p class="text-center text-sm text-muted mb-6">
             {{ closed_message }}
         </p>
         <p class="text-center text-sm text-muted mt-4">
             Already have an account?
-            <a href="{% url 'hub:login' %}" class="text-accent hover:underline">Log in</a>
+            <a href="{% url 'hub:login' %}" class="text-primary font-semibold hover:underline">Log in</a>
         </p>
         {% else %}
-        <h1 class="themed-title text-2xl mb-2 text-center">Create Account</h1>
+        <h1 class="font-headline font-black text-2xl uppercase tracking-tight mb-2 text-center">Create Account</h1>
         <p class="text-center text-sm text-muted mb-6">Start with a demo balance</p>
 
         {% if form.non_field_errors %}
@@ -29,7 +29,7 @@
             {% csrf_token %}
 
             <div>
-                <label for="id_email" class="themed-label">Email</label>
+                <label for="id_email" class="block text-sm font-label font-bold uppercase tracking-wider text-secondary mb-1">Email</label>
                 {{ form.email }}
                 {% if form.email.errors %}
                 <p class="text-danger text-xs mt-1">{{ form.email.errors.0 }}</p>
@@ -37,7 +37,7 @@
             </div>
 
             <div>
-                <label for="id_password" class="themed-label">Password</label>
+                <label for="id_password" class="block text-sm font-label font-bold uppercase tracking-wider text-secondary mb-1">Password</label>
                 {{ form.password }}
                 {% if form.password.errors %}
                 <p class="text-danger text-xs mt-1">{{ form.password.errors.0 }}</p>
@@ -45,7 +45,7 @@
             </div>
 
             <div>
-                <label for="id_password_confirm" class="themed-label">Confirm Password</label>
+                <label for="id_password_confirm" class="block text-sm font-label font-bold uppercase tracking-wider text-secondary mb-1">Confirm Password</label>
                 {{ form.password_confirm }}
                 {% if form.password_confirm.errors %}
                 <p class="text-danger text-xs mt-1">{{ form.password_confirm.errors.0 }}</p>
@@ -53,7 +53,7 @@
             </div>
 
             <div>
-                <label for="id_promo_code" class="themed-label">Promo Code</label>
+                <label for="id_promo_code" class="block text-sm font-label font-bold uppercase tracking-wider text-secondary mb-1">Promo Code</label>
                 {{ form.promo_code }}
                 {% if form.promo_code.errors %}
                 <p class="text-danger text-xs mt-1">{{ form.promo_code.errors.0 }}</p>
@@ -62,14 +62,14 @@
             </div>
 
             <button type="submit"
-                    class="w-full bg-accent text-dark font-bold py-2 px-4 rounded-md hover:bg-accent/90 transition-colors">
+                    class="w-full jukebox-btn bg-primary text-on-primary font-headline font-black uppercase tracking-widest py-3 px-4 rounded-full">
                 Create Account
             </button>
         </form>
 
         <p class="text-center text-sm text-muted mt-4">
             Already have an account?
-            <a href="{% url 'hub:login' %}" class="text-accent hover:underline">Log in</a>
+            <a href="{% url 'hub:login' %}" class="text-primary font-semibold hover:underline">Log in</a>
         </p>
         {% endif %}
     </div>

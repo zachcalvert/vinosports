@@ -1,7 +1,7 @@
 {% load match_tags %}
 {% if odds %}
 <div class="space-y-3">
-    <div class="rounded-xl border border-border bg-accent-light px-4 py-3">
+    <div class="rounded-xl border border-outline-variant bg-accent-light px-4 py-3">
         <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div>
                 <p class="text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-accent/80">House odds</p>
@@ -11,17 +11,17 @@
     </div>
 
     <div class="grid grid-cols-3 gap-3">
-        <div class="rounded-xl border border-border bg-surface p-4 text-center">
+        <div class="rounded-xl border border-outline-variant bg-surface p-4 text-center">
             <p class="text-xs text-muted uppercase tracking-wider mb-2">Home</p>
-            <p class="font-mono text-lg text-accent font-bold">{{ best_home|format_odds }}</p>
+            <p class="font-mono text-lg text-primary font-bold">{{ best_home|format_odds }}</p>
         </div>
-        <div class="rounded-xl border border-border bg-surface p-4 text-center">
+        <div class="rounded-xl border border-outline-variant bg-surface p-4 text-center">
             <p class="text-xs text-muted uppercase tracking-wider mb-2">Draw</p>
-            <p class="font-mono text-lg text-accent font-bold">{{ best_draw|format_odds }}</p>
+            <p class="font-mono text-lg text-primary font-bold">{{ best_draw|format_odds }}</p>
         </div>
-        <div class="rounded-xl border border-border bg-surface p-4 text-center">
+        <div class="rounded-xl border border-outline-variant bg-surface p-4 text-center">
             <p class="text-xs text-muted uppercase tracking-wider mb-2">Away</p>
-            <p class="font-mono text-lg text-accent font-bold">{{ best_away|format_odds }}</p>
+            <p class="font-mono text-lg text-primary font-bold">{{ best_away|format_odds }}</p>
         </div>
     </div>
 </div>

@@ -1,296 +1,24 @@
 /* ==========================================================================
-   Vinosports Design System — NBA League Stylesheet
+   NBA League Stylesheet — League-specific overrides only
    ==========================================================================
-   CSS custom properties + component classes consumed by Django templates.
-   The Tailwind CDN config in base.html references these variables.
+   Shared palette, navbar, sidebar, footer, and utility classes live in:
+     vinosports-core → static/vinosports/css/design-system.css
+   This file contains only NBA-specific rules.
    ========================================================================== */
 
+
 /* --------------------------------------------------------------------------
-   1. CSS CUSTOM PROPERTIES (Theme Tokens)
+   1. LEAGUE TOKEN (NBA alias for secondary)
    -------------------------------------------------------------------------- */
 
-:root,
-[data-theme="light"] {
-    /* Foundation */
-    --color-bg:          250 250 248;   /* #FAFAF8 warm off-white */
-    --color-surface:     255 255 255;   /* #FFFFFF */
-    --color-dark:         28  25  23;   /* #1C1917 warm near-black */
-    --color-text:         28  25  23;   /* #1C1917 */
-    --color-muted:       120 113 108;   /* #78716C warm gray */
-    --color-border:      231 229 228;   /* #E7E5E4 stone-200 */
-
-    /* NBA accent — vintage Knicks orange */
-    --color-accent:      240  90  40;   /* #F05A28 Knicks orange */
-    --color-accent-nav:  244 123  82;   /* #F47B52 lighter orange for dark navbar */
-    --color-accent-light: 255 243 238;  /* #FFF3EE soft warm tint */
-    --color-nba:           0 107 182;   /* #006BB6 Knicks royal blue */
-
-    /* Gold brand accent */
-    --color-gold:        184 134  11;   /* #B8860B */
-}
-
-[data-theme="dark"] {
-    --color-bg:           12  10   9;   /* #0C0A09 */
-    --color-surface:      28  25  23;   /* #1C1917 */
-    --color-dark:         12  10   9;   /* #0C0A09 */
-    --color-text:        250 250 245;   /* #FAFAF5 */
-    --color-muted:       168 162 158;   /* #A8A29E */
-    --color-border:       41  37  36;   /* #292524 */
-
-    --color-accent:      244 123  82;   /* #F47B52 warm orange for dark bg */
-    --color-accent-nav:  244 123  82;   /* #F47B52 match accent */
-    --color-accent-light:  40  25  20;  /* subtle warm tint */
-    --color-nba:          61 155 233;   /* #3D9BE9 lighter blue for dark bg */
-    --color-gold:        212 168  67;   /* #D4A843 */
+:root {
+    --color-nba: 72 95 132;  /* #485f84 — same as secondary */
 }
 
 
 /* --------------------------------------------------------------------------
-   2. GLOBAL / PAGE
+   2. HTMX LOADING INDICATOR
    -------------------------------------------------------------------------- */
-
-.theme-page {
-    background-color: rgb(var(--color-bg));
-    color: rgb(var(--color-text));
-    transition: background-color 0.2s ease, color 0.2s ease;
-}
-
-
-/* --------------------------------------------------------------------------
-   3. NAVBAR
-   -------------------------------------------------------------------------- */
-
-.site-nav {
-    background-color: rgb(var(--color-dark));
-    border-bottom: 1px solid rgba(255 255 255 / 0.06);
-    position: sticky;
-    top: 0;
-    z-index: 40;
-}
-
-.nav-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.375rem;
-    padding: 0.375rem 0.75rem;
-    border-radius: 0.375rem;
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: #a8a29e;
-    transition: color 0.15s, background-color 0.15s;
-}
-.nav-link:hover {
-    color: #ffffff;
-    background-color: rgba(255 255 255 / 0.08);
-}
-.nav-link.nav-link-active {
-    color: rgb(var(--color-accent-nav));
-    background-color: rgba(var(--color-accent-nav) / 0.12);
-}
-
-.nav-logo-text {
-    color: rgb(var(--color-accent-nav));
-}
-
-.nav-action-link {
-    padding: 0.375rem 0.75rem;
-    border-radius: 0.375rem;
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: #a8a29e;
-    transition: color 0.15s, background-color 0.15s;
-}
-.nav-action-link:hover {
-    color: #ffffff;
-    background-color: rgba(255 255 255 / 0.08);
-}
-
-
-/* --------------------------------------------------------------------------
-   4. DROPDOWN MENU
-   -------------------------------------------------------------------------- */
-
-.dropdown-link {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 1rem;
-    font-size: 0.875rem;
-    color: rgb(var(--color-text));
-    transition: background-color 0.15s;
-}
-.dropdown-link:hover {
-    background-color: rgb(var(--color-accent-light));
-}
-.dropdown-link.dropdown-link-active {
-    color: rgb(var(--color-accent));
-    background-color: rgb(var(--color-accent-light));
-}
-
-
-/* --------------------------------------------------------------------------
-   5. MOBILE MENU
-   -------------------------------------------------------------------------- */
-
-.mobile-menu-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0.5rem;
-    border-radius: 0.375rem;
-    color: #a8a29e;
-    transition: color 0.15s, background-color 0.15s;
-}
-.mobile-menu-btn:hover {
-    color: #ffffff;
-    background-color: rgba(255 255 255 / 0.08);
-}
-
-.mobile-menu-shell {
-    background-color: rgb(var(--color-dark));
-    border-top: 1px solid rgba(255 255 255 / 0.06);
-    max-height: 0;
-    overflow: hidden;
-    transition: max-height 0.25s ease;
-}
-.mobile-menu-shell.open {
-    max-height: 100vh;
-}
-
-.mobile-nav-link {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 0.75rem;
-    border-radius: 0.375rem;
-    font-size: 0.9375rem;
-    font-weight: 500;
-    color: #a8a29e;
-    transition: color 0.15s, background-color 0.15s;
-}
-.mobile-nav-link:hover {
-    color: #ffffff;
-    background-color: rgba(255 255 255 / 0.08);
-}
-.mobile-nav-link.nav-link-active {
-    color: rgb(var(--color-accent));
-    background-color: rgba(var(--color-accent) / 0.12);
-}
-
-.theme-toggle-mobile {
-    justify-content: space-between;
-}
-
-
-/* --------------------------------------------------------------------------
-   6. THEME TOGGLE
-   -------------------------------------------------------------------------- */
-
-.theme-toggle-track {
-    position: relative;
-    display: inline-flex;
-    align-items: center;
-    width: 2.75rem;
-    height: 1.5rem;
-    border-radius: 9999px;
-    background-color: #d6d3d1;
-    transition: background-color 0.2s ease;
-    flex-shrink: 0;
-}
-.theme-toggle-track.is-dark {
-    background-color: #57534e;
-}
-
-.theme-toggle-track--sm {
-    width: 2rem;
-    height: 1.125rem;
-}
-
-.theme-toggle-thumb {
-    position: absolute;
-    left: 2px;
-    width: 1.25rem;
-    height: 1.25rem;
-    border-radius: 9999px;
-    background-color: #ffffff;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-    transition: transform 0.2s ease;
-}
-.theme-toggle-thumb.is-dark {
-    transform: translateX(1.25rem);
-}
-
-.theme-toggle-thumb--sm {
-    width: 0.875rem;
-    height: 0.875rem;
-}
-.theme-toggle-thumb--sm.is-dark {
-    transform: translateX(0.875rem);
-}
-
-.theme-toggle-icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 0.875rem;
-    height: 0.875rem;
-    flex-shrink: 0;
-    margin: 0 0.25rem;
-}
-.theme-toggle-icon svg {
-    width: 100%;
-    height: 100%;
-}
-.theme-toggle-sun {
-    color: #f59e0b;
-}
-.theme-toggle-moon {
-    color: #94a3b8;
-}
-
-
-/* --------------------------------------------------------------------------
-   7. WEBSOCKET STATUS DOT
-   -------------------------------------------------------------------------- */
-
-.ws-status {
-    display: inline-block;
-    width: 0.5rem;
-    height: 0.5rem;
-    border-radius: 9999px;
-    flex-shrink: 0;
-}
-.ws-status.connected {
-    background-color: #16a34a;
-    box-shadow: 0 0 4px rgba(22, 163, 74, 0.5);
-}
-.ws-status.disconnected {
-    background-color: #a8a29e;
-}
-
-
-/* --------------------------------------------------------------------------
-   8. SPINNER
-   -------------------------------------------------------------------------- */
-
-.spinner {
-    display: inline-block;
-    width: 1.5rem;
-    height: 1.5rem;
-    border: 2px solid rgb(var(--color-border));
-    border-top-color: rgb(var(--color-accent));
-    border-radius: 9999px;
-    animation: spin 0.6s linear infinite;
-}
-.spinner-sm {
-    width: 1rem;
-    height: 1rem;
-    border-width: 1.5px;
-}
-
-@keyframes spin {
-    to { transform: rotate(360deg); }
-}
 
 .htmx-indicator {
     opacity: 0;
@@ -303,7 +31,7 @@
 
 
 /* --------------------------------------------------------------------------
-   9. GAME CARDS
+   3. GAME CARDS
    -------------------------------------------------------------------------- */
 
 .live-game-card {
@@ -322,7 +50,7 @@
 
 
 /* --------------------------------------------------------------------------
-   10. TOAST NOTIFICATIONS
+   4. TOAST NOTIFICATIONS
    -------------------------------------------------------------------------- */
 
 .toast-shell {
@@ -361,7 +89,7 @@
 
 
 /* --------------------------------------------------------------------------
-   11. REWARD TOASTS
+   5. REWARD TOASTS
    -------------------------------------------------------------------------- */
 
 .reward-toast {
@@ -389,16 +117,16 @@
     opacity: 0;
     animation: confetti-fall 1.8s ease-out forwards;
 }
-.reward-toast-confetti span:nth-child(1)  { left: 10%; background: #F05A28; animation-delay: 0.0s; }
-.reward-toast-confetti span:nth-child(2)  { left: 20%; background: #006BB6; animation-delay: 0.1s; }
-.reward-toast-confetti span:nth-child(3)  { left: 30%; background: #B8860B; animation-delay: 0.15s; }
-.reward-toast-confetti span:nth-child(4)  { left: 45%; background: #F05A28; animation-delay: 0.05s; }
-.reward-toast-confetti span:nth-child(5)  { left: 55%; background: #FFFFFF; animation-delay: 0.2s; }
-.reward-toast-confetti span:nth-child(6)  { left: 65%; background: #006BB6; animation-delay: 0.08s; }
-.reward-toast-confetti span:nth-child(7)  { left: 75%; background: #B8860B; animation-delay: 0.12s; }
-.reward-toast-confetti span:nth-child(8)  { left: 82%; background: #F05A28; animation-delay: 0.18s; }
-.reward-toast-confetti span:nth-child(9)  { left: 88%; background: #006BB6; animation-delay: 0.25s; }
-.reward-toast-confetti span:nth-child(10) { left: 95%; background: #B8860B; animation-delay: 0.1s; }
+.reward-toast-confetti span:nth-child(1)  { left: 10%; background: #b3262f; animation-delay: 0.0s; }
+.reward-toast-confetti span:nth-child(2)  { left: 20%; background: #485f84; animation-delay: 0.1s; }
+.reward-toast-confetti span:nth-child(3)  { left: 30%; background: #765a05; animation-delay: 0.15s; }
+.reward-toast-confetti span:nth-child(4)  { left: 45%; background: #b3262f; animation-delay: 0.05s; }
+.reward-toast-confetti span:nth-child(5)  { left: 55%; background: #16A34A; animation-delay: 0.2s; }
+.reward-toast-confetti span:nth-child(6)  { left: 65%; background: #485f84; animation-delay: 0.08s; }
+.reward-toast-confetti span:nth-child(7)  { left: 75%; background: #765a05; animation-delay: 0.12s; }
+.reward-toast-confetti span:nth-child(8)  { left: 82%; background: #b3262f; animation-delay: 0.18s; }
+.reward-toast-confetti span:nth-child(9)  { left: 88%; background: #485f84; animation-delay: 0.25s; }
+.reward-toast-confetti span:nth-child(10) { left: 95%; background: #765a05; animation-delay: 0.1s; }
 
 @keyframes confetti-fall {
     0%   { top: -10%; opacity: 1; transform: rotate(0deg) scale(1); }
@@ -427,7 +155,7 @@
 }
 
 .reward-toast-title {
-    font-family: 'Oswald', sans-serif;
+    font-family: 'Epilogue', sans-serif;
     font-weight: 600;
     font-size: 0.9375rem;
     color: rgb(var(--color-text));
@@ -448,7 +176,7 @@
 
 
 /* --------------------------------------------------------------------------
-   12. ACTIVITY TOASTS (bottom-left feed)
+   6. ACTIVITY TOASTS (bottom-left feed)
    -------------------------------------------------------------------------- */
 
 .activity-toast {
@@ -491,7 +219,7 @@ a.activity-toast:hover {
 
 
 /* --------------------------------------------------------------------------
-   13. THEMED PANELS & INPUTS
+   7. THEMED PANELS & INPUTS
    -------------------------------------------------------------------------- */
 
 .themed-panel {
@@ -501,7 +229,7 @@ a.activity-toast:hover {
 }
 
 .themed-title {
-    font-family: 'Oswald', sans-serif;
+    font-family: 'Epilogue', sans-serif;
     font-weight: 600;
     color: rgb(var(--color-text));
 }
@@ -545,7 +273,7 @@ a.activity-toast:hover {
 
 
 /* --------------------------------------------------------------------------
-   14. SLIDE ANIMATIONS
+   8. SLIDE ANIMATIONS
    -------------------------------------------------------------------------- */
 
 @keyframes slide-in-right {
@@ -580,7 +308,7 @@ a.activity-toast:hover {
 
 
 /* --------------------------------------------------------------------------
-   15. LEAGUE SIDEBAR
+   9. LEAGUE SIDEBAR (sticky positioning — link styles in design-system.css)
    -------------------------------------------------------------------------- */
 
 .league-sidebar {
@@ -595,100 +323,9 @@ a.activity-toast:hover {
     padding: 1rem 0;
 }
 
-.sidebar-nav { padding: 0 0.5rem; }
-
-.sidebar-links { display: flex; flex-direction: column; gap: 0.125rem; }
-
-.sidebar-link {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.5rem 0.75rem;
-    border-radius: 0.375rem;
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: rgb(var(--color-muted));
-    text-decoration: none;
-    transition: color 0.15s, background-color 0.15s;
-}
-.sidebar-link:hover {
-    color: rgb(var(--color-text));
-    background-color: rgb(var(--color-accent-light));
-}
-.sidebar-link--active {
-    color: rgb(var(--color-accent));
-    background-color: rgb(var(--color-accent-light));
-    font-weight: 600;
-}
-
-.sidebar-divider {
-    height: 1px;
-    background-color: rgb(var(--color-border));
-    margin: 0.5rem 0.75rem;
-}
-
-/* Mobile sidebar overlay + drawer */
-.sidebar-overlay {
-    position: fixed;
-    inset: 0;
-    z-index: 50;
-}
-.sidebar-backdrop {
-    position: absolute;
-    inset: 0;
-    background-color: rgba(0, 0, 0, 0.5);
-}
-.sidebar-drawer {
-    position: absolute;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    width: 16rem;
-    background-color: rgb(var(--color-surface));
-    border-right: 1px solid rgb(var(--color-border));
-    padding: 1rem 0;
-    overflow-y: auto;
-    animation: slide-in-left 0.2s ease-out;
-}
-.sidebar-drawer-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 1rem 0.75rem;
-    border-bottom: 1px solid rgb(var(--color-border));
-    margin-bottom: 0.75rem;
-}
-.sidebar-close-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0.25rem;
-    border-radius: 0.375rem;
-    color: rgb(var(--color-muted));
-    background: none;
-    border: none;
-    cursor: pointer;
-    transition: color 0.15s, background-color 0.15s;
-}
-.sidebar-close-btn:hover {
-    color: rgb(var(--color-text));
-    background-color: rgb(var(--color-accent-light));
-}
-
 
 /* --------------------------------------------------------------------------
-   16. FOOTER
-   -------------------------------------------------------------------------- */
-
-.site-footer {
-    background-color: rgb(var(--color-surface));
-    border-top: 1px solid rgb(var(--color-border));
-    margin-top: auto;
-}
-
-
-/* --------------------------------------------------------------------------
-   16. ODDS DISPLAY HELPERS
+   10. ODDS DISPLAY HELPERS
    -------------------------------------------------------------------------- */
 
 .odds-positive {
@@ -720,7 +357,7 @@ a.activity-toast:hover {
 
 
 /* --------------------------------------------------------------------------
-   17. GAME DETAIL — LIVE UPDATES
+   11. GAME DETAIL — LIVE UPDATES
    -------------------------------------------------------------------------- */
 
 /* Score flash: brief highlight when OOB swap lands */
@@ -732,15 +369,7 @@ a.activity-toast:hover {
     animation: score-flash 1s ease-out;
 }
 
-/* WebSocket connection indicator */
-.ws-status {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.375rem;
-    font-size: 0.6875rem;
-    color: rgb(var(--color-muted));
-    transition: opacity 0.3s ease;
-}
+/* WebSocket connection indicator (game detail variant) */
 .ws-status-dot {
     width: 0.375rem;
     height: 0.375rem;

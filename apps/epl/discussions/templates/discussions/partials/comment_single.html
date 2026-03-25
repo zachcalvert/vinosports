@@ -1,7 +1,7 @@
 {% load match_tags %}
 
-<div id="comment-{{ comment.id_hash }}" class="{% if is_reply %}ml-8 pl-4 border-l border-border/50{% endif %}">
-    <div class="bg-surface rounded-lg border border-border p-4">
+<div id="comment-{{ comment.id_hash }}" class="{% if is_reply %}ml-8 pl-4 border-l border-outline-variant/50{% endif %}">
+    <div class="bg-surface-container-lowest rounded-xl border-b-4 border-outline-variant p-4">
         <!-- Header: user info + bet badge + timestamp -->
         <div class="flex items-center justify-between mb-2">
             <div class="flex items-center gap-2 flex-wrap">
@@ -13,7 +13,7 @@
                 <span class="bot-badge">BOT</span>
                 {% endif %}
                 {% if comment.bet_position %}
-                <span class="inline-flex items-center gap-1 rounded-full bg-accent/15 px-2 py-0.5 text-xs font-medium text-accent">
+                <span class="inline-flex items-center gap-1 rounded-full bg-primary/15 px-2 py-0.5 text-xs font-medium text-primary">
                     <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 6v.75m0 3v.75m0 3v.75m0 3V18m-9-5.25h5.25M7.5 15h3M3.375 5.25c-.621 0-1.125.504-1.125 1.125v3.026a2.999 2.999 0 010 5.198v3.026c0 .621.504 1.125 1.125 1.125h17.25c.621 0 1.125-.504 1.125-1.125v-3.026a2.999 2.999 0 010-5.198V6.375c0-.621-.504-1.125-1.125-1.125H3.375z"/>
                     </svg>
@@ -34,7 +34,7 @@
         <div class="flex items-center gap-3 mt-2">
             {% if not is_reply %}
             <button onclick="this.nextElementSibling.classList.toggle('hidden')"
-                    class="text-xs text-muted hover:text-accent transition-colors">
+                    class="text-xs text-muted hover:text-primary transition-colors">
                 Reply
             </button>
             <form class="hidden w-full"
@@ -50,7 +50,7 @@
                               class="themed-input flex-1 text-sm"
                               required></textarea>
                     <button type="submit"
-                            class="bg-accent text-dark font-bold py-1.5 px-3 rounded-md text-xs shrink-0 hover:bg-accent/90 transition-colors">
+                            class="bg-primary text-dark font-bold py-1.5 px-3 rounded-md text-xs shrink-0 hover:bg-primary/90 transition-colors">
                         <span class="htmx-indicator"><span class="spinner spinner-sm mr-1"></span></span>
                         Reply
                     </button>

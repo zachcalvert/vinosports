@@ -1,6 +1,6 @@
 {% load currency_tags %}
-<div id="bet-form-container" class="bg-surface rounded-xl border border-border p-6 shadow-sm">
-    <h3 class="text-xl font-bold mb-4">Place a Bet</h3>
+<div id="bet-form-container" class="bg-surface-container-lowest rounded-xl p-6 border-b-4 border-secondary">
+    <h3 class="font-headline font-black text-xl uppercase tracking-tight text-secondary mb-4">Place a Bet</h3>
 
     {% if error %}
     <div class="bg-danger/10 border border-danger/30 rounded-md p-3 mb-4">
@@ -27,9 +27,9 @@
                     <input type="radio" name="selection" value="{{ value }}"
                            class="hidden peer"
                            {% if form.selection.value == value %}checked{% endif %}>
-                    <div class="peer-checked:border-accent peer-checked:bg-accent/10 peer-checked:text-accent
-                                border border-border rounded-md py-3 text-center font-medium
-                                text-muted hover:border-gray-400 transition-colors">
+                    <div class="peer-checked:border-primary peer-checked:bg-primary/10 peer-checked:text-primary
+                                border-2 border-outline-variant rounded-sm py-3 text-center font-bold
+                                text-secondary hover:border-primary/50 transition-all duration-300">
                         {% if value == "HOME_WIN" %}
                             <span class="block text-sm">{{ match.home_team.short_name|default:match.home_team.name }}</span>
                         {% elif value == "DRAW" %}
@@ -60,7 +60,7 @@
         </div>
 
         <button type="submit"
-                class="w-full bg-accent text-dark font-bold py-2.5 px-4 rounded-md hover:bg-accent/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                class="w-full jukebox-btn bg-primary text-on-primary font-headline font-black uppercase tracking-widest text-sm py-3 px-4 rounded-full disabled:opacity-50 disabled:cursor-not-allowed">
             <span class="htmx-indicator"><span class="spinner spinner-sm mr-1"></span></span>
             Place Bet
         </button>

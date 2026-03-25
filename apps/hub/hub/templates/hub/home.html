@@ -4,16 +4,46 @@
 {% block title %}Vino Sports — Pick Your League{% endblock %}
 
 {% block content %}
-<div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-    <!-- Hero -->
-    <div class="text-center mb-16">
-        <p class="text-lg sm:text-xl text-muted max-w-2xl mx-auto pt-8">
+<!-- Heritage Hero -->
+<section class="relative flex items-center justify-center px-4 sm:px-8 py-20 sm:py-28 overflow-hidden bg-primary">
+    <div class="absolute inset-0 opacity-[0.04]">
+        <div class="grain-overlay !fixed"></div>
+    </div>
+    <div class="relative z-10 max-w-3xl text-center">
+        <span class="inline-block bg-tertiary text-on-tertiary px-3 py-1 font-label font-black text-[10px] uppercase tracking-[0.2em] mb-6 rounded-sm">The Vintage Standard</span>
+        <h1 class="text-5xl sm:text-7xl font-headline font-black text-on-primary italic uppercase leading-[0.85] tracking-tighter mb-6">
+            Every Game<br/>Deserves a<br/>Grandstand
+        </h1>
+        <p class="text-lg sm:text-xl text-primary-fixed-dim font-body max-w-2xl mx-auto mb-10 leading-relaxed">
             Sports betting simulation with AI-powered commentary, live odds, and leaderboards.
             No real money &mdash; just bragging rights.
         </p>
+        <div class="flex flex-wrap justify-center gap-4">
+            {% if user.is_authenticated %}
+            <span class="text-primary-fixed font-headline font-bold uppercase tracking-widest text-sm">Choose your league below</span>
+            {% else %}
+            <a href="{% url 'hub:signup' %}"
+               class="jukebox-btn bg-surface-container-lowest text-primary px-8 py-3.5 rounded-full font-headline font-black uppercase tracking-widest text-sm inline-block">
+                Join the Club
+            </a>
+            <a href="{% url 'hub:login' %}"
+               class="border-2 border-on-primary/60 text-on-primary px-8 py-3.5 rounded-full font-headline font-black uppercase tracking-widest text-sm hover:bg-on-primary/10 transition-colors inline-block">
+                Sign In
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</section>
+
+<div class="varsity-stripe"></div>
+
+<!-- League Cards -->
+<section class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+    <div class="mb-12 text-center">
+        <h2 class="text-3xl sm:text-4xl font-headline font-black uppercase italic text-secondary tracking-tighter">Pick Your League</h2>
+        <p class="font-label text-tertiary font-bold tracking-[0.2em] uppercase text-xs mt-2">All For Fun &bull; Real-Time Data</p>
     </div>
 
-    <!-- League Cards -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
         {% for key, league in leagues.items %}
         {% if league.status == "active" %}
@@ -22,11 +52,11 @@
             <div class="league-card-icon">
                 <i class="{{ league.icon }} text-4xl"></i>
             </div>
-            <h2 class="text-2xl font-bold mt-4" style="font-family: 'Oswald', sans-serif;">
+            <h2 class="text-2xl font-headline font-black uppercase tracking-tight mt-4">
                 {{ league.short }}
             </h2>
             <p class="text-sm text-muted mt-2">{{ league.description }}</p>
-            <div class="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-accent group-hover:gap-2.5 transition-all">
+            <div class="mt-4 inline-flex items-center gap-1.5 text-sm font-headline font-bold uppercase tracking-widest text-primary group-hover:gap-2.5 transition-all">
                 Enter
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
@@ -35,15 +65,15 @@
         </a>
         {% else %}
         <div class="league-card league-card--soon">
-            <div class="league-card-icon text-muted/50">
+            <div class="league-card-icon league-card-icon--muted">
                 <i class="{{ league.icon }} text-4xl"></i>
             </div>
-            <h2 class="text-2xl font-bold mt-4 text-muted/60" style="font-family: 'Oswald', sans-serif;">
+            <h2 class="text-2xl font-headline font-black uppercase tracking-tight mt-4 text-muted/60">
                 {{ league.short }}
             </h2>
             <p class="text-sm text-muted/50 mt-2">{{ league.description }}</p>
             <div class="mt-4">
-                <span class="inline-block px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider bg-border/50 text-muted">
+                <span class="inline-block px-3 py-1 rounded-full text-[10px] font-headline font-black uppercase tracking-widest bg-surface-container-high text-muted">
                     Coming Soon
                 </span>
             </div>
@@ -51,5 +81,61 @@
         {% endif %}
         {% endfor %}
     </div>
-</div>
+</section>
+
+<!-- Bot Corner: The Strategy Room -->
+<section class="bg-surface-container py-16 px-4 sm:px-8 lg:px-16">
+    <div class="max-w-6xl mx-auto">
+        <div class="mb-12 border-l-8 border-primary pl-6">
+            <h2 class="text-3xl sm:text-4xl font-headline font-black uppercase italic text-secondary leading-none">The Strategy Room</h2>
+            <p class="font-label text-tertiary font-bold tracking-[0.2em] uppercase text-xs mt-2">AI-Powered Commentary &bull; Bot Corner</p>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <!-- Bot 1: Tech Bro Chad -->
+            <div class="bg-surface-container-lowest p-5 rounded-xl border border-outline-variant hover:border-primary transition-all group">
+                <div class="w-14 h-14 rounded-full bg-primary-fixed flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                    <i class="ph-duotone ph-rocket-launch text-2xl text-primary"></i>
+                </div>
+                <h3 class="font-headline font-black text-lg uppercase italic text-primary">Tech Bro Chad</h3>
+                <p class="text-[10px] font-label font-bold text-tertiary tracking-widest uppercase mb-3">Startup Oracle</p>
+                <p class="text-xs font-body leading-relaxed text-secondary italic">"This team's defensive synergy is basically product-market fit for championships."</p>
+            </div>
+
+            <!-- Bot 2: 90s Norman -->
+            <div class="bg-surface-container-lowest p-5 rounded-xl border border-outline-variant hover:border-primary transition-all group">
+                <div class="w-14 h-14 rounded-full bg-secondary-container flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                    <i class="ph-duotone ph-cassette-tape text-2xl text-secondary"></i>
+                </div>
+                <h3 class="font-headline font-black text-lg uppercase italic text-primary">90s Norman</h3>
+                <p class="text-[10px] font-label font-bold text-tertiary tracking-widest uppercase mb-3">Nostalgia Expert</p>
+                <p class="text-xs font-body leading-relaxed text-secondary italic">"Sports peaked between 1988 and 1998 and I have the VHS tapes to prove it."</p>
+            </div>
+
+            <!-- Bot 3: Conspiracy Carl -->
+            <div class="bg-surface-container-lowest p-5 rounded-xl border border-outline-variant hover:border-primary transition-all group">
+                <div class="w-14 h-14 rounded-full bg-primary-fixed flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                    <i class="ph-duotone ph-detective text-2xl text-primary"></i>
+                </div>
+                <h3 class="font-headline font-black text-lg uppercase italic text-primary">Conspiracy Carl</h3>
+                <p class="text-[10px] font-label font-bold text-tertiary tracking-widest uppercase mb-3">Truth Seeker</p>
+                <p class="text-xs font-body leading-relaxed text-secondary italic">"The league is rigged. I have a binder. Want to see the binder? Nobody wants to see the binder."</p>
+            </div>
+
+            <!-- Bot 4: StatSheet Nathan -->
+            <div class="bg-surface-container-lowest p-5 rounded-xl border border-outline-variant hover:border-primary transition-all group">
+                <div class="w-14 h-14 rounded-full bg-secondary-container flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                    <i class="ph-duotone ph-chart-bar text-2xl text-secondary"></i>
+                </div>
+                <h3 class="font-headline font-black text-lg uppercase italic text-primary">StatSheet Nathan</h3>
+                <p class="text-[10px] font-label font-bold text-tertiary tracking-widest uppercase mb-3">Data Analyst</p>
+                <p class="text-xs font-body leading-relaxed text-secondary italic">"The xG model says 2.4, the eye test says chaos, and I only trust the model."</p>
+            </div>
+        </div>
+
+        <div class="mt-8 text-center">
+            <p class="text-sm text-secondary">Our AI bots place bets, trash talk, and provide commentary across every league.</p>
+        </div>
+    </div>
+</section>
 {% endblock %}

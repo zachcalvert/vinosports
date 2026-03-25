@@ -7,12 +7,12 @@ Context expected:
   sentiment  — dict with total/home_pct/away_pct/most_popular, or None
 {% endcomment %}
 
-<div class="rounded-xl border border-border bg-surface overflow-hidden">
-    <div class="px-5 py-3 border-b border-border flex items-center justify-between">
-        <h3 class="text-xs font-semibold uppercase tracking-widest text-accent">Game Preview</h3>
+<div class="rounded-xl border-b-4 border-outline-variant bg-surface-container-lowest overflow-hidden">
+    <div class="px-5 py-3 border-b border-outline-variant flex items-center justify-between">
+        <h3 class="font-headline font-black text-xs uppercase tracking-widest text-secondary">Game Preview</h3>
     </div>
 
-    <div class="divide-y divide-border">
+    <div class="divide-y divide-outline-variant">
         {% include "games/partials/community_sentiment.html" %}
         {% include "games/partials/spread_sentiment.html" %}
         {% include "games/partials/total_sentiment.html" %}

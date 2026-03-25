@@ -16,7 +16,7 @@ Context expected:
         </div>
         <div class="flex rounded overflow-hidden h-6 mb-2 text-xs font-semibold">
             {% if spread_sentiment.home_pct %}
-            <div class="flex items-center justify-center bg-accent text-dark"
+            <div class="flex items-center justify-center bg-primary text-dark"
                  style="width: {{ spread_sentiment.home_pct }}%">
                 {% if spread_sentiment.home_pct >= 15 %}{{ spread_sentiment.home_pct }}%{% endif %}
             </div>
@@ -29,7 +29,7 @@ Context expected:
             {% endif %}
         </div>
         <div class="flex justify-between text-xs text-muted">
-            <span><span class="inline-block w-2 h-2 rounded-sm bg-accent mr-1"></span>{{ game.home_team.abbreviation }} {{ spread_sentiment.home_pct }}%</span>
+            <span><span class="inline-block w-2 h-2 rounded-sm bg-primary mr-1"></span>{{ game.home_team.abbreviation }} {{ spread_sentiment.home_pct }}%</span>
             <span><span class="inline-block w-2 h-2 rounded-sm bg-indigo-500 mr-1"></span>{{ game.away_team.abbreviation }} {{ spread_sentiment.away_pct }}%</span>
         </div>
     </div>

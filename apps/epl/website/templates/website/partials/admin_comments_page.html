@@ -1,5 +1,5 @@
 {% for item in items %}
-<div class="flex items-center gap-3 py-2.5 text-sm border-t border-border/50">
+<div class="flex items-center gap-3 py-2.5 text-sm border-t border-outline-variant/50">
     {% if item.user %}
         {% include "website/components/avatar.html" with avatar_user=item.user avatar_size="xs" %}
     {% else %}
@@ -27,11 +27,11 @@
             hx-target="#admin-comments-items"
             hx-swap="beforeend"
             hx-indicator="#comments-loading"
-            class="text-accent text-sm hover:underline">
+            class="text-primary text-sm hover:underline">
         View all
     </button>
     <span id="comments-loading" class="htmx-indicator">
-        <span class="spinner spinner-sm text-accent"></span>
+        <span class="spinner spinner-sm text-primary"></span>
     </span>
 </div>
 {% else %}

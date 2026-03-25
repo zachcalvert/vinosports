@@ -1,5 +1,5 @@
-<section id="account-settings-card" class="rounded-lg border border-border bg-surface p-5">
-    <p class="text-xs font-semibold uppercase tracking-wider text-accent mb-1">Account</p>
+<section id="account-settings-card" class="rounded-xl border-b-4 border-outline-variant bg-surface-container-lowest p-5">
+    <p class="text-xs font-semibold uppercase tracking-wider text-primary mb-1">Account</p>
     <h2 class="text-xl font-bold">Public display name</h2>
     <p class="mt-2 text-sm text-muted">Shown publicly on the leaderboard. Leave blank to keep using your masked email.</p>
 
@@ -19,7 +19,7 @@
                 </div>
                 <button
                     type="submit"
-                    class="rounded-md bg-accent px-4 py-2 text-sm font-semibold text-dark transition-colors hover:bg-accent/90 whitespace-nowrap"
+                    class="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-dark transition-colors hover:bg-primary/90 whitespace-nowrap"
                 >
                     Save display name
                 </button>
@@ -31,7 +31,7 @@
         </div>
 
         {% if account_save_success %}
-        <p class="text-accent text-sm">Display name updated.</p>
+        <p class="text-primary text-sm">Display name updated.</p>
         {% endif %}
 
         <p class="text-xs text-muted">Masked fallback: <span class="font-mono">{{ account_masked_email }}</span></p>

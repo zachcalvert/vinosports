@@ -12,7 +12,7 @@ Context expected:
 <div class="overflow-x-auto">
     <table class="w-full text-xs">
         <thead>
-            <tr class="text-left text-muted border-b border-border">
+            <tr class="text-left text-muted border-b border-outline-variant">
                 <th class="sticky left-0 bg-surface px-3 py-2 font-semibold min-w-[140px]">Player</th>
                 <th class="px-2 py-2 font-semibold text-right">MIN</th>
                 <th class="px-2 py-2 font-semibold text-right">PTS</th>
@@ -27,7 +27,7 @@ Context expected:
                 <th class="px-2 py-2 font-semibold text-right">+/-</th>
             </tr>
         </thead>
-        <tbody class="divide-y divide-border/50">
+        <tbody class="divide-y divide-outline-variant/50">
             {% if starters %}
             <tr><td colspan="12" class="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-widest text-muted bg-surface-alt">Starters</td></tr>
             {% for player in starters %}
@@ -42,7 +42,7 @@ Context expected:
             {% endif %}
         </tbody>
         <tfoot>
-            <tr class="border-t border-border font-semibold text-xs">
+            <tr class="border-t border-outline-variant font-semibold text-xs">
                 <td class="sticky left-0 bg-surface px-3 py-2">Totals</td>
                 <td class="px-2 py-2"></td>
                 <td class="px-2 py-2 text-right font-mono">{{ totals.points }}</td>

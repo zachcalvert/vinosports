@@ -1,21 +1,21 @@
 {% load currency_tags %}
-<div class="rounded-lg bg-accent-light border border-border px-4 py-3 {% if uc.status == 'COMPLETED' %}border-accent/30{% endif %}">
+<div class="rounded-xl bg-surface-container-lowest border-b-4 border-secondary px-4 py-3 {% if uc.status == 'COMPLETED' %}border-tertiary{% endif %}">
     <div class="flex items-start gap-3">
-        <i class="ph-duotone ph-{{ uc.challenge.template.icon }} text-2xl shrink-0 mt-0.5 text-accent" aria-hidden="true"></i>
+        <i class="ph-duotone ph-{{ uc.challenge.template.icon }} text-2xl shrink-0 mt-0.5 text-primary" aria-hidden="true"></i>
         <div class="flex-1 min-w-0">
             <div class="flex items-center gap-2 mb-0.5">
                 <h3 class="text-sm font-semibold truncate">{{ uc.challenge.template.title }}</h3>
                 <span class="shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider
-                    {% if uc.challenge.template.challenge_type == 'DAILY' %}bg-blue-500/15 text-blue-400
-                    {% elif uc.challenge.template.challenge_type == 'WEEKLY' %}bg-purple-500/15 text-purple-400
-                    {% else %}bg-yellow-500/15 text-yellow-400{% endif %}">
+                    {% if uc.challenge.template.challenge_type == 'DAILY' %}bg-secondary/15 text-secondary
+                    {% elif uc.challenge.template.challenge_type == 'WEEKLY' %}bg-primary/15 text-primary
+                    {% else %}bg-tertiary/15 text-tertiary{% endif %}">
                     {{ uc.challenge.template.get_challenge_type_display }}
                 </span>
             </div>
             <p class="text-xs text-muted mb-2">{{ uc.challenge.template.description }}</p>
             {% include "challenges/partials/challenge_progress_bar.html" %}
             <div class="flex items-center justify-between mt-2">
-                <span class="text-xs text-accent font-medium">+{{ uc.challenge.template.reward_amount|currency:request.user }}</span>
+                <span class="text-xs text-primary font-medium">+{{ uc.challenge.template.reward_amount|currency:request.user }}</span>
                 {% if uc.challenge.template.badge %}
                 <span class="text-xs text-muted">+ <i class="ph-duotone ph-{{ uc.challenge.template.badge.icon }}" aria-hidden="true"></i> badge</span>
                 {% endif %}

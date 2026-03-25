@@ -2,7 +2,7 @@
 <div class="overflow-x-auto">
     <table class="w-full">
         <thead>
-            <tr class="border-b border-border text-xs text-muted uppercase tracking-wider">
+            <tr class="border-b border-outline-variant text-xs text-muted uppercase tracking-wider">
                 <th class="px-2 sm:px-3 py-3 text-left w-8">#</th>
                 <th class="px-2 sm:px-3 py-3 text-left">Team</th>
                 <th class="px-2 sm:px-3 py-3 text-center">W</th>
@@ -16,10 +16,10 @@
         </thead>
         <tbody>
             {% for standing in standings %}
-            <tr class="border-b border-border/50 hover:bg-surface/50
-                {% if standing.conference_rank <= 6 %}bg-accent/5{% elif standing.conference_rank <= 10 %}bg-nba/5{% endif %}">
+            <tr class="border-b border-outline-variant/50 hover:bg-surface-container-low
+                {% if standing.conference_rank <= 6 %}bg-primary/5{% elif standing.conference_rank <= 10 %}bg-nba/5{% endif %}">
                 <td class="px-2 sm:px-3 py-2 text-sm font-medium
-                    {% if standing.conference_rank <= 6 %}text-accent{% elif standing.conference_rank <= 10 %}text-nba{% else %}text-muted{% endif %}">
+                    {% if standing.conference_rank <= 6 %}text-primary{% elif standing.conference_rank <= 10 %}text-nba{% else %}text-muted{% endif %}">
                     {{ standing.conference_rank }}
                 </td>
                 <td class="px-2 sm:px-3 py-2">
@@ -51,7 +51,7 @@
 
 <div class="mt-4 flex gap-4 text-xs text-muted">
     <div class="flex items-center gap-1.5">
-        <span class="w-2 h-2 rounded-full bg-accent"></span> Playoff seeding (1–6)
+        <span class="w-2 h-2 rounded-full bg-primary"></span> Playoff seeding (1–6)
     </div>
     <div class="flex items-center gap-1.5">
         <span class="w-2 h-2 rounded-full bg-nba"></span> Play-in (7–10)
