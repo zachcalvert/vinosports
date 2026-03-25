@@ -10,7 +10,15 @@ SECRET_KEY = os.environ.get("SECRET_KEY", "django-insecure-change-me-in-producti
 
 DEBUG = os.environ.get("DEBUG", "True").lower() in ("true", "1", "yes")
 
-ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
+ALLOWED_HOSTS = os.environ.get(
+    "ALLOWED_HOSTS", "localhost,127.0.0.1,vinosports.local"
+).split(",")
+
+CSRF_TRUSTED_ORIGINS = [
+    "http://vinosports.local",
+]
+
+FORCE_SCRIPT_NAME = os.environ.get("FORCE_SCRIPT_NAME", "")
 
 INSTALLED_APPS = [
     "daphne",
@@ -138,7 +146,7 @@ else:
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-HUB_URL = os.environ.get("HUB_URL", "http://localhost:7999")
+HUB_URL = os.environ.get("HUB_URL", "http://vinosports.local")
 
 # Global nav
 CURRENT_LEAGUE = "nba"
@@ -146,20 +154,20 @@ LEAGUE_URLS = {
     "epl": {
         "name": "English Premier League",
         "short": "EPL",
-        "url": os.environ.get("EPL_URL", "http://localhost:8000"),
+        "url": os.environ.get("EPL_URL", "http://vinosports.local/epl"),
         "icon": "ph-duotone ph-soccer-ball",
         "status": "active",
     },
     "nba": {
         "name": "NBA",
         "short": "NBA",
-        "url": os.environ.get("NBA_URL", "http://localhost:8001"),
+        "url": os.environ.get("NBA_URL", "http://vinosports.local/nba"),
         "icon": "ph-duotone ph-basketball",
         "status": "active",
     },
 }
 
-LOGIN_URL = HUB_URL + "/login/"
+LOGIN_URL = "/login/"
 LOGIN_REDIRECT_URL = "/"
 LOGOUT_REDIRECT_URL = "/"
 

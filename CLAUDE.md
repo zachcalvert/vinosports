@@ -26,9 +26,10 @@ apps/nba/        # NBA — skeleton (models defined, no views/templates yet)
 - **Abstract models** in core: BetSlip, Parlay, Comment, BotProfile (sport-specific fields added in league apps)
 - **App labels**: Core apps use simple labels (`users`, `betting`). League apps use prefixed labels (`epl_betting`, `nba_betting`) to avoid collisions
 - **Single shared DB**: All apps (hub + leagues) share one PostgreSQL instance. One user account + balance works across all leagues
-- **Hub owns auth**: Signup, login, logout live in hub. League apps redirect `/login/` and `/signup/` to hub. Each league keeps a thin local `LogoutView` (CSRF tokens can't cross ports). Sessions are shared across all apps (same DB, same `SECRET_KEY`, same `sessionid` cookie on localhost)
+- **Hub owns auth**: Signup, login, logout live in hub at the root path. League apps redirect `/login/` and `/signup/` to hub
 - **Hub as entry point**: `apps/hub/` is the central homepage, auth provider, and global account manager. Owns `SiteSettings` (registration caps) and `UserAdmin`. League apps handle league-specific settings (avatar, badges, stats)
-- **Cross-app sessions**: All apps share one `django_session` table and `SECRET_KEY`. Cookies on `localhost` are shared across ports, so login on hub:7999 authenticates on epl:8000 and nba:8001. Logout from any app logs out everywhere. CSRF tokens do NOT work cross-port — keep logout as a local POST in each app
+- **Unified domain**: All apps served via nginx reverse proxy on `vinosports.local`. Hub at root, EPL at `/epl/`, NBA at `/nba/`. Sessions and CSRF tokens work across all apps (same domain, same DB, same `SECRET_KEY`)
+- **FORCE_SCRIPT_NAME**: EPL and NBA use `FORCE_SCRIPT_NAME` so Django's `reverse()` and `{% url %}` include the `/epl/` or `/nba/` prefix. Nginx strips the prefix before proxying to the Django app
 - **HTMX frontend**: Server-rendered templates with HTMX for interactivity. No JS framework
 
 ## Running Locally
@@ -44,10 +45,21 @@ make migrate
 make seed
 ```
 
-### Ports
-- Hub: localhost:7999
-- EPL: localhost:8000
-- NBA: localhost:8001
+### URLs (local dev)
+
+Add to `/etc/hosts`:
+```
+127.0.0.1 vinosports.local
+```
+
+All apps are served through nginx on port 80:
+- Hub: http://vinosports.local
+- EPL: http://vinosports.local/epl/
+- NBA: http://vinosports.local/nba/
+
+Nginx reverse proxy strips the `/epl/` and `/nba/` prefixes before forwarding to the Django apps. `FORCE_SCRIPT_NAME` ensures Django generates prefixed URLs in `{% url %}`, `reverse()`, and redirects.
+
+### Infrastructure Ports
 - PostgreSQL: 5432
 - Redis: 6379
 

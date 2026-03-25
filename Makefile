@@ -1,4 +1,4 @@
-.PHONY: up down restart logs shell-epl shell-nba shell-hub migrate migrate-epl migrate-nba seed seed-epl seed-nba lint format test
+.PHONY: up down restart logs shell migrate seed lint format test
 
 up:
 	docker compose up --build -d
@@ -12,31 +12,16 @@ restart:
 logs:
 	docker compose logs -f
 
-shell-epl:
-	docker compose exec epl-web bash
+shell:
+	docker compose exec web bash
 
-shell-nba:
-	docker compose exec nba-web bash
+migrate:
+	docker compose run --rm web python manage.py migrate --noinput
 
-shell-hub:
-	docker compose exec hub-web bash
-
-migrate: migrate-epl migrate-nba
-
-migrate-epl:
-	docker compose run --rm epl-web python manage.py migrate --noinput
-
-migrate-nba:
-	docker compose run --rm nba-web python manage.py migrate --noinput
-
-seed: seed-epl seed-nba
-
-seed-epl:
-	docker compose exec epl-web python manage.py seed
-
-seed-nba:
-	docker compose exec nba-web python manage.py seed_nba
-	docker compose exec nba-web python manage.py seed_challenge_templates
+seed:
+	docker compose exec web python manage.py seed
+	docker compose exec web python manage.py seed_nba
+	docker compose exec web python manage.py seed_challenge_templates
 
 lint:
 	ruff check . --fix
@@ -46,12 +31,4 @@ format:
 	ruff format .
 
 test:
-	docker compose run --rm epl-web python -m pytest
-	docker compose run --rm nba-web python -m pytest
-
-test-epl:
-	docker compose run --rm epl-web python -m pytest
-
-test-nba:
-	docker compose run --rm nba-web python -m pytest --cov-report=term-missing
-
+	docker compose run --rm web python -m pytest

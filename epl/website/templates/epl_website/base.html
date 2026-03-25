@@ -1,0 +1,186 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}EPL Bets{% endblock %}</title>
+
+    {% include "vinosports/includes/head_design_system.html" %}
+
+    <link rel="icon" type="image/svg+xml" href="{% static 'epl_website/favicon.svg' %}">
+
+    <!-- HTMX -->
+    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+    <script src="https://unpkg.com/htmx-ext-ws@2.0.2/ws.js"></script>
+
+    <!-- EPL-specific styles (league-only overrides) -->
+    <link rel="stylesheet" href="{% static 'epl_website/css/styles.css' %}">
+
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="h-full theme-page">
+    <div class="grain-overlay"></div>
+    <div class="min-h-full flex flex-col">
+        {% include "vinosports/components/global_navbar.html" %}
+
+        <div class="flex flex-1">
+            <!-- Desktop sidebar -->
+            <aside class="league-sidebar hidden lg:flex">
+                {% include "epl_website/components/sidebar.html" %}
+            </aside>
+
+            <!-- Main content -->
+            <main class="flex-1 min-w-0">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                    {% block content %}{% endblock %}
+                </div>
+            </main>
+        </div>
+
+        {% include "epl_website/components/footer.html" %}
+    </div>
+
+    <!-- Mobile sidebar overlay -->
+    <div id="sidebar-overlay" class="sidebar-overlay hidden" aria-hidden="true">
+        <div class="sidebar-backdrop"></div>
+        <aside class="sidebar-drawer">
+            <div class="sidebar-drawer-header">
+                <span class="text-sm font-semibold uppercase tracking-wider text-muted">EPL</span>
+                <button id="sidebar-close" type="button" class="sidebar-close-btn" aria-label="Close sidebar">
+                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            {% include "epl_website/components/sidebar.html" %}
+        </aside>
+    </div>
+
+    {% if is_bankrupt %}
+        {% include "epl_betting/partials/bailout_overlay.html" %}
+    {% endif %}
+
+    {% if user.is_authenticated %}
+        {% include "epl_betting/partials/parlay_slip.html" %}
+    {% endif %}
+
+    <!-- Notifications container for real-time toasts (bet settlements, etc.) -->
+    <div id="notifications" class="fixed top-20 right-4 z-50 space-y-2 max-w-sm"></div>
+
+    <!-- Reward notifications: global WS connection + page-load toasts for unseen rewards -->
+    {% if user.is_authenticated %}
+    <div id="reward-notifications"
+         class="fixed top-20 left-1/2 -translate-x-1/2 z-50 space-y-3 w-full max-w-sm px-4"
+         hx-ext="ws" ws-connect="/epl/ws/notifications/">
+        {% for distribution in unseen_rewards %}
+            {% include "epl_rewards/partials/reward_toast.html" with distribution=distribution %}
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Live activity feed toasts (all visitors) -->
+    {% if show_activity_toasts %}
+    <div id="activity-toasts"
+         class="fixed bottom-4 left-4 z-40 space-y-2 max-w-xs"
+         hx-ext="ws" ws-connect="/epl/ws/activity/">
+    </div>
+    {% endif %}
+
+    <!-- Reload on bfcache restore — Tailwind CDN doesn't re-run after back/forward navigation -->
+    <script>
+        window.addEventListener('pageshow', function(e) {
+            if (e.persisted) { window.location.reload(); }
+        });
+    </script>
+
+    <!-- Mobile sidebar close handlers -->
+    <script>
+    (function() {
+        var overlay = document.getElementById('sidebar-overlay');
+        if (!overlay) return;
+        var backdrop = overlay.querySelector('.sidebar-backdrop');
+        var closeBtn = document.getElementById('sidebar-close');
+        function closeSidebar() { overlay.classList.add('hidden'); overlay.setAttribute('aria-hidden', 'true'); }
+        if (backdrop) backdrop.addEventListener('click', closeSidebar);
+        if (closeBtn) closeBtn.addEventListener('click', closeSidebar);
+    })();
+    </script>
+
+    <!-- Global HTMX CSRF + error handler -->
+    <script>
+        document.body.addEventListener('htmx:configRequest', function(e) {
+            var csrfCookie = document.cookie.split('; ').find(function(c) { return c.startsWith('csrftoken='); });
+            if (csrfCookie) {
+                e.detail.headers['X-CSRFToken'] = csrfCookie.split('=')[1];
+            }
+        });
+
+        function showToast(message) {
+            var container = document.getElementById('notifications');
+            var toast = document.createElement('div');
+            toast.className = 'toast-shell animate-slide-in';
+            toast.setAttribute('role', 'alert');
+            toast.innerHTML = '<svg class="w-5 h-5 text-danger flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/></svg>'
+                + '<p class="toast-message">' + message + '</p>'
+                + '<button onclick="var t=this.closest(\'[role=alert]\');t.classList.add(\'animate-slide-out\');t.addEventListener(\'animationend\',function(){t.remove()})" class="toast-dismiss"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button>';
+            container.appendChild(toast);
+            setTimeout(function() {
+                toast.classList.add('animate-slide-out');
+                toast.addEventListener('animationend', function() { toast.remove(); });
+            }, 5000);
+        }
+
+        document.body.addEventListener('htmx:responseError', function(e) {
+            showToast('Something went wrong. Please try again.');
+        });
+        document.body.addEventListener('htmx:sendError', function(e) {
+            showToast('Network error. Check your connection.');
+        });
+    </script>
+
+    <!-- Activity toast auto-fade + anonymous nudge -->
+    <script>
+    (function() {
+        var container = document.getElementById('activity-toasts');
+        if (!container) return;
+        var isAnon = {% if user.is_authenticated %}false{% else %}true{% endif %};
+
+        function fadeOut(el, delay) {
+            setTimeout(function() {
+                el.classList.add('animate-slide-out-left');
+                el.addEventListener('animationend', function() { el.remove(); });
+            }, delay);
+        }
+
+        var observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(m) {
+                m.addedNodes.forEach(function(node) {
+                    if (node.nodeType !== 1) return;
+                    if (node.classList.contains('activity-toast--nudge')) return;
+                    fadeOut(node, 6000);
+
+                    if (isAnon && !sessionStorage.getItem('activity_nudge_shown')) {
+                        sessionStorage.setItem('activity_nudge_shown', '1');
+                        setTimeout(function() {
+                            var nudge = document.createElement('a');
+                            nudge.href = '{% url "epl_website:signup" %}';
+                            nudge.className = 'activity-toast activity-toast--nudge animate-slide-in-left';
+                            nudge.setAttribute('role', 'status');
+                            nudge.innerHTML = '<p class="activity-toast-message">Want to control these notifications? <span class="text-accent font-semibold">Create a free account</span></p>';
+                            container.appendChild(nudge);
+                            fadeOut(nudge, 8000);
+                        }, 7000);
+                    }
+                });
+            });
+        });
+        observer.observe(container, { childList: true });
+    })();
+    </script>
+
+    <script src="{% static 'epl_website/js/payout-preview.js' %}"></script>
+    <script src="{% static 'epl_website/js/local-times.js' %}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

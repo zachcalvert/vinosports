@@ -58,8 +58,8 @@
                     </div>
                     <!-- Links -->
                     <div class="py-1">
-                        {% if current_league %}
-                        <a href="{% url 'website:account' %}" class="dropdown-link">
+                        {% if request.league %}
+                        <a href="/{{ request.league }}/account/" class="dropdown-link">
                             <i class="ph-duotone ph-gear text-base"></i> Profile &amp; Settings
                         </a>
                         {% else %}
@@ -70,8 +70,8 @@
                     </div>
                     <!-- Logout -->
                     <div class="border-t border-border py-1">
-                        {% if current_league %}
-                        <form method="post" action="{% url 'website:logout' %}">
+                        {% if request.league %}
+                        <form method="post" action="/{{ request.league }}/logout/">
                             {% csrf_token %}
                             <button type="submit" class="dropdown-link w-full text-left text-red-600 hover:text-red-700">
                                 <i class="ph-duotone ph-sign-out text-base"></i> Log Out

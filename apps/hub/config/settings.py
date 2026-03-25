@@ -7,7 +7,13 @@ SECRET_KEY = os.environ.get("SECRET_KEY", "django-insecure-change-me-in-producti
 
 DEBUG = os.environ.get("DEBUG", "True").lower() in ("true", "1", "yes")
 
-ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
+ALLOWED_HOSTS = os.environ.get(
+    "ALLOWED_HOSTS", "localhost,127.0.0.1,vinosports.local"
+).split(",")
+
+CSRF_TRUSTED_ORIGINS = [
+    "http://vinosports.local",
+]
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -104,7 +110,7 @@ LEAGUE_URLS = {
     "epl": {
         "name": "English Premier League",
         "short": "EPL",
-        "url": os.environ.get("EPL_URL", "http://localhost:8000"),
+        "url": os.environ.get("EPL_URL", "http://vinosports.local/epl"),
         "status": "active",
         "description": "Place bets on Premier League matches, climb the leaderboard, and compete with AI-powered rivals.",
         "icon": "ph-duotone ph-soccer-ball",
@@ -112,7 +118,7 @@ LEAGUE_URLS = {
     "nba": {
         "name": "NBA",
         "short": "NBA",
-        "url": os.environ.get("NBA_URL", "http://localhost:8001"),
+        "url": os.environ.get("NBA_URL", "http://vinosports.local/nba"),
         "status": "active",
         "description": "NBA betting simulation with game props, player stats, and playoff brackets.",
         "icon": "ph-duotone ph-basketball",
@@ -128,7 +134,7 @@ LEAGUE_URLS = {
 }
 
 # Hub URL (for league apps to link back)
-HUB_URL = os.environ.get("HUB_URL", "http://localhost:7999")
+HUB_URL = os.environ.get("HUB_URL", "http://vinosports.local")
 
 # Global nav
 CURRENT_LEAGUE = None

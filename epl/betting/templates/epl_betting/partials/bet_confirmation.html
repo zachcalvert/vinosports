@@ -1,0 +1,32 @@
+{% load currency_tags %}
+<div id="bet-form-container" class="bg-surface rounded-lg border border-accent/30 p-6">
+    <div class="text-center">
+        <div class="text-accent text-3xl mb-2">&#10003;</div>
+        <h3 class="text-lg font-bold mb-1">Bet Placed!</h3>
+        <p class="text-sm text-muted mb-4">
+            {{ bet.get_selection_display }} on
+            {{ match.home_team.short_name|default:match.home_team.name }} vs
+            {{ match.away_team.short_name|default:match.away_team.name }}
+        </p>
+
+        <div class="grid grid-cols-3 gap-4 text-center mb-4">
+            <div>
+                <div class="text-xs text-muted uppercase">Stake</div>
+                <div class="font-mono font-semibold">{{ bet.stake|currency:request.user }}</div>
+            </div>
+            <div>
+                <div class="text-xs text-muted uppercase">Odds</div>
+                <div class="font-mono font-semibold">{{ bet.odds_at_placement|floatformat:2 }}</div>
+            </div>
+            <div>
+                <div class="text-xs text-muted uppercase">Potential Payout</div>
+                <div class="text-accent font-mono font-semibold">{{ potential_payout|currency:request.user }}</div>
+            </div>
+        </div>
+
+        <a href="{% url 'epl_betting:my_bets' %}"
+           class="text-sm text-accent hover:underline">View My Bets &rarr;</a>
+    </div>
+</div>
+{% include "epl_website/components/balance_oob.html" %}
+{% with oob=True %}{% include "matches/partials/community_sentiment.html" %}{% endwith %}

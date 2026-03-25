@@ -1,0 +1,12 @@
+{% extends "nba_website/base.html" %}
+{% block title %}Schedule — {{ target_date|date:"M j, Y" }}{% endblock %}
+
+{% block content %}
+<div class="flex items-center gap-3 mb-1">
+    <span class="w-1.5 h-8 rounded-full bg-primary"></span>
+    <h1 class="text-3xl font-bold">Schedule</h1>
+</div>
+<div id="schedule-content">
+    {% include "games/partials/schedule_content.html" %}
+</div>
+{% endblock %}

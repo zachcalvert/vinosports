@@ -1,0 +1,188 @@
+{% extends "nba_website/base.html" %}
+{% block title %}Profile &amp; Settings — NBA Bets{% endblock %}
+
+{% block content %}
+<div class="flex items-center gap-3 mb-6">
+    <span class="w-1.5 h-8 rounded-full bg-primary"></span>
+    <h1 class="text-3xl font-bold">Profile &amp; Settings</h1>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6 items-start">
+
+    {# Left column: display name form #}
+    <div class="flex flex-col gap-6">
+        <div class="themed-panel p-5">
+            <h2 class="text-lg font-bold mb-4">Display Name</h2>
+            <form method="post" class="space-y-3">
+                {% csrf_token %}
+                <div>
+                    <label for="id_display_name" class="themed-label">Name shown on leaderboards</label>
+                    {{ form.display_name }}
+                    {% if form.display_name.errors %}
+                    <p class="text-danger text-xs mt-1">{{ form.display_name.errors.0 }}</p>
+                    {% endif %}
+                </div>
+                <button type="submit"
+                        class="bg-primary text-dark font-bold py-2 px-4 rounded-md hover:bg-primary/90 transition-colors text-sm">
+                    Save
+                </button>
+            </form>
+        </div>
+
+        {# Info panels #}
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+            {% if balance is not None %}
+            <div class="bg-surface-container-lowest rounded-xl border-b-4 border-outline-variant border-t-4 border-t-nba p-4 text-center">
+                <div class="text-xs text-muted uppercase mb-1">Balance</div>
+                <div class="text-xl font-mono font-bold text-primary">${{ balance|floatformat:0 }}</div>
+            </div>
+            {% endif %}
+
+            <div class="bg-surface-container-lowest rounded-xl border-b-4 border-outline-variant p-4 text-center">
+                <div class="text-xs text-muted uppercase mb-1">Member Since</div>
+                <div class="text-xl font-bold">{{ user.date_joined|date:"M d, Y" }}</div>
+            </div>
+
+            {% if stats %}
+            <div class="bg-surface-container-lowest rounded-xl border-b-4 border-outline-variant p-4 text-center">
+                <div class="text-xs text-muted uppercase mb-1">Record</div>
+                <div class="text-xl font-mono font-bold">{{ stats.total_wins }}W&ndash;{{ stats.total_losses }}L</div>
+                {% if stats.total_bets > 0 %}
+                <div class="text-xs text-muted mt-1">{{ stats.win_rate }}% win rate</div>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <div class="bg-surface-container-lowest rounded-xl border-b-4 border-outline-variant p-4 text-center">
+                <div class="text-xs text-muted uppercase mb-1">Theme</div>
+                <form method="post" action="{% url 'nba_website:theme_toggle' %}" class="mt-1">
+                    {% csrf_token %}
+                    <input type="hidden" name="theme" value="{{ ui_theme_toggle_value }}">
+                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                    <button type="submit" class="theme-toggle-btn" aria-label="{{ ui_theme_toggle_label }}" title="{{ ui_theme_toggle_label }}">
+                        <span class="theme-toggle-track{% if ui_theme_is_dark %} is-dark{% endif %}">
+                            <span class="theme-toggle-icon theme-toggle-sun" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="4"></circle>
+                                    <path d="M12 2.5v2.5M12 19v2.5M4.93 4.93l1.77 1.77M17.3 17.3l1.77 1.77M2.5 12H5M19 12h2.5M4.93 19.07l1.77-1.77M17.3 6.7l1.77-1.77"></path>
+                                </svg>
+                            </span>
+                            <span class="theme-toggle-thumb{% if ui_theme_is_dark %} is-dark{% endif %}" aria-hidden="true"></span>
+                            <span class="theme-toggle-icon theme-toggle-moon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"></path>
+                                </svg>
+                            </span>
+                        </span>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    {# Right column: transaction history #}
+    <div class="themed-panel p-5">
+        <h2 class="text-lg font-bold mb-4">Recent Transactions</h2>
+        {% if transactions %}
+        <div class="space-y-2 max-h-96 overflow-y-auto">
+            {% for txn in transactions %}
+            <div class="flex items-center justify-between py-2 border-b border-outline-variant last:border-0">
+                <div>
+                    <div class="text-sm">{{ txn.description }}</div>
+                    <div class="text-xs text-muted">{{ txn.created_at|date:"M d, Y g:i A" }}</div>
+                </div>
+                <div class="font-mono text-sm font-semibold {% if txn.amount > 0 %}text-positive{% else %}text-danger{% endif %}">
+                    {% if txn.amount > 0 %}+{% endif %}${{ txn.amount|floatformat:0 }}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-sm text-muted">No transactions yet. Place your first bet!</p>
+        {% endif %}
+    </div>
+
+</div>
+
+{# Balance history chart #}
+<div class="bg-surface-container-lowest rounded-xl border-b-4 border-outline-variant p-4 mb-6">
+    <div class="flex items-center gap-2 mb-3">
+        <span class="w-1 h-5 rounded-full bg-nba"></span>
+        <h2 class="text-lg font-bold">Balance History</h2>
+    </div>
+    <div style="position: relative; height: 250px;">
+        <canvas id="balanceChart"></canvas>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+<script>
+(function() {
+    var canvas = document.getElementById('balanceChart');
+    if (!canvas) return;
+    var symbol = '$';
+
+    fetch('/api/balance-history/{{ user.slug }}/')
+        .then(function(r) { return r.json(); })
+        .then(function(json) {
+            var accentColor = getComputedStyle(document.documentElement)
+                .getPropertyValue('--color-accent').trim().split(' ');
+            var rgb = 'rgb(' + accentColor.join(',') + ')';
+            var rgbA = 'rgba(' + accentColor.join(',') + ', 0.1)';
+
+            new Chart(canvas, {
+                type: 'line',
+                data: {
+                    datasets: [{
+                        data: json.data,
+                        borderColor: rgb,
+                        backgroundColor: rgbA,
+                        fill: true,
+                        tension: 0.1,
+                        pointRadius: 0,
+                        pointHitRadius: 8,
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    parsing: { xAxisKey: 't', yAxisKey: 'y' },
+                    scales: {
+                        x: {
+                            type: 'time',
+                            time: {
+                                unit: 'day',
+                                tooltipFormat: 'EEE MMM d',
+                                displayFormats: { day: 'MMM d' }
+                            },
+                            grid: { color: 'rgba(255,255,255,0.05)' },
+                            ticks: { color: '#9ca3af', maxTicksLimit: 10 }
+                        },
+                        y: {
+                            grid: { color: 'rgba(255,255,255,0.05)' },
+                            ticks: {
+                                color: '#9ca3af',
+                                callback: function(v) { return symbol + v.toLocaleString(); }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(ctx) {
+                                    return symbol + ctx.parsed.y.toLocaleString();
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        });
+})();
+</script>
+{% endblock %}

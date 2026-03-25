@@ -1,0 +1,51 @@
+<div class="bg-surface-container-lowest rounded-xl p-4 sm:p-5 border-b-4 border-primary">
+    <div class="flex items-center justify-between mb-4">
+        <h3 class="font-headline font-black text-sm uppercase tracking-widest text-secondary">League Table</h3>
+        <a href="{% url 'epl_matches:table' %}" class="text-xs text-primary hover:underline transition-colors">View full table</a>
+    </div>
+    {% if standings %}
+    <div class="overflow-x-auto">
+        <table class="w-full text-xs">
+            <thead>
+                <tr class="border-b border-outline-variant text-muted uppercase tracking-wider">
+                    <th class="px-2 py-2 text-left">Pos</th>
+                    <th class="px-2 py-2 text-left">Team</th>
+                    <th class="px-2 py-2 text-center">P</th>
+                    <th class="px-2 py-2 text-center">Pts</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for standing in standings %}
+                <tr class="border-b border-outline-variant/50 hover:bg-surface-container-low
+                    {% if standing.position <= 4 %}bg-primary/5{% elif standing.position >= 18 %}bg-danger/5{% endif %}">
+                    <td class="px-2 py-2 font-medium
+                        {% if standing.position <= 4 %}text-primary{% elif standing.position >= 18 %}text-danger{% else %}text-muted{% endif %}">
+                        {{ standing.position }}
+                    </td>
+                    <td class="px-2 py-2">
+                        <div class="flex items-center gap-1.5">
+                            {% if standing.team.crest_url %}
+                                <img src="{{ standing.team.crest_url }}" alt="" class="w-4 h-4 object-contain flex-shrink-0">
+                            {% endif %}
+                            <span class="font-medium truncate">{{ standing.team.short_name|default:standing.team.name }}</span>
+                        </div>
+                    </td>
+                    <td class="px-2 py-2 text-center text-muted">{{ standing.played }}</td>
+                    <td class="px-2 py-2 text-center font-bold">{{ standing.points }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="mt-3 flex gap-2 text-xs text-muted">
+        <div class="flex items-center gap-1">
+            <span class="w-1.5 h-1.5 rounded-full bg-primary"></span> CL
+        </div>
+        <div class="flex items-center gap-1">
+            <span class="w-1.5 h-1.5 rounded-full bg-danger"></span> Rel
+        </div>
+    </div>
+    {% else %}
+    <p class="text-sm text-muted">No standings data available</p>
+    {% endif %}
+</div>

@@ -1,0 +1,255 @@
+{% load match_tags %}
+{# Hidden CSRF token for HTMX parlay add buttons (hx-include targets this) #}
+{% if user.is_authenticated %}<div hidden>{% csrf_token %}</div>{% endif %}
+{% if matches %}
+<!-- Desktop table -->
+<div class="hidden md:block">
+    <div class="mb-3 flex items-center justify-between gap-3 rounded-xl border border-outline-variant/70 bg-accent-light px-4 py-3">
+        <div>
+            <p class="text-xs font-semibold uppercase tracking-[0.22em] text-accent/80">Market freshness</p>
+            <p class="mt-1 text-sm">
+                {% if last_odds_refresh %}
+                    Odds generated {{ last_odds_refresh|relative_time }}
+                {% else %}
+                    Waiting for odds generation
+                {% endif %}
+            </p>
+        </div>
+        <p class="text-xs text-muted">Board rendered {{ rendered_at|relative_time }}</p>
+    </div>
+    <table class="w-full">
+        <thead>
+            <tr class="border-b border-outline-variant text-xs text-muted uppercase tracking-wider">
+                <th class="px-3 py-3 text-left">Kickoff</th>
+                <th class="px-3 py-3 text-left">Home</th>
+                <th class="px-3 py-3 text-center">H</th>
+                <th class="px-3 py-3 text-center">D</th>
+                <th class="px-3 py-3 text-center">A</th>
+                <th class="px-3 py-3 text-right">Away</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for match in matches %}
+            <tr class="border-b border-outline-variant/50 hover:bg-surface-container-low">
+                <td class="px-3 py-3 text-sm text-muted whitespace-nowrap">
+                    <time datetime="{{ match.kickoff|date:'c' }}" data-format="short">{{ match.kickoff|date:"D d M, H:i" }}</time>
+                </td>
+                <td class="px-3 py-3">
+                    <a href="{% url 'epl_matches:match_detail' match.slug %}" class="flex items-center gap-2 hover:text-primary transition-colors">
+                        {% if match.home_team.crest_url %}
+                            <img src="{{ match.home_team.crest_url }}" alt="" class="w-5 h-5 object-contain">
+                        {% endif %}
+                        <span class="text-sm font-medium">{{ match.home_team.short_name|default:match.home_team.name }}</span>
+                    </a>
+                </td>
+                <td class="px-3 py-3 text-center">
+                    {% if match.best_home_odds %}
+                    <div class="flex flex-col items-center gap-0.5">
+                        <button class="font-mono text-sm text-primary font-bold px-2 py-1 rounded hover:bg-accent/10 transition-colors"
+                                hx-get="{% url 'epl_betting:quick_bet_form' match.slug %}?selection=HOME_WIN&container=quick-bet-{{ match.pk }}"
+                                hx-target="#quick-bet-{{ match.pk }}"
+                                hx-swap="innerHTML">
+                            {{ match.best_home_odds|format_odds }}
+                        </button>
+                        {% if user.is_authenticated %}
+                        <button class="text-[0.6rem] text-muted hover:text-primary transition-colors leading-none px-1"
+                                title="Add to parlay"
+                                hx-post="{% url 'epl_betting:parlay_add' %}"
+                                hx-target="#parlay-slip-panel"
+                                hx-swap="outerHTML"
+                                hx-vals='{"match_id": "{{ match.pk }}", "selection": "HOME_WIN"}'
+                                hx-include="[name='csrfmiddlewaretoken']">
+                            + parlay
+                        </button>
+                        {% endif %}
+                    </div>
+                    {% else %}
+                    <span class="text-sm font-mono text-muted">&mdash;</span>
+                    {% endif %}
+                </td>
+                <td class="px-3 py-3 text-center">
+                    {% if match.best_draw_odds %}
+                    <div class="flex flex-col items-center gap-0.5">
+                        <button class="font-mono text-sm text-primary font-bold px-2 py-1 rounded hover:bg-accent/10 transition-colors"
+                                hx-get="{% url 'epl_betting:quick_bet_form' match.slug %}?selection=DRAW&container=quick-bet-{{ match.pk }}"
+                                hx-target="#quick-bet-{{ match.pk }}"
+                                hx-swap="innerHTML">
+                            {{ match.best_draw_odds|format_odds }}
+                        </button>
+                        {% if user.is_authenticated %}
+                        <button class="text-[0.6rem] text-muted hover:text-primary transition-colors leading-none px-1"
+                                title="Add to parlay"
+                                hx-post="{% url 'epl_betting:parlay_add' %}"
+                                hx-target="#parlay-slip-panel"
+                                hx-swap="outerHTML"
+                                hx-vals='{"match_id": "{{ match.pk }}", "selection": "DRAW"}'
+                                hx-include="[name='csrfmiddlewaretoken']">
+                            + parlay
+                        </button>
+                        {% endif %}
+                    </div>
+                    {% else %}
+                    <span class="text-sm font-mono text-muted">&mdash;</span>
+                    {% endif %}
+                </td>
+                <td class="px-3 py-3 text-center">
+                    {% if match.best_away_odds %}
+                    <div class="flex flex-col items-center gap-0.5">
+                        <button class="font-mono text-sm text-primary font-bold px-2 py-1 rounded hover:bg-accent/10 transition-colors"
+                                hx-get="{% url 'epl_betting:quick_bet_form' match.slug %}?selection=AWAY_WIN&container=quick-bet-{{ match.pk }}"
+                                hx-target="#quick-bet-{{ match.pk }}"
+                                hx-swap="innerHTML">
+                            {{ match.best_away_odds|format_odds }}
+                        </button>
+                        {% if user.is_authenticated %}
+                        <button class="text-[0.6rem] text-muted hover:text-primary transition-colors leading-none px-1"
+                                title="Add to parlay"
+                                hx-post="{% url 'epl_betting:parlay_add' %}"
+                                hx-target="#parlay-slip-panel"
+                                hx-swap="outerHTML"
+                                hx-vals='{"match_id": "{{ match.pk }}", "selection": "AWAY_WIN"}'
+                                hx-include="[name='csrfmiddlewaretoken']">
+                            + parlay
+                        </button>
+                        {% endif %}
+                    </div>
+                    {% else %}
+                    <span class="text-sm font-mono text-muted">&mdash;</span>
+                    {% endif %}
+                </td>
+                <td class="px-3 py-3 text-right">
+                    <a href="{% url 'epl_matches:match_detail' match.slug %}" class="flex items-center gap-2 justify-end hover:text-primary transition-colors">
+                        <span class="text-sm font-medium">{{ match.away_team.short_name|default:match.away_team.name }}</span>
+                        {% if match.away_team.crest_url %}
+                            <img src="{{ match.away_team.crest_url }}" alt="" class="w-5 h-5 object-contain">
+                        {% endif %}
+                    </a>
+                </td>
+            </tr>
+            <!-- Quick bet row (hidden until user clicks an odds button) -->
+            <tr>
+                <td colspan="6" id="quick-bet-{{ match.pk }}"></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Mobile card list -->
+<div class="md:hidden space-y-3">
+    <div class="rounded-2xl border border-accent/20 bg-surface px-4 py-4 shadow-[0_18px_45px_rgba(0,0,0,0.22)]">
+        <p class="text-[0.68rem] font-semibold uppercase tracking-[0.24em] text-accent/80">Odds board</p>
+        <p class="mt-1 text-sm font-semibold">
+            {% if last_odds_refresh %}
+                Odds generated {{ last_odds_refresh|relative_time }}
+            {% else %}
+                Waiting for odds generation
+            {% endif %}
+        </p>
+    </div>
+    {% for match in matches %}
+    <div class="overflow-hidden rounded-2xl border border-outline-variant/60 bg-surface shadow-[0_16px_40px_rgba(0,0,0,0.2)]">
+        <div class="flex items-center justify-between border-b border-outline-variant/60 px-4 py-3">
+            <div class="text-xs font-medium text-muted"><time datetime="{{ match.kickoff|date:'c' }}" data-format="short">{{ match.kickoff|date:"D d M, H:i" }}</time></div>
+            <div class="rounded-full bg-accent-light px-2.5 py-1 text-[0.68rem] uppercase tracking-[0.18em] text-muted">Tap for details</div>
+        </div>
+        <a href="{% url 'epl_matches:match_detail' match.slug %}" class="block px-4 py-4 hover:text-primary transition-colors">
+            <div class="space-y-3">
+                <div class="flex items-center justify-between gap-3">
+                    <div class="flex min-w-0 items-center gap-2">
+                {% if match.home_team.crest_url %}
+                    <img src="{{ match.home_team.crest_url }}" alt="" class="w-5 h-5 object-contain">
+                {% endif %}
+                        <span class="truncate text-sm font-medium">{{ match.home_team.short_name|default:match.home_team.name }}</span>
+                    </div>
+                    <span class="text-[0.68rem] uppercase tracking-[0.18em] text-muted">Home</span>
+                </div>
+                <div class="flex items-center justify-between gap-3">
+                    <div class="flex min-w-0 items-center gap-2">
+                        <span class="truncate text-sm font-medium">{{ match.away_team.short_name|default:match.away_team.name }}</span>
+                {% if match.away_team.crest_url %}
+                    <img src="{{ match.away_team.crest_url }}" alt="" class="w-5 h-5 object-contain">
+                {% endif %}
+                    </div>
+                    <span class="text-[0.68rem] uppercase tracking-[0.18em] text-muted">Away</span>
+                </div>
+            </div>
+        </a>
+        <div class="grid grid-cols-3 gap-2 px-4 pb-4">
+            <div class="text-center">
+                {% if match.best_home_odds %}
+                <button class="w-full font-mono text-sm text-primary font-bold py-2 rounded border border-outline-variant hover:bg-primary/10 transition-colors"
+                        hx-get="{% url 'epl_betting:quick_bet_form' match.slug %}?selection=HOME_WIN&container=quick-bet-mobile-{{ match.pk }}"
+                        hx-target="#quick-bet-mobile-{{ match.pk }}"
+                        hx-swap="innerHTML">
+                    {{ match.best_home_odds|format_odds }}
+                </button>
+                <div class="text-xs text-muted mt-1">Home</div>
+                {% if user.is_authenticated %}
+                <button class="text-[0.6rem] text-muted hover:text-primary transition-colors mt-1"
+                        hx-post="{% url 'epl_betting:parlay_add' %}"
+                        hx-target="#parlay-slip-panel"
+                        hx-swap="outerHTML"
+                        hx-vals='{"match_id": "{{ match.pk }}", "selection": "HOME_WIN"}'
+                        hx-include="[name='csrfmiddlewaretoken']">
+                    + parlay
+                </button>
+                {% endif %}
+                {% else %}
+                <span class="text-sm font-mono text-muted">&mdash;</span>
+                {% endif %}
+            </div>
+            <div class="text-center">
+                {% if match.best_draw_odds %}
+                <button class="w-full font-mono text-sm text-primary font-bold py-2 rounded border border-outline-variant hover:bg-primary/10 transition-colors"
+                        hx-get="{% url 'epl_betting:quick_bet_form' match.slug %}?selection=DRAW&container=quick-bet-mobile-{{ match.pk }}"
+                        hx-target="#quick-bet-mobile-{{ match.pk }}"
+                        hx-swap="innerHTML">
+                    {{ match.best_draw_odds|format_odds }}
+                </button>
+                <div class="text-xs text-muted mt-1">Draw</div>
+                {% if user.is_authenticated %}
+                <button class="text-[0.6rem] text-muted hover:text-primary transition-colors mt-1"
+                        hx-post="{% url 'epl_betting:parlay_add' %}"
+                        hx-target="#parlay-slip-panel"
+                        hx-swap="outerHTML"
+                        hx-vals='{"match_id": "{{ match.pk }}", "selection": "DRAW"}'
+                        hx-include="[name='csrfmiddlewaretoken']">
+                    + parlay
+                </button>
+                {% endif %}
+                {% else %}
+                <span class="text-sm font-mono text-muted">&mdash;</span>
+                {% endif %}
+            </div>
+            <div class="text-center">
+                {% if match.best_away_odds %}
+                <button class="w-full font-mono text-sm text-primary font-bold py-2 rounded border border-outline-variant hover:bg-primary/10 transition-colors"
+                        hx-get="{% url 'epl_betting:quick_bet_form' match.slug %}?selection=AWAY_WIN&container=quick-bet-mobile-{{ match.pk }}"
+                        hx-target="#quick-bet-mobile-{{ match.pk }}"
+                        hx-swap="innerHTML">
+                    {{ match.best_away_odds|format_odds }}
+                </button>
+                <div class="text-xs text-muted mt-1">Away</div>
+                {% if user.is_authenticated %}
+                <button class="text-[0.6rem] text-muted hover:text-primary transition-colors mt-1"
+                        hx-post="{% url 'epl_betting:parlay_add' %}"
+                        hx-target="#parlay-slip-panel"
+                        hx-swap="outerHTML"
+                        hx-vals='{"match_id": "{{ match.pk }}", "selection": "AWAY_WIN"}'
+                        hx-include="[name='csrfmiddlewaretoken']">
+                    + parlay
+                </button>
+                {% endif %}
+                {% else %}
+                <span class="text-sm font-mono text-muted">&mdash;</span>
+                {% endif %}
+            </div>
+        </div>
+        <div id="quick-bet-mobile-{{ match.pk }}" class="px-4 pb-4"></div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+{% include "epl_website/components/empty_state.html" with icon="odds" title="No upcoming matches with odds" message="Check back later for new odds." cta_url="/" cta_text="View Dashboard" %}
+{% endif %}

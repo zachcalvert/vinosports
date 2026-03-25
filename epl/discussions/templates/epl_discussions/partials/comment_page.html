@@ -1,0 +1,22 @@
+{% load match_tags %}
+
+{% for comment in comments %}
+    {% include "epl_discussions/partials/comment_single.html" with is_reply=False %}
+{% endfor %}
+
+{% if has_more %}
+<div id="load-more-comments" hx-swap-oob="true" class="text-center mt-4">
+    <button hx-get="{% url 'epl_discussions:comment_list' match.slug %}?offset={{ next_offset }}"
+            hx-target="#comment-list"
+            hx-swap="beforeend"
+            hx-indicator="#comments-loading"
+            class="text-primary text-sm hover:underline">
+        Load more comments
+    </button>
+    <span id="comments-loading" class="htmx-indicator">
+        <span class="spinner spinner-sm text-primary"></span>
+    </span>
+</div>
+{% else %}
+<div id="load-more-comments" hx-swap-oob="true"></div>
+{% endif %}

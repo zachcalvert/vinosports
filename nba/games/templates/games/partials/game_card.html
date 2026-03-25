@@ -1,0 +1,74 @@
+{% load game_tags %}
+{# Canonical game card — expects `game` and `standings_by_team` in context. #}
+{# `game` should be annotated with `bet_count` and `comment_count`.         #}
+<div id="game-{{ game.id_hash }}"
+     class="bg-surface-container-lowest rounded-xl p-4 border-b-4 transition-all duration-300
+            {% if game.is_live %}border-primary live-game-card{% elif game.is_final %}border-secondary opacity-75 hover:opacity-100{% else %}border-primary hover:bg-surface-container-low{% endif %}">
+    <a href="{% url 'nba_games:game_detail' game.id_hash %}" class="block">
+        {# ── Header: status badge + arena ── #}
+        <div class="flex items-center justify-between mb-2">
+            {% if game.is_live %}
+                <span class="inline-flex items-center gap-1.5 text-xs font-bold text-danger uppercase tracking-wider">
+                    <span class="h-1.5 w-1.5 rounded-full bg-danger animate-pulse"></span>
+                    {{ game.get_status_display }}
+                </span>
+            {% elif game.is_final %}
+                <span class="font-label text-[10px] font-bold uppercase tracking-widest text-secondary">Final</span>
+            {% elif game.status == "POSTPONED" %}
+                <span class="font-label text-[10px] font-bold uppercase tracking-widest text-warning">Postponed</span>
+            {% else %}
+                <span class="text-xs text-primary font-bold">
+                    {% if game.tip_off %}
+                        <time class="local-time" datetime="{{ game.tip_off|date:'c' }}">{{ game.tip_off|date:"g:i A" }}</time>
+                    {% else %}
+                        TBD
+                    {% endif %}
+                </span>
+            {% endif %}
+            <div class="flex items-center gap-2">
+                {% if game.postseason %}
+                    <span class="text-[10px] uppercase tracking-widest font-bold text-tertiary">Playoffs</span>
+                {% endif %}
+                {% if game.arena %}
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-muted">{{ game.arena }}</span>
+                {% endif %}
+            </div>
+        </div>
+
+        {# ── Team rows ── #}
+        <div class="flex-1">
+            {# Away team #}
+            <div class="flex items-center justify-between mb-1">
+                <div class="flex items-center gap-2">
+                    {% if game.away_team.logo_url %}<img src="{{ game.away_team.logo_url }}" alt="" class="w-5 h-5 object-contain">{% endif %}
+                    <span class="font-semibold {% if game.is_final and game.away_score > game.home_score %}text-primary{% endif %}">{{ game.away_team }}</span>
+                    {% with standing=standings_by_team|get_item:game.away_team_id %}
+                    {% if standing %}<span class="text-xs text-muted">({{ standing.conference_rank }}) {{ standing.wins }}-{{ standing.losses }}</span>{% endif %}
+                    {% endwith %}
+                </div>
+                {% if game.away_score is not None %}
+                    <span class="font-headline font-black italic text-xl {% if game.is_final and game.away_score > game.home_score %}text-primary{% else %}text-secondary{% endif %}">{{ game.away_score }}</span>
+                {% endif %}
+            </div>
+            {# Home team #}
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    {% if game.home_team.logo_url %}<img src="{{ game.home_team.logo_url }}" alt="" class="w-5 h-5 object-contain">{% endif %}
+                    <span class="font-semibold {% if game.is_final and game.home_score > game.away_score %}text-primary{% endif %}">{{ game.home_team }}</span>
+                    {% with standing=standings_by_team|get_item:game.home_team_id %}
+                    {% if standing %}<span class="text-xs text-muted">({{ standing.conference_rank }}) {{ standing.wins }}-{{ standing.losses }}</span>{% endif %}
+                    {% endwith %}
+                </div>
+                {% if game.home_score is not None %}
+                    <span class="font-headline font-black italic text-xl {% if game.is_final and game.home_score > game.away_score %}text-primary{% else %}text-secondary{% endif %}">{{ game.home_score }}</span>
+                {% endif %}
+            </div>
+        </div>
+    </a>
+
+    {# ── Footer: bet & comment counts ── #}
+    <div class="mt-3 flex items-center gap-4 bg-surface-container-low rounded-lg px-3 py-2">
+        <span class="flex items-center gap-1"><i class="ph-duotone ph-ticket text-sm text-primary"></i> <span class="text-[10px] font-bold uppercase tracking-widest text-secondary">{{ game.bet_count|default:"0" }}</span></span>
+        <span class="flex items-center gap-1"><i class="ph-duotone ph-chat-circle-text text-sm text-secondary"></i> <span class="text-[10px] font-bold uppercase tracking-widest text-secondary">{{ game.comment_count|default:"0" }}</span></span>
+    </div>
+</div>

@@ -8,3 +8,7 @@ ignore = ["E501"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["vinosports"]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings"
+python_files = ["tests.py", "test_*.py"]

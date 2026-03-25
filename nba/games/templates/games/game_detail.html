@@ -1,0 +1,144 @@
+{% extends "nba_website/base.html" %}
+{% block title %}{{ game }}{% endblock %}
+
+{% block content %}
+<!-- Scoreboard (WebSocket for live score updates) -->
+{% if not game.is_final and game.status != "POSTPONED" and game.status != "CANCELLED" %}
+<div id="ws-container" hx-ext="ws" ws-connect="/nba/ws/live/{{ game.id_hash }}/">
+{% include "games/partials/scoreboard.html" %}
+</div>
+{% if game.is_live %}
+<script>
+(function() {
+    var container = document.getElementById('ws-container');
+    var dot = document.getElementById('ws-dot');
+    var label = document.getElementById('ws-label');
+    if (!container || !dot) return;
+
+    container.addEventListener('htmx:wsOpen', function() {
+        dot.classList.remove('connecting');
+        dot.classList.add('connected');
+        if (label) label.textContent = 'Live';
+    });
+    container.addEventListener('htmx:wsClose', function() {
+        dot.classList.remove('connected');
+        dot.classList.add('connecting');
+        if (label) label.textContent = 'Reconnecting';
+    });
+})();
+</script>
+{% endif %}
+{% else %}
+{% include "games/partials/scoreboard.html" %}
+{% endif %}
+
+<!-- Two-column layout: bet form | status card + discussion -->
+<div class="grid grid-cols-1 lg:grid-cols-[26rem_minmax(0,1fr)] gap-6 mb-6">
+
+    <!-- Bet form sidebar -->
+    <div class="lg:sticky lg:top-6 lg:self-start space-y-4">
+        {% if user_bets %}
+            {% include "nba_betting/partials/your_bets.html" %}
+        {% endif %}
+        {% if user.is_authenticated %}
+            {% if game.status == "SCHEDULED" %}
+                {% include "nba_betting/partials/bet_form.html" %}
+            {% else %}
+                <div class="bg-surface-container-lowest rounded-xl border-b-4 border-outline-variant p-6 text-center text-muted">
+                    <p class="text-sm">Betting is closed for this game.</p>
+                </div>
+            {% endif %}
+        {% else %}
+            <div class="bg-surface-container-lowest rounded-xl border-b-4 border-outline-variant border-dashed p-6 text-center">
+                <p class="text-muted text-sm mb-3">Log in to place a bet on this game.</p>
+                <a href="{% url 'nba_website:login' %}?next={{ request.path }}"
+                   class="inline-block bg-primary text-dark font-bold py-2 px-6 rounded-md hover:bg-primary/90 transition-colors text-sm">
+                    Log In
+                </a>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Main column — status card + discussion -->
+    <div class="space-y-4">
+        <!-- State-specific content -->
+        {% if game.status == "FINAL" %}
+            {% include "games/partials/recap_card.html" %}
+        {% elif sentiment or spread_sentiment or total_sentiment %}
+            {% include "games/partials/hype_card.html" %}
+        {% endif %}
+
+        <!-- Comments -->
+        <div class="bg-surface-container-lowest rounded-xl border-b-4 border-outline-variant">
+            <div class="px-5 py-4 border-b border-outline-variant flex items-center gap-3">
+                <span class="w-1 h-6 rounded-full bg-nba"></span>
+                <h3 class="text-lg font-bold">Discussion</h3>
+            </div>
+            <div class="px-5 py-4">
+                {% if user.is_authenticated %}
+                <form method="post" action="{% url 'nba_games:game_detail' game.id_hash %}" class="mb-6">
+                    {% csrf_token %}
+                    <div class="flex gap-3">
+                        <div class="flex-1">
+                            {{ comment_form.body }}
+                        </div>
+                        <button type="submit"
+                                class="self-end bg-primary text-dark font-bold py-2 px-4 rounded-md hover:bg-primary/90 transition-colors text-sm">
+                            Post
+                        </button>
+                    </div>
+                </form>
+                {% endif %}
+
+                {% if comments %}
+                <div class="space-y-4">
+                    {% for comment in comments %}
+                    <div class="flex gap-3">
+                        <div class="w-8 h-8 rounded-full bg-accent-light flex items-center justify-center text-xs font-bold text-accent shrink-0">
+                            {% if comment.user.display_name %}{{ comment.user.display_name|first|upper }}{% else %}{{ comment.user.email|first|upper }}{% endif %}
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="text-sm font-medium">{% if comment.user.display_name %}{{ comment.user.display_name }}{% else %}{{ comment.user.email }}{% endif %}</span>
+                                {% if comment.user.is_bot %}<span class="inline-flex items-center rounded-full bg-accent-light px-1.5 py-0.5 text-[10px] font-semibold text-accent">BOT</span>{% endif %}
+                                <span class="text-xs text-muted">{{ comment.created_at|timesince }} ago</span>
+                            </div>
+                            <p class="text-sm text-muted">{{ comment.body }}</p>
+
+                            {% if comment.replies.all %}
+                            <div class="mt-3 ml-4 space-y-3 border-l border-outline-variant pl-4">
+                                {% for reply in comment.replies.all %}
+                                <div class="flex gap-2">
+                                    <div class="w-6 h-6 rounded-full bg-accent-light/50 flex items-center justify-center text-[10px] font-bold text-accent shrink-0">
+                                        {% if reply.user.display_name %}{{ reply.user.display_name|first|upper }}{% else %}{{ reply.user.email|first|upper }}{% endif %}
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex items-center gap-2 mb-0.5">
+                                            <span class="text-xs font-medium">{% if reply.user.display_name %}{{ reply.user.display_name }}{% else %}{{ reply.user.email }}{% endif %}</span>
+                                            {% if reply.user.is_bot %}<span class="inline-flex items-center rounded-full bg-accent-light px-1.5 py-0.5 text-[10px] font-semibold text-accent">BOT</span>{% endif %}
+                                            <span class="text-[11px] text-muted">{{ reply.created_at|timesince }} ago</span>
+                                        </div>
+                                        <p class="text-xs text-muted">{{ reply.body }}</p>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-sm text-muted text-center py-6">No comments yet. Be the first to weigh in.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Box Score (live + final games) -->
+{% if has_box_score %}
+    {% include "games/partials/box_score.html" %}
+{% endif %}
+{% endblock %}
+

@@ -1,0 +1,37 @@
+{% load match_tags %}
+
+<div id="discussion-section" class="mt-4 mb-6">
+    <h3 class="text-xl font-bold mb-3">
+        Discussion
+        <span id="comment-count" class="text-muted font-normal text-base">({{ comment_count }})</span>
+    </h3>
+
+    {% if request.user.is_authenticated %}
+        {% include "epl_discussions/partials/comment_form.html" %}
+    {% else %}
+        {% include "epl_discussions/partials/login_cta.html" %}
+    {% endif %}
+
+    <div id="comment-list" class="space-y-3 mt-4">
+        {% for comment in comments %}
+            {% include "epl_discussions/partials/comment_single.html" with is_reply=False %}
+        {% empty %}
+            {% include "epl_website/components/empty_state.html" with icon="chat" title="No comments yet" message="Be the first to share your thoughts on this match." %}
+        {% endfor %}
+    </div>
+
+    {% if has_more %}
+    <div id="load-more-comments" class="text-center mt-4">
+        <button hx-get="{% url 'epl_discussions:comment_list' match.slug %}?offset={{ next_offset }}"
+                hx-target="#comment-list"
+                hx-swap="beforeend"
+                hx-indicator="#comments-loading"
+                class="text-primary text-sm hover:underline">
+            Load more comments
+        </button>
+        <span id="comments-loading" class="htmx-indicator">
+            <span class="spinner spinner-sm text-primary"></span>
+        </span>
+    </div>
+    {% endif %}
+</div>

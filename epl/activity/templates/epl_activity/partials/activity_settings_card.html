@@ -1,0 +1,27 @@
+<section id="activity-settings-card" class="rounded-xl border-b-4 border-outline-variant bg-surface-container-lowest p-5">
+    <p class="text-xs font-semibold uppercase tracking-wider text-primary mb-1">Notifications</p>
+    <h2 class="text-xl font-bold">Live Activity Feed</h2>
+    <p class="mt-2 text-sm text-muted">
+        Show real-time activity toasts (bets, comments, goals) in the bottom-left corner of every page.
+    </p>
+    <form
+        method="post"
+        hx-post="{% url 'epl_activity:toggle_toasts' %}"
+        hx-target="#activity-settings-card"
+        hx-swap="outerHTML"
+        class="mt-4"
+    >
+        {% csrf_token %}
+        <label class="flex items-center gap-3 cursor-pointer select-none">
+            <span class="relative inline-flex items-center">
+                <input type="checkbox" name="show_activity_toasts"
+                       {% if user.show_activity_toasts %}checked{% endif %}
+                       onchange="this.form.requestSubmit()"
+                       class="sr-only peer">
+                <span class="block w-10 h-6 rounded-full bg-gray-600 peer-checked:bg-primary transition-colors"></span>
+                <span class="absolute left-1 top-1 w-4 h-4 rounded-full bg-white transition-transform peer-checked:translate-x-4"></span>
+            </span>
+            <span class="text-sm">Show activity toasts</span>
+        </label>
+    </form>
+</section>

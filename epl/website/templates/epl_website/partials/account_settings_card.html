@@ -1,0 +1,95 @@
+{% load currency_tags %}
+<section id="account-settings-card" class="rounded-xl border-b-4 border-outline-variant bg-surface-container-lowest p-5">
+    <p class="text-xs font-semibold uppercase tracking-wider text-primary mb-1">Settings</p>
+    <h2 class="text-xl font-bold">Account &amp; Preferences</h2>
+
+    {# ── Display name ──────────────────────────────── #}
+    <form
+        method="post"
+        hx-post="{% url 'epl_website:account' %}"
+        hx-target="#account-settings-card"
+        hx-swap="outerHTML"
+        class="mt-4 space-y-3"
+    >
+        {% csrf_token %}
+        <div>
+            <label for="{{ display_name_form.display_name.id_for_label }}" class="block text-sm font-medium text-muted mb-1">Display name</label>
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+                <div class="flex-1">
+                    {{ display_name_form.display_name }}
+                </div>
+                <button
+                    type="submit"
+                    class="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-dark transition-colors hover:bg-primary/90 whitespace-nowrap"
+                >
+                    Save
+                </button>
+            </div>
+            {% if display_name_form.display_name.errors %}
+            <p class="text-danger text-xs mt-1">{{ display_name_form.display_name.errors.0 }}</p>
+            {% endif %}
+            <p class="text-xs text-muted mt-1">Up to 50 characters, unique. Fallback: <span class="font-mono">{{ account_masked_email }}</span></p>
+        </div>
+
+        {% if account_save_success %}
+        <p class="text-primary text-sm">Display name updated.</p>
+        {% endif %}
+    </form>
+
+    <hr class="border-outline-variant my-4">
+
+    {# ── Currency ──────────────────────────────────── #}
+    <form
+        method="post"
+        hx-post="{% url 'epl_website:currency_update' %}"
+        hx-target="#account-settings-card"
+        hx-swap="outerHTML"
+        class="space-y-3"
+    >
+        {% csrf_token %}
+        <div>
+            <label for="{{ currency_form.currency.id_for_label }}" class="block text-sm font-medium text-muted mb-1">Display currency</label>
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+                <div class="flex-1">
+                    {{ currency_form.currency }}
+                </div>
+                <button
+                    type="submit"
+                    class="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-dark transition-colors hover:bg-primary/90 whitespace-nowrap"
+                >
+                    Save
+                </button>
+            </div>
+        </div>
+
+        {% if currency_save_success %}
+        <p class="text-primary text-sm">Currency updated.</p>
+        {% endif %}
+
+        <p class="text-xs text-muted">Currently displaying as: <span class="font-mono">{% currency_symbol user %}</span></p>
+    </form>
+
+    <hr class="border-outline-variant my-4">
+
+    {# ── Activity toasts ───────────────────────────── #}
+    <form
+        method="post"
+        hx-post="{% url 'epl_activity:toggle_toasts' %}"
+        hx-target="#account-settings-card"
+        hx-swap="outerHTML"
+    >
+        {% csrf_token %}
+        <label class="flex items-center gap-3 cursor-pointer select-none">
+            <span class="relative inline-flex items-center">
+                <input type="checkbox" name="show_activity_toasts"
+                       {% if user.show_activity_toasts %}checked{% endif %}
+                       onchange="this.form.requestSubmit()"
+                       class="sr-only peer">
+                <span class="block w-10 h-6 rounded-full bg-gray-600 peer-checked:bg-primary transition-colors"></span>
+                <span class="absolute left-1 top-1 w-4 h-4 rounded-full bg-white transition-transform peer-checked:translate-x-4"></span>
+            </span>
+            <span class="text-sm">Show live activity toasts</span>
+        </label>
+        <p class="text-xs text-muted mt-2">Real-time bets, comments, and goals in the bottom-left corner.</p>
+    </form>
+</section>

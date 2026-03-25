@@ -1,0 +1,7 @@
+<div class="bg-surface-container-lowest rounded-xl border border-outline-variant border-dashed p-4 text-center">
+    <p class="text-muted text-sm mb-2">Log in to join the discussion.</p>
+    <a href="{% url 'epl_website:login' %}?next={% url 'epl_matches:match_detail' match.slug %}"
+       class="inline-block bg-primary text-dark font-bold py-1.5 px-4 rounded-md hover:bg-primary/90 transition-colors text-sm">
+        Log In
+    </a>
+</div>

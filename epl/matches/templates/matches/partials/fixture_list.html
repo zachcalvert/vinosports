@@ -1,0 +1,10 @@
+{% load match_tags %}
+{% if matches %}
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    {% for match in matches %}
+        {% include "matches/partials/match_card.html" %}
+    {% endfor %}
+</div>
+{% else %}
+{% include "epl_website/components/empty_state.html" with icon="calendar" title="No fixtures for this matchday" %}
+{% endif %}
