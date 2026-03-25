@@ -2,75 +2,37 @@
 {% block title %}{{ game }}{% endblock %}
 
 {% block content %}
-<!-- Game header -->
-<div class="bg-surface rounded-xl border border-border border-t-4 border-t-nba p-6 shadow-sm mb-6">
-    <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div class="flex items-center gap-3">
-            {% if game.status == "FINAL" %}
-                <span class="inline-flex items-center rounded-full bg-border/40 px-2.5 py-1 text-xs font-medium text-muted">Final</span>
-            {% elif game.is_live %}
-                <span class="inline-flex items-center gap-1 rounded-full bg-danger/10 px-2.5 py-1 text-xs font-bold text-danger">
-                    <span class="h-1.5 w-1.5 rounded-full bg-danger animate-pulse"></span>
-                    {{ game.get_status_display }}
-                </span>
-            {% elif game.status == "POSTPONED" %}
-                <span class="inline-flex items-center rounded-full bg-warning/10 px-2.5 py-1 text-xs font-medium text-warning">Postponed</span>
-            {% else %}
-                <span class="inline-flex items-center rounded-full bg-accent-light px-2.5 py-1 text-xs font-medium text-muted">Scheduled</span>
-            {% endif %}
-            {% if game.postseason %}
-                <span class="text-xs uppercase tracking-wider font-bold text-accent">Playoffs</span>
-            {% endif %}
-        </div>
-        <span class="text-xs text-muted">{{ game.season }}&ndash;{{ game.season|add:"1" }} Season</span>
-    </div>
-
-    <div class="flex items-center justify-center gap-8 md:gap-16">
-        <!-- Away team -->
-        <div class="text-center flex-1">
-            {% if game.away_team.logo_url %}
-                <img src="{{ game.away_team.logo_url }}" alt="" class="w-16 h-16 mx-auto mb-2 object-contain">
-            {% endif %}
-            <h2 class="text-lg font-bold">{{ game.away_team.short_name }}</h2>
-            <p class="text-sm text-muted mt-0.5">{{ game.away_team.abbreviation }}</p>
-        </div>
-
-        <!-- Score / vs -->
-        <div class="text-center">
-            {% if game.home_score is not None and game.away_score is not None %}
-                <div class="flex items-center gap-3">
-                    <span class="text-4xl font-bold font-mono {% if game.is_final and game.winner == game.away_team %}text-accent{% endif %}">{{ game.away_score }}</span>
-                    <span class="text-lg text-muted">&ndash;</span>
-                    <span class="text-4xl font-bold font-mono {% if game.is_final and game.winner == game.home_team %}text-accent{% endif %}">{{ game.home_score }}</span>
-                </div>
-            {% else %}
-                <span class="text-3xl font-bold text-muted">vs</span>
-            {% endif %}
-        </div>
-
-        <!-- Home team -->
-        <div class="text-center flex-1">
-            {% if game.home_team.logo_url %}
-                <img src="{{ game.home_team.logo_url }}" alt="" class="w-16 h-16 mx-auto mb-2 object-contain">
-            {% endif %}
-            <h2 class="text-lg font-bold">{{ game.home_team.short_name }}</h2>
-            <p class="text-sm text-muted mt-0.5">{{ game.home_team.abbreviation }}</p>
-        </div>
-    </div>
-
-    <div class="text-center mt-4 text-sm text-muted">
-        {% if game.tip_off %}
-            <time datetime="{{ game.tip_off|date:'c' }}">{{ game.tip_off|date:"l, F j, Y — g:i A" }}</time>
-        {% else %}
-            {{ game.game_date|date:"l, F j, Y" }}
-        {% endif %}
-        {% if game.arena %}
-            &middot; {{ game.arena }}
-        {% endif %}
-    </div>
+<!-- Scoreboard (WebSocket for live score updates) -->
+{% if not game.is_final and game.status != "POSTPONED" and game.status != "CANCELLED" %}
+<div id="ws-container" hx-ext="ws" ws-connect="/ws/live/{{ game.id_hash }}/">
+{% include "games/partials/scoreboard.html" %}
 </div>
+{% if game.is_live %}
+<script>
+(function() {
+    var container = document.getElementById('ws-container');
+    var dot = document.getElementById('ws-dot');
+    var label = document.getElementById('ws-label');
+    if (!container || !dot) return;
 
-<!-- Two-column layout: bet form | odds + discussion -->
+    container.addEventListener('htmx:wsOpen', function() {
+        dot.classList.remove('connecting');
+        dot.classList.add('connected');
+        if (label) label.textContent = 'Live';
+    });
+    container.addEventListener('htmx:wsClose', function() {
+        dot.classList.remove('connected');
+        dot.classList.add('connecting');
+        if (label) label.textContent = 'Reconnecting';
+    });
+})();
+</script>
+{% endif %}
+{% else %}
+{% include "games/partials/scoreboard.html" %}
+{% endif %}
+
+<!-- Two-column layout: bet form | status card + discussion -->
 <div class="grid grid-cols-1 lg:grid-cols-[26rem_minmax(0,1fr)] gap-6 mb-6">
 
     <!-- Bet form sidebar -->
@@ -99,11 +61,12 @@
 
     <!-- Main column — status card + discussion -->
     <div class="space-y-4">
-        <!-- Status card: preview or recap -->
-        {% if game.status == "SCHEDULED" and sentiment or spread_sentiment or total_sentiment %}
-            {% include "games/partials/hype_card.html" %}
-        {% elif game.status == "FINAL" %}
+        <!-- State-specific content -->
+        {% if game.status == "FINAL" %}
             {% include "games/partials/recap_card.html" %}
+        {% endif %}
+        {% if sentiment or spread_sentiment or total_sentiment %}
+            {% include "games/partials/hype_card.html" %}
         {% endif %}
 
         <!-- Comments -->
@@ -133,11 +96,12 @@
                     {% for comment in comments %}
                     <div class="flex gap-3">
                         <div class="w-8 h-8 rounded-full bg-accent-light flex items-center justify-center text-xs font-bold text-accent shrink-0">
-                            {{ comment.user.email|first|upper }}
+                            {% if comment.user.display_name %}{{ comment.user.display_name|first|upper }}{% else %}{{ comment.user.email|first|upper }}{% endif %}
                         </div>
                         <div class="flex-1 min-w-0">
                             <div class="flex items-center gap-2 mb-1">
-                                <span class="text-sm font-medium">{{ comment.user.email }}</span>
+                                <span class="text-sm font-medium">{% if comment.user.display_name %}{{ comment.user.display_name }}{% else %}{{ comment.user.email }}{% endif %}</span>
+                                {% if comment.user.is_bot %}<span class="inline-flex items-center rounded-full bg-accent-light px-1.5 py-0.5 text-[10px] font-semibold text-accent">BOT</span>{% endif %}
                                 <span class="text-xs text-muted">{{ comment.created_at|timesince }} ago</span>
                             </div>
                             <p class="text-sm text-muted">{{ comment.body }}</p>
@@ -147,11 +111,12 @@
                                 {% for reply in comment.replies.all %}
                                 <div class="flex gap-2">
                                     <div class="w-6 h-6 rounded-full bg-accent-light/50 flex items-center justify-center text-[10px] font-bold text-accent shrink-0">
-                                        {{ reply.user.email|first|upper }}
+                                        {% if reply.user.display_name %}{{ reply.user.display_name|first|upper }}{% else %}{{ reply.user.email|first|upper }}{% endif %}
                                     </div>
                                     <div class="flex-1 min-w-0">
                                         <div class="flex items-center gap-2 mb-0.5">
-                                            <span class="text-xs font-medium">{{ reply.user.email }}</span>
+                                            <span class="text-xs font-medium">{% if reply.user.display_name %}{{ reply.user.display_name }}{% else %}{{ reply.user.email }}{% endif %}</span>
+                                            {% if reply.user.is_bot %}<span class="inline-flex items-center rounded-full bg-accent-light px-1.5 py-0.5 text-[10px] font-semibold text-accent">BOT</span>{% endif %}
                                             <span class="text-[11px] text-muted">{{ reply.created_at|timesince }} ago</span>
                                         </div>
                                         <p class="text-xs text-muted">{{ reply.body }}</p>
@@ -171,65 +136,4 @@
         </div>
     </div>
 </div>
-
-<!-- Odds history -->
-{% if odds_list %}
-<details class="mb-6 rounded-lg border border-border bg-surface shadow-sm">
-    <summary class="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4 sm:px-6">
-        <div class="flex items-center gap-3">
-            <span class="w-1 h-6 rounded-full bg-accent"></span>
-            <div>
-                <h3 class="text-lg font-bold">Odds History</h3>
-                <p class="mt-0.5 text-xs text-muted">Recent odds snapshots</p>
-            </div>
-        </div>
-        <span class="shrink-0 text-xs uppercase tracking-[0.18em] text-muted">Expand</span>
-    </summary>
-
-    <div class="border-t border-border px-5 py-4 sm:px-6">
-        <div class="overflow-x-auto">
-            <table class="w-full text-sm">
-                <thead>
-                    <tr class="border-b border-border text-xs text-muted uppercase tracking-wider">
-                        <th class="px-2 py-2 text-left">Book</th>
-                        <th class="px-2 py-2 text-center">ML Away</th>
-                        <th class="px-2 py-2 text-center">ML Home</th>
-                        <th class="px-2 py-2 text-center">Spread</th>
-                        <th class="px-2 py-2 text-center">Total</th>
-                        <th class="px-2 py-2 text-right">Updated</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for odds in odds_list %}
-                    <tr class="border-b border-border/50">
-                        <td class="px-2 py-2 font-medium">{{ odds.bookmaker }}</td>
-                        <td class="px-2 py-2 text-center font-mono">
-                            {% if odds.away_moneyline is not None %}
-                                {% if odds.away_moneyline > 0 %}+{{ odds.away_moneyline }}{% else %}{{ odds.away_moneyline }}{% endif %}
-                            {% else %}&mdash;{% endif %}
-                        </td>
-                        <td class="px-2 py-2 text-center font-mono">
-                            {% if odds.home_moneyline is not None %}
-                                {% if odds.home_moneyline > 0 %}+{{ odds.home_moneyline }}{% else %}{{ odds.home_moneyline }}{% endif %}
-                            {% else %}&mdash;{% endif %}
-                        </td>
-                        <td class="px-2 py-2 text-center font-mono">
-                            {% if odds.spread_line is not None %}
-                                {{ odds.spread_line|floatformat:1 }}
-                            {% else %}&mdash;{% endif %}
-                        </td>
-                        <td class="px-2 py-2 text-center font-mono">
-                            {% if odds.total_line is not None %}
-                                {{ odds.total_line|floatformat:1 }}
-                            {% else %}&mdash;{% endif %}
-                        </td>
-                        <td class="px-2 py-2 text-right text-xs text-muted">{{ odds.fetched_at|timesince }} ago</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-</details>
-{% endif %}
 {% endblock %}

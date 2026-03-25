@@ -33,7 +33,7 @@ Context expected:
         {% if betting_outcome %}
         <div class="px-5 py-4">
             <p class="text-xs font-semibold uppercase tracking-widest text-muted mb-3">Betting Outcome</p>
-            <div class="grid grid-cols-3 gap-4 text-center text-sm">
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center text-sm">
                 <div>
                     <p class="text-2xl font-bold">{{ betting_outcome.total_bets }}</p>
                     <p class="text-xs text-muted">Bets Placed</p>
@@ -43,8 +43,12 @@ Context expected:
                     <p class="text-xs text-muted">Got It Right</p>
                 </div>
                 <div>
+                    <p class="text-2xl font-bold">{{ betting_outcome.total_staked|currency_rounded:request.user }}</p>
+                    <p class="text-xs text-muted">Total Staked</p>
+                </div>
+                <div>
                     <p class="text-2xl font-bold text-accent">{{ betting_outcome.total_won_payout|currency_rounded:request.user }}</p>
-                    <p class="text-xs text-muted">Won</p>
+                    <p class="text-xs text-muted">Total Won</p>
                 </div>
             </div>
         </div>

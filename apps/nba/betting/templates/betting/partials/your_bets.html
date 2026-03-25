@@ -2,12 +2,12 @@
 <div class="bg-surface rounded-lg border border-border p-4">
     <div class="flex items-center gap-2 mb-3">
         <span class="w-1 h-5 rounded-full bg-nba"></span>
-        <h3 class="text-sm font-semibold">Your Bets <span class="text-muted font-normal">({{ user_bets|length }})</span></h3>
+        <h3 class="text-sm font-semibold">{% if game.is_final %}Your Results{% else %}Your Bets{% endif %} <span class="text-muted font-normal">({{ user_bets|length }})</span></h3>
     </div>
 
     <div class="space-y-3">
         {% for bet in user_bets %}
-        <div class="rounded-lg border border-border/50 bg-surface/50 p-3">
+        <div class="rounded-lg border border-border/50 bg-surface/50 p-3 {% if bet.status == 'WON' %}border-l-2 border-l-positive{% elif bet.status == 'LOST' %}border-l-2 border-l-danger{% elif bet.status == 'VOID' %}border-l-2 border-l-gray-500{% endif %}">
             <div class="flex items-center justify-between mb-2">
                 <div>
                     <span class="text-xs text-muted uppercase">{{ bet.get_market_display }}</span>

@@ -284,6 +284,13 @@ class GameDetailView(LoginRequiredMixin, View):
             "-created_at"
         )
 
+        # Team standings (records)
+        season = game.season
+        standings_qs = Standing.objects.filter(
+            team__in=[game.home_team, game.away_team], season=season
+        )
+        standings_map = {s.team_id: s for s in standings_qs}
+
         ctx = {
             "game": game,
             "odds_list": odds[:5],
@@ -295,6 +302,8 @@ class GameDetailView(LoginRequiredMixin, View):
             "sentiment": sentiment,
             "spread_sentiment": spread_sentiment,
             "total_sentiment": total_sentiment,
+            "home_standing": standings_map.get(game.home_team_id),
+            "away_standing": standings_map.get(game.away_team_id),
         }
         ctx.update(recap_ctx)
 

@@ -1,6 +1,7 @@
 # 0016: NBA Challenge Templates
 
 **Date:** 2026-03-24
+**Status:** Complete
 
 ## Goal
 
