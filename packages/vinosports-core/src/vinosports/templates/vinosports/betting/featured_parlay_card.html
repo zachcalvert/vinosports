@@ -5,7 +5,9 @@
     {# Header: sponsor + league badge #}
     <div class="flex items-center justify-between px-5 pt-5 pb-3">
         <div class="flex items-center gap-3">
-            {% if parlay.sponsor.bot_profile %}
+            {% if parlay.sponsor.profile_image %}
+            <img src="{{ parlay.sponsor.profile_image.url }}" class="w-10 h-10 rounded-full object-cover flex-shrink-0" alt="">
+            {% elif parlay.sponsor.bot_profile %}
             <div class="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
                  style="background-color: {{ parlay.sponsor.bot_profile.avatar_bg }};">
                 <i class="ph-duotone ph-{{ parlay.sponsor.bot_profile.avatar_icon }} text-lg text-white"></i>

@@ -111,10 +111,14 @@
             {% for bp in bot_profiles %}
             <a href="{% url 'hub:bot_profile' bp.user.slug %}"
                class="bg-surface-container-lowest p-5 rounded-xl border border-outline-variant hover:border-primary transition-all group block">
+                {% if bp.user.profile_image %}
+                <img src="{{ bp.user.profile_image.url }}" alt="" class="w-14 h-14 rounded-full object-cover mb-4 group-hover:scale-110 transition-transform">
+                {% else %}
                 <div class="w-14 h-14 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform"
                      style="background-color: {{ bp.avatar_bg }};">
                     <i class="ph-duotone ph-{{ bp.avatar_icon }} text-2xl text-white"></i>
                 </div>
+                {% endif %}
                 <h3 class="font-headline font-black text-lg uppercase italic text-primary">{{ bp.user.display_name }}</h3>
                 <p class="text-[10px] font-label font-bold text-tertiary tracking-widest uppercase mb-3">{{ bp.get_strategy_type_display }}</p>
                 {% if bp.tagline %}

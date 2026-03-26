@@ -14,7 +14,19 @@
 
     {# Portrait / Avatar #}
     <div class="lg:col-span-4 relative">
-        {% if bot_profile.portrait_url %}
+        {% if profile_user.profile_image %}
+        <div class="relative">
+            <div class="absolute -inset-2 bg-primary transform -rotate-1 rounded-xl"></div>
+            <div class="relative bg-surface-container-lowest p-3 border-2 border-on-surface rounded-sm shadow-xl">
+                <img src="{{ profile_user.profile_image.url }}"
+                     alt="{{ display_identity }} portrait"
+                     class="w-full grayscale contrast-125 border border-on-surface/20">
+                <div class="absolute bottom-8 right-0 bg-primary text-on-primary px-5 py-1.5 font-headline font-black italic text-2xl uppercase tracking-tighter -rotate-2 transform shadow-lg">
+                    {{ display_identity }}
+                </div>
+            </div>
+        </div>
+        {% elif bot_profile.portrait_url %}
         <div class="relative">
             <div class="absolute -inset-2 bg-primary transform -rotate-1 rounded-xl"></div>
             <div class="relative bg-surface-container-lowest p-3 border-2 border-on-surface rounded-sm shadow-xl">
@@ -47,7 +59,7 @@
     {# Identity + Playbook #}
     <div class="lg:col-span-8 flex flex-col justify-center h-full">
         <div class="flex items-center gap-3 mb-3 flex-wrap">
-            {% if not bot_profile.portrait_url %}
+            {% if not profile_user.profile_image and not bot_profile.portrait_url %}
             <h1 class="font-headline font-black text-4xl md:text-5xl text-primary uppercase tracking-tighter leading-none">
                 {{ display_identity }}
             </h1>

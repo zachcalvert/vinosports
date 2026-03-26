@@ -32,12 +32,12 @@ SELECTION_TO_ODDS_FIELD = {
 
 def get_available_matches_for_bot(bot_user):
     """Return bettable matches the bot hasn't already placed a pending bet on."""
-    already_bet = BetSlip.objects.filter(
-        user=bot_user, status=BetStatus.PENDING
-    ).values_list("match_id", flat=True)
+    already_bet = BetSlip.objects.filter(user=bot_user, status="PENDING").values_list(
+        "match_id", flat=True
+    )
 
     already_in_parlay = ParlayLeg.objects.filter(
-        parlay__user=bot_user, parlay__status=BetStatus.PENDING
+        parlay__user=bot_user, parlay__status="PENDING"
     ).values_list("match_id", flat=True)
 
     excluded = set(already_bet) | set(already_in_parlay)

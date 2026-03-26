@@ -4,6 +4,7 @@ from epl.betting.models import BetSlip, Parlay, ParlayLeg
 from epl.matches.models import Odds
 from vinosports.betting.featured import FeaturedParlay, FeaturedParlayLeg
 from vinosports.betting.models import Badge, UserBadge, UserBalance
+from vinosports.challenges.models import Challenge, ChallengeTemplate, UserChallenge
 
 
 @admin.register(Odds)
@@ -85,6 +86,61 @@ class FeaturedParlayLegInline(admin.TabularInline):
     extra = 0
     readonly_fields = ["event_label", "selection_label", "odds_snapshot"]
     can_delete = False
+
+
+@admin.register(ChallengeTemplate)
+class ChallengeTemplateAdmin(admin.ModelAdmin):
+    list_display = [
+        "title",
+        "challenge_type",
+        "criteria_type",
+        "reward_amount",
+        "is_active",
+    ]
+    list_filter = ["challenge_type", "criteria_type", "is_active"]
+    search_fields = ["title", "slug"]
+    prepopulated_fields = {"slug": ("title",)}
+
+
+class UserChallengeInline(admin.TabularInline):
+    model = UserChallenge
+    extra = 0
+    readonly_fields = [
+        "user",
+        "progress",
+        "target",
+        "status",
+        "completed_at",
+        "reward_credited",
+    ]
+    can_delete = False
+
+
+@admin.register(Challenge)
+class ChallengeAdmin(admin.ModelAdmin):
+    list_display = ["template", "status", "starts_at", "ends_at", "matchday"]
+    list_filter = ["status", "template__challenge_type"]
+    search_fields = ["template__title"]
+    raw_id_fields = ["template"]
+    inlines = [UserChallengeInline]
+
+
+@admin.register(UserChallenge)
+class UserChallengeAdmin(admin.ModelAdmin):
+    list_display = [
+        "user",
+        "challenge",
+        "progress",
+        "target",
+        "status",
+        "reward_credited",
+    ]
+    list_filter = ["status", "reward_credited"]
+    search_fields = ["user__email", "challenge__template__title"]
+    raw_id_fields = ["user", "challenge"]
+
+
+# --- Featured Parlays (shared core model, registered here to avoid duplication) ---
 
 
 @admin.register(FeaturedParlay)

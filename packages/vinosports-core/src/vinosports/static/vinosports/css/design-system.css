@@ -394,7 +394,8 @@
     width: 100%;
     height: 100%;
 }
-.avatar-crest-img {
+.avatar-crest-img,
+.avatar-profile-img {
     width: 100%;
     height: 100%;
     object-fit: cover;

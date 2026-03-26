@@ -4,6 +4,7 @@ from django import forms
 from django.contrib import admin
 from django.contrib.auth import get_user_model
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
+from django.contrib.auth.models import Group
 from django.db import transaction
 from django.db.models import Count
 
@@ -14,6 +15,8 @@ from vinosports.rewards.models import Reward, RewardDistribution, RewardRule
 from .models import SiteSettings
 
 User = get_user_model()
+
+admin.site.unregister(Group)
 
 
 class UserBalanceInline(admin.TabularInline):
@@ -39,7 +42,16 @@ class UserAdmin(BaseUserAdmin):
         (None, {"fields": ("email", "password")}),
         (
             "Profile",
-            {"fields": ("display_name", "currency", "is_bot", "slug", "id_hash")},
+            {
+                "fields": (
+                    "display_name",
+                    "currency",
+                    "is_bot",
+                    "profile_image",
+                    "slug",
+                    "id_hash",
+                )
+            },
         ),
         (
             "Permissions",
