@@ -3,6 +3,7 @@ import logging
 from asgiref.sync import async_to_sync
 from channels.generic.websocket import WebsocketConsumer
 from django.db import close_old_connections
+from django.db.models import Count
 from django.template.loader import render_to_string
 
 logger = logging.getLogger(__name__)
@@ -32,8 +33,37 @@ class LiveUpdatesConsumer(WebsocketConsumer):
         )
 
     def score_update(self, event):
-        """Handle dashboard-level score updates."""
-        self.send(text_data=event.get("html", ""))
+        """Handle dashboard-level score updates — render OOB game card."""
+        close_old_connections()
+        game_pk = event.get("game_pk")
+        try:
+            from .models import Game, Standing
+
+            game = (
+                Game.objects.filter(pk=game_pk)
+                .select_related("home_team", "away_team")
+                .annotate(
+                    bet_count=Count("bets", distinct=True),
+                    comment_count=Count("comments", distinct=True),
+                )
+                .first()
+            )
+            if not game:
+                return
+
+            standings_qs = Standing.objects.filter(
+                team_id__in=[game.home_team_id, game.away_team_id],
+                season=game.season,
+            ).select_related("team")
+            standings_by_team = {s.team_id: s for s in standings_qs}
+
+            html = render_to_string(
+                "games/partials/game_card_oob.html",
+                {"game": game, "standings_by_team": standings_by_team},
+            )
+            self.send(text_data=html)
+        except Exception:
+            logger.exception("Error rendering score_update for game %s", game_pk)
 
     def game_score_update(self, event):
         """Handle game detail page score updates — render OOB scoreboard + box score."""
