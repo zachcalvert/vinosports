@@ -25,6 +25,11 @@ from nba.games.models import (
 _ET = zoneinfo.ZoneInfo("America/New_York")
 
 
+def today_et() -> date:
+    """Return today's date in Eastern Time (matches how game_date is stored)."""
+    return datetime.now(_ET).date()
+
+
 logger = logging.getLogger(__name__)
 
 BDL_BASE = "https://api.balldontlie.io/nba/v1"
@@ -123,21 +128,22 @@ class NBADataClient:
 
         Checks if we have locally-live games to avoid unnecessary API calls.
         """
+        et_today = today_et()
         local_live = Game.objects.filter(
-            game_date=date.today(),
+            game_date=et_today,
             status__in=(GameStatus.IN_PROGRESS, GameStatus.HALFTIME),
         ).exists()
         if not local_live:
             # No games we think are live — skip unless there are scheduled
             # games today (they might have started since our last check).
             has_scheduled = Game.objects.filter(
-                game_date=date.today(),
+                game_date=et_today,
                 status=GameStatus.SCHEDULED,
             ).exists()
             if not has_scheduled:
                 return []
 
-        raw = self._get_all("/games", params={"dates[]": date.today().isoformat()})
+        raw = self._get_all("/games", params={"dates[]": et_today.isoformat()})
         return [
             self._normalize_game(g)
             for g in raw

@@ -1,7 +1,7 @@
 from datetime import timedelta
 
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models import Count, Q, Sum
+from django.db.models import Count, Prefetch, Q, Sum
 from django.shortcuts import get_object_or_404, render
 from django.utils import timezone
 from django.views import View
@@ -38,6 +38,12 @@ class ScheduleView(LoginRequiredMixin, View):
         games = (
             Game.objects.filter(game_date=target_date)
             .select_related("home_team", "away_team")
+            .prefetch_related(
+                Prefetch(
+                    "odds",
+                    queryset=Odds.objects.order_by("-fetched_at"),
+                )
+            )
             .annotate(
                 bet_count=Count("bets", distinct=True),
                 comment_count=Count("comments", distinct=True),
@@ -52,7 +58,8 @@ class ScheduleView(LoginRequiredMixin, View):
 
         # Build standings lookup for records & seeds
         team_ids = set()
-        for g in games:
+        games_list = list(games)
+        for g in games_list:
             team_ids.add(g.home_team_id)
             team_ids.add(g.away_team_id)
         standings_qs = Standing.objects.filter(
@@ -60,16 +67,43 @@ class ScheduleView(LoginRequiredMixin, View):
         ).select_related("team")
         standings_by_team = {s.team_id: s for s in standings_qs}
 
-        prev_date = target_date - timedelta(days=1)
-        next_date = target_date + timedelta(days=1)
+        # Build odds lookup (most recent per game)
+        odds_by_game = {}
+        for g in games_list:
+            first_odds = g.odds.all()[:1]
+            if first_odds:
+                odds_by_game[g.id] = first_odds[0]
+
+        # Pick featured game: most bets among non-final games, fallback to first
+        featured_game = None
+        remaining_games = games_list
+        non_final = [g for g in games_list if not g.is_final]
+        if non_final:
+            featured_game = max(non_final, key=lambda g: g.bet_count)
+            remaining_games = [g for g in games_list if g.id != featured_game.id]
+        elif games_list:
+            featured_game = games_list[0]
+            remaining_games = games_list[1:]
+
+        # Build week date strip (3 days before + target + 3 days after)
+        week_dates = []
+        for offset in range(-3, 4):
+            d = target_date + timedelta(days=offset)
+            week_dates.append(
+                {
+                    "date": d,
+                    "is_selected": d == target_date,
+                }
+            )
 
         ctx = {
-            "games": games,
+            "games": remaining_games,
+            "featured_game": featured_game,
             "target_date": target_date,
-            "prev_date": prev_date,
-            "next_date": next_date,
+            "week_dates": week_dates,
             "conference": conference,
             "standings_by_team": standings_by_team,
+            "odds_by_game": odds_by_game,
         }
 
         if getattr(request, "htmx", False):

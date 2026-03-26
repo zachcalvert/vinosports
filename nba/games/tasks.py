@@ -1,7 +1,6 @@
 import logging
 
 from celery import shared_task
-from django.utils import timezone
 
 from nba.games.services import sync_games, sync_live_scores, sync_standings, sync_teams
 
@@ -62,7 +61,9 @@ def _current_season() -> int:
     BDL uses the *start* year: the 2025-26 season is labelled "2025".
     Oct-Dec → current calendar year; Jan-Sep → previous calendar year.
     """
-    today = timezone.now().date()
+    from nba.games.services import today_et
+
+    today = today_et()
     if today.month >= 10:
         return today.year
     return today.year - 1

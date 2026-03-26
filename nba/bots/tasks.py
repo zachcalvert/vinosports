@@ -17,6 +17,7 @@ from nba.betting.settlement import BANKRUPTCY_THRESHOLD, grant_bailout
 from nba.bots.services import place_bot_bets
 from nba.bots.strategies import STRATEGY_MAP
 from nba.games.models import Game, GameStatus, Odds
+from nba.games.services import today_et
 from vinosports.betting.models import UserBalance
 from vinosports.bots.models import BotProfile
 from vinosports.bots.schedule import get_active_window, roll_action
@@ -31,7 +32,7 @@ MIN_BALANCE = Decimal("5.00")
 def run_bot_strategies(self):
     """Dispatch execute_bot_strategy for active bots whose schedule window matches now."""
     now = timezone.localtime()
-    today = now.date()
+    today = today_et()
     profiles = BotProfile.objects.filter(
         is_active=True, active_in_nba=True
     ).select_related("user", "schedule_template")
@@ -105,7 +106,7 @@ def execute_bot_strategy(self, bot_user_id: int, window_max_bets: int | None = N
             )
             return {"error": "low_balance"}
 
-    today = timezone.localdate()
+    today = today_et()
     games = Game.objects.filter(status=GameStatus.SCHEDULED, game_date=today)
     if not games.exists():
         return {"bets": 0, "reason": "no_games"}

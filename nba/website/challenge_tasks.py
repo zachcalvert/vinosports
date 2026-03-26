@@ -29,10 +29,10 @@ def _recently_used_template_ids(challenge_type, lookback_days):
 
 def _has_games_today():
     from nba.games.models import Game, GameStatus
+    from nba.games.services import today_et
 
-    today = timezone.localdate()
     return Game.objects.filter(
-        game_date=today,
+        game_date=today_et(),
         status=GameStatus.SCHEDULED,
     ).exists()
 

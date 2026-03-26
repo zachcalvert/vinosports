@@ -23,9 +23,9 @@ User = get_user_model()
 
 class DashboardView(LoginRequiredMixin, View):
     def get(self, request):
-        from django.utils import timezone
+        from nba.games.services import today_et
 
-        today = timezone.localdate()
+        today = today_et()
         games = (
             Game.objects.filter(game_date=today)
             .select_related("home_team", "away_team")

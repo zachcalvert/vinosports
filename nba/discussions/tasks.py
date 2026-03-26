@@ -15,6 +15,7 @@ from django.utils import timezone
 from nba.activity.models import ActivityEvent
 from nba.discussions.models import Comment
 from nba.games.models import Game, GameStatus
+from nba.games.services import today_et
 from vinosports.bots.models import BotProfile
 from vinosports.bots.schedule import get_active_window, roll_action
 
@@ -40,7 +41,7 @@ def generate_pregame_comments():
     Checks each bot's schedule window and rolls comment_probability.
     """
     now = timezone.localtime()
-    today = now.date()
+    today = today_et()
     games = Game.objects.filter(
         status=GameStatus.SCHEDULED, game_date=today
     ).select_related("home_team", "away_team")
@@ -112,7 +113,7 @@ def generate_postgame_comments():
     Checks each bot's schedule window and rolls comment_probability.
     """
     now = timezone.localtime()
-    today = now.date()
+    today = today_et()
     games = Game.objects.filter(
         status=GameStatus.FINAL, game_date=today
     ).select_related("home_team", "away_team")
