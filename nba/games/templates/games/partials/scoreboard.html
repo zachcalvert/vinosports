@@ -37,7 +37,7 @@ Context expected:
     <!-- Teams + Score -->
     <div class="flex items-center justify-center gap-8 md:gap-16">
         <!-- Away team -->
-        <div class="text-center flex-1">
+        <a href="{% url 'nba_games:team_detail' game.away_team.abbreviation %}" class="text-center flex-1 hover:opacity-80 transition-opacity">
             {% if game.away_team.logo_url %}
                 <img src="{{ game.away_team.logo_url }}" alt="" class="w-16 h-16 mx-auto mb-2 object-contain">
             {% endif %}
@@ -52,7 +52,7 @@ Context expected:
             {% elif away_standing %}
                 <p class="text-xs text-muted mt-1">{% if away_standing.conference_rank %}#{{ away_standing.conference_rank }} &middot; {% endif %}{{ away_standing.wins }}-{{ away_standing.losses }}</p>
             {% endif %}
-        </div>
+        </a>
 
         <!-- Score / vs -->
         <div id="score-display" class="text-center">
@@ -78,7 +78,7 @@ Context expected:
         </div>
 
         <!-- Home team -->
-        <div class="text-center flex-1">
+        <a href="{% url 'nba_games:team_detail' game.home_team.abbreviation %}" class="text-center flex-1 hover:opacity-80 transition-opacity">
             {% if game.home_team.logo_url %}
                 <img src="{{ game.home_team.logo_url }}" alt="" class="w-16 h-16 mx-auto mb-2 object-contain">
             {% endif %}
@@ -93,7 +93,7 @@ Context expected:
             {% elif home_standing %}
                 <p class="text-xs text-muted mt-1">{% if home_standing.conference_rank %}#{{ home_standing.conference_rank }} &middot; {% endif %}{{ home_standing.wins }}-{{ home_standing.losses }}</p>
             {% endif %}
-        </div>
+        </a>
     </div>
 
     <!-- Footer info -->

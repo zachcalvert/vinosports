@@ -16,7 +16,7 @@ Context expected:
         </div>
         <div class="flex rounded overflow-hidden h-6 mb-2 text-xs font-semibold">
             {% if spread_sentiment.home_pct %}
-            <div class="flex items-center justify-center bg-primary text-dark"
+            <div class="flex items-center justify-center bg-primary text-on-primary"
                  style="width: {{ spread_sentiment.home_pct }}%">
                 {% if spread_sentiment.home_pct >= 15 %}{{ spread_sentiment.home_pct }}%{% endif %}
             </div>

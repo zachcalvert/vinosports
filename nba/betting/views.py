@@ -21,6 +21,21 @@ from vinosports.betting.constants import PARLAY_MAX_LEGS, PARLAY_MIN_LEGS
 from vinosports.betting.models import BalanceTransaction
 
 
+class BetFormView(LoginRequiredMixin, View):
+    def get(self, request, id_hash):
+        game = get_object_or_404(Game, id_hash=id_hash, status=GameStatus.SCHEDULED)
+        best_odds = game.odds.order_by("-fetched_at").first()
+        return render(
+            request,
+            "nba_betting/partials/bet_form.html",
+            {
+                "game": game,
+                "best_odds": best_odds,
+                "bet_form": PlaceBetForm(),
+            },
+        )
+
+
 class PlaceBetView(LoginRequiredMixin, View):
     def post(self, request, id_hash):
         game = get_object_or_404(Game, id_hash=id_hash, status=GameStatus.SCHEDULED)

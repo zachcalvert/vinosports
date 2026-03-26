@@ -3,6 +3,7 @@ from django.urls import path
 from nba.betting.views import (
     AddToParlayView,
     BailoutView,
+    BetFormView,
     ClearParlayView,
     MyBetsView,
     PlaceBetView,
@@ -13,6 +14,7 @@ from nba.betting.views import (
 app_name = "nba_betting"
 
 urlpatterns = [
+    path("form/<str:id_hash>/", BetFormView.as_view(), name="bet_form"),
     path("place/<str:id_hash>/", PlaceBetView.as_view(), name="place_bet"),
     path("my-bets/", MyBetsView.as_view(), name="my_bets"),
     path("bailout/", BailoutView.as_view(), name="bailout"),
