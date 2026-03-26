@@ -22,13 +22,6 @@
             <i class="ph-duotone ph-chart-line-up text-lg"></i>
             <span>Odds</span>
         </a>
-        {% if user.is_authenticated %}
-        <a href="{% url 'epl_challenges:challenges' %}"
-           class="sidebar-link {% if url_name == 'challenges' %}sidebar-link--active{% endif %}">
-            <i class="ph-duotone ph-trophy text-lg"></i>
-            <span>Challenges</span>
-        </a>
-        {% endif %}
         {% if user.is_superuser %}
         <div class="sidebar-divider"></div>
         <a href="{% url 'epl_website:admin_dashboard' %}"

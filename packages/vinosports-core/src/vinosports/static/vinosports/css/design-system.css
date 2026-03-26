@@ -280,6 +280,19 @@
     background-color: rgb(var(--color-accent-light));
 }
 
+/* League sidebar — sticky desktop column */
+.league-sidebar {
+    width: 13rem;
+    flex-shrink: 0;
+    background-color: rgb(var(--color-surface));
+    border-right: 1px solid rgb(var(--color-border));
+    position: sticky;
+    top: 3.5rem; /* below global nav */
+    height: calc(100vh - 3.5rem);
+    overflow-y: auto;
+    padding: 1rem 0;
+}
+
 
 /* --------------------------------------------------------------------------
    8. FOOTER
