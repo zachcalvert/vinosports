@@ -2,7 +2,7 @@
 
 A monorepo for sports betting simulations across multiple leagues, powered by a shared Django package.
 
-Each league (EPL, NBA, and eventually NFL, World Cup, March Madness) is a standalone Django project that installs `vinosports-core` — a shared package providing user accounts, play-money balances, betting infrastructure, AI bot commentary, challenges, and rewards. One user account and one balance works across all leagues.
+Each league (EPL, NBA, and eventually NFL, World Cup, March Madness) lives as a Python package within a single unified Django project. `vinosports-core` is a shared package providing user accounts, play-money balances, betting infrastructure, AI bot commentary, challenges, and rewards. One user account and one balance works across all leagues.
 
 <img width="1016" height="632" alt="Screenshot 2026-03-25 at 9 09 47 AM" src="https://github.com/user-attachments/assets/ac54fbfd-8b0a-4b4f-855f-475039470243" />
 
@@ -14,24 +14,28 @@ Each league (EPL, NBA, and eventually NFL, World Cup, March Madness) is a standa
 
 ```
 vinosports/
-├── packages/vinosports-core/    # Shared Django apps (pip-installable)
-├── apps/hub/                     # Central homepage + global account settings
-├── apps/epl/                     # EPL betting simulation (fully ported)
-├── apps/nba/                     # NBA betting simulation (skeleton)
-├── docker-compose.yml            # Local dev stack
-└── docs/                         # Architecture decisions and plans
+├── config/                        # Unified Django config (settings, urls, asgi, celery)
+├── packages/vinosports-core/      # Shared Django apps (pip-installable)
+├── hub/                           # Central homepage, auth, global account settings
+├── epl/                           # EPL betting simulation (fully featured)
+├── nba/                           # NBA betting simulation (fully featured)
+├── Dockerfile                     # Single Dockerfile for all services
+├── docker-compose.yml             # Local dev stack (6 services)
+└── docs/                          # Architecture decisions and plans
 ```
 
-The **hub** (`apps/hub/`) is the top-level entry point. It provides a league directory (EPL, NBA, NFL cards) and manages global account settings (display name, balance, currency). It has no models — it reads from vinosports-core's shared database. See [docs/0005-HUB_APPLICATION.md](docs/0005-HUB_APPLICATION.md) for details.
+The **hub** (`hub/`) is the top-level entry point at `/`. It provides a league directory and manages global account settings. League apps are mounted at `/epl/` and `/nba/` via standard Django URL includes — no prefix stripping, no `FORCE_SCRIPT_NAME`.
 
-See [docs/0000-INITIAL_VISION.md](docs/0000-INITIAL_VISION.md) for the full architectural rationale and [docs/0001-SCAFFOLDING_COMPLETE.md](docs/0001-SCAFFOLDING_COMPLETE.md) for what's been built.
+A `LeagueMiddleware` sets `request.league` from the URL path, and each league's context processors guard on this value to avoid unnecessary queries on other leagues' pages.
+
+See [docs/0000-INITIAL_VISION.md](docs/0000-INITIAL_VISION.md) for the original architectural rationale and [docs/0019-UNIFIED_DJANGO_PROJECT.md](docs/0019-UNIFIED_DJANGO_PROJECT.md) for the merge from three projects into one.
 
 ## Local Development
 
 ### Prerequisites
 
 - [Docker](https://docs.docker.com/get-docker/) and Docker Compose
-- A [football-data.org](https://www.football-data.org/) API key (free tier, for EPL data)
+- Add `127.0.0.1 vinosports.local` to `/etc/hosts`
 
 ### Quick Start
 
@@ -46,17 +50,20 @@ cp .env.example .env
 # Build and start everything
 make up
 
-# Run migrations (both leagues)
+# Run migrations
 make migrate
 
 # Create a superuser
-docker compose run --rm epl-web python manage.py createsuperuser
+docker compose exec web python manage.py createsuperuser
 
-# Populate EPL data
+# Populate data (EPL + NBA)
 make seed
 ```
 
-The hub is at [localhost:7999](http://localhost:7999), EPL at [localhost:8000](http://localhost:8000), NBA at [localhost:8001](http://localhost:8001).
+All apps are served through nginx on port 80:
+- Hub: http://vinosports.local
+- EPL: http://vinosports.local/epl/
+- NBA: http://vinosports.local/nba/
 
 ### Environment Variables
 
@@ -77,21 +84,17 @@ A `Makefile` wraps the most-used workflows:
 | `make down` | Stop all services |
 | `make restart` | Rebuild and restart |
 | `make logs` | Tail all service logs |
-| `make migrate` | Run migrations for both leagues |
-| `make seed` | Populate EPL data (teams, fixtures, standings, odds) |
-| `make shell-epl` | Shell into the EPL container |
-| `make shell-nba` | Shell into the NBA container |
+| `make migrate` | Run migrations |
+| `make seed` | Populate EPL + NBA data |
+| `make shell` | Shell into the web container |
 | `make lint` | Run ruff check + format |
 | `make test` | Run all test suites |
-| `make test-epl` | Run EPL tests only |
-| `make test-nba` | Run NBA tests only |
-| `make test-core` | Run vinosports-core tests only |
 
 ### Hot Reload
 
-Docker Compose mounts your local source code into all containers. Web services run Django's `runserver` in dev mode, so Python file changes trigger an automatic restart — no rebuild needed. Worker and beat services also mount source code but need a manual container restart to pick up changes.
+Docker Compose mounts your local source code into all containers. The web service runs Django's `runserver` in dev mode, so Python file changes trigger an automatic restart — no rebuild needed. Worker and beat services also mount source code but need a manual container restart to pick up changes.
 
-Dockerfiles retain Daphne as the production server; the `runserver` override is only in `docker-compose.yml`.
+The Dockerfile retains Daphne as the production server; the `runserver` override is only in `docker-compose.yml`.
 
 ### Populating Data
 
@@ -107,13 +110,10 @@ See [docs/0003-BOT_SETUP.md](docs/0003-BOT_SETUP.md) for the full guide.
 |---------|------|-------------|
 | `db` | 5432 | PostgreSQL (shared by all leagues) |
 | `redis` | 6379 | Redis (Celery broker + Channels layer) |
-| `hub-web` | 7999 | Hub homepage + global account settings |
-| `epl-web` | 8000 | EPL dev server (auto-reload) |
-| `epl-worker` | — | EPL Celery worker |
-| `epl-beat` | — | EPL Celery beat scheduler |
-| `nba-web` | 8001 | NBA dev server (auto-reload) |
-| `nba-worker` | — | NBA Celery worker |
-| `nba-beat` | — | NBA Celery beat scheduler |
+| `nginx` | 80 | Reverse proxy (WebSocket upgrade support) |
+| `web` | — | Django dev server (all leagues) |
+| `worker` | — | Celery worker (EPL + NBA queues) |
+| `beat` | — | Celery beat scheduler |
 
 ### Running Without Docker
 
@@ -124,47 +124,23 @@ source .venv/bin/activate
 pip install -e packages/vinosports-core
 pip install psycopg2-binary whitenoise django-htmx
 
-# Run the EPL project (requires local Postgres and Redis)
-cd apps/epl
+# Run the project (requires local Postgres and Redis)
 python manage.py migrate
 python manage.py runserver
 ```
 
 ## Testing
 
-**Test coverage is required for all contributions.** The project has three test suites that mirror the package structure:
-
-```
-packages/vinosports-core/tests/    # Shared models, balance logic, challenge engine
-apps/epl/tests/                     # EPL-specific: settlement, odds engine, data ingestion
-apps/nba/tests/                     # NBA-specific: spread/total settlement, API client
-```
-
-### Running Tests
-
 ```bash
-make test          # All suites
-make test-epl      # EPL tests only
-make test-nba      # NBA tests only
-make test-core     # vinosports-core tests only
+make test    # Run all tests
 ```
 
 ### Test Guidelines
 
-- **Every new model, view, or service must have tests.** No exceptions.
 - **Test behavior, not implementation.** Assert on outcomes (bet settled correctly, balance updated, WebSocket message sent), not on internal method calls.
 - **Use factories over fixtures.** Create test data with factory functions or `Model.objects.create()`, not JSON fixtures.
-- **Test the boundaries.** If a model is abstract in vinosports-core and concrete in a league project, test the concrete version in the league's test suite. Test the abstract logic (shared fields, methods) in vinosports-core's tests.
-- **Integration tests for Celery tasks.** Use `@shared_task` with `task_always_eager=True` in test settings so tasks run synchronously.
+- **Integration tests for Celery tasks.** Use `task_always_eager=True` in test settings so tasks run synchronously.
 - **WebSocket tests.** Use `channels.testing.WebsocketCommunicator` for consumer tests.
-
-### CI
-
-Tests run automatically via GitHub Actions with path-based triggers:
-
-- Changes to `packages/vinosports-core/` trigger **all three** test suites
-- Changes to `apps/epl/` trigger only the EPL + core suites
-- Changes to `apps/nba/` trigger only the NBA + core suites
 
 ## Linting
 
@@ -174,22 +150,11 @@ Tests run automatically via GitHub Actions with path-based triggers:
 make lint    # ruff check --fix + ruff format
 ```
 
-A pre-commit hook runs ruff automatically on every commit. Install it with:
-
-```bash
-pre-commit install
-```
-
-## Contributing
-
-1. Fork the repo and create a feature branch
-2. Write your code with tests
-3. Run the relevant test suite locally and ensure it passes
-4. Open a PR — CI will run the appropriate checks
+A pre-commit hook runs ruff automatically on every commit.
 
 ## Tech Stack
 
-- **Django 5.1** with email-based auth
+- **Django 5.2** with email-based auth
 - **Daphne** (ASGI) for WebSocket support
 - **Django Channels** + Redis for real-time score updates
 - **Celery** + Redis for background tasks
