@@ -56,7 +56,7 @@ Context expected:
 
         <!-- Score / vs -->
         <div id="score-display" class="text-center">
-            {% if game.home_score is not None and game.away_score is not None %}
+            {% if game.is_live or game.is_final %}
                 <div class="flex items-center gap-3">
                     <span class="text-4xl font-bold font-mono {% if game.is_final and game.winner == game.away_team %}text-primary{% endif %}">{{ game.away_score }}</span>
                     <span class="text-lg text-muted">&ndash;</span>

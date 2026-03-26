@@ -40,7 +40,7 @@
                 {% with standing=standings_by_team|get_item:game.away_team_id %}
                 {% if standing %}<span class="text-[10px] font-label opacity-50">{{ standing.wins }}-{{ standing.losses }}</span>{% endif %}
                 {% endwith %}
-                {% if game.away_score is not None %}
+                {% if game.is_live or game.is_final %}
                 <span class="font-headline font-black italic text-xl {% if game.is_final and game.away_score > game.home_score %}text-primary{% else %}text-secondary{% endif %}">{{ game.away_score }}</span>
                 {% endif %}
             </div>
@@ -53,7 +53,7 @@
                 {% with standing=standings_by_team|get_item:game.home_team_id %}
                 {% if standing %}<span class="text-[10px] font-label opacity-50">{{ standing.wins }}-{{ standing.losses }}</span>{% endif %}
                 {% endwith %}
-                {% if game.home_score is not None %}
+                {% if game.is_live or game.is_final %}
                 <span class="font-headline font-black italic text-xl {% if game.is_final and game.home_score > game.away_score %}text-primary{% else %}text-secondary{% endif %}">{{ game.home_score }}</span>
                 {% endif %}
             </div>

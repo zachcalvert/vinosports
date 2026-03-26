@@ -18,7 +18,7 @@
                     {% endif %}
                     <span class="text-sm font-semibold">{{ match.home_team.short_name|default:match.home_team.name }}</span>
                 </div>
-                {% if match.home_score is not None %}
+                {% if match.status != 'SCHEDULED' and match.status != 'TIMED' and match.home_score is not None %}
                     <span class="text-xl font-headline font-black italic text-primary">{{ match.home_score }}</span>
                 {% endif %}
             </div>
@@ -29,7 +29,7 @@
                     {% endif %}
                     <span class="text-sm font-semibold">{{ match.away_team.short_name|default:match.away_team.name }}</span>
                 </div>
-                {% if match.away_score is not None %}
+                {% if match.status != 'SCHEDULED' and match.status != 'TIMED' and match.away_score is not None %}
                     <span class="text-xl font-headline font-black italic text-primary">{{ match.away_score }}</span>
                 {% endif %}
             </div>

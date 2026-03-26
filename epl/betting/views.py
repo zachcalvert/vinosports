@@ -33,6 +33,7 @@ from vinosports.betting.models import (
     Bailout,
     BalanceTransaction,
     Bankruptcy,
+    BetStatus,
     UserBadge,
     UserBalance,
     UserStats,
@@ -559,7 +560,7 @@ class BailoutView(LoginRequiredMixin, View):
                 return JsonResponse({"error": "No balance found."}, status=400)
 
             pending_count = BetSlip.objects.filter(
-                user=request.user, status=BetSlip.Status.PENDING
+                user=request.user, status=BetStatus.PENDING
             ).count()
             pending_parlays = Parlay.objects.filter(
                 user=request.user, status=Parlay.Status.PENDING

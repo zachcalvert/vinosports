@@ -10,7 +10,7 @@ from vinosports.betting.constants import (
     PARLAY_MAX_PAYOUT,
     PARLAY_MIN_LEGS,
 )
-from vinosports.betting.models import Bankruptcy, UserBalance
+from vinosports.betting.models import Bankruptcy, BetStatus, UserBalance
 
 MIN_BET = Decimal("0.50")
 PARLAY_SESSION_KEY = "parlay_slip"
@@ -31,7 +31,7 @@ def bankruptcy(request):
         return {}
 
     has_pending_bets = BetSlip.objects.filter(
-        user=request.user, status=BetSlip.Status.PENDING
+        user=request.user, status=BetStatus.PENDING
     ).exists()
 
     if has_pending_bets:

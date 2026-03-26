@@ -79,7 +79,11 @@ def status_badge(match):
 
 @register.simple_tag
 def score_display(match):
-    if match.home_score is not None and match.away_score is not None:
+    if (
+        match.status not in ("SCHEDULED", "TIMED")
+        and match.home_score is not None
+        and match.away_score is not None
+    ):
         return mark_safe(
             f'<span class="text-2xl font-bold font-mono">{match.home_score} - {match.away_score}</span>'
         )
