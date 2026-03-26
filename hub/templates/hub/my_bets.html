@@ -1,0 +1,287 @@
+{% extends "hub/base.html" %}
+{% load currency_tags %}
+{% block title %}My Bets{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    <h1 class="font-headline font-black text-3xl uppercase tracking-tight mb-6">My Bets</h1>
+
+    <!-- Balance & P&L cards -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+        <div class="bg-surface-container-lowest rounded-xl border-b-4 border-primary p-4 text-center">
+            <div class="font-label text-[10px] font-bold text-secondary uppercase tracking-widest mb-1">Balance</div>
+            <div class="text-2xl font-mono font-bold text-primary">{{ current_balance|currency:user }}</div>
+        </div>
+        <div class="bg-surface-container-lowest rounded-xl border-b-4 border-outline-variant p-4 text-center">
+            <div class="font-label text-[10px] font-bold text-secondary uppercase tracking-widest mb-1">Total Staked</div>
+            <div class="text-2xl font-mono font-bold">{{ total_staked|currency:user }}</div>
+        </div>
+        <div class="bg-surface-container-lowest rounded-xl border-b-4 border-outline-variant p-4 text-center">
+            <div class="font-label text-[10px] font-bold text-secondary uppercase tracking-widest mb-1">Total Won</div>
+            <div class="text-2xl font-mono font-bold">{{ total_payout|currency:user }}</div>
+        </div>
+        <div class="bg-surface-container-lowest rounded-xl border-b-4 border-outline-variant p-4 text-center">
+            <div class="font-label text-[10px] font-bold text-secondary uppercase tracking-widest mb-1">Net P&amp;L</div>
+            <div class="text-2xl font-mono font-bold {% if net_pnl >= 0 %}text-primary{% else %}text-danger{% endif %}">
+                {% if net_pnl >= 0 %}+{% endif %}{{ net_pnl|currency:user }}
+            </div>
+        </div>
+    </div>
+
+    {% if activity %}
+    <!-- Desktop table -->
+    <div class="hidden md:block overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="border-b-2 border-outline-variant text-left font-label font-bold text-secondary text-xs uppercase tracking-widest">
+                    <th class="py-3 px-2">League</th>
+                    <th class="py-3 px-2">Activity</th>
+                    <th class="py-3 px-2">Detail</th>
+                    <th class="py-3 px-2 text-right">Odds</th>
+                    <th class="py-3 px-2 text-right">Stake</th>
+                    <th class="py-3 px-2 text-right">Payout</th>
+                    <th class="py-3 px-2 text-center">Status</th>
+                    <th class="py-3 px-2 text-right">Date</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-outline-variant/30">
+                {% for entry in activity %}
+                {% if entry.type == "bet" %}
+                <tr class="hover:bg-surface-container-low transition-colors">
+                    <td class="py-3 px-2">
+                        <span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider
+                            {% if entry.league == 'epl' %}bg-green-500/15 text-green-400{% else %}bg-blue-500/15 text-blue-400{% endif %}">
+                            {{ entry.league|upper }}
+                        </span>
+                    </td>
+                    <td class="py-3 px-2">
+                        {% if entry.league == "epl" %}
+                            <a href="{% url 'epl_matches:match_detail' entry.item.match.slug %}" class="hover:text-primary transition-colors">
+                                {{ entry.item.match.home_team.short_name|default:entry.item.match.home_team.tla }}
+                                vs
+                                {{ entry.item.match.away_team.short_name|default:entry.item.match.away_team.tla }}
+                            </a>
+                        {% else %}
+                            <a href="{% url 'nba_games:game_detail' entry.item.game.id_hash %}" class="hover:text-primary transition-colors">
+                                {{ entry.item.game.home_team.abbreviation }}
+                                vs
+                                {{ entry.item.game.away_team.abbreviation }}
+                            </a>
+                        {% endif %}
+                    </td>
+                    <td class="py-3 px-2 text-muted">
+                        {% if entry.league == "epl" %}
+                            {{ entry.item.get_selection_display }}
+                        {% else %}
+                            {{ entry.item.get_market_display }}: {{ entry.item.get_selection_display }}
+                        {% endif %}
+                    </td>
+                    <td class="py-3 px-2 text-right font-mono text-muted">
+                        {% if entry.league == "epl" %}
+                            {{ entry.item.odds_at_placement|floatformat:2 }}
+                        {% else %}
+                            {% if entry.item.odds_at_placement > 0 %}+{% endif %}{{ entry.item.odds_at_placement }}
+                        {% endif %}
+                    </td>
+                    <td class="py-3 px-2 text-right font-mono">{{ entry.item.stake|currency:user }}</td>
+                    <td class="py-3 px-2 text-right font-mono {% if entry.item.payout %}text-primary{% else %}text-muted{% endif %}">
+                        {% if entry.item.payout != None %}{{ entry.item.payout|currency:user }}{% else %}&mdash;{% endif %}
+                    </td>
+                    <td class="py-3 px-2 text-center">
+                        {% include "hub/partials/status_badge.html" with status=entry.item.status %}
+                    </td>
+                    <td class="py-3 px-2 text-right text-muted text-xs">{{ entry.date|date:"d M H:i" }}</td>
+                </tr>
+
+                {% elif entry.type == "parlay" %}
+                <tr class="hover:bg-surface-container-low transition-colors border-l-2 border-l-secondary/40" id="parlay-row-{{ entry.item.id_hash }}">
+                    <td class="py-3 px-2">
+                        <span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider
+                            {% if entry.league == 'epl' %}bg-green-500/15 text-green-400{% else %}bg-blue-500/15 text-blue-400{% endif %}">
+                            {{ entry.league|upper }}
+                        </span>
+                    </td>
+                    <td class="py-3 px-2">
+                        <button class="text-left text-secondary hover:text-secondary/80 transition-colors font-medium"
+                                onclick="document.getElementById('parlay-legs-{{ entry.item.id_hash }}').classList.toggle('hidden')">
+                            Parlay &bull; {{ entry.item.legs.count }} legs &#9660;
+                        </button>
+                    </td>
+                    <td class="py-3 px-2 text-muted text-xs">
+                        {% for leg in entry.item.legs.all %}
+                            {% if entry.league == "epl" %}
+                                {% if leg.selection == "HOME_WIN" %}{{ leg.match.home_team.short_name|default:leg.match.home_team.tla }}{% elif leg.selection == "DRAW" %}Draw{% else %}{{ leg.match.away_team.short_name|default:leg.match.away_team.tla }}{% endif %}{% if not forloop.last %}, {% endif %}
+                            {% else %}
+                                {{ leg.game.home_team.abbreviation }} vs {{ leg.game.away_team.abbreviation }}{% if not forloop.last %}, {% endif %}
+                            {% endif %}
+                        {% endfor %}
+                    </td>
+                    <td class="py-3 px-2 text-right font-mono text-muted">
+                        {% if entry.league == "epl" %}
+                            {{ entry.item.combined_odds|floatformat:2 }}x
+                        {% else %}
+                            {% if entry.item.combined_odds > 0 %}+{% endif %}{{ entry.item.combined_odds }}
+                        {% endif %}
+                    </td>
+                    <td class="py-3 px-2 text-right font-mono">{{ entry.item.stake|currency:user }}</td>
+                    <td class="py-3 px-2 text-right font-mono {% if entry.item.payout %}text-primary{% else %}text-muted{% endif %}">
+                        {% if entry.item.payout != None %}{{ entry.item.payout|currency:user }}{% else %}&mdash;{% endif %}
+                    </td>
+                    <td class="py-3 px-2 text-center">
+                        {% include "hub/partials/status_badge.html" with status=entry.item.status %}
+                    </td>
+                    <td class="py-3 px-2 text-right text-muted text-xs">{{ entry.date|date:"d M H:i" }}</td>
+                </tr>
+                <tr id="parlay-legs-{{ entry.item.id_hash }}" class="hidden bg-primary-light/50">
+                    <td colspan="8" class="px-4 py-2">
+                        <ul class="space-y-1">
+                            {% for leg in entry.item.legs.all %}
+                            <li class="flex items-center gap-3 text-xs text-muted">
+                                <span class="w-2 h-2 rounded-full inline-block
+                                    {% if leg.status == 'WON' %}bg-primary{% elif leg.status == 'LOST' %}bg-danger{% elif leg.status == 'VOID' %}bg-gray-500{% else %}bg-warning{% endif %}">
+                                </span>
+                                <span>
+                                    {% if entry.league == "epl" %}
+                                        {{ leg.match.home_team.short_name|default:leg.match.home_team.tla }} vs {{ leg.match.away_team.short_name|default:leg.match.away_team.tla }}
+                                        &mdash;
+                                        {% if leg.selection == "HOME_WIN" %}Home Win{% elif leg.selection == "DRAW" %}Draw{% else %}Away Win{% endif %}
+                                        <span class="font-mono">@ {{ leg.odds_at_placement }}</span>
+                                    {% else %}
+                                        {{ leg.game.home_team.abbreviation }} vs {{ leg.game.away_team.abbreviation }}
+                                        &mdash;
+                                        {{ leg.get_market_display }}: {{ leg.get_selection_display }}
+                                        <span class="font-mono">@ {% if leg.odds_at_placement > 0 %}+{% endif %}{{ leg.odds_at_placement }}</span>
+                                    {% endif %}
+                                </span>
+                                <span class="{% if leg.status == 'WON' %}text-primary{% elif leg.status == 'LOST' %}text-danger{% elif leg.status == 'VOID' %}text-muted{% else %}text-warning{% endif %}">
+                                    {{ leg.get_status_display }}
+                                </span>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </td>
+                </tr>
+                {% endif %}
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Mobile card list -->
+    <div class="md:hidden space-y-3">
+        {% for entry in activity %}
+        {% if entry.type == "bet" %}
+        <div class="bg-surface-container-lowest rounded-lg border border-outline-variant/50 p-4">
+            <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center gap-2">
+                    <span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider
+                        {% if entry.league == 'epl' %}bg-green-500/15 text-green-400{% else %}bg-blue-500/15 text-blue-400{% endif %}">
+                        {{ entry.league|upper }}
+                    </span>
+                    <span class="text-sm font-medium">
+                        {% if entry.league == "epl" %}
+                            {{ entry.item.match.home_team.short_name|default:entry.item.match.home_team.tla }}
+                            vs
+                            {{ entry.item.match.away_team.short_name|default:entry.item.match.away_team.tla }}
+                        {% else %}
+                            {{ entry.item.game.home_team.abbreviation }}
+                            vs
+                            {{ entry.item.game.away_team.abbreviation }}
+                        {% endif %}
+                    </span>
+                </div>
+                {% include "hub/partials/status_badge.html" with status=entry.item.status %}
+            </div>
+            <div class="text-xs text-muted mb-2">
+                {% if entry.league == "epl" %}{{ entry.item.get_selection_display }}{% else %}{{ entry.item.get_market_display }}: {{ entry.item.get_selection_display }}{% endif %}
+                &middot; {{ entry.date|date:"d M H:i" }}
+            </div>
+            <div class="grid grid-cols-3 gap-3 text-center">
+                <div>
+                    <div class="text-xs text-muted">Odds</div>
+                    <div class="font-mono text-sm text-muted">
+                        {% if entry.league == "epl" %}{{ entry.item.odds_at_placement|floatformat:2 }}{% else %}{% if entry.item.odds_at_placement > 0 %}+{% endif %}{{ entry.item.odds_at_placement }}{% endif %}
+                    </div>
+                </div>
+                <div>
+                    <div class="text-xs text-muted">Stake</div>
+                    <div class="font-mono text-sm">{{ entry.item.stake|currency:user }}</div>
+                </div>
+                <div>
+                    <div class="text-xs text-muted">Payout</div>
+                    <div class="font-mono text-sm {% if entry.item.payout %}text-primary{% else %}text-muted{% endif %}">
+                        {% if entry.item.payout != None %}{{ entry.item.payout|currency:user }}{% else %}&mdash;{% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% elif entry.type == "parlay" %}
+        <div class="bg-surface-container-lowest rounded-lg border border-secondary/30 p-4">
+            <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center gap-2">
+                    <span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider
+                        {% if entry.league == 'epl' %}bg-green-500/15 text-green-400{% else %}bg-blue-500/15 text-blue-400{% endif %}">
+                        {{ entry.league|upper }}
+                    </span>
+                    <span class="text-sm font-medium text-secondary">Parlay &bull; {{ entry.item.legs.count }} legs</span>
+                </div>
+                {% include "hub/partials/status_badge.html" with status=entry.item.status %}
+            </div>
+            <div class="text-xs text-muted mb-3">{{ entry.date|date:"d M H:i" }}</div>
+            <ul class="space-y-1 mb-3">
+                {% for leg in entry.item.legs.all %}
+                <li class="flex items-center gap-2 text-xs">
+                    <span class="w-1.5 h-1.5 rounded-full shrink-0
+                        {% if leg.status == 'WON' %}bg-primary{% elif leg.status == 'LOST' %}bg-danger{% elif leg.status == 'VOID' %}bg-gray-500{% else %}bg-warning{% endif %}">
+                    </span>
+                    <span class="text-muted truncate">
+                        {% if entry.league == "epl" %}
+                            {% if leg.selection == "HOME_WIN" %}{{ leg.match.home_team.short_name|default:leg.match.home_team.tla }} Win{% elif leg.selection == "DRAW" %}Draw{% else %}{{ leg.match.away_team.short_name|default:leg.match.away_team.tla }} Win{% endif %}
+                            <span class="font-mono">@ {{ leg.odds_at_placement }}</span>
+                        {% else %}
+                            {{ leg.game.home_team.abbreviation }} vs {{ leg.game.away_team.abbreviation }}
+                            <span class="font-mono">@ {% if leg.odds_at_placement > 0 %}+{% endif %}{{ leg.odds_at_placement }}</span>
+                        {% endif %}
+                    </span>
+                </li>
+                {% endfor %}
+            </ul>
+            <div class="grid grid-cols-3 gap-3 text-center">
+                <div>
+                    <div class="text-xs text-muted">Odds</div>
+                    <div class="font-mono text-sm text-muted">
+                        {% if entry.league == "epl" %}{{ entry.item.combined_odds|floatformat:2 }}x{% else %}{% if entry.item.combined_odds > 0 %}+{% endif %}{{ entry.item.combined_odds }}{% endif %}
+                    </div>
+                </div>
+                <div>
+                    <div class="text-xs text-muted">Stake</div>
+                    <div class="font-mono text-sm">{{ entry.item.stake|currency:user }}</div>
+                </div>
+                <div>
+                    <div class="text-xs text-muted">Payout</div>
+                    <div class="font-mono text-sm {% if entry.item.payout %}text-primary{% else %}text-muted{% endif %}">
+                        {% if entry.item.payout != None %}{{ entry.item.payout|currency:user }}{% else %}&mdash;{% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        {% endfor %}
+    </div>
+
+    {% else %}
+    <div class="text-center py-12">
+        <svg class="w-12 h-12 mx-auto mb-4 text-muted/50" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 6v.75m0 3v.75m0 3v.75m0 3V18m-9-5.25h5.25M7.5 15h3M3.375 5.25c-.621 0-1.125.504-1.125 1.125v3.026a2.999 2.999 0 010 5.198v3.026c0 .621.504 1.125 1.125 1.125h17.25c.621 0 1.125-.504 1.125-1.125v-3.026a2.999 2.999 0 010-5.198V6.375c0-.621-.504-1.125-1.125-1.125H3.375z"/>
+        </svg>
+        <p class="text-lg text-muted mb-1">No bets yet</p>
+        <p class="text-sm text-gray-500 mb-3">Place your first bet on EPL or NBA to see it here.</p>
+        <div class="flex justify-center gap-4">
+            <a href="/epl/" class="text-primary hover:underline text-sm">EPL Odds &rarr;</a>
+            <a href="/nba/" class="text-primary hover:underline text-sm">NBA Odds &rarr;</a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

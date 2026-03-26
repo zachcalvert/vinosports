@@ -2,14 +2,20 @@ import logging
 from decimal import Decimal
 
 from django.contrib.auth import authenticate, get_user_model, login, logout
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.db import transaction
+from django.db.models import Sum
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views import View
 from django.views.generic import TemplateView
 
 from vinosports.betting.balance import log_transaction
-from vinosports.betting.leaderboard import get_public_identity, get_user_rank
+from vinosports.betting.leaderboard import (
+    BOARD_TYPES,
+    get_leaderboard_entries,
+    get_public_identity,
+    get_user_rank,
+)
 from vinosports.betting.models import (
     Badge,
     BalanceTransaction,
@@ -253,3 +259,358 @@ class CurrencyUpdateView(LoginRequiredMixin, View):
                 ),
             )
         return redirect("hub:account")
+
+
+# ---------------------------------------------------------------------------
+# Global Standings
+# ---------------------------------------------------------------------------
+
+
+class StandingsView(TemplateView):
+    template_name = "hub/standings.html"
+
+    def _get_board_type(self):
+        board_type = self.request.GET.get("type", "balance")
+        return board_type if board_type in BOARD_TYPES else "balance"
+
+    def get_template_names(self):
+        if getattr(self.request, "htmx", False):
+            return ["hub/partials/standings_table.html"]
+        return [self.template_name]
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        board_type = self._get_board_type()
+        ctx["leaderboard"] = get_leaderboard_entries(limit=None, board_type=board_type)
+        ctx["user_rank"] = get_user_rank(
+            self.request.user, ctx["leaderboard"], board_type=board_type
+        )
+        ctx["board_type"] = board_type
+        ctx["board_types"] = BOARD_TYPES
+        return ctx
+
+
+# ---------------------------------------------------------------------------
+# My Bets (cross-league)
+# ---------------------------------------------------------------------------
+
+
+class MyBetsView(LoginRequiredMixin, TemplateView):
+    template_name = "hub/my_bets.html"
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        user = self.request.user
+
+        from epl.betting.models import BetSlip as EplBetSlip
+        from epl.betting.models import Parlay as EplParlay
+        from nba.betting.models import BetSlip as NbaBetSlip
+        from nba.betting.models import Parlay as NbaParlay
+
+        epl_bets = EplBetSlip.objects.filter(user=user).select_related(
+            "match__home_team", "match__away_team"
+        )
+        nba_bets = NbaBetSlip.objects.filter(user=user).select_related(
+            "game__home_team", "game__away_team"
+        )
+        epl_parlays = EplParlay.objects.filter(user=user).prefetch_related(
+            "legs__match__home_team", "legs__match__away_team"
+        )
+        nba_parlays = NbaParlay.objects.filter(user=user).prefetch_related(
+            "legs__game__home_team", "legs__game__away_team"
+        )
+
+        # Aggregate totals
+        epl_bet_totals = epl_bets.aggregate(
+            total_staked=Sum("stake"), total_payout=Sum("payout")
+        )
+        nba_bet_totals = nba_bets.aggregate(
+            total_staked=Sum("stake"), total_payout=Sum("payout")
+        )
+        epl_parlay_totals = epl_parlays.aggregate(
+            total_staked=Sum("stake"), total_payout=Sum("payout")
+        )
+        nba_parlay_totals = nba_parlays.aggregate(
+            total_staked=Sum("stake"), total_payout=Sum("payout")
+        )
+
+        total_staked = sum(
+            t["total_staked"] or Decimal("0")
+            for t in [
+                epl_bet_totals,
+                nba_bet_totals,
+                epl_parlay_totals,
+                nba_parlay_totals,
+            ]
+        )
+        total_payout = sum(
+            t["total_payout"] or Decimal("0")
+            for t in [
+                epl_bet_totals,
+                nba_bet_totals,
+                epl_parlay_totals,
+                nba_parlay_totals,
+            ]
+        )
+
+        balance = getattr(user, "balance", None)
+        current_balance = balance.balance if balance else Decimal("1000.00")
+
+        # Build unified activity feed: pending first, then by date
+        activity = []
+        for bet in epl_bets:
+            activity.append(
+                {"type": "bet", "league": "epl", "date": bet.created_at, "item": bet}
+            )
+        for bet in nba_bets:
+            activity.append(
+                {"type": "bet", "league": "nba", "date": bet.created_at, "item": bet}
+            )
+        for parlay in epl_parlays:
+            activity.append(
+                {
+                    "type": "parlay",
+                    "league": "epl",
+                    "date": parlay.created_at,
+                    "item": parlay,
+                }
+            )
+        for parlay in nba_parlays:
+            activity.append(
+                {
+                    "type": "parlay",
+                    "league": "nba",
+                    "date": parlay.created_at,
+                    "item": parlay,
+                }
+            )
+        # Pending first, then most recent
+        activity.sort(
+            key=lambda a: (
+                0 if a["item"].status == "PENDING" else 1,
+                -a["date"].timestamp(),
+            )
+        )
+
+        ctx["total_staked"] = total_staked
+        ctx["total_payout"] = total_payout
+        ctx["net_pnl"] = total_payout - total_staked
+        ctx["current_balance"] = current_balance
+        ctx["activity"] = activity
+        return ctx
+
+
+# ---------------------------------------------------------------------------
+# Admin Dashboard (cross-league)
+# ---------------------------------------------------------------------------
+
+
+class SuperuserRequiredMixin(UserPassesTestMixin):
+    def test_func(self):
+        return self.request.user.is_superuser
+
+
+ADMIN_PAGE_SIZE = 5
+ADMIN_MAX_OFFSET = 500
+
+
+class AdminDashboardView(SuperuserRequiredMixin, TemplateView):
+    template_name = "hub/admin_dashboard.html"
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        User = get_user_model()
+
+        from epl.betting.models import BetSlip as EplBetSlip
+        from epl.betting.models import Parlay as EplParlay
+        from epl.discussions.models import Comment as EplComment
+        from nba.betting.models import BetSlip as NbaBetSlip
+        from nba.betting.models import Parlay as NbaParlay
+        from nba.discussions.models import Comment as NbaComment
+
+        ctx["total_users"] = User.objects.count()
+        ctx["active_bets"] = (
+            EplBetSlip.objects.filter(status="PENDING").count()
+            + NbaBetSlip.objects.filter(status="PENDING").count()
+        )
+        ctx["active_parlays"] = (
+            EplParlay.objects.filter(status="PENDING").count()
+            + NbaParlay.objects.filter(status="PENDING").count()
+        )
+        ctx["total_comments"] = (
+            EplComment.objects.filter(is_deleted=False).count()
+            + NbaComment.objects.filter(is_deleted=False).count()
+        )
+        ctx["total_bets_all_time"] = (
+            EplBetSlip.objects.count()
+            + NbaBetSlip.objects.count()
+            + EplParlay.objects.count()
+            + NbaParlay.objects.count()
+        )
+        epl_in_play = (
+            EplBetSlip.objects.filter(status="PENDING").aggregate(total=Sum("stake"))[
+                "total"
+            ]
+            or 0
+        )
+        nba_in_play = (
+            NbaBetSlip.objects.filter(status="PENDING").aggregate(total=Sum("stake"))[
+                "total"
+            ]
+            or 0
+        )
+        ctx["total_in_play"] = epl_in_play + nba_in_play
+
+        # Per-league breakdowns
+        ctx["epl_bets"] = EplBetSlip.objects.count() + EplParlay.objects.count()
+        ctx["nba_bets"] = NbaBetSlip.objects.count() + NbaParlay.objects.count()
+        return ctx
+
+
+def _admin_parse_offset(request):
+    try:
+        return min(ADMIN_MAX_OFFSET, max(0, int(request.GET.get("offset", 0))))
+    except (TypeError, ValueError):
+        return 0
+
+
+def _admin_paginated_response(request, items, total, offset, list_tpl, page_tpl):
+    from django.template.loader import render_to_string
+
+    has_more = (offset + ADMIN_PAGE_SIZE) < total
+    ctx = {
+        "items": items,
+        "has_more": has_more,
+        "next_offset": offset + ADMIN_PAGE_SIZE,
+        "request": request,
+    }
+    if offset > 0:
+        html = render_to_string(page_tpl, ctx, request=request)
+    else:
+        html = render_to_string(list_tpl, ctx, request=request)
+    from django.http import HttpResponse
+
+    return HttpResponse(html)
+
+
+def _admin_merged_querysets(qs_a, qs_b, offset, page_size):
+    from heapq import merge
+    from operator import attrgetter
+
+    limit = offset + page_size
+    a_items = list(qs_a[:limit])
+    b_items = list(qs_b[:limit])
+    merged = list(merge(a_items, b_items, key=attrgetter("created_at"), reverse=True))
+    return merged[offset : offset + page_size]
+
+
+class AdminBetsPartialView(SuperuserRequiredMixin, View):
+    def get(self, request):
+        from epl.betting.models import BetSlip as EplBetSlip
+        from epl.betting.models import Parlay as EplParlay
+        from nba.betting.models import BetSlip as NbaBetSlip
+        from nba.betting.models import Parlay as NbaParlay
+
+        offset = _admin_parse_offset(request)
+
+        # Merge all bets from both leagues
+        epl_bets = EplBetSlip.objects.select_related(
+            "user", "match__home_team", "match__away_team"
+        ).order_by("-created_at")
+        nba_bets = NbaBetSlip.objects.select_related(
+            "user", "game__home_team", "game__away_team"
+        ).order_by("-created_at")
+        all_bets = _admin_merged_querysets(
+            epl_bets, nba_bets, 0, offset + ADMIN_PAGE_SIZE * 2
+        )
+
+        # Merge all parlays from both leagues
+        epl_parlays = (
+            EplParlay.objects.select_related("user")
+            .prefetch_related("legs__match__home_team", "legs__match__away_team")
+            .order_by("-created_at")
+        )
+        nba_parlays = (
+            NbaParlay.objects.select_related("user")
+            .prefetch_related("legs__game__home_team", "legs__game__away_team")
+            .order_by("-created_at")
+        )
+        all_parlays = _admin_merged_querysets(
+            epl_parlays, nba_parlays, 0, offset + ADMIN_PAGE_SIZE * 2
+        )
+
+        # Final merge of bets + parlays
+        from heapq import merge
+        from operator import attrgetter
+
+        merged = list(
+            merge(all_bets, all_parlays, key=attrgetter("created_at"), reverse=True)
+        )
+        items = merged[offset : offset + ADMIN_PAGE_SIZE]
+        total = (
+            EplBetSlip.objects.count()
+            + NbaBetSlip.objects.count()
+            + EplParlay.objects.count()
+            + NbaParlay.objects.count()
+        )
+
+        return _admin_paginated_response(
+            request,
+            items,
+            total,
+            offset,
+            "hub/partials/admin_bets_list.html",
+            "hub/partials/admin_bets_page.html",
+        )
+
+
+class AdminCommentsPartialView(SuperuserRequiredMixin, View):
+    def get(self, request):
+        from epl.discussions.models import Comment as EplComment
+        from nba.discussions.models import Comment as NbaComment
+
+        offset = _admin_parse_offset(request)
+        epl_comments = (
+            EplComment.objects.filter(is_deleted=False)
+            .select_related("user", "match__home_team", "match__away_team")
+            .order_by("-created_at")
+        )
+        nba_comments = (
+            NbaComment.objects.filter(is_deleted=False)
+            .select_related("user", "game__home_team", "game__away_team")
+            .order_by("-created_at")
+        )
+        items = _admin_merged_querysets(
+            epl_comments, nba_comments, offset, ADMIN_PAGE_SIZE
+        )
+        total = (
+            EplComment.objects.filter(is_deleted=False).count()
+            + NbaComment.objects.filter(is_deleted=False).count()
+        )
+
+        return _admin_paginated_response(
+            request,
+            items,
+            total,
+            offset,
+            "hub/partials/admin_comments_list.html",
+            "hub/partials/admin_comments_page.html",
+        )
+
+
+class AdminUsersPartialView(SuperuserRequiredMixin, View):
+    def get(self, request):
+        User = get_user_model()
+        offset = _admin_parse_offset(request)
+        qs = User.objects.filter(is_bot=False).order_by("-date_joined")
+        items = list(qs[offset : offset + ADMIN_PAGE_SIZE])
+        total = qs.count()
+
+        return _admin_paginated_response(
+            request,
+            items,
+            total,
+            offset,
+            "hub/partials/admin_users_list.html",
+            "hub/partials/admin_users_page.html",
+        )
