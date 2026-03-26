@@ -68,6 +68,7 @@ services:
       - ./nba:/app/nba
       - ./hub:/app/hub
       - ./manage.py:/app/manage.py
+      - ./pyproject.toml:/app/pyproject.toml
       - ./packages/vinosports-core/src:/packages/vinosports-core/src
 
   # --- Celery Worker (all queues) ---

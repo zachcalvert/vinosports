@@ -76,12 +76,16 @@ Added a two-tier navigation system. See `docs/0015-GLOBAL_NAVBAR.md` for full de
 
 Everything here depends on the schema changes being done first.
 
-### 4a. Add EPL Test Suite
-The EPL app currently has no tests. The legacy `epl-bets` repo has a test suite that can be ported:
-- Port relevant test modules (services, tasks, settlement, models) from `epl-bets`
-- Update imports and factories to match the current EPL app structure
-- Ensure pytest + factories are in EPL's dev dependencies
-- Target the same patterns used in the NBA test suite (mock API clients, factory-based fixtures, behavior-focused assertions)
+### ~~4a. Test Infrastructure & Baseline Coverage~~ DONE
+Established test coverage across the entire monorepo — 616 tests passing at 53% baseline coverage. Scope expanded well beyond the original EPL-only plan:
+- **vinosports-core** (79 tests, new) — models, users, betting, bots, challenges, rewards, middleware
+- **hub** (47 tests, new) — models, forms, views, template tags
+- **EPL** (41 tests, new) — odds engine, settlement, models, views
+- **NBA** (449 tests, fixed) — all 113 failures from unified project migration resolved
+
+Also found and fixed a **production bug**: EPL settlement code referenced nonexistent `BetSlip.Status` inner class (should be standalone `BetStatus` enum) across 6 source files — would have crashed on any bet settlement.
+
+See `docs/0027-TEST_INFRASTRUCTURE.md` for full details.
 
 ### 4b. Squash Migrations
 Both EPL and NBA apps have accumulated dev migrations, plus the new migrations from Phase 2. Squash them all down to clean initial migrations before the first deploy creates a production database. This is the last step before infra — no more schema changes after this.
