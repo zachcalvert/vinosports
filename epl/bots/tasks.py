@@ -475,3 +475,202 @@ def _maybe_dispatch_reply(match, comment):
         comment.user.display_name,
         match,
     )
+
+
+# ---------------------------------------------------------------------------
+# Featured Parlays
+# ---------------------------------------------------------------------------
+
+
+@shared_task(name="epl.bots.tasks.generate_featured_parlays")
+def generate_featured_parlays():
+    """Generate featured parlay proposals for the upcoming EPL matchday.
+
+    Scheduled weekly (Friday 8am). Builds 2-3 themed parlays using
+    ParlayBuilder.preview(), then asks Claude for a catchy title and description.
+    """
+    from datetime import timedelta
+    from decimal import Decimal
+
+    from epl.bots.services import get_best_odds_map
+    from epl.matches.models import Match
+    from vinosports.betting.featured import FeaturedParlay, FeaturedParlayLeg
+    from vinosports.betting.featured_utils import generate_parlay_copy
+    from vinosports.betting.parlay_builder import ParlayBuilder, ParlayValidationError
+
+    # Get upcoming bettable matches
+    matches = list(
+        Match.objects.filter(
+            status__in=[Match.Status.SCHEDULED, Match.Status.TIMED],
+        )
+        .select_related("home_team", "away_team")
+        .order_by("kickoff")[:20]
+    )
+    if len(matches) < 3:
+        logger.info(
+            "EPL featured parlays: not enough matches (%d), skipping", len(matches)
+        )
+        return
+
+    match_ids = [m.pk for m in matches]
+    odds_map = get_best_odds_map(match_ids)
+    if not odds_map:
+        logger.info("EPL featured parlays: no odds available, skipping")
+        return
+
+    # Pick a sponsor bot
+    sponsor_bot = (
+        BotProfile.objects.filter(is_active=True, active_in_epl=True)
+        .select_related("user")
+        .order_by("?")
+        .first()
+    )
+    if not sponsor_bot:
+        logger.warning("EPL featured parlays: no active EPL bot found")
+        return
+
+    # Build themed parlays
+    themes = _build_epl_parlay_themes(matches, odds_map)
+
+    last_kickoff = max(
+        (m.kickoff for m in matches if m.kickoff), default=timezone.now()
+    )
+    expires_at = last_kickoff + timedelta(hours=2)
+
+    created = 0
+    for theme_name, legs_data in themes.items():
+        if len(legs_data) < 2:
+            continue
+
+        try:
+            builder = ParlayBuilder("epl")
+            for leg in legs_data:
+                builder.add_leg(leg["match_id"], leg["selection"])
+            preview = builder.preview(stake=Decimal("10.00"))
+        except ParlayValidationError as e:
+            logger.info("EPL featured parlay '%s' skipped: %s", theme_name, e)
+            continue
+
+        # Generate copy via Claude
+        legs_summary = [
+            {
+                "event": leg["label"],
+                "selection": leg["selection_label"],
+                "odds": str(leg["odds"]),
+            }
+            for leg in legs_data
+        ]
+        copy = generate_parlay_copy(legs_summary, "epl", theme_name)
+
+        fp = FeaturedParlay.objects.create(
+            league="epl",
+            sponsor=sponsor_bot.user,
+            title=copy["title"],
+            description=copy["description"],
+            expires_at=expires_at,
+            combined_odds=preview.combined_odds,
+            potential_payout=preview.potential_payout,
+        )
+        FeaturedParlayLeg.objects.bulk_create(
+            [
+                FeaturedParlayLeg(
+                    featured_parlay=fp,
+                    event_id=resolved.leg.event_id,
+                    event_label=_match_label(resolved.event),
+                    selection=resolved.leg.selection,
+                    selection_label=_epl_selection_label(resolved.leg.selection),
+                    odds_snapshot=resolved.decimal_odds,
+                    extras_json={},
+                )
+                for resolved in preview.legs
+            ]
+        )
+        created += 1
+
+    logger.info("EPL featured parlays: created %d parlays", created)
+
+
+def _build_epl_parlay_themes(matches, odds_map):
+    """Build themed leg lists from available matches and odds.
+
+    Returns: {"favorites": [...], "underdogs": [...], "value": [...]}
+    Each leg dict has: match_id, selection, label, selection_label, odds
+    """
+    favorites, underdogs, value = [], [], []
+
+    for match in matches:
+        odds = odds_map.get(match.pk)
+        if not odds:
+            continue
+
+        label = _match_label(match)
+        hw, dr, aw = odds.get("home_win"), odds.get("draw"), odds.get("away_win")
+        if not all([hw, dr, aw]):
+            continue
+
+        # Favorites: lowest odds selection (most likely outcome)
+        best_sel, best_odds = min(
+            [("HOME_WIN", hw), ("AWAY_WIN", aw)], key=lambda x: x[1]
+        )
+        favorites.append(
+            {
+                "match_id": match.pk,
+                "selection": best_sel,
+                "selection_label": _epl_selection_label(best_sel),
+                "label": label,
+                "odds": best_odds,
+            }
+        )
+
+        # Underdogs: highest odds selection
+        dog_sel, dog_odds = max(
+            [("HOME_WIN", hw), ("DRAW", dr), ("AWAY_WIN", aw)], key=lambda x: x[1]
+        )
+        underdogs.append(
+            {
+                "match_id": match.pk,
+                "selection": dog_sel,
+                "selection_label": _epl_selection_label(dog_sel),
+                "label": label,
+                "odds": dog_odds,
+            }
+        )
+
+        # Value: draw selections in the 2.5-4.0 range
+        from decimal import Decimal
+
+        if Decimal("2.50") <= dr <= Decimal("4.00"):
+            value.append(
+                {
+                    "match_id": match.pk,
+                    "selection": "DRAW",
+                    "selection_label": "Draw",
+                    "label": label,
+                    "odds": dr,
+                }
+            )
+
+    # Trim to 3-4 legs each, picking the best candidates
+    favorites.sort(key=lambda x: x["odds"])
+    underdogs.sort(key=lambda x: x["odds"], reverse=True)
+
+    return {
+        "favorites": favorites[:4],
+        "underdogs": underdogs[:4],
+        "value": value[:4],
+    }
+
+
+def _match_label(match):
+    return f"{match.home_team.name} vs {match.away_team.name}"
+
+
+_EPL_SELECTION_LABELS = {
+    "HOME_WIN": "Home Win",
+    "DRAW": "Draw",
+    "AWAY_WIN": "Away Win",
+}
+
+
+def _epl_selection_label(selection):
+    return _EPL_SELECTION_LABELS.get(selection, selection)

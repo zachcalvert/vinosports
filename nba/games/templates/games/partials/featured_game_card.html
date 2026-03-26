@@ -1,7 +1,6 @@
 {% load game_tags %}
 {# Featured game card — full-width hero with odds sidebar. #}
 {# Expects `game`, `standings_by_team`, `odds_by_game` in context. #}
-<a href="{% url 'nba_games:game_detail' game.id_hash %}" class="block">
 <div id="featured-{{ game.id_hash }}"
      class="relative bg-surface-container-highest rounded-xl p-6 md:p-8 overflow-hidden group
             {% if game.is_live %}live-game-card{% endif %}">
@@ -9,8 +8,8 @@
     <div class="absolute top-0 left-0 w-1 h-full bg-primary"></div>
 
     <div class="flex flex-col md:flex-row justify-between gap-6 md:gap-8">
-        {# ── Matchup area ── #}
-        <div class="flex-1 flex items-center justify-between gap-4 md:gap-6">
+        {# ── Matchup area (linked) ── #}
+        <a href="{% url 'nba_games:game_detail' game.id_hash %}" class="flex-1 flex items-center justify-between gap-4 md:gap-6 block">
             {# Away team #}
             <div class="text-center space-y-2">
                 <div class="w-16 h-16 md:w-20 md:h-20 bg-surface flex items-center justify-center rounded-full mx-auto shadow-sm">
@@ -66,33 +65,68 @@
                 {% if standing %}<div class="text-[10px] font-label uppercase opacity-60">{{ standing.wins }}-{{ standing.losses }}</div>{% endif %}
                 {% endwith %}
             </div>
-        </div>
+        </a>
 
-        {# ── Odds sidebar ── #}
+        {# ── Odds sidebar (interactive, not inside link) ── #}
         {% with odds=odds_by_game|get_item:game.id %}
-        {% if odds and not game.is_final %}
+        {% if odds and not game.is_final and not game.is_live %}
         <div class="md:border-l md:border-on-surface/10 md:pl-6 md:w-48 space-y-3">
+            {# Moneyline buttons #}
+            {% if odds.home_moneyline is not None and odds.away_moneyline is not None %}
+            <div class="text-[8px] font-label uppercase opacity-60 text-center">Moneyline</div>
+            <div class="grid grid-cols-2 gap-2">
+                <button class="bg-surface p-2 rounded border border-outline-variant/20 text-center hover:border-primary hover:bg-primary/10 transition-all duration-300"
+                        hx-get="{% url 'nba_betting:quick_bet_form' game.id_hash %}?market=MONEYLINE&selection=AWAY&container=quick-bet-featured-{{ game.id_hash }}"
+                        hx-target="#quick-bet-featured-{{ game.id_hash }}"
+                        hx-swap="innerHTML">
+                    <div class="text-[8px] font-label uppercase opacity-60">{{ game.away_team.abbreviation }}</div>
+                    <div class="font-headline font-bold text-primary">{% if odds.away_moneyline > 0 %}+{% endif %}{{ odds.away_moneyline }}</div>
+                </button>
+                <button class="bg-surface p-2 rounded border border-outline-variant/20 text-center hover:border-primary hover:bg-primary/10 transition-all duration-300"
+                        hx-get="{% url 'nba_betting:quick_bet_form' game.id_hash %}?market=MONEYLINE&selection=HOME&container=quick-bet-featured-{{ game.id_hash }}"
+                        hx-target="#quick-bet-featured-{{ game.id_hash }}"
+                        hx-swap="innerHTML">
+                    <div class="text-[8px] font-label uppercase opacity-60">{{ game.home_team.abbreviation }}</div>
+                    <div class="font-headline font-bold text-primary">{% if odds.home_moneyline > 0 %}+{% endif %}{{ odds.home_moneyline }}</div>
+                </button>
+            </div>
+            {% endif %}
+
+            {# Spread & O/U display #}
             <div class="grid grid-cols-2 gap-2 text-center">
                 {% if odds.spread_line is not None %}
-                <div class="bg-surface p-2 rounded border border-outline-variant/20">
+                <button class="bg-surface p-2 rounded border border-outline-variant/20 hover:border-primary hover:bg-primary/10 transition-all duration-300"
+                        hx-get="{% url 'nba_betting:quick_bet_form' game.id_hash %}?market=SPREAD&selection=HOME&container=quick-bet-featured-{{ game.id_hash }}"
+                        hx-target="#quick-bet-featured-{{ game.id_hash }}"
+                        hx-swap="innerHTML">
                     <div class="text-[8px] font-label uppercase opacity-60">Spread</div>
                     <div class="font-headline font-bold text-primary">{% if odds.spread_line > 0 %}+{% endif %}{{ odds.spread_line }}</div>
-                </div>
+                </button>
                 {% endif %}
                 {% if odds.total_line is not None %}
-                <div class="bg-surface p-2 rounded border border-outline-variant/20">
+                <button class="bg-surface p-2 rounded border border-outline-variant/20 hover:border-primary hover:bg-primary/10 transition-all duration-300"
+                        hx-get="{% url 'nba_betting:quick_bet_form' game.id_hash %}?market=TOTAL&selection=OVER&container=quick-bet-featured-{{ game.id_hash }}"
+                        hx-target="#quick-bet-featured-{{ game.id_hash }}"
+                        hx-swap="innerHTML">
                     <div class="text-[8px] font-label uppercase opacity-60">O/U</div>
                     <div class="font-headline font-bold text-primary">{{ odds.total_line }}</div>
-                </div>
+                </button>
                 {% endif %}
             </div>
-            <div class="bg-primary-container text-on-primary-container py-2.5 font-headline font-bold italic uppercase tracking-wider text-xs rounded-lg text-center">
-                Place Bet
-            </div>
         </div>
+        {% elif not game.is_final and not game.is_live %}
+        <a href="{% url 'nba_games:game_detail' game.id_hash %}"
+           class="md:border-l md:border-on-surface/10 md:pl-6 md:w-48 flex items-center justify-center">
+            <div class="bg-primary-container text-on-primary-container py-2.5 px-6 font-headline font-bold italic uppercase tracking-wider text-xs rounded-lg text-center">
+                View Game
+            </div>
+        </a>
         {% endif %}
         {% endwith %}
     </div>
+
+    {# Quick bet form target #}
+    <div id="quick-bet-featured-{{ game.id_hash }}"></div>
 
     {# Footer meta #}
     <div class="mt-4 flex items-center gap-4 text-[10px] font-label uppercase tracking-widest opacity-50">
@@ -104,4 +138,3 @@
         </span>
     </div>
 </div>
-</a>

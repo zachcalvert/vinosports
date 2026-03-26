@@ -8,6 +8,7 @@ from nba.betting.views import (
     MyBetsView,
     PlaceBetView,
     PlaceParlayView,
+    QuickBetFormView,
     RemoveFromParlayView,
 )
 
@@ -15,6 +16,7 @@ app_name = "nba_betting"
 
 urlpatterns = [
     path("form/<str:id_hash>/", BetFormView.as_view(), name="bet_form"),
+    path("quick-bet/<str:id_hash>/", QuickBetFormView.as_view(), name="quick_bet_form"),
     path("place/<str:id_hash>/", PlaceBetView.as_view(), name="place_bet"),
     path("my-bets/", MyBetsView.as_view(), name="my_bets"),
     path("bailout/", BailoutView.as_view(), name="bailout"),

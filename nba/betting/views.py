@@ -36,13 +36,95 @@ class BetFormView(LoginRequiredMixin, View):
         )
 
 
+class QuickBetFormView(LoginRequiredMixin, View):
+    """Return a compact inline bet form for game cards (dashboard / schedule)."""
+
+    MARKET_ODDS_MAP = {
+        ("MONEYLINE", "HOME"): "home_moneyline",
+        ("MONEYLINE", "AWAY"): "away_moneyline",
+        ("SPREAD", "HOME"): "spread_home",
+        ("SPREAD", "AWAY"): "spread_away",
+        ("TOTAL", "OVER"): "over_odds",
+        ("TOTAL", "UNDER"): "under_odds",
+    }
+
+    def get(self, request, id_hash):
+        game = get_object_or_404(
+            Game.objects.select_related("home_team", "away_team"),
+            id_hash=id_hash,
+        )
+        market = request.GET.get("market", "MONEYLINE")
+        selection = request.GET.get("selection", "HOME")
+        container_id = request.GET.get("container", "")
+
+        best_odds = game.odds.order_by("-fetched_at").first()
+        odds_field = self.MARKET_ODDS_MAP.get((market, selection))
+        selected_odds = (
+            getattr(best_odds, odds_field, None) if best_odds and odds_field else None
+        )
+
+        line = None
+        if best_odds and market == "SPREAD":
+            line = (
+                best_odds.spread_line
+                if selection == "HOME"
+                else (-best_odds.spread_line if best_odds.spread_line else None)
+            )
+        elif best_odds and market == "TOTAL":
+            line = best_odds.total_line
+
+        return render(
+            request,
+            "nba_betting/partials/quick_bet_form.html",
+            {
+                "game": game,
+                "market": market,
+                "selection": selection,
+                "container_id": container_id,
+                "selected_odds": selected_odds,
+                "line": line,
+            },
+        )
+
+
 class PlaceBetView(LoginRequiredMixin, View):
+    def _error_template(self, container_id):
+        if container_id:
+            return "nba_betting/partials/quick_bet_form.html"
+        return "nba_betting/partials/bet_form.html"
+
+    def _quick_bet_context(self, game, request_post):
+        """Build context for re-rendering the quick bet form on error."""
+        market = request_post.get("market", "MONEYLINE")
+        selection = request_post.get("selection", "HOME")
+        container_id = request_post.get("container_id", "")
+        odds_val = request_post.get("odds")
+        line_val = request_post.get("line")
+        return {
+            "game": game,
+            "market": market,
+            "selection": selection,
+            "container_id": container_id,
+            "selected_odds": int(odds_val) if odds_val else None,
+            "line": float(line_val) if line_val else None,
+        }
+
     def post(self, request, id_hash):
         game = get_object_or_404(Game, id_hash=id_hash, status=GameStatus.SCHEDULED)
         form = PlaceBetForm(request.POST)
+        container_id = request.POST.get("container_id", "")
 
         if not form.is_valid():
             if getattr(request, "htmx", False):
+                if container_id:
+                    return render(
+                        request,
+                        self._error_template(container_id),
+                        {
+                            **self._quick_bet_context(game, request.POST),
+                            "error": "Please check your bet details.",
+                        },
+                    )
                 best_odds = game.odds.order_by("-fetched_at").first()
                 return render(
                     request,
@@ -71,6 +153,15 @@ class PlaceBetView(LoginRequiredMixin, View):
             )
         except ValueError:
             if getattr(request, "htmx", False):
+                if container_id:
+                    return render(
+                        request,
+                        self._error_template(container_id),
+                        {
+                            **self._quick_bet_context(game, request.POST),
+                            "error": "Insufficient balance.",
+                        },
+                    )
                 best_odds = game.odds.order_by("-fetched_at").first()
                 return render(
                     request,
@@ -104,6 +195,16 @@ class PlaceBetView(LoginRequiredMixin, View):
         )
 
         if getattr(request, "htmx", False):
+            if container_id:
+                return render(
+                    request,
+                    "nba_betting/partials/quick_bet_confirmation.html",
+                    {
+                        "bet": bet,
+                        "game": game,
+                        "container_id": container_id,
+                    },
+                )
             from nba.games.views import (
                 _get_game_sentiment,
                 _get_spread_sentiment,

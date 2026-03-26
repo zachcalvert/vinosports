@@ -2,6 +2,7 @@ from django.contrib import admin
 
 from epl.betting.models import BetSlip, Parlay, ParlayLeg
 from epl.matches.models import Odds
+from vinosports.betting.featured import FeaturedParlay, FeaturedParlayLeg
 from vinosports.betting.models import Badge, UserBadge, UserBalance
 
 
@@ -74,3 +75,31 @@ class UserBadgeAdmin(admin.ModelAdmin):
     list_filter = ["badge__rarity", "badge"]
     search_fields = ["user__email", "badge__name"]
     raw_id_fields = ["user"]
+
+
+# --- Featured Parlays (shared core model, registered here to avoid duplication) ---
+
+
+class FeaturedParlayLegInline(admin.TabularInline):
+    model = FeaturedParlayLeg
+    extra = 0
+    readonly_fields = ["event_label", "selection_label", "odds_snapshot"]
+    can_delete = False
+
+
+@admin.register(FeaturedParlay)
+class FeaturedParlayAdmin(admin.ModelAdmin):
+    list_display = [
+        "title",
+        "league",
+        "sponsor",
+        "status",
+        "combined_odds",
+        "expires_at",
+        "created_at",
+    ]
+    list_filter = ["league", "status"]
+    search_fields = ["title", "sponsor__display_name"]
+    raw_id_fields = ["sponsor"]
+    inlines = [FeaturedParlayLegInline]
+    readonly_fields = ["id_hash", "combined_odds", "potential_payout"]

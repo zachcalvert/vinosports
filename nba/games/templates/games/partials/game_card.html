@@ -60,24 +60,33 @@
         </div>
     </a>
 
-    {# ── Footer: odds + bet button ── #}
+    {# ── Footer: odds + inline betting ── #}
     {% with odds=odds_by_game|get_item:game.id %}
-    <div class="flex gap-2 items-center">
-        {% if odds and odds.home_moneyline is not None and not game.is_final %}
-        <div class="flex-1 bg-surface p-2 rounded text-center">
-            <div class="text-[8px] font-label uppercase opacity-60">ML</div>
-            <div class="font-headline font-bold text-primary">{% if odds.home_moneyline > 0 %}+{% endif %}{{ odds.home_moneyline }}</div>
-        </div>
-        <a href="{% url 'nba_games:game_detail' game.id_hash %}"
-           class="px-5 bg-on-surface text-surface py-2 font-headline font-bold italic uppercase text-[10px] rounded-lg hover:opacity-90 transition-opacity">
-            BET
-        </a>
-        {% else %}
-        <div class="flex-1 bg-surface-container-low rounded-lg px-3 py-2 flex items-center gap-4">
-            <span class="flex items-center gap-1"><i class="ph-duotone ph-ticket text-sm text-primary"></i> <span class="text-[10px] font-bold uppercase tracking-widest text-secondary">{{ game.bet_count|default:"0" }}</span></span>
-            <span class="flex items-center gap-1"><i class="ph-duotone ph-chat-circle-text text-sm text-secondary"></i> <span class="text-[10px] font-bold uppercase tracking-widest text-secondary">{{ game.comment_count|default:"0" }}</span></span>
-        </div>
-        {% endif %}
+    {% if odds and odds.home_moneyline is not None and odds.away_moneyline is not None and not game.is_final and not game.is_live %}
+    <div class="varsity-stripe my-3"></div>
+    <div class="flex gap-2 text-xs">
+        <button class="flex-1 text-center py-1.5 rounded-sm bg-surface font-mono text-primary font-bold hover:bg-primary hover:text-on-primary transition-all duration-300"
+                hx-get="{% url 'nba_betting:quick_bet_form' game.id_hash %}?market=MONEYLINE&selection=AWAY&container=quick-bet-{{ game.id_hash }}"
+                hx-target="#quick-bet-{{ game.id_hash }}"
+                hx-swap="innerHTML">
+            <span class="text-[8px] font-label uppercase opacity-60 block">{{ game.away_team.abbreviation }}</span>
+            {% if odds.away_moneyline > 0 %}+{% endif %}{{ odds.away_moneyline }}
+        </button>
+        <button class="flex-1 text-center py-1.5 rounded-sm bg-surface font-mono text-primary font-bold hover:bg-primary hover:text-on-primary transition-all duration-300"
+                hx-get="{% url 'nba_betting:quick_bet_form' game.id_hash %}?market=MONEYLINE&selection=HOME&container=quick-bet-{{ game.id_hash }}"
+                hx-target="#quick-bet-{{ game.id_hash }}"
+                hx-swap="innerHTML">
+            <span class="text-[8px] font-label uppercase opacity-60 block">{{ game.home_team.abbreviation }}</span>
+            {% if odds.home_moneyline > 0 %}+{% endif %}{{ odds.home_moneyline }}
+        </button>
     </div>
+    <div id="quick-bet-{{ game.id_hash }}"></div>
+    {% endif %}
     {% endwith %}
+
+    {# ── Activity counts ── #}
+    <div class="mt-3 flex-1 bg-surface-container-low rounded-lg px-3 py-2 flex items-center gap-4">
+        <span class="flex items-center gap-1"><i class="ph-duotone ph-ticket text-sm text-primary"></i> <span class="text-[10px] font-bold uppercase tracking-widest text-secondary">{{ game.bet_count|default:"0" }}</span></span>
+        <span class="flex items-center gap-1"><i class="ph-duotone ph-chat-circle-text text-sm text-secondary"></i> <span class="text-[10px] font-bold uppercase tracking-widest text-secondary">{{ game.comment_count|default:"0" }}</span></span>
+    </div>
 </div>

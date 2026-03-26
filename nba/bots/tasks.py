@@ -144,3 +144,204 @@ def execute_bot_strategy(self, bot_user_id: int, window_max_bets: int | None = N
         "Bot %s placed %d bets (skipped %d)", user, result["placed"], result["skipped"]
     )
     return result
+
+
+# ---------------------------------------------------------------------------
+# Featured Parlays
+# ---------------------------------------------------------------------------
+
+
+@shared_task(name="nba.bots.tasks.generate_featured_parlays")
+def generate_featured_parlays():
+    """Generate featured parlay proposals for today's NBA games.
+
+    Scheduled daily (10am). Builds 1-2 themed parlays using
+    ParlayBuilder.preview(), then asks Claude for a catchy title and description.
+    Skips if no games are scheduled today.
+    """
+    from datetime import timedelta
+
+    from vinosports.betting.featured import FeaturedParlay, FeaturedParlayLeg
+    from vinosports.betting.featured_utils import generate_parlay_copy
+    from vinosports.betting.parlay_builder import ParlayBuilder, ParlayValidationError
+
+    today = today_et()
+    games = list(
+        Game.objects.filter(status=GameStatus.SCHEDULED, game_date=today)
+        .select_related("home_team", "away_team")
+        .order_by("tip_off")
+    )
+    if len(games) < 2:
+        logger.info("NBA featured parlays: not enough games (%d), skipping", len(games))
+        return
+
+    # Get latest odds per game
+    odds_by_game = {}
+    for odds in (
+        Odds.objects.filter(game__in=games)
+        .select_related("game")
+        .order_by("game_id", "-fetched_at")
+        .distinct("game_id")
+    ):
+        odds_by_game[odds.game_id] = odds
+
+    if not odds_by_game:
+        logger.info("NBA featured parlays: no odds available, skipping")
+        return
+
+    # Pick a sponsor bot
+    sponsor_bot = (
+        BotProfile.objects.filter(is_active=True, active_in_nba=True)
+        .select_related("user")
+        .order_by("?")
+        .first()
+    )
+    if not sponsor_bot:
+        logger.warning("NBA featured parlays: no active NBA bot found")
+        return
+
+    themes = _build_nba_parlay_themes(games, odds_by_game)
+
+    last_tip = max(
+        (g.tip_off for g in games if g.tip_off),
+        default=timezone.now(),
+    )
+    expires_at = last_tip + timedelta(hours=4)
+
+    created = 0
+    for theme_name, legs_data in themes.items():
+        if len(legs_data) < 2:
+            continue
+
+        try:
+            builder = ParlayBuilder("nba")
+            for leg in legs_data:
+                builder.add_leg(
+                    leg["game_id"],
+                    leg["selection"],
+                    odds=leg.get("decimal_odds"),
+                    market=leg["market"],
+                    line=leg.get("line"),
+                )
+            preview = builder.preview(stake=Decimal("10.00"))
+        except ParlayValidationError as e:
+            logger.info("NBA featured parlay '%s' skipped: %s", theme_name, e)
+            continue
+
+        legs_summary = [
+            {
+                "event": leg["label"],
+                "selection": leg["selection_label"],
+                "odds": str(leg.get("decimal_odds", "")),
+            }
+            for leg in legs_data
+        ]
+        copy = generate_parlay_copy(legs_summary, "nba", theme_name)
+
+        fp = FeaturedParlay.objects.create(
+            league="nba",
+            sponsor=sponsor_bot.user,
+            title=copy["title"],
+            description=copy["description"],
+            expires_at=expires_at,
+            combined_odds=preview.combined_odds,
+            potential_payout=preview.potential_payout,
+        )
+        FeaturedParlayLeg.objects.bulk_create(
+            [
+                FeaturedParlayLeg(
+                    featured_parlay=fp,
+                    event_id=resolved.leg.event_id,
+                    event_label=_game_label(resolved.event),
+                    selection=resolved.leg.selection,
+                    selection_label=_nba_selection_label(
+                        resolved.leg.extras.get("market", "MONEYLINE"),
+                        resolved.leg.selection,
+                        resolved.leg.extras.get("line"),
+                    ),
+                    odds_snapshot=resolved.decimal_odds,
+                    extras_json={
+                        k: v for k, v in resolved.leg.extras.items() if v is not None
+                    },
+                )
+                for resolved in preview.legs
+            ]
+        )
+        created += 1
+
+    logger.info("NBA featured parlays: created %d parlays", created)
+
+
+def _build_nba_parlay_themes(games, odds_by_game):
+    """Build themed leg lists from today's games and odds.
+
+    Returns: {"favorites": [...], "spread": [...]}
+    """
+    from nba.betting.settlement import american_to_decimal
+
+    favorites, spread_picks = [], []
+
+    for game in games:
+        odds = odds_by_game.get(game.pk)
+        if not odds:
+            continue
+
+        label = _game_label(game)
+
+        # Moneyline favorites: pick the team with lower (more negative) moneyline
+        if odds.home_moneyline is not None and odds.away_moneyline is not None:
+            if odds.home_moneyline < odds.away_moneyline:
+                fav_sel, fav_odds = "HOME", odds.home_moneyline
+            else:
+                fav_sel, fav_odds = "AWAY", odds.away_moneyline
+
+            favorites.append(
+                {
+                    "game_id": game.pk,
+                    "selection": fav_sel,
+                    "selection_label": f"{game.home_team.short_name if fav_sel == 'HOME' else game.away_team.short_name} ML",
+                    "market": "MONEYLINE",
+                    "label": label,
+                    "decimal_odds": american_to_decimal(fav_odds),
+                    "american_odds": fav_odds,
+                }
+            )
+
+        # Spread picks: home team spread
+        if odds.spread_home is not None and odds.spread_line is not None:
+            spread_picks.append(
+                {
+                    "game_id": game.pk,
+                    "selection": "HOME",
+                    "selection_label": f"{game.home_team.short_name} {odds.spread_line:+g}",
+                    "market": "SPREAD",
+                    "line": odds.spread_line,
+                    "label": label,
+                    "decimal_odds": american_to_decimal(odds.spread_home),
+                    "american_odds": odds.spread_home,
+                }
+            )
+
+    # Trim to 3-4 legs, sorted by likelihood
+    favorites.sort(key=lambda x: x["decimal_odds"])
+
+    return {
+        "favorites": favorites[:4],
+        "value": spread_picks[:4],
+    }
+
+
+def _game_label(game):
+    return f"{game.home_team.short_name} vs {game.away_team.short_name}"
+
+
+def _nba_selection_label(market, selection, line=None):
+    if market == "MONEYLINE":
+        return f"{selection.title()} ML"
+    elif market == "SPREAD":
+        line_str = f" {line:+g}" if line is not None else ""
+        return f"{selection.title()}{line_str}"
+    elif market == "TOTAL":
+        line_str = f" {line:g}" if line is not None else ""
+        return f"{selection.title()}{line_str}"
+    return selection

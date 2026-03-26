@@ -45,6 +45,24 @@ class DashboardView(LoginRequiredMixin, View):
         ).select_related("team")
         standings_by_team = {s.team_id: s for s in standings_qs}
 
+        # Build odds lookup (most recent per game)
+        odds_by_game = {}
+        for g in games:
+            first_odds = g.odds.all()[:1]
+            if first_odds:
+                odds_by_game[g.id] = first_odds[0]
+
+        from vinosports.betting.featured import FeaturedParlay
+
+        featured_parlays = (
+            FeaturedParlay.objects.filter(
+                league="nba", status=FeaturedParlay.Status.ACTIVE
+            )
+            .select_related("sponsor", "sponsor__bot_profile")
+            .prefetch_related("legs")
+            .order_by("-created_at")[:2]
+        )
+
         return render(
             request,
             "nba_website/dashboard.html",
@@ -54,6 +72,8 @@ class DashboardView(LoginRequiredMixin, View):
                 "final_games": final,
                 "today": today,
                 "standings_by_team": standings_by_team,
+                "odds_by_game": odds_by_game,
+                "featured_parlays": featured_parlays,
             },
         )
 

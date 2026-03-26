@@ -42,6 +42,14 @@ class HomeView(TemplateView):
             .select_related("user")
             .order_by("user__date_joined")
         )
+        from vinosports.betting.featured import FeaturedParlay
+
+        ctx["featured_parlays"] = (
+            FeaturedParlay.objects.filter(status=FeaturedParlay.Status.ACTIVE)
+            .select_related("sponsor", "sponsor__bot_profile")
+            .prefetch_related("legs")
+            .order_by("-created_at")[:4]
+        )
         return ctx
 
 

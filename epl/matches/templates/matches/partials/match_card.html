@@ -93,7 +93,10 @@
     {% endif %}
 
     <div class="mt-3 flex items-center justify-between gap-3 bg-surface-container-low rounded-lg px-3 py-2">
-        <span class="text-[10px] font-bold uppercase tracking-widest text-secondary">Freshness</span>
+        <div class="flex items-center gap-4">
+            <span class="flex items-center gap-1"><i class="ph-duotone ph-ticket text-sm text-primary"></i> <span class="text-[10px] font-bold uppercase tracking-widest text-secondary">{{ match.bet_count|default:"0" }}</span></span>
+            <span class="flex items-center gap-1"><i class="ph-duotone ph-chat-circle-text text-sm text-secondary"></i> <span class="text-[10px] font-bold uppercase tracking-widest text-secondary">{{ match.comment_count|default:"0" }}</span></span>
+        </div>
         <span class="text-[10px] font-bold uppercase tracking-widest text-muted">
             {% if match.status == 'IN_PLAY' or match.status == 'PAUSED' %}
                 Live {{ match.updated_at|relative_time }}

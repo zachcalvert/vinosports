@@ -266,6 +266,10 @@ CELERY_BEAT_SCHEDULE = {
         "task": "epl.bots.tasks.run_bot_strategies",
         "schedule": crontab(minute=5),
     },
+    "epl-generate-featured-parlays-weekly": {
+        "task": "epl.bots.tasks.generate_featured_parlays",
+        "schedule": crontab(hour=8, minute=0, day_of_week="friday"),
+    },
     "epl-generate-prematch-comments-hourly": {
         "task": "epl.bots.tasks.generate_prematch_comments",
         "schedule": crontab(minute=15),
@@ -320,6 +324,10 @@ CELERY_BEAT_SCHEDULE = {
         "task": "nba.bots.tasks.run_bot_strategies",
         "schedule": crontab(minute=5),
     },
+    "nba-generate-featured-parlays-daily": {
+        "task": "nba.bots.tasks.generate_featured_parlays",
+        "schedule": crontab(hour=10, minute=0),
+    },
     "nba-generate-pregame-comments-hourly": {
         "task": "nba.discussions.tasks.generate_pregame_comments",
         "schedule": crontab(minute=15),
@@ -348,6 +356,11 @@ CELERY_BEAT_SCHEDULE = {
     },
     "nba-expire-challenges-30m": {
         "task": "nba.website.challenge_tasks.expire_challenges",
+        "schedule": timedelta(minutes=30),
+    },
+    # ===== Cross-league =====
+    "expire-featured-parlays-30m": {
+        "task": "vinosports.betting.tasks.expire_featured_parlays",
         "schedule": timedelta(minutes=30),
     },
 }

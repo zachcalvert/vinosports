@@ -36,11 +36,17 @@ class LiveUpdatesConsumer(WebsocketConsumer):
         close_old_connections()
         match_id = event.get("match_id")
         try:
+            from django.db.models import Count
+
             from .models import Match
 
             match = (
                 Match.objects.filter(pk=match_id)
                 .select_related("home_team", "away_team")
+                .annotate(
+                    bet_count=Count("bets", distinct=True),
+                    comment_count=Count("comments", distinct=True),
+                )
                 .first()
             )
             if not match:

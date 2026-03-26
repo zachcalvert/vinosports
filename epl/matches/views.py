@@ -49,7 +49,9 @@ def _get_matches_with_odds(season, matchday):
                 When(status__in=unplayed_statuses, then=Value(0)),
                 default=Value(1),
                 output_field=IntegerField(),
-            )
+            ),
+            bet_count=Count("bets", distinct=True),
+            comment_count=Count("comments", distinct=True),
         )
         .order_by("unplayed_priority", "kickoff")
     )
@@ -114,6 +116,17 @@ class DashboardView(TemplateView):
             Standing.objects.filter(season=settings.EPL_CURRENT_SEASON)
             .select_related("team")
             .order_by("position")[:8]
+        )
+
+        from vinosports.betting.featured import FeaturedParlay
+
+        ctx["featured_parlays"] = (
+            FeaturedParlay.objects.filter(
+                league="epl", status=FeaturedParlay.Status.ACTIVE
+            )
+            .select_related("sponsor", "sponsor__bot_profile")
+            .prefetch_related("legs")
+            .order_by("-created_at")[:2]
         )
 
         return ctx

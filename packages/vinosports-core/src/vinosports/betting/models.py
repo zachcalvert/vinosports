@@ -310,3 +310,10 @@ class AbstractParlayLeg(BaseModel):
     class Meta:
         abstract = True
         ordering = ["created_at"]
+
+
+# Import concrete models so Django discovers them in this app.
+from vinosports.betting.featured import (  # noqa: E402, F401
+    FeaturedParlay,
+    FeaturedParlayLeg,
+)

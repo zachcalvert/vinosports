@@ -83,6 +83,22 @@
     </div>
 </section>
 
+<!-- Featured Parlays -->
+{% if featured_parlays %}
+<section class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+    <div class="mb-12 text-center">
+        <h2 class="text-3xl sm:text-4xl font-headline font-black uppercase italic text-secondary tracking-tighter">Featured Parlays</h2>
+        <p class="font-label text-tertiary font-bold tracking-[0.2em] uppercase text-xs mt-2">Bot-Curated Picks &bull; Updated Weekly</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {% for parlay in featured_parlays %}
+            {% include "vinosports/betting/featured_parlay_card.html" %}
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
 <!-- Bot Corner: The Strategy Room -->
 <section class="bg-surface-container py-16 px-4 sm:px-8 lg:px-16">
     <div class="max-w-6xl mx-auto">

@@ -1,0 +1,64 @@
+{# Featured Parlay Card — shared partial included from hub, EPL, and NBA templates.
+   Expects `parlay` in context (a FeaturedParlay instance with prefetched legs and sponsor). #}
+
+<div class="bg-surface-container-lowest rounded-xl border border-outline-variant overflow-hidden">
+    {# Header: sponsor + league badge #}
+    <div class="flex items-center justify-between px-5 pt-5 pb-3">
+        <div class="flex items-center gap-3">
+            {% if parlay.sponsor.bot_profile %}
+            <div class="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
+                 style="background-color: {{ parlay.sponsor.bot_profile.avatar_bg }};">
+                <i class="ph-duotone ph-{{ parlay.sponsor.bot_profile.avatar_icon }} text-lg text-white"></i>
+            </div>
+            {% endif %}
+            <div>
+                <p class="font-headline font-bold text-sm uppercase tracking-wide text-primary leading-tight">
+                    {{ parlay.sponsor.display_name }}
+                </p>
+                <p class="text-[10px] font-label text-muted uppercase tracking-widest">Sponsored Pick</p>
+            </div>
+        </div>
+        <span class="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-headline font-bold uppercase tracking-widest
+                      {% if parlay.league == 'epl' %}bg-primary/10 text-primary{% else %}bg-primary/10 text-primary{% endif %}">
+            {{ parlay.league|upper }}
+        </span>
+    </div>
+
+    {# Title + description #}
+    <div class="px-5 pb-3">
+        <h3 class="font-headline font-black text-xl uppercase italic tracking-tight text-secondary leading-tight">
+            {{ parlay.title }}
+        </h3>
+        {% if parlay.description %}
+        <p class="text-xs text-muted mt-1 font-body leading-relaxed">{{ parlay.description }}</p>
+        {% endif %}
+    </div>
+
+    {# Legs #}
+    <div class="px-5 pb-3 space-y-1.5">
+        {% for leg in parlay.legs.all %}
+        <div class="flex items-center justify-between text-sm">
+            <div class="flex items-center gap-2 min-w-0">
+                <span class="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0"></span>
+                <span class="font-body text-secondary truncate">{{ leg.event_label }}</span>
+            </div>
+            <div class="flex items-center gap-2 flex-shrink-0 ml-3">
+                <span class="font-label font-bold text-xs text-primary uppercase tracking-wide">{{ leg.selection_label }}</span>
+                <span class="font-mono text-xs text-muted">{{ leg.odds_snapshot }}x</span>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {# Footer: combined odds + payout #}
+    <div class="flex items-center justify-between px-5 py-3 bg-surface-container border-t border-outline-variant">
+        <div>
+            <span class="text-[10px] font-label text-muted uppercase tracking-widest">Combined Odds</span>
+            <p class="font-mono font-bold text-primary text-lg leading-tight">{{ parlay.combined_odds }}x</p>
+        </div>
+        <div class="text-right">
+            <span class="text-[10px] font-label text-muted uppercase tracking-widest">${{ parlay.reference_stake }} returns</span>
+            <p class="font-mono font-bold text-positive text-lg leading-tight">${{ parlay.potential_payout }}</p>
+        </div>
+    </div>
+</div>
