@@ -23,23 +23,11 @@
             <span>Odds</span>
         </a>
         {% if user.is_authenticated %}
-        <a href="{% url 'epl_betting:my_bets' %}"
-           class="sidebar-link {% if url_name == 'my_bets' %}sidebar-link--active{% endif %}">
-            <i class="ph-duotone ph-receipt text-lg"></i>
-            <span>My Bets</span>
-        </a>
         <a href="{% url 'epl_challenges:challenges' %}"
            class="sidebar-link {% if url_name == 'challenges' %}sidebar-link--active{% endif %}">
             <i class="ph-duotone ph-trophy text-lg"></i>
             <span>Challenges</span>
         </a>
-        <div class="mt-3 px-1">
-            <a href="{% url 'epl_matches:dashboard' %}"
-               class="sidebar-link sidebar-link--cta">
-                <i class="ph-duotone ph-lightning text-lg"></i>
-                <span>View Live Scores</span>
-            </a>
-        </div>
         {% endif %}
         {% if user.is_superuser %}
         <div class="sidebar-divider"></div>

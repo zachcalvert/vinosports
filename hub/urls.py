@@ -18,6 +18,23 @@ urlpatterns = [
     path("standings/", views.StandingsView.as_view(), name="standings"),
     # My Bets (cross-league)
     path("my-bets/", views.MyBetsView.as_view(), name="my_bets"),
+    # Challenges (cross-league)
+    path("challenges/", views.ChallengesView.as_view(), name="challenges"),
+    path(
+        "challenges/active/",
+        views.ActiveChallengesHubPartial.as_view(),
+        name="challenges_active_partial",
+    ),
+    path(
+        "challenges/completed/",
+        views.CompletedChallengesHubPartial.as_view(),
+        name="challenges_completed_partial",
+    ),
+    path(
+        "challenges/upcoming/",
+        views.UpcomingChallengesHubPartial.as_view(),
+        name="challenges_upcoming_partial",
+    ),
     # Admin Dashboard (cross-league)
     path(
         "admin-dashboard/",

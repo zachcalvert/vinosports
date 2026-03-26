@@ -1,0 +1,52 @@
+{% extends "hub/base.html" %}
+{% block title %}Challenges{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    <h1 class="font-headline font-black text-3xl uppercase tracking-tight mb-1">Challenges</h1>
+    <p class="text-muted text-sm mb-6">Complete challenges across all leagues to earn bonuses.</p>
+
+    <!-- Tabs -->
+    <div class="flex gap-1 mb-6 border-b-2 border-outline-variant">
+        <button
+            class="px-4 py-2.5 text-sm font-medium border-b-2 transition-colors
+                {% if active_tab == 'active' %}border-primary text-primary{% else %}border-transparent text-muted hover:text-primary{% endif %}"
+            hx-get="{% url 'hub:challenges_active_partial' %}"
+            hx-target="#challenge-list"
+            hx-swap="outerHTML"
+            hx-push-url="{% url 'hub:challenges' %}?tab=active"
+            onclick="document.querySelectorAll('[data-tab-btn]').forEach(b => {b.classList.remove('border-primary','text-primary');b.classList.add('border-transparent','text-muted')});this.classList.remove('border-transparent','text-muted');this.classList.add('border-primary','text-primary')"
+            data-tab-btn
+        >
+            Active
+        </button>
+        <button
+            class="px-4 py-2.5 text-sm font-medium border-b-2 transition-colors
+                {% if active_tab == 'completed' %}border-primary text-primary{% else %}border-transparent text-muted hover:text-primary{% endif %}"
+            hx-get="{% url 'hub:challenges_completed_partial' %}"
+            hx-target="#challenge-list"
+            hx-swap="outerHTML"
+            hx-push-url="{% url 'hub:challenges' %}?tab=completed"
+            onclick="document.querySelectorAll('[data-tab-btn]').forEach(b => {b.classList.remove('border-primary','text-primary');b.classList.add('border-transparent','text-muted')});this.classList.remove('border-transparent','text-muted');this.classList.add('border-primary','text-primary')"
+            data-tab-btn
+        >
+            Completed
+        </button>
+        <button
+            class="px-4 py-2.5 text-sm font-medium border-b-2 transition-colors
+                {% if active_tab == 'upcoming' %}border-primary text-primary{% else %}border-transparent text-muted hover:text-primary{% endif %}"
+            hx-get="{% url 'hub:challenges_upcoming_partial' %}"
+            hx-target="#challenge-list"
+            hx-swap="outerHTML"
+            hx-push-url="{% url 'hub:challenges' %}?tab=upcoming"
+            onclick="document.querySelectorAll('[data-tab-btn]').forEach(b => {b.classList.remove('border-primary','text-primary');b.classList.add('border-transparent','text-muted')});this.classList.remove('border-transparent','text-muted');this.classList.add('border-primary','text-primary')"
+            data-tab-btn
+        >
+            Upcoming
+        </button>
+    </div>
+
+    <!-- Tab content -->
+    {% include "hub/partials/challenge_list.html" %}
+</div>
+{% endblock %}

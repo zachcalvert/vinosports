@@ -20,13 +20,13 @@
 
             <div class="flex items-center gap-1 ml-4">
                 {% for key, league in leagues.items %}
-                {% if league.status == "active" %}
-                <a href="{{ league.url }}"
-                   class="global-nav-league {% if current_league == key %}global-nav-league--active{% endif %}">
-                    <i class="{{ league.icon }} text-sm"></i>
-                    <span>{{ league.short }}</span>
-                </a>
-                {% endif %}
+                    {% if league.status == "active" %}
+                    <a href="{{ league.url }}"
+                    class="global-nav-league {% if current_league == key %}global-nav-league--active{% endif %}">
+                        <i class="{{ league.icon }} text-sm"></i>
+                        <span>{{ league.short }}</span>
+                    </a>
+                    {% endif %}
                 {% endfor %}
             </div>
         </div>
@@ -58,6 +58,12 @@
                     </div>
                     <!-- Links -->
                     <div class="py-1">
+                        <a href="{% url 'hub:my_bets' %}" class="dropdown-link">
+                            <i class="ph-duotone ph-ticket text-base"></i> My Bets
+                        </a>
+                        <a href="{% url 'hub:challenges' %}" class="dropdown-link">
+                            <i class="ph-duotone ph-trophy text-base"></i> Challenges
+                        </a>
                         {% if request.league %}
                         <a href="/{{ request.league }}/account/" class="dropdown-link">
                             <i class="ph-duotone ph-gear text-base"></i> Profile &amp; Settings
