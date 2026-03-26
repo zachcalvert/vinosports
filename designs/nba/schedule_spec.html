@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Vinosports | NBA Schedule &amp; Betting</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Epilogue:ital,wght@0,700;0,900;1,700;1,900&amp;family=Manrope:wght@400;500;600&amp;family=Inter:wght@400;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "on-surface": "#1b1d0e",
+                        "primary-fixed": "#ffdad6",
+                        "surface-container-low": "#f5f5dc",
+                        "secondary-container": "#b9c7fd",
+                        "on-primary-fixed": "#410003",
+                        "background": "#fbfbe2",
+                        "error": "#ba1a1a",
+                        "surface-container-high": "#eaead1",
+                        "surface": "#fbfbe2",
+                        "surface-container-highest": "#e4e4cc",
+                        "outline-variant": "#e2beba",
+                        "error-container": "#ffdad6",
+                        "on-secondary-container": "#445281",
+                        "outline": "#8e706d",
+                        "on-secondary-fixed": "#061845",
+                        "inverse-surface": "#303221",
+                        "on-tertiary-fixed": "#241a00",
+                        "primary-fixed-dim": "#ffb4ac",
+                        "on-primary": "#ffffff",
+                        "surface-container": "#efefd7",
+                        "on-primary-container": "#ffc8c2",
+                        "inverse-primary": "#ffb4ac",
+                        "on-background": "#1b1d0e",
+                        "on-tertiary": "#ffffff",
+                        "on-surface-variant": "#5a403e",
+                        "surface-container-lowest": "#ffffff",
+                        "tertiary-container": "#cca72f",
+                        "on-tertiary-fixed-variant": "#574500",
+                        "inverse-on-surface": "#f2f2d9",
+                        "tertiary-fixed-dim": "#e9c349",
+                        "on-tertiary-container": "#4e3d00",
+                        "on-primary-fixed-variant": "#92030f",
+                        "on-secondary-fixed-variant": "#364572",
+                        "on-secondary": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "tertiary-fixed": "#ffe088",
+                        "secondary": "#4e5d8c",
+                        "primary": "#8f000d",
+                        "tertiary": "#735c00",
+                        "surface-dim": "#dbdcc3",
+                        "surface-variant": "#e4e4cc",
+                        "surface-tint": "#b52424",
+                        "secondary-fixed-dim": "#b6c5fb",
+                        "on-error": "#ffffff",
+                        "primary-container": "#b22222",
+                        "secondary-fixed": "#dbe1ff",
+                        "surface-bright": "#fbfbe2"
+                    },
+                    fontFamily: {
+                        "headline": ["Epilogue"],
+                        "body": ["Manrope"],
+                        "label": ["Inter"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body { font-family: 'Manrope', sans-serif; }
+        .font-epilogue { font-family: 'Epilogue', sans-serif; }
+        .font-inter { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-background text-on-surface selection:bg-primary selection:text-white">
+<!-- Top Navigation Anchor -->
+<header class="fixed top-0 z-50 w-full bg-[#fbfbe2] shadow-[0_12px_32px_-4px_rgba(27,29,14,0.08)]">
+<div class="flex justify-between items-center w-full px-6 py-4 max-w-[1440px] mx-auto">
+<div class="text-2xl font-epilogue font-bold italic uppercase text-[#8f000d]">Vinosports</div>
+<nav class="hidden md:flex items-center gap-8">
+<a class="text-[#1b1d0e] opacity-70 font-inter uppercase tracking-wider text-[10px] hover:bg-[#e4e4cc] transition-colors duration-200 px-2 py-1" href="#">Dashboard</a>
+<a class="text-[#8f000d] font-bold italic font-epilogue uppercase tracking-wider text-[10px] px-2 py-1" href="#">Schedule</a>
+<a class="text-[#1b1d0e] opacity-70 font-inter uppercase tracking-wider text-[10px] hover:bg-[#e4e4cc] transition-colors duration-200 px-2 py-1" href="#">Standings</a>
+<a class="text-[#1b1d0e] opacity-70 font-inter uppercase tracking-wider text-[10px] hover:bg-[#e4e4cc] transition-colors duration-200 px-2 py-1" href="#">My Bets</a>
+</nav>
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-[#8f000d] cursor-pointer" data-icon="account_balance_wallet">account_balance_wallet</span>
+<span class="material-symbols-outlined text-[#8f000d] cursor-pointer" data-icon="notifications">notifications</span>
+<img alt="User profile avatar" class="w-8 h-8 rounded-full bg-surface-container-high" data-alt="minimalist flat illustration avatar of a smiling man with short hair and glasses on a cream background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBFE5UGjF4PWuRonVs5XJ0zW1G2-s4tJj5lJBq0_XC8UxERhYscf0kOh0-yZ3adx36fPbSgaM_Gc6cUVo46jg59M8_xcCPZLulyKbiQ9DM_R0nbX4mdOTJ7y41vgeDfpM_OXJKK8o3HjgCrYdsRy1QQaKsND-XlbsFORoxYujJ4De8my2H0k8RAotzcVm8daJi9x1Urg33tRmN74hKOY1Ei4t8VnV_q_ekRNCieKGH1cj6WExe3VNGpPvTiY10O0c5-sxeVYTiSFP4"/>
+</div>
+</div>
+</header>
+<!-- Side Navigation Blueprint -->
+<aside class="hidden lg:flex flex-col h-screen w-64 fixed left-0 top-0 py-8 bg-[#fbfbe2] z-40">
+<div class="px-6 mb-12">
+<h1 class="font-epilogue font-black italic text-[#8f000d] text-xl leading-tight">The Editorial Athlete</h1>
+<p class="font-inter uppercase text-[10px] tracking-widest opacity-60">Heritage Broadcaster v1.0</p>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center gap-4 py-3 text-[#1b1d0e] opacity-60 pl-4 hover:text-[#8f000d] transition-all duration-200 group" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-epilogue font-bold italic text-lg group-hover:translate-x-1 transition-transform">Dashboard</span>
+</a>
+<a class="flex items-center gap-4 py-3 text-[#8f000d] font-bold italic border-l-4 border-[#8f000d] pl-4 translate-x-1" href="#">
+<span class="material-symbols-outlined" data-icon="calendar_today">calendar_today</span>
+<span class="font-epilogue text-lg">Schedule</span>
+</a>
+<a class="flex items-center gap-4 py-3 text-[#1b1d0e] opacity-60 pl-4 hover:text-[#8f000d] transition-all duration-200 group" href="#">
+<span class="material-symbols-outlined" data-icon="leaderboard">leaderboard</span>
+<span class="font-epilogue font-bold italic text-lg group-hover:translate-x-1 transition-transform">Standings</span>
+</a>
+<a class="flex items-center gap-4 py-3 text-[#1b1d0e] opacity-60 pl-4 hover:text-[#8f000d] transition-all duration-200 group" href="#">
+<span class="material-symbols-outlined" data-icon="confirmation_number">confirmation_number</span>
+<span class="font-epilogue font-bold italic text-lg group-hover:translate-x-1 transition-transform">My Bets</span>
+</a>
+<a class="flex items-center gap-4 py-3 text-[#1b1d0e] opacity-60 pl-4 hover:text-[#8f000d] transition-all duration-200 group" href="#">
+<span class="material-symbols-outlined" data-icon="emoji_events">emoji_events</span>
+<span class="font-epilogue font-bold italic text-lg group-hover:translate-x-1 transition-transform">Challenges</span>
+</a>
+</nav>
+<div class="px-6 mt-auto space-y-4">
+<button class="w-full bg-primary text-white py-4 font-epilogue font-bold italic uppercase tracking-widest rounded-lg shadow-[0_4px_0_0_#410003] active:translate-y-[2px] active:shadow-none transition-all">
+                Place a Bet
+            </button>
+<div class="flex gap-4 pt-6 opacity-60">
+<span class="material-symbols-outlined cursor-pointer hover:text-primary transition-colors" data-icon="settings">settings</span>
+<span class="material-symbols-outlined cursor-pointer hover:text-primary transition-colors" data-icon="help_outline">help_outline</span>
+</div>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="lg:ml-64 pt-24 pb-12 px-6 min-h-screen">
+<div class="max-w-6xl mx-auto space-y-12">
+<!-- Header Section -->
+<section class="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b-0">
+<div class="space-y-2">
+<span class="font-inter uppercase text-[10px] tracking-widest text-primary font-bold">National Basketball Association</span>
+<h2 class="text-6xl font-epilogue font-black italic text-on-surface leading-[0.9]">THE DAILY<br/>TICKET</h2>
+</div>
+<!-- Date Selector -->
+<div class="bg-surface-container-low p-2 rounded-xl flex items-center gap-1 overflow-x-auto no-scrollbar">
+<button class="flex flex-col items-center justify-center min-w-[64px] h-16 rounded-lg hover:bg-surface-container-high transition-colors">
+<span class="text-[10px] font-inter uppercase opacity-60">Mon</span>
+<span class="text-xl font-epilogue font-bold italic">12</span>
+</button>
+<button class="flex flex-col items-center justify-center min-w-[64px] h-16 rounded-lg bg-primary text-white shadow-lg">
+<span class="text-[10px] font-inter uppercase opacity-80">Tue</span>
+<span class="text-xl font-epilogue font-bold italic">13</span>
+</button>
+<button class="flex flex-col items-center justify-center min-w-[64px] h-16 rounded-lg hover:bg-surface-container-high transition-colors">
+<span class="text-[10px] font-inter uppercase opacity-60">Wed</span>
+<span class="text-xl font-epilogue font-bold italic">14</span>
+</button>
+<button class="flex flex-col items-center justify-center min-w-[64px] h-16 rounded-lg hover:bg-surface-container-high transition-colors">
+<span class="text-[10px] font-inter uppercase opacity-60">Thu</span>
+<span class="text-xl font-epilogue font-bold italic">15</span>
+</button>
+<button class="flex flex-col items-center justify-center min-w-[64px] h-16 rounded-lg hover:bg-surface-container-high transition-colors">
+<span class="text-[10px] font-inter uppercase opacity-60">Fri</span>
+<span class="text-xl font-epilogue font-bold italic">16</span>
+</button>
+</div>
+</section>
+<div class="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start">
+<!-- Schedule Grid (Bento Style) -->
+<div class="xl:col-span-8 space-y-6">
+<!-- Game Card 1: Featured -->
+<div class="relative bg-surface-container-highest rounded-xl p-8 overflow-hidden group">
+<div class="absolute top-0 left-0 w-1 h-full bg-primary"></div>
+<div class="flex flex-col md:flex-row justify-between gap-8">
+<div class="flex-1 flex items-center justify-between gap-6">
+<div class="text-center space-y-2">
+<div class="w-20 h-20 bg-surface flex items-center justify-center rounded-full mx-auto shadow-sm">
+<img alt="Lakers Logo" class="w-12 h-12" data-alt="stylized vector graphic of a professional basketball team logo in purple and gold tones" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAiTbhZjh1H4OGd8nUsZZLzS7Lc2xjIMwnjKrb4UrtDu_mMhsMdQu135L6UqWVLcdwUxId_0NWCWxu_Sb1rRNjJ2GJOo-rXGvNvtIc1YaelJT22CaHwNfUTc-IC5Q4wfnRQvC9-STKypoIK4ce-mvjehrnhEutTVJt9ZwColeZARcKYVKwcezdNyM2iYuvtOalEEGuemwBonDnF4DlmzES3smXTWOmoBzMCDeLEyEHEueHnqeHW7QWW4UjW4xyNcWjgjffklWfuPEg"/>
+</div>
+<div class="font-epilogue font-black italic text-lg">LAKERS</div>
+<div class="text-[10px] font-inter uppercase opacity-60">32-28</div>
+</div>
+<div class="flex flex-col items-center">
+<span class="text-[10px] font-inter uppercase tracking-widest bg-primary-fixed text-on-primary-fixed px-2 py-0.5 rounded mb-2">LIVE TV</span>
+<span class="text-3xl font-epilogue font-black italic text-on-surface">VS</span>
+<span class="text-sm font-inter uppercase opacity-60 mt-1">7:30 PM EST</span>
+</div>
+<div class="text-center space-y-2">
+<div class="w-20 h-20 bg-surface flex items-center justify-center rounded-full mx-auto shadow-sm">
+<img alt="Celtics Logo" class="w-12 h-12" data-alt="stylized vector graphic of a professional basketball team logo in green and white tones" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD7S212UKL8vbCiarxX6goI9JRhOiGrch0zDL7igV9BD5cGWgoVc1sui4DLn5YCyiM6W-KpOPYZzgWlOsfAy25O61dJFVm8_DSzYCOBe-14_8VGlV0T9Ehnz64d9pU1-Pw2bj7W9DjNV2LIF56pJo0NcOtdnCa_IB9lmNZJrNLqyVzKXu899fnRPDAMuvpqpFY7Jv6016YrkpJdeFkT6pHRnvFf8sHQUlISg0pMBsxhLP5RhO9m_FWiwYo6j9KBxlGUMwMxz7hV0Wk"/>
+</div>
+<div class="font-epilogue font-black italic text-lg">CELTICS</div>
+<div class="text-[10px] font-inter uppercase opacity-60">45-12</div>
+</div>
+</div>
+<div class="md:w-px bg-on-surface opacity-10"></div>
+<div class="md:w-48 space-y-4">
+<div class="grid grid-cols-2 gap-2 text-center">
+<div class="bg-surface p-2 rounded border border-outline-variant border-opacity-20">
+<div class="text-[8px] font-inter uppercase opacity-60">Spread</div>
+<div class="font-epilogue font-bold text-primary">-5.5</div>
+</div>
+<div class="bg-surface p-2 rounded border border-outline-variant border-opacity-20">
+<div class="text-[8px] font-inter uppercase opacity-60">O/U</div>
+<div class="font-epilogue font-bold text-primary">228.5</div>
+</div>
+</div>
+<button class="w-full bg-primary-container text-white py-3 font-epilogue font-bold italic uppercase tracking-wider text-xs rounded-lg hover:brightness-110 transition-all">
+                                    Place Bet
+                                </button>
+</div>
+</div>
+</div>
+<!-- Regular Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<!-- Game Card 2 -->
+<div class="bg-surface-container-high rounded-xl p-6 relative overflow-hidden">
+<div class="absolute top-0 left-0 w-1 h-full bg-secondary"></div>
+<div class="flex justify-between items-center mb-6">
+<span class="font-inter text-[10px] uppercase opacity-60">State Farm Arena</span>
+<span class="font-inter text-[10px] uppercase font-bold text-primary">8:00 PM</span>
+</div>
+<div class="flex items-center justify-between mb-8">
+<div class="flex flex-col items-center gap-2">
+<img alt="Warriors" class="w-12 h-12" data-alt="minimalist team emblem in navy and gold" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD5Ro4du80Yi_w8M4DDqbp14XcVvcpHZWGk6jTryzUZ4IFGBQYj1BoDW7_L2pXXEiaMD1_d115u6orVviSEEjuereq-tUsszkULuNy9A7_JPYnCqk8Zji-HpPEjdaKeC2VGXZAhn1_B4Ewmv9AIc_RsoZMlvJo1ech5r-_WkLDTI4xpyt4XEAdf0cNMhJ500vzH5l0Ikm4w5bH5o_sPaH_FPmcgrBLakPLJultCVLxXnVCt5w8aJXVVqKuI2hpd1TZ1tN9tJXf4oIA"/>
+<span class="font-epilogue font-bold italic">WARRIORS</span>
+</div>
+<span class="font-epilogue font-bold italic opacity-20 text-2xl">@</span>
+<div class="flex flex-col items-center gap-2">
+<img alt="Hawks" class="w-12 h-12" data-alt="minimalist team emblem in red and yellow" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCbe8XtoYfZ5jRK5Fqczs02T_C-dlNXuynPx8fpzRw0McoJkpHcjRkpHUJp107VmIU-gqNUoWCgb6RM-QCWTjyG_RE7vGHTibCaCKaPYItLujrr5GyuLq0l1P85rDLyL8LPCiPapLWOOV_FrS9rAbcBU18HUyuN7N9Ioxy0HPQbhwEvlicxfCYoYJdqH0S-l1neTWjwFTyNFcgFPsD6h4Ube1PklkEhLR-qi1Z9D2feB7Mzp8HZEjhb4SYz0lrDEC-XiYScu1fSezc"/>
+<span class="font-epilogue font-bold italic">HAWKS</span>
+</div>
+</div>
+<div class="flex gap-2">
+<div class="flex-1 bg-surface p-2 rounded text-center">
+<div class="text-[8px] font-inter uppercase opacity-60">ML</div>
+<div class="font-epilogue font-bold text-primary">-110</div>
+</div>
+<button class="px-6 bg-on-surface text-surface py-2 font-epilogue font-bold italic uppercase text-[10px] rounded-lg">BET</button>
+</div>
+</div>
+<!-- Game Card 3 -->
+<div class="bg-surface-container-high rounded-xl p-6 relative overflow-hidden">
+<div class="absolute top-0 left-0 w-1 h-full bg-secondary"></div>
+<div class="flex justify-between items-center mb-6">
+<span class="font-inter text-[10px] uppercase opacity-60">Madison Square Garden</span>
+<span class="font-inter text-[10px] uppercase font-bold text-primary">8:30 PM</span>
+</div>
+<div class="flex items-center justify-between mb-8">
+<div class="flex flex-col items-center gap-2">
+<img alt="Knicks" class="w-12 h-12" data-alt="minimalist team emblem in blue and orange" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD_OJ0ixxl5KVDqpaXpFzmSnS-dArQ9CmI2oVEAdNue5-MLkUMV2F7iOH0tTun1-eV7mj3cC_hlR3Me78-pFfcE0hhyjOCtYmaEDJFUXj4SRdmMbpVrMCOzOWFdzFNTRWGHrVjHT4TkqLuCMIVCTCgxI_oQcIO3_iAGQDf35FvxmJBgf7Zhrat9iT4_Iho4wzb-9gyjlqM_wGsW13Wde4EdwmF7cqW4MnoMkdj3zE-IgR4uWdtPrQwfcKM5gCgkLXLC26ohpSXs2c4"/>
+<span class="font-epilogue font-bold italic">KNICKS</span>
+</div>
+<span class="font-epilogue font-bold italic opacity-20 text-2xl">@</span>
+<div class="flex flex-col items-center gap-2">
+<img alt="Heat" class="w-12 h-12" data-alt="minimalist team emblem in red and black" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAirh4bqG1g8WMtkfOyr09boQVuUvWCshSeTrZOKMa3RHPBEsJ06my84_4zner6PvYys6HUglbe3TGBjpUDctr9AFzL-HEFL0tBsXax2Thy4STBV2aulX9gjCpcKfGpuDgjisHPCi8rTjUHsGKd_DxwNl9PAqsYRfHc7oEUC2vdW56nI4A0YKGq3DQLm8kJiBue-6D6GL_uHagzu8B8bT3iB6fbL5eR_Nepc4TDk1qzFplvrLkTPSYkbyD8fb9y_2jHpQzOVNaaTEY"/>
+<span class="font-epilogue font-bold italic">HEAT</span>
+</div>
+</div>
+<div class="flex gap-2">
+<div class="flex-1 bg-surface p-2 rounded text-center">
+<div class="text-[8px] font-inter uppercase opacity-60">ML</div>
+<div class="font-epilogue font-bold text-primary">+145</div>
+</div>
+<button class="px-6 bg-on-surface text-surface py-2 font-epilogue font-bold italic uppercase text-[10px] rounded-lg">BET</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Sidebar Context -->
+<aside class="xl:col-span-4 space-y-8">
+<!-- Game of the Night Editorial Card -->
+<div class="bg-primary text-white p-8 rounded-xl relative overflow-hidden">
+<div class="absolute inset-0 opacity-10 mix-blend-overlay">
+<div class="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/asfalt-dark.png')]"></div>
+</div>
+<div class="relative z-10">
+<span class="font-inter uppercase text-[10px] tracking-widest text-on-primary-container font-bold">Editorial Pick</span>
+<h3 class="text-4xl font-epilogue font-black italic mt-2 mb-4 leading-none">THE CLASH AT THE GARDEN</h3>
+<p class="font-body text-sm opacity-90 mb-6 leading-relaxed">Brunson returns to MSG as the Knicks look to snap a 3-game skid against Butler's Heat. Expect a defensive masterclass with low scoring intensity.</p>
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
+<span class="material-symbols-outlined text-white" data-icon="trending_up">trending_up</span>
+</div>
+<div>
+<div class="text-[10px] font-inter uppercase opacity-80">Trend Alert</div>
+<div class="text-sm font-bold">Under 214.5 (82% of Pro Bets)</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Betting Trends -->
+<div class="bg-surface-container-low p-6 rounded-xl space-y-6">
+<h4 class="font-epilogue font-bold italic text-xl border-l-4 border-primary pl-4">BETTING TRENDS</h4>
+<div class="space-y-4">
+<div class="flex justify-between items-center py-3 border-b border-on-surface/5">
+<span class="text-sm font-body">Lakers ATS (Home)</span>
+<span class="font-inter font-bold text-error">12-18</span>
+</div>
+<div class="flex justify-between items-center py-3 border-b border-on-surface/5">
+<span class="text-sm font-body">Warriors Total Over</span>
+<span class="font-inter font-bold text-primary">7/10</span>
+</div>
+<div class="flex justify-between items-center py-3 border-b border-on-surface/5">
+<span class="text-sm font-body">Celtics Win Margin</span>
+<span class="font-inter font-bold text-primary">+8.4</span>
+</div>
+</div>
+</div>
+<!-- Promo Card -->
+<div class="bg-secondary-container p-6 rounded-xl group cursor-pointer hover:shadow-lg transition-all">
+<div class="flex justify-between items-start">
+<div>
+<h5 class="font-epilogue font-bold italic text-on-secondary-container text-lg">PARLAY BOOST</h5>
+<p class="text-xs font-body text-on-secondary-container/80 mt-1">Get 20% extra on 3+ leg NBA parlays tonight.</p>
+</div>
+<span class="material-symbols-outlined text-on-secondary-container" data-icon="bolt">bolt</span>
+</div>
+</div>
+</aside>
+</div>
+</div>
+</main>
+<!-- Bot Activity Toasts (Bottom-Right) -->
+<div class="fixed bottom-6 right-6 z-[60] flex flex-col gap-3 pointer-events-none">
+<!-- Toast 1 -->
+<div class="bg-white/90 backdrop-blur-md border border-outline-variant/20 p-4 rounded-xl shadow-2xl flex items-center gap-4 w-80 animate-slide-up">
+<div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+<span class="material-symbols-outlined text-primary" data-icon="robot_2">robot_2</span>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-center">
+<span class="text-[10px] font-inter font-bold uppercase text-primary">VinoAI</span>
+<span class="text-[10px] opacity-40">Just now</span>
+</div>
+<p class="text-xs font-body text-on-surface leading-tight mt-1">"LeBron is on a heater tonight! Expect high volume in Q1."</p>
+</div>
+</div>
+<!-- Toast 2 -->
+<div class="bg-white/90 backdrop-blur-md border border-outline-variant/20 p-4 rounded-xl shadow-2xl flex items-center gap-4 w-80 translate-y-2 opacity-80 scale-95">
+<div class="w-10 h-10 rounded-lg bg-secondary/10 flex items-center justify-center">
+<span class="material-symbols-outlined text-secondary" data-icon="smart_toy">smart_toy</span>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-center">
+<span class="text-[10px] font-inter font-bold uppercase text-secondary">SharpBot_99</span>
+<span class="text-[10px] opacity-40">2m ago</span>
+</div>
+<p class="text-xs font-body text-on-surface leading-tight mt-1">Just bet <span class="font-bold">$200</span> on Lakers Spread (-5.5)</p>
+</div>
+</div>
+</div>
+<!-- Mobile Navigation Shell -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full bg-[#fbfbe2] flex justify-around items-center py-4 px-2 z-50 border-t-0 shadow-[0_-4px_16px_rgba(27,29,14,0.05)]">
+<a class="flex flex-col items-center text-[#1b1d0e] opacity-70" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-inter text-[10px] uppercase mt-1">Home</span>
+</a>
+<a class="flex flex-col items-center text-[#8f000d]" href="#">
+<span class="material-symbols-outlined" data-icon="calendar_today" style="font-variation-settings: 'FILL' 1;">calendar_today</span>
+<span class="font-epilogue font-bold italic text-[10px] uppercase mt-1">Schedule</span>
+</a>
+<a class="flex flex-col items-center text-[#1b1d0e] opacity-70" href="#">
+<span class="material-symbols-outlined" data-icon="leaderboard">leaderboard</span>
+<span class="font-inter text-[10px] uppercase mt-1">Stats</span>
+</a>
+<a class="flex flex-col items-center text-[#1b1d0e] opacity-70" href="#">
+<span class="material-symbols-outlined" data-icon="confirmation_number">confirmation_number</span>
+<span class="font-inter text-[10px] uppercase mt-1">Bets</span>
+</a>
+</nav>
+<style>
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        @keyframes slide-up {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .animate-slide-up {
+            animation: slide-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+    </style>
+</body></html>

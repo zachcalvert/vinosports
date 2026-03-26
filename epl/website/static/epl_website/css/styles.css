@@ -17,7 +17,25 @@
 
 
 /* --------------------------------------------------------------------------
-   2. MATCHDAY TABS (horizontal scrolling)
+   2. SIDEBAR CTA BUTTON
+   -------------------------------------------------------------------------- */
+
+.sidebar-link--cta {
+    background-color: rgb(var(--color-primary));
+    color: #fff !important;
+    border-radius: 0.5rem;
+    font-weight: 700;
+    justify-content: center;
+    transition: background-color 0.15s ease;
+}
+
+.sidebar-link--cta:hover {
+    background-color: rgb(var(--color-primary) / 0.85);
+}
+
+
+/* --------------------------------------------------------------------------
+   3. MATCHDAY TABS (horizontal scrolling)
    -------------------------------------------------------------------------- */
 
 .matchday-tabs-wrapper {

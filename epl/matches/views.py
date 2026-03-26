@@ -1,6 +1,6 @@
 from django.conf import settings
 from django.contrib.auth.mixins import UserPassesTestMixin
-from django.db.models import Case, Count, IntegerField, Min, Q, Sum, Value, When
+from django.db.models import Case, Count, IntegerField, Max, Min, Q, Sum, Value, When
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.template.loader import render_to_string
@@ -159,12 +159,71 @@ class LeagueTableView(TemplateView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx["standings"] = (
-            Standing.objects.filter(season=settings.EPL_CURRENT_SEASON)
+        season = settings.EPL_CURRENT_SEASON
+        standings = (
+            Standing.objects.filter(season=season)
             .select_related("team")
             .order_by("position")
         )
-        ctx["season"] = settings.EPL_CURRENT_SEASON
+        ctx["standings"] = standings
+        ctx["season"] = season
+
+        # Current matchday: highest matchday among finished matches
+        latest_matchday = (
+            Match.objects.filter(season=season, status=Match.Status.FINISHED)
+            .aggregate(md=Max("matchday"))
+            .get("md")
+        ) or 0
+        ctx["matchday"] = latest_matchday
+
+        # Last 5 form per team: recent finished results → list of W/D/L
+        form_by_team = {}
+        for standing in standings:
+            team = standing.team
+            recent = (
+                Match.objects.filter(
+                    season=season,
+                    status=Match.Status.FINISHED,
+                )
+                .filter(Q(home_team=team) | Q(away_team=team))
+                .order_by("-matchday", "-kickoff")[:5]
+            )
+            form = []
+            for m in recent:
+                if m.home_team_id == team.pk:
+                    if m.home_score > m.away_score:
+                        form.append("W")
+                    elif m.home_score < m.away_score:
+                        form.append("L")
+                    else:
+                        form.append("D")
+                else:
+                    if m.away_score > m.home_score:
+                        form.append("W")
+                    elif m.away_score < m.home_score:
+                        form.append("L")
+                    else:
+                        form.append("D")
+            form_by_team[team.pk] = form
+        ctx["form_by_team"] = form_by_team
+
+        # Next upcoming match between top-6 teams
+        top_team_ids = list(
+            standings.filter(position__lte=6).values_list("team_id", flat=True)
+        )
+        next_big_match = (
+            Match.objects.filter(
+                season=season,
+                home_team_id__in=top_team_ids,
+                away_team_id__in=top_team_ids,
+                status__in=[Match.Status.SCHEDULED, Match.Status.TIMED],
+            )
+            .select_related("home_team", "away_team")
+            .order_by("kickoff")
+            .first()
+        )
+        ctx["next_big_match"] = next_big_match
+
         return ctx
 
 

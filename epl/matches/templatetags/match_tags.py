@@ -110,6 +110,14 @@ def ordinal(value):
 
 
 @register.filter
+def get_item(dictionary, key):
+    """Lookup a dictionary value by key in templates."""
+    if dictionary is None:
+        return None
+    return dictionary.get(key)
+
+
+@register.filter
 def relative_time(value):
     dt = _coerce_datetime(value)
     if dt is None:

@@ -1,26 +1,47 @@
-<tr class="border-b border-outline-variant/50 hover:bg-surface-container-low
-    {% if standing.position <= 4 %}bg-accent/5{% elif standing.position >= 18 %}bg-danger/5{% endif %}">
-    <td class="px-2 sm:px-3 py-2 text-sm font-medium
-        {% if standing.position <= 4 %}text-primary{% elif standing.position >= 18 %}text-danger{% else %}text-muted{% endif %}">
+{% if standing.position == 5 %}
+<tr>
+    <td class="py-1 text-[10px] uppercase tracking-widest font-bold text-muted/40 text-center" colspan="7">Mid-Table Boundary</td>
+</tr>
+{% elif standing.position == 18 %}
+<tr>
+    <td class="py-1 text-[10px] uppercase tracking-widest font-bold text-danger/60 text-center" colspan="7">Relegation Danger Zone</td>
+</tr>
+{% endif %}
+<tr class="border-b border-outline-variant/50 hover:bg-surface-container-low transition-colors
+    {% if standing.position <= 4 %}border-l-4 border-l-secondary bg-secondary/5{% elif standing.position >= 18 %}border-l-4 border-l-primary/40 bg-danger/5{% endif %}">
+    <td class="px-3 py-3 text-sm
+        {% if standing.position <= 4 %}text-secondary font-bold{% elif standing.position >= 18 %}text-danger font-bold{% else %}text-muted font-medium{% endif %}">
         {{ standing.position }}
     </td>
-    <td class="px-2 sm:px-3 py-2">
-        <div class="flex items-center gap-2">
+    <td class="px-3 py-3">
+        <div class="flex items-center gap-3">
             {% if standing.team.crest_url %}
-                <img src="{{ standing.team.crest_url }}" alt="" class="w-5 h-5 object-contain">
+                <img src="{{ standing.team.crest_url }}" alt="" class="w-6 h-6 object-contain">
+            {% elif standing.team.tla %}
+                <div class="w-6 h-6 bg-primary/20 rounded-sm flex items-center justify-center text-[10px] font-black italic text-primary">{{ standing.team.tla }}</div>
             {% endif %}
-            <span class="text-sm font-medium">{{ standing.team.short_name|default:standing.team.name }}</span>
+            <span class="font-headline italic text-base tracking-tight">{{ standing.team.short_name|default:standing.team.name }}</span>
         </div>
     </td>
-    <td class="px-2 sm:px-3 py-2 text-sm text-center text-muted">{{ standing.played }}</td>
-    <td class="px-2 sm:px-3 py-2 text-sm text-center text-muted hidden sm:table-cell">{{ standing.won }}</td>
-    <td class="px-2 sm:px-3 py-2 text-sm text-center text-muted hidden sm:table-cell">{{ standing.drawn }}</td>
-    <td class="px-2 sm:px-3 py-2 text-sm text-center text-muted hidden sm:table-cell">{{ standing.lost }}</td>
-    <td class="px-2 sm:px-3 py-2 text-sm text-center text-muted hidden sm:table-cell">{{ standing.goals_for }}</td>
-    <td class="px-2 sm:px-3 py-2 text-sm text-center text-muted hidden sm:table-cell">{{ standing.goals_against }}</td>
-    <td class="px-2 sm:px-3 py-2 text-sm text-center font-medium
-        {% if standing.goal_difference > 0 %}text-primary{% elif standing.goal_difference < 0 %}text-danger{% else %}text-muted{% endif %}">
-        {{ standing.goal_difference }}
+    <td class="px-3 py-3 text-sm text-center text-muted">{{ standing.played }}</td>
+    <td class="px-3 py-3 text-sm text-center text-muted hidden sm:table-cell">{{ standing.won }}-{{ standing.drawn }}-{{ standing.lost }}</td>
+    <td class="px-3 py-3 text-sm text-center font-medium
+        {% if standing.goal_difference > 0 %}text-positive{% elif standing.goal_difference < 0 %}text-danger{% else %}text-muted{% endif %}">
+        {% if standing.goal_difference > 0 %}+{% endif %}{{ standing.goal_difference }}
     </td>
-    <td class="px-2 sm:px-3 py-2 text-sm text-center font-bold">{{ standing.points }}</td>
+    <td class="px-3 py-3 text-center text-primary text-lg font-black">{{ standing.points }}</td>
+    <td class="px-3 py-3 hidden md:table-cell">
+        <div class="flex justify-center gap-1">
+            {% if team_form %}
+                {% for result in team_form %}
+                <div class="w-5 h-5 rounded-full text-[8px] flex items-center justify-center text-white font-bold
+                    {% if result == 'W' %}bg-green-600{% elif result == 'L' %}bg-red-600{% else %}bg-gray-400{% endif %}">
+                    {{ result }}
+                </div>
+                {% endfor %}
+            {% else %}
+                <span class="text-xs text-muted">&mdash;</span>
+            {% endif %}
+        </div>
+    </td>
 </tr>

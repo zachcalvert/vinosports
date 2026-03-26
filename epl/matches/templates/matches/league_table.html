@@ -1,46 +1,69 @@
 {% extends "epl_website/base.html" %}
+{% load match_tags %}
 {% block title %}League Table{% endblock %}
 
 {% block content %}
-<div class="mb-6">
-    <h1 class="text-3xl font-bold mb-1">Premier League Table</h1>
-    <p class="text-muted text-sm">{{ season }}/{{ season|add:"1" }} Season</p>
-</div>
-
-{% if standings %}
-<div class="overflow-x-auto">
-    <table class="w-full" id="standings-table">
-        <thead>
-            <tr class="border-b border-outline-variant text-xs text-muted uppercase tracking-wider">
-                <th class="px-2 sm:px-3 py-3 text-left">Pos</th>
-                <th class="px-2 sm:px-3 py-3 text-left">Team</th>
-                <th class="px-2 sm:px-3 py-3 text-center">P</th>
-                <th class="px-2 sm:px-3 py-3 text-center hidden sm:table-cell">W</th>
-                <th class="px-2 sm:px-3 py-3 text-center hidden sm:table-cell">D</th>
-                <th class="px-2 sm:px-3 py-3 text-center hidden sm:table-cell">L</th>
-                <th class="px-2 sm:px-3 py-3 text-center hidden sm:table-cell">GF</th>
-                <th class="px-2 sm:px-3 py-3 text-center hidden sm:table-cell">GA</th>
-                <th class="px-2 sm:px-3 py-3 text-center">GD</th>
-                <th class="px-2 sm:px-3 py-3 text-center">Pts</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for standing in standings %}
-                {% include "matches/partials/standings_row.html" %}
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
-
-<div class="mt-4 flex gap-4 text-xs text-muted">
-    <div class="flex items-center gap-1">
-        <span class="w-2 h-2 rounded-full bg-primary"></span> Champions League
+<!-- Editorial header -->
+<div class="relative overflow-hidden rounded-xl bg-surface-container-low p-6 sm:p-8 border-l-8 border-primary mb-8">
+    <div class="relative z-10">
+        <p class="text-xs uppercase tracking-widest font-semibold text-primary mb-2">Vinosports Editorial</p>
+        <h1 class="font-headline italic font-black text-4xl sm:text-5xl md:text-6xl uppercase tracking-tighter leading-none mb-2">
+            Premier League Table
+        </h1>
+        <p class="text-lg text-muted font-medium">{{ season }}/{{ season|add:"1" }} Season{% if matchday %} &bull; Matchday {{ matchday }} of 38{% endif %}</p>
     </div>
-    <div class="flex items-center gap-1">
-        <span class="w-2 h-2 rounded-full bg-danger"></span> Relegation
+    <div class="absolute right-0 top-0 h-full w-1/3 opacity-5 pointer-events-none flex items-center justify-center">
+        <i class="ph-duotone ph-soccer-ball text-[180px] -rotate-12"></i>
     </div>
 </div>
-{% else %}
-{% include "epl_website/components/empty_state.html" with icon="table" title="No standings data available" message="Run the data pipeline to populate standings." %}
-{% endif %}
+
+<!-- Main content grid -->
+<div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
+    <!-- Standings table (2/3 width) -->
+    <div class="xl:col-span-2">
+        {% if standings %}
+        <div class="bg-surface rounded-xl border border-outline-variant overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="bg-surface-container-low/50">
+                            <th class="px-3 py-3 text-left text-[10px] uppercase tracking-widest font-black text-muted">Pos</th>
+                            <th class="px-3 py-3 text-left text-[10px] uppercase tracking-widest font-black text-muted">Club</th>
+                            <th class="px-3 py-3 text-center text-[10px] uppercase tracking-widest font-black text-muted">MP</th>
+                            <th class="px-3 py-3 text-center text-[10px] uppercase tracking-widest font-black text-muted hidden sm:table-cell">W-D-L</th>
+                            <th class="px-3 py-3 text-center text-[10px] uppercase tracking-widest font-black text-muted">GD</th>
+                            <th class="px-3 py-3 text-center text-[10px] uppercase tracking-widest font-black text-muted">Pts</th>
+                            <th class="px-3 py-3 text-center text-[10px] uppercase tracking-widest font-black text-muted hidden md:table-cell">Last 5</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-sm font-medium">
+                        {% for standing in standings %}
+                            {% with team_form=form_by_team|get_item:standing.team.pk %}
+                            {% include "matches/partials/standings_row.html" %}
+                            {% endwith %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="mt-4 flex gap-4 text-xs text-muted">
+            <div class="flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-secondary"></span> Champions League
+            </div>
+            <div class="flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-danger"></span> Relegation
+            </div>
+        </div>
+        {% else %}
+        {% include "epl_website/components/empty_state.html" with icon="table" title="No standings data available" message="Run the data pipeline to populate standings." %}
+        {% endif %}
+    </div>
+
+    <!-- Right sidebar widgets -->
+    <div class="space-y-6">
+        {% include "matches/partials/_title_race.html" %}
+        {% include "matches/partials/_next_big_match.html" %}
+    </div>
+</div>
 {% endblock %}

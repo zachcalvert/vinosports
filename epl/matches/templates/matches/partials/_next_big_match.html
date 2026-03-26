@@ -1,0 +1,39 @@
+{% load match_tags %}
+{% if next_big_match %}
+<div class="bg-dark text-on-primary rounded-xl p-5 border-t-4 border-primary">
+    <p class="text-[10px] uppercase tracking-widest font-bold text-tertiary-fixed-dim mb-4">Next Major Broadcast</p>
+
+    <div class="flex items-center justify-between text-center gap-4">
+        <!-- Home team -->
+        <div>
+            {% if next_big_match.home_team.crest_url %}
+                <img src="{{ next_big_match.home_team.crest_url }}" alt="" class="w-10 h-10 object-contain mx-auto mb-2">
+            {% else %}
+                <div class="w-10 h-10 bg-primary rounded-lg mx-auto mb-2 flex items-center justify-center font-black italic text-xs text-white">{{ next_big_match.home_team.tla }}</div>
+            {% endif %}
+            <p class="text-[10px] uppercase font-bold">{{ next_big_match.home_team.short_name|default:next_big_match.home_team.name }}</p>
+        </div>
+
+        <!-- VS -->
+        <div>
+            <p class="text-2xl font-black italic text-tertiary-fixed-dim">VS</p>
+            <p class="text-[10px] uppercase opacity-50">{{ next_big_match.kickoff|date:"D H:i" }}</p>
+        </div>
+
+        <!-- Away team -->
+        <div>
+            {% if next_big_match.away_team.crest_url %}
+                <img src="{{ next_big_match.away_team.crest_url }}" alt="" class="w-10 h-10 object-contain mx-auto mb-2">
+            {% else %}
+                <div class="w-10 h-10 bg-secondary rounded-lg mx-auto mb-2 flex items-center justify-center font-black italic text-xs text-white">{{ next_big_match.away_team.tla }}</div>
+            {% endif %}
+            <p class="text-[10px] uppercase font-bold">{{ next_big_match.away_team.short_name|default:next_big_match.away_team.name }}</p>
+        </div>
+    </div>
+
+    <a href="{{ next_big_match.get_absolute_url }}"
+       class="block w-full mt-5 py-2 bg-tertiary-fixed-dim/20 hover:bg-tertiary-fixed-dim/30 border border-tertiary-fixed-dim/40 text-tertiary-fixed-dim text-[10px] uppercase tracking-widest font-bold rounded-lg transition-colors text-center">
+        View Match Preview
+    </a>
+</div>
+{% endif %}
