@@ -95,16 +95,39 @@ class StandingsView(LoginRequiredMixin, View):
         )
 
         tab = request.GET.get("tab", "west")
+        active_standings = east if tab == "east" else west
+
+        # Projected first-round matchup: seed 1 vs seed 8
+        projected_matchup = {}
+        if active_standings.count() >= 8:
+            projected_matchup = {
+                "seed_1": active_standings[0],
+                "seed_8": active_standings[7],
+            }
+
+        # Division leaders: top 3 teams in the #1 seed's division
+        division_name = ""
+        division_leaders = Standing.objects.none()
+        if active_standings.exists():
+            division_name = active_standings[0].team.division
+            division_leaders = (
+                Standing.objects.filter(season=season, team__division=division_name)
+                .select_related("team")
+                .order_by("conference_rank")[:3]
+            )
 
         ctx = {
             "east_standings": east,
             "west_standings": west,
             "tab": tab,
             "season": season,
+            "projected_matchup": projected_matchup,
+            "division_leaders": division_leaders,
+            "division_name": division_name,
         }
 
         if getattr(request, "htmx", False):
-            return render(request, "games/partials/standings_table.html", ctx)
+            return render(request, "games/partials/standings_panel.html", ctx)
         return render(request, "games/standings.html", ctx)
 
 

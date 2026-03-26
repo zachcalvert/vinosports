@@ -28,6 +28,13 @@
             <i class="ph-duotone ph-trophy text-lg"></i>
             <span>Challenges</span>
         </a>
+        <div class="mt-3 px-1">
+            <a href="{% url 'nba_games:schedule' %}"
+               class="sidebar-link sidebar-link--cta">
+                <i class="ph-duotone ph-lightning text-lg"></i>
+                <span>Place Live Bet</span>
+            </a>
+        </div>
         {% endif %}
         {% if user.is_superuser %}
         <div class="sidebar-divider"></div>

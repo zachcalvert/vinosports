@@ -1,0 +1,20 @@
+{% if division_leaders %}
+<div class="bg-surface rounded-xl border border-outline-variant p-4">
+    <h3 class="text-xs uppercase tracking-wider text-muted font-semibold mb-3">{{ division_name }} Leaders</h3>
+
+    <div class="space-y-2">
+        {% for standing in division_leaders %}
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <span class="text-xs text-muted w-4">{{ forloop.counter }}.</span>
+                {% if standing.team.logo_url %}
+                    <img src="{{ standing.team.logo_url }}" alt="" class="w-5 h-5 object-contain">
+                {% endif %}
+                <span class="text-sm font-medium">{{ standing.team.short_name }}</span>
+            </div>
+            <span class="text-sm font-mono font-bold">{{ standing.wins }}-{{ standing.losses }}</span>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}

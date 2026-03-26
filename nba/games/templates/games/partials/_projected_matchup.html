@@ -1,0 +1,34 @@
+{% if projected_matchup.seed_1 and projected_matchup.seed_8 %}
+<div class="bg-surface rounded-xl border border-outline-variant p-4">
+    <h3 class="text-xs uppercase tracking-wider text-muted font-semibold mb-3">Projected Matchup</h3>
+
+    <div class="flex items-center justify-center gap-4">
+        <!-- Seed 1 -->
+        <div class="text-center">
+            <div class="flex items-center justify-center gap-2 mb-1">
+                {% if projected_matchup.seed_1.team.logo_url %}
+                    <img src="{{ projected_matchup.seed_1.team.logo_url }}" alt="" class="w-8 h-8 object-contain">
+                {% endif %}
+            </div>
+            <span class="text-sm font-bold">{{ projected_matchup.seed_1.team.abbreviation }}</span>
+            <div class="text-xs text-muted">({{ projected_matchup.seed_1.conference_rank }})</div>
+        </div>
+
+        <!-- VS -->
+        <span class="text-xs text-muted font-semibold uppercase tracking-wider">vs</span>
+
+        <!-- Seed 8 -->
+        <div class="text-center">
+            <div class="flex items-center justify-center gap-2 mb-1">
+                {% if projected_matchup.seed_8.team.logo_url %}
+                    <img src="{{ projected_matchup.seed_8.team.logo_url }}" alt="" class="w-8 h-8 object-contain">
+                {% endif %}
+            </div>
+            <span class="text-sm font-bold">{{ projected_matchup.seed_8.team.abbreviation }}</span>
+            <div class="text-xs text-muted">({{ projected_matchup.seed_8.conference_rank }})</div>
+        </div>
+    </div>
+
+    <p class="text-xs text-muted text-center mt-2 uppercase tracking-wider">First Round</p>
+</div>
+{% endif %}
