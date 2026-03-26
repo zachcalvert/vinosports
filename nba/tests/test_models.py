@@ -56,10 +56,14 @@ class TestPlayer:
         player = PlayerFactory(first_name="Stephen", last_name="Curry")
         assert player.full_name == "Stephen Curry"
 
+    def test_slug_property(self):
+        player = PlayerFactory(first_name="LeBron", last_name="James")
+        assert player.slug == f"lebron-james-{player.id_hash}"
+
     def test_get_absolute_url(self):
-        player = PlayerFactory()
+        player = PlayerFactory(first_name="Stephen", last_name="Curry")
         url = player.get_absolute_url()
-        assert url == f"/nba/games/players/{player.id_hash}/"
+        assert url == f"/nba/games/players/stephen-curry-{player.id_hash}/"
 
     def test_unique_external_id(self):
         PlayerFactory(external_id=99999)

@@ -2,7 +2,7 @@ from datetime import timedelta
 
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Count, Prefetch, Q, Sum
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views import View
 
@@ -195,11 +195,14 @@ class PlayerListView(LoginRequiredMixin, View):
 
 
 class PlayerDetailView(LoginRequiredMixin, View):
-    def get(self, request, id_hash):
+    def get(self, request, slug):
+        id_hash = slug.rsplit("-", 1)[-1]
         player = get_object_or_404(
             Player.objects.select_related("team"),
             id_hash=id_hash,
         )
+        if slug != player.slug:
+            return redirect(player.get_absolute_url(), permanent=True)
 
         # Recent box scores (last 10 games)
         recent_box_scores = player.box_scores.select_related(

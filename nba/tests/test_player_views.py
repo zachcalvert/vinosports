@@ -53,7 +53,7 @@ class TestPlayerDetailView:
 
     def test_renders_player_profile(self):
         player = PlayerFactory()
-        resp = self.client.get(f"/nba/games/players/{player.id_hash}/")
+        resp = self.client.get(f"/nba/games/players/{player.slug}/")
         assert resp.status_code == 200
         assert resp.context["player"] == player
 
@@ -76,24 +76,30 @@ class TestPlayerDetailView:
             reb=10,
             ast=5,
         )
-        resp = self.client.get(f"/nba/games/players/{player.id_hash}/")
+        resp = self.client.get(f"/nba/games/players/{player.slug}/")
         assert resp.status_code == 200
         assert resp.context["averages"]["games_played"] == 1
         assert resp.context["averages"]["ppg"] == 30.0
 
     def test_shows_empty_state_when_no_box_scores(self):
         player = PlayerFactory()
-        resp = self.client.get(f"/nba/games/players/{player.id_hash}/")
+        resp = self.client.get(f"/nba/games/players/{player.slug}/")
         assert resp.status_code == 200
         assert resp.context["averages"]["games_played"] == 0
 
     def test_404_for_unknown_id_hash(self):
-        resp = self.client.get("/nba/games/players/nonexistent/")
+        resp = self.client.get("/nba/games/players/nobody-zzzzzzzz/")
         assert resp.status_code == 404
+
+    def test_redirects_stale_slug_to_canonical(self):
+        player = PlayerFactory(first_name="LeBron", last_name="James")
+        resp = self.client.get(f"/nba/games/players/wrong-name-{player.id_hash}/")
+        assert resp.status_code == 301
+        assert resp.url == f"/nba/games/players/{player.slug}/"
 
     def test_requires_login_redirects_anonymous(self):
         player = PlayerFactory()
         anon_client = Client()
-        resp = anon_client.get(f"/nba/games/players/{player.id_hash}/")
+        resp = anon_client.get(f"/nba/games/players/{player.slug}/")
         assert resp.status_code == 302
         assert "/login/" in resp.url

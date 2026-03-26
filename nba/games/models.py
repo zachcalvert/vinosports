@@ -1,5 +1,6 @@
 from django.db import models
 from django.urls import reverse
+from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 
 from vinosports.core.models import BaseModel
@@ -151,8 +152,13 @@ class Player(BaseModel):
     def full_name(self):
         return f"{self.first_name} {self.last_name}".strip()
 
+    @property
+    def slug(self):
+        name_part = slugify(f"{self.first_name} {self.last_name}") or "player"
+        return f"{name_part}-{self.id_hash}"
+
     def get_absolute_url(self):
-        return reverse("nba_games:player_detail", kwargs={"id_hash": self.id_hash})
+        return reverse("nba_games:player_detail", kwargs={"slug": self.slug})
 
 
 class PlayerBoxScore(BaseModel):
