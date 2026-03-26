@@ -425,7 +425,99 @@
 
 
 /* --------------------------------------------------------------------------
-   12. ANIMATIONS
+   12. BADGE CARDS
+   -------------------------------------------------------------------------- */
+
+.badge-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+    gap: 0.75rem;
+}
+
+.badge-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 1.25rem 0.75rem 1rem;
+    border-radius: 0.75rem;
+    border: 1px solid rgb(var(--color-border));
+    background: rgb(var(--color-surface));
+    transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+}
+
+/* Rarity accent — bottom border stripe like a collectible card */
+.badge-card--common    { border-bottom: 3px solid #a8a29e; }
+.badge-card--uncommon  { border-bottom: 3px solid #22c55e; }
+.badge-card--rare      { border-bottom: 3px solid #3b82f6; }
+.badge-card--epic      { border-bottom: 3px solid #8b5cf6; }
+
+/* Earned cards get a subtle lift on hover */
+.badge-card--earned:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.08);
+}
+
+/* Locked cards — greyed out with reduced opacity */
+.badge-card--locked {
+    opacity: 0.4;
+    filter: grayscale(0.8);
+}
+.badge-card--locked .badge-card-icon {
+    opacity: 0.5;
+}
+
+.badge-card-icon {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+    line-height: 1;
+}
+
+/* Rarity-tinted icons for earned cards */
+.badge-card--earned.badge-card--common  .badge-card-icon  { color: #78716c; }
+.badge-card--earned.badge-card--uncommon .badge-card-icon { color: #16a34a; }
+.badge-card--earned.badge-card--rare    .badge-card-icon  { color: #2563eb; }
+.badge-card--earned.badge-card--epic    .badge-card-icon  { color: #7c3aed; }
+
+.badge-card-name {
+    font-family: 'Oswald', sans-serif;
+    font-weight: 600;
+    font-size: 0.8125rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: rgb(var(--color-text));
+    margin-bottom: 0.25rem;
+    line-height: 1.2;
+}
+
+.badge-card-desc {
+    font-size: 0.6875rem;
+    color: rgb(var(--color-muted));
+    line-height: 1.35;
+    margin-bottom: 0.5rem;
+}
+
+/* Rarity pills */
+.badge-rarity-pill {
+    display: inline-block;
+    margin-top: 0.375rem;
+    padding: 0.125rem 0.5rem;
+    border-radius: 9999px;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+.badge-rarity-pill--common    { background: #f5f5f4; color: #78716c; }
+.badge-rarity-pill--uncommon  { background: #f0fdf4; color: #16a34a; }
+.badge-rarity-pill--rare      { background: #eff6ff; color: #2563eb; }
+.badge-rarity-pill--epic      { background: #f5f3ff; color: #7c3aed; }
+.badge-rarity-pill--legendary { background: #fef9ee; color: #b8860b; }
+
+
+/* --------------------------------------------------------------------------
+   13. ANIMATIONS
    -------------------------------------------------------------------------- */
 
 @keyframes slide-in-left {
