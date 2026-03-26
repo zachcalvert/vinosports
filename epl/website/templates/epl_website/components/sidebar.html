@@ -19,8 +19,8 @@
         </a>
         {% if user.is_superuser %}
         <div class="sidebar-divider"></div>
-        <a href="{% url 'epl_website:admin_dashboard' %}"
-           class="sidebar-link {% if url_name == 'admin_dashboard' %}sidebar-link--active{% endif %}">
+        <a href="{% url 'hub:admin_dashboard' %}"
+           class="sidebar-link">
             <i class="ph-duotone ph-gauge text-lg"></i>
             <span>Admin</span>
         </a>

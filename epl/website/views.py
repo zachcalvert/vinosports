@@ -1,21 +1,13 @@
-from heapq import merge
-from operator import attrgetter
-
-from django.contrib.auth import get_user_model, logout
-from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.db.models import Sum
-from django.http import Http404, HttpResponse
+from django.contrib.auth import logout
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.http import Http404
 from django.shortcuts import redirect, render
-from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views import View
 from django.views.generic import TemplateView
 
-from epl.activity.models import ActivityEvent
 from epl.betting.forms import CurrencyForm, DisplayNameForm
-from epl.betting.models import BetSlip, Parlay
-from epl.discussions.models import Comment
 from epl.matches.models import Team
 from epl.users.avatars import AVATAR_COLORS, AVATAR_ICONS, get_unlocked_frames
 from epl.users.forms import AvatarForm
@@ -404,149 +396,3 @@ class AvatarUpdateView(LoginRequiredMixin, View):
                 status=422,
             )
         return redirect("epl_website:account")
-
-
-# ---------------------------------------------------------------------------
-# Admin Dashboard
-# ---------------------------------------------------------------------------
-
-ADMIN_PAGE_SIZE = 5
-ADMIN_MAX_OFFSET = 500
-
-
-class SuperuserRequiredMixin(UserPassesTestMixin):
-    def test_func(self):
-        return self.request.user.is_superuser
-
-
-class AdminDashboardView(SuperuserRequiredMixin, TemplateView):
-    template_name = "epl_website/admin_dashboard.html"
-
-    def get_context_data(self, **kwargs):
-        ctx = super().get_context_data(**kwargs)
-        User = get_user_model()
-        ctx["total_users"] = User.objects.count()
-        ctx["active_bets"] = BetSlip.objects.filter(status="PENDING").count()
-        ctx["active_parlays"] = Parlay.objects.filter(status="PENDING").count()
-        ctx["total_comments"] = Comment.objects.filter(is_deleted=False).count()
-        ctx["total_bets_all_time"] = BetSlip.objects.count() + Parlay.objects.count()
-        ctx["total_in_play"] = (
-            BetSlip.objects.filter(status="PENDING").aggregate(total=Sum("stake"))[
-                "total"
-            ]
-            or 0
-        )
-        ctx["queued_events"] = ActivityEvent.objects.filter(
-            broadcast_at__isnull=True
-        ).count()
-        return ctx
-
-
-def _parse_offset(request):
-    try:
-        return min(ADMIN_MAX_OFFSET, max(0, int(request.GET.get("offset", 0))))
-    except (TypeError, ValueError):
-        return 0
-
-
-def _paginated_response(request, items, total, offset, list_tpl, page_tpl):
-    has_more = (offset + ADMIN_PAGE_SIZE) < total
-    ctx = {
-        "items": items,
-        "has_more": has_more,
-        "next_offset": offset + ADMIN_PAGE_SIZE,
-        "request": request,
-    }
-    if offset > 0:
-        html = render_to_string(page_tpl, ctx, request=request)
-    else:
-        html = render_to_string(list_tpl, ctx, request=request)
-    return HttpResponse(html)
-
-
-def _merged_querysets(qs_a, qs_b, offset, page_size):
-    """Merge two querysets ordered by -created_at using heapq, with offset pagination."""
-    # Fetch enough from each to cover offset + page_size
-    limit = offset + page_size
-    a_items = list(qs_a[:limit])
-    b_items = list(qs_b[:limit])
-    merged = list(merge(a_items, b_items, key=attrgetter("created_at"), reverse=True))
-    return merged[offset : offset + page_size]
-
-
-class AdminBetsPartialView(SuperuserRequiredMixin, View):
-    def get(self, request):
-        offset = _parse_offset(request)
-        bets_qs = BetSlip.objects.select_related(
-            "user", "match__home_team", "match__away_team"
-        ).order_by("-created_at")
-        parlays_qs = (
-            Parlay.objects.select_related("user")
-            .prefetch_related("legs__match__home_team", "legs__match__away_team")
-            .order_by("-created_at")
-        )
-        items = _merged_querysets(bets_qs, parlays_qs, offset, ADMIN_PAGE_SIZE)
-        total = BetSlip.objects.count() + Parlay.objects.count()
-        return _paginated_response(
-            request,
-            items,
-            total,
-            offset,
-            "epl_website/partials/admin_bets_list.html",
-            "epl_website/partials/admin_bets_page.html",
-        )
-
-
-class AdminCommentsPartialView(SuperuserRequiredMixin, View):
-    def get(self, request):
-        offset = _parse_offset(request)
-        qs = (
-            Comment.objects.filter(is_deleted=False)
-            .select_related("user", "match__home_team", "match__away_team")
-            .order_by("-created_at")
-        )
-        items = list(qs[offset : offset + ADMIN_PAGE_SIZE])
-        total = qs.count()
-        return _paginated_response(
-            request,
-            items,
-            total,
-            offset,
-            "epl_website/partials/admin_comments_list.html",
-            "epl_website/partials/admin_comments_page.html",
-        )
-
-
-class AdminUsersPartialView(SuperuserRequiredMixin, View):
-    def get(self, request):
-        User = get_user_model()
-        offset = _parse_offset(request)
-        qs = User.objects.filter(is_bot=False).order_by("-date_joined")
-        items = list(qs[offset : offset + ADMIN_PAGE_SIZE])
-        total = qs.count()
-        return _paginated_response(
-            request,
-            items,
-            total,
-            offset,
-            "epl_website/partials/admin_users_list.html",
-            "epl_website/partials/admin_users_page.html",
-        )
-
-
-class AdminActivityQueuePartialView(SuperuserRequiredMixin, View):
-    def get(self, request):
-        offset = _parse_offset(request)
-        qs = ActivityEvent.objects.filter(broadcast_at__isnull=True).order_by(
-            "created_at"
-        )
-        items = list(qs[offset : offset + ADMIN_PAGE_SIZE])
-        total = qs.count()
-        return _paginated_response(
-            request,
-            items,
-            total,
-            offset,
-            "epl_website/partials/admin_activity_queue_list.html",
-            "epl_website/partials/admin_activity_queue_page.html",
-        )

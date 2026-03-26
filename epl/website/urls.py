@@ -3,11 +3,6 @@ from django.views.generic import RedirectView
 
 from epl.website.views import (
     AccountView,
-    AdminActivityQueuePartialView,
-    AdminBetsPartialView,
-    AdminCommentsPartialView,
-    AdminDashboardView,
-    AdminUsersPartialView,
     AvatarUpdateView,
     ComponentDetailView,
     CurrencyUpdateView,
@@ -32,27 +27,5 @@ urlpatterns = [
         "how-it-works/component/",
         ComponentDetailView.as_view(),
         name="component_detail",
-    ),
-    # Admin dashboard
-    path("admin-dashboard/", AdminDashboardView.as_view(), name="admin_dashboard"),
-    path(
-        "admin-dashboard/bets/",
-        AdminBetsPartialView.as_view(),
-        name="admin_dashboard_bets",
-    ),
-    path(
-        "admin-dashboard/comments/",
-        AdminCommentsPartialView.as_view(),
-        name="admin_dashboard_comments",
-    ),
-    path(
-        "admin-dashboard/users/",
-        AdminUsersPartialView.as_view(),
-        name="admin_dashboard_users",
-    ),
-    path(
-        "admin-dashboard/activity-queue/",
-        AdminActivityQueuePartialView.as_view(),
-        name="admin_dashboard_activity_queue",
     ),
 ]
