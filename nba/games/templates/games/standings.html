@@ -15,16 +15,6 @@
 
 <!-- Conference tabs -->
 <div class="flex items-center gap-3 mb-6 text-sm">
-    <a href="?tab=east"
-       class="px-5 py-2 rounded-full border transition-colors font-semibold
-              {% if tab == 'east' %}bg-primary text-on-primary border-primary{% else %}border-outline-variant bg-surface hover:bg-surface-container-low text-muted{% endif %}"
-       hx-get="{% url 'nba_games:standings' %}?tab=east"
-       hx-target="#standings-panel"
-       hx-swap="innerHTML"
-       hx-push-url="?tab=east"
-       hx-indicator="#standings-loading">
-        Eastern
-    </a>
     <a href="?tab=west"
        class="px-5 py-2 rounded-full border transition-colors font-semibold
               {% if tab == 'west' %}bg-primary text-on-primary border-primary{% else %}border-outline-variant bg-surface hover:bg-surface-container-low text-muted{% endif %}"
@@ -34,6 +24,16 @@
        hx-push-url="?tab=west"
        hx-indicator="#standings-loading">
         Western
+    </a>
+    <a href="?tab=east"
+       class="px-5 py-2 rounded-full border transition-colors font-semibold
+              {% if tab == 'east' %}bg-primary text-on-primary border-primary{% else %}border-outline-variant bg-surface hover:bg-surface-container-low text-muted{% endif %}"
+       hx-get="{% url 'nba_games:standings' %}?tab=east"
+       hx-target="#standings-panel"
+       hx-swap="innerHTML"
+       hx-push-url="?tab=east"
+       hx-indicator="#standings-loading">
+        Eastern
     </a>
 </div>
 
