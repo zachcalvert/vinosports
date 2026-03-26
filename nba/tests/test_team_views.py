@@ -91,3 +91,30 @@ class TestTeamDetailView:
         resp = anon_client.get(f"/nba/games/teams/{team.abbreviation.lower()}/")
         assert resp.status_code == 302
         assert "/login/" in resp.url
+
+    def test_opponent_standing_in_context(self):
+        """When a final game exists with opponent having a standing, standings_by_team is populated."""
+        from nba.games.tasks import _current_season
+
+        user = UserFactory()
+        c = Client()
+        c.force_login(user)
+
+        team = TeamFactory()
+        opponent = TeamFactory()
+        season = _current_season()
+        game = GameFactory(
+            home_team=opponent,
+            away_team=team,
+            status=GameStatus.FINAL,
+            home_score=110,
+            away_score=100,
+            game_date=timezone.localdate(),
+            season=season,
+        )
+        StandingFactory(team=opponent, season=season)
+
+        response = c.get(f"/nba/games/teams/{team.abbreviation}/")
+        assert response.status_code == 200
+        standings_by_team = response.context.get("standings_by_team", {})
+        assert opponent.pk in standings_by_team

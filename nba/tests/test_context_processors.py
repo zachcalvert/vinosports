@@ -194,3 +194,95 @@ class TestParlaySlipContextProcessor:
         result = parlay_slip(request)
         assert result["parlay_leg_count"] == 0
         assert result["parlay_legs"] == []
+
+
+@pytest.mark.django_db
+class TestActivityToastsContextProcessor:
+    def test_non_nba_league_returns_empty(self):
+        factory = RequestFactory()
+        request = factory.get("/")
+        request.league = "epl"
+        request.user = AnonymousUser()
+
+        from nba.activity.context_processors import activity_toasts
+        result = activity_toasts(request)
+        assert result == {}
+
+    def test_anonymous_user_returns_toasts_true(self):
+        factory = RequestFactory()
+        request = factory.get("/")
+        request.league = "nba"
+        request.user = AnonymousUser()
+
+        from nba.activity.context_processors import activity_toasts
+        result = activity_toasts(request)
+        assert result == {"show_activity_toasts": True}
+
+    def test_authenticated_user_returns_user_preference(self):
+        from nba.activity.context_processors import activity_toasts
+        factory = RequestFactory()
+        request = factory.get("/")
+        request.league = "nba"
+        user = UserFactory(show_activity_toasts=False)
+        request.user = user
+        result = activity_toasts(request)
+        assert result == {"show_activity_toasts": False}
+
+
+@pytest.mark.django_db
+class TestUnseenRewardsContextProcessor:
+    def test_non_nba_league_returns_empty_list(self):
+        from nba.rewards.context_processors import unseen_rewards
+        factory = RequestFactory()
+        request = factory.get("/")
+        request.league = "epl"
+        request.user = AnonymousUser()
+        result = unseen_rewards(request)
+        assert result == {"unseen_rewards": []}
+
+    def test_unauthenticated_returns_empty_list(self):
+        from nba.rewards.context_processors import unseen_rewards
+        factory = RequestFactory()
+        request = factory.get("/")
+        request.league = "nba"
+        request.user = AnonymousUser()
+        result = unseen_rewards(request)
+        assert result == {"unseen_rewards": []}
+
+
+class TestThemeContextProcessor:
+    def test_non_nba_league_returns_empty(self):
+        from nba.website.context_processors import theme
+        factory = RequestFactory()
+        request = factory.get("/")
+        request.league = "hub"
+        result = theme(request)
+        assert result == {}
+
+
+class TestNormalizeTheme:
+    def test_invalid_theme_falls_back_to_default(self):
+        from nba.website.theme import normalize_theme
+        assert normalize_theme("invalid") == "light"
+
+    def test_valid_dark_theme(self):
+        from nba.website.theme import normalize_theme
+        assert normalize_theme("dark") == "dark"
+
+
+class TestGetToggleTheme:
+    def test_toggle_from_dark_returns_light(self):
+        from nba.website.theme import get_toggle_theme
+        from unittest.mock import MagicMock
+        request = MagicMock()
+        request.session = {"theme_preference": "dark"}
+        result = get_toggle_theme(request)
+        assert result == "light"
+
+    def test_toggle_from_light_returns_dark(self):
+        from nba.website.theme import get_toggle_theme
+        from unittest.mock import MagicMock
+        request = MagicMock()
+        request.session = {"theme_preference": "light"}
+        result = get_toggle_theme(request)
+        assert result == "dark"

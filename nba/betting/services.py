@@ -134,9 +134,12 @@ def _parse_bookmaker_odds(game_data: dict) -> list[dict]:
 
 def sync_odds(client: OddsClient | None = None) -> int:
     """Fetch current NBA odds and upsert Odds records. Returns count synced."""
+    from django.utils import timezone
+
     with client or OddsClient() as c:
         raw_games = c.get_odds()
 
+    fetched_at = timezone.now()
     team_map = {t.short_name: t for t in Team.objects.all()}
     count = 0
 
@@ -166,6 +169,7 @@ def sync_odds(client: OddsClient | None = None) -> int:
 
         for bm_odds in _parse_bookmaker_odds(game_data):
             bookmaker = bm_odds.pop("bookmaker")
+            bm_odds["fetched_at"] = fetched_at
             Odds.objects.update_or_create(
                 game=game,
                 bookmaker=bookmaker,
