@@ -128,7 +128,7 @@ class TestGame:
     def test_get_absolute_url(self):
         game = GameFactory()
         url = game.get_absolute_url()
-        assert url == f"/games/{game.id_hash}/"
+        assert url == f"/nba/games/{game.id_hash}/"
 
 
 # ---------------------------------------------------------------------------

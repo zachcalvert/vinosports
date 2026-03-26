@@ -112,7 +112,7 @@ class TestGeneratePregameComments:
 
         with (
             patch(
-                "discussions.tasks._generate_comment_body",
+                "nba.discussions.tasks._generate_comment_body",
                 side_effect=Exception("API error"),
             ),
             patch("nba.discussions.tasks.roll_action", return_value=True),

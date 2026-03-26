@@ -36,7 +36,7 @@ class TestPlaceBetView:
         c = Client()
         game = GameFactory(status=GameStatus.SCHEDULED)
         response = c.post(
-            f"/odds/place/{game.id_hash}/",
+            f"/nba/odds/place/{game.id_hash}/",
             {
                 "market": "MONEYLINE",
                 "selection": "HOME",
@@ -51,7 +51,7 @@ class TestPlaceBetView:
         game = GameFactory(status=GameStatus.SCHEDULED)
         count_before = BetSlip.objects.count()
         c.post(
-            f"/odds/place/{game.id_hash}/",
+            f"/nba/odds/place/{game.id_hash}/",
             {
                 "market": "MONEYLINE",
                 "selection": "HOME",
@@ -68,7 +68,7 @@ class TestPlaceBetView:
 
         balance_before = UserBalance.objects.get(user=user).balance
         c.post(
-            f"/odds/place/{game.id_hash}/",
+            f"/nba/odds/place/{game.id_hash}/",
             {
                 "market": "MONEYLINE",
                 "selection": "HOME",
@@ -83,7 +83,7 @@ class TestPlaceBetView:
         c, user = auth_client
         game = GameFactory(status=GameStatus.SCHEDULED)
         response = c.post(
-            f"/odds/place/{game.id_hash}/",
+            f"/nba/odds/place/{game.id_hash}/",
             {"market": "INVALID", "selection": "HOME", "odds": -150, "stake": "50.00"},
         )
         assert response.status_code == 400
@@ -95,7 +95,7 @@ class TestPlaceBetView:
         UserBalance.objects.filter(user=user).update(balance=Decimal("5.00"))
         game = GameFactory(status=GameStatus.SCHEDULED)
         response = c.post(
-            f"/odds/place/{game.id_hash}/",
+            f"/nba/odds/place/{game.id_hash}/",
             {
                 "market": "MONEYLINE",
                 "selection": "HOME",
@@ -108,7 +108,7 @@ class TestPlaceBetView:
     def test_game_not_found_returns_404(self, auth_client):
         c, user = auth_client
         response = c.post(
-            "/odds/place/nonexistent/",
+            "/nba/odds/place/nonexistent/",
             {
                 "market": "MONEYLINE",
                 "selection": "HOME",
@@ -122,7 +122,7 @@ class TestPlaceBetView:
         c, user = auth_client
         game = GameFactory(status=GameStatus.FINAL)
         response = c.post(
-            f"/odds/place/{game.id_hash}/",
+            f"/nba/odds/place/{game.id_hash}/",
             {
                 "market": "MONEYLINE",
                 "selection": "HOME",
@@ -136,7 +136,7 @@ class TestPlaceBetView:
         c, user = auth_client
         game = GameFactory(status=GameStatus.SCHEDULED)
         response = c.post(
-            f"/odds/place/{game.id_hash}/",
+            f"/nba/odds/place/{game.id_hash}/",
             {
                 "market": "MONEYLINE",
                 "selection": "HOME",
@@ -151,18 +151,18 @@ class TestPlaceBetView:
 class TestMyBetsView:
     def test_unauthenticated_redirected(self):
         c = Client()
-        response = c.get("/odds/my-bets/")
+        response = c.get("/nba/odds/my-bets/")
         assert response.status_code in (301, 302)
 
     def test_renders_my_bets_template(self, auth_client):
         c, user = auth_client
-        response = c.get("/odds/my-bets/")
+        response = c.get("/nba/odds/my-bets/")
         assert response.status_code == 200
         assert "nba_betting/my_bets.html" in [t.name for t in response.templates]
 
     def test_default_tab_is_pending(self, auth_client):
         c, user = auth_client
-        response = c.get("/odds/my-bets/")
+        response = c.get("/nba/odds/my-bets/")
         assert response.context["tab"] == "pending"
 
     def test_pending_tab_shows_pending_bets(self, auth_client):
@@ -170,7 +170,7 @@ class TestMyBetsView:
         game = GameFactory()
         BetSlipFactory(user=user, game=game, status="PENDING")
         BetSlipFactory(user=user, game=game, status="WON")
-        response = c.get("/odds/my-bets/?tab=pending")
+        response = c.get("/nba/odds/my-bets/?tab=pending")
         bets = list(response.context["bets"])
         assert all(b.status == "PENDING" for b in bets)
 
@@ -179,7 +179,7 @@ class TestMyBetsView:
         game = GameFactory()
         BetSlipFactory(user=user, game=game, status="WON")
         BetSlipFactory(user=user, game=game, status="PENDING")
-        response = c.get("/odds/my-bets/?tab=won")
+        response = c.get("/nba/odds/my-bets/?tab=won")
         bets = list(response.context["bets"])
         assert all(b.status == "WON" for b in bets)
 
@@ -187,7 +187,7 @@ class TestMyBetsView:
         c, user = auth_client
         game = GameFactory()
         BetSlipFactory(user=user, game=game, status="LOST")
-        response = c.get("/odds/my-bets/?tab=lost")
+        response = c.get("/nba/odds/my-bets/?tab=lost")
         bets = list(response.context["bets"])
         assert all(b.status == "LOST" for b in bets)
 
@@ -196,13 +196,13 @@ class TestMyBetsView:
         game = GameFactory()
         BetSlipFactory(user=user, game=game, status="WON")
         BetSlipFactory(user=user, game=game, status="LOST")
-        response = c.get("/odds/my-bets/?tab=all")
+        response = c.get("/nba/odds/my-bets/?tab=all")
         bets = list(response.context["bets"])
         assert len(bets) == 2
 
     def test_context_has_parlays(self, auth_client):
         c, user = auth_client
-        response = c.get("/odds/my-bets/")
+        response = c.get("/nba/odds/my-bets/")
         assert "parlays" in response.context
 
 
@@ -210,7 +210,7 @@ class TestMyBetsView:
 class TestBailoutView:
     def test_unauthenticated_redirected(self):
         c = Client()
-        response = c.post("/odds/bailout/")
+        response = c.post("/nba/odds/bailout/")
         assert response.status_code in (301, 302)
 
     def test_eligible_user_gets_bailout(self, db):
@@ -222,13 +222,13 @@ class TestBailoutView:
         Bankruptcy.objects.create(user=user, balance_at_bankruptcy=Decimal("0.10"))
         c = Client()
         c.force_login(user)
-        response = c.post("/odds/bailout/")
+        response = c.post("/nba/odds/bailout/")
         assert response.status_code in (301, 302)
 
     def test_ineligible_user_returns_400(self, auth_client):
         c, user = auth_client
         # User has $1000 — not eligible for bailout
-        response = c.post("/odds/bailout/")
+        response = c.post("/nba/odds/bailout/")
         assert response.status_code == 400
 
 
@@ -238,7 +238,7 @@ class TestAddToParlayView:
         c = Client()
         game = GameFactory()
         response = c.post(
-            "/odds/parlay/add/",
+            "/nba/odds/parlay/add/",
             {
                 "game_id": game.pk,
                 "market": "MONEYLINE",
@@ -252,7 +252,7 @@ class TestAddToParlayView:
         c, user = auth_client
         game = GameFactory()
         c.post(
-            "/odds/parlay/add/",
+            "/nba/odds/parlay/add/",
             {
                 "game_id": game.pk,
                 "market": "MONEYLINE",
@@ -268,7 +268,7 @@ class TestAddToParlayView:
         c, user = auth_client
         game = GameFactory()
         c.post(
-            "/odds/parlay/add/",
+            "/nba/odds/parlay/add/",
             {
                 "game_id": game.pk,
                 "market": "MONEYLINE",
@@ -277,7 +277,7 @@ class TestAddToParlayView:
             },
         )
         response = c.post(
-            "/odds/parlay/add/",
+            "/nba/odds/parlay/add/",
             {
                 "game_id": game.pk,
                 "market": "MONEYLINE",
@@ -307,7 +307,7 @@ class TestAddToParlayView:
         session.save()
         game = GameFactory()
         response = c.post(
-            "/odds/parlay/add/",
+            "/nba/odds/parlay/add/",
             {
                 "game_id": game.pk,
                 "market": "MONEYLINE",
@@ -321,7 +321,7 @@ class TestAddToParlayView:
         c, user = auth_client
         game = GameFactory()
         response = c.post(
-            "/odds/parlay/add/",
+            "/nba/odds/parlay/add/",
             {
                 "game_id": game.pk,
                 "market": "MONEYLINE",
@@ -336,7 +336,7 @@ class TestAddToParlayView:
 class TestRemoveFromParlayView:
     def test_unauthenticated_redirected(self):
         c = Client()
-        response = c.post("/odds/parlay/remove/", {"game_id": 1})
+        response = c.post("/nba/odds/parlay/remove/", {"game_id": 1})
         assert response.status_code in (301, 302)
 
     def test_removes_leg_from_session(self, auth_client):
@@ -353,7 +353,7 @@ class TestRemoveFromParlayView:
             }
         ]
         session.save()
-        c.post("/odds/parlay/remove/", {"game_id": game.pk})
+        c.post("/nba/odds/parlay/remove/", {"game_id": game.pk})
         slip = c.session.get(PARLAY_SESSION_KEY, [])
         assert len(slip) == 0
 
@@ -371,7 +371,7 @@ class TestRemoveFromParlayView:
             }
         ]
         session.save()
-        c.post("/odds/parlay/remove/", {"game_id": 999999})
+        c.post("/nba/odds/parlay/remove/", {"game_id": 999999})
         slip = c.session.get(PARLAY_SESSION_KEY, [])
         assert len(slip) == 1
 
@@ -380,7 +380,7 @@ class TestRemoveFromParlayView:
 class TestClearParlayView:
     def test_unauthenticated_redirected(self):
         c = Client()
-        response = c.post("/odds/parlay/clear/")
+        response = c.post("/nba/odds/parlay/clear/")
         assert response.status_code in (301, 302)
 
     def test_clears_session_slip(self, auth_client):
@@ -397,13 +397,13 @@ class TestClearParlayView:
             }
         ]
         session.save()
-        c.post("/odds/parlay/clear/")
+        c.post("/nba/odds/parlay/clear/")
         slip = c.session.get(PARLAY_SESSION_KEY, [])
         assert len(slip) == 0
 
     def test_clear_empty_slip_is_noop(self, auth_client):
         c, user = auth_client
-        c.post("/odds/parlay/clear/")
+        c.post("/nba/odds/parlay/clear/")
         slip = c.session.get(PARLAY_SESSION_KEY, [])
         assert slip == []
 
@@ -412,7 +412,7 @@ class TestClearParlayView:
 class TestPlaceParlayView:
     def test_unauthenticated_redirected(self):
         c = Client()
-        response = c.post("/odds/parlay/place/", {"stake": "30.00"})
+        response = c.post("/nba/odds/parlay/place/", {"stake": "30.00"})
         assert response.status_code in (301, 302)
 
     def test_invalid_stake_returns_400(self, auth_client):
@@ -437,7 +437,7 @@ class TestPlaceParlayView:
             },
         ]
         session.save()
-        response = c.post("/odds/parlay/place/", {"stake": "0.01"})
+        response = c.post("/nba/odds/parlay/place/", {"stake": "0.01"})
         assert response.status_code == 400
 
     def test_too_few_legs_returns_400(self, auth_client):
@@ -445,7 +445,7 @@ class TestPlaceParlayView:
         session = c.session
         session[PARLAY_SESSION_KEY] = []
         session.save()
-        response = c.post("/odds/parlay/place/", {"stake": "30.00"})
+        response = c.post("/nba/odds/parlay/place/", {"stake": "30.00"})
         assert response.status_code == 400
 
     def test_valid_parlay_creates_record(self, auth_client):
@@ -471,7 +471,7 @@ class TestPlaceParlayView:
         ]
         session.save()
         count_before = Parlay.objects.count()
-        c.post("/odds/parlay/place/", {"stake": "30.00"})
+        c.post("/nba/odds/parlay/place/", {"stake": "30.00"})
         assert Parlay.objects.count() == count_before + 1
 
     def test_valid_parlay_deducts_balance(self, auth_client):
@@ -499,7 +499,7 @@ class TestPlaceParlayView:
         from vinosports.betting.models import UserBalance
 
         balance_before = UserBalance.objects.get(user=user).balance
-        c.post("/odds/parlay/place/", {"stake": "30.00"})
+        c.post("/nba/odds/parlay/place/", {"stake": "30.00"})
         balance_after = UserBalance.objects.get(user=user).balance
         assert balance_after == balance_before - Decimal("30.00")
 
@@ -525,7 +525,7 @@ class TestPlaceParlayView:
             },
         ]
         session.save()
-        c.post("/odds/parlay/place/", {"stake": "30.00"})
+        c.post("/nba/odds/parlay/place/", {"stake": "30.00"})
         slip = c.session.get(PARLAY_SESSION_KEY, [])
         assert slip == []
 
@@ -554,5 +554,5 @@ class TestPlaceParlayView:
             },
         ]
         session.save()
-        response = c.post("/odds/parlay/place/", {"stake": "30.00"})
+        response = c.post("/nba/odds/parlay/place/", {"stake": "30.00"})
         assert response.status_code == 400

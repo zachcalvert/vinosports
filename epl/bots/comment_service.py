@@ -13,11 +13,11 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError, transaction
 
-from epl.betting.models import BetSlip
 from epl.bots.models import BotComment
 from epl.bots.services import get_best_odds_map
 from epl.discussions.models import Comment
 from epl.matches.models import MatchNotes, MatchStats, Odds
+from vinosports.betting.models import BetStatus
 from vinosports.bots.models import BotProfile, StrategyType
 
 User = get_user_model()
@@ -560,7 +560,7 @@ def _build_user_prompt(match, trigger_type, bet_slip=None, parent_comment=None):
             f"Final score: {home.name} {match.home_score}-{match.away_score} {away.name}"
         )
         if bet_slip:
-            won = bet_slip.status == BetSlip.Status.WON
+            won = bet_slip.status == BetStatus.WON
             lines.append(
                 f"Your bet: {bet_slip.get_selection_display()} @ {bet_slip.odds_at_placement} "
                 f"— {'WON' if won else 'LOST'}"

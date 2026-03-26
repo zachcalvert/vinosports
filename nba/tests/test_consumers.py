@@ -46,10 +46,11 @@ class TestLiveUpdatesConsumer:
         # group_discard called via async_to_sync
         assert mock_a2s.call_count == 2  # group_add + group_discard
 
-    def test_score_update_sends_html(self):
+    @pytest.mark.django_db
+    def test_score_update_no_game_does_not_send(self):
         consumer = self._make_consumer("dashboard")
-        consumer.score_update({"html": "<div>Score!</div>"})
-        consumer.send.assert_called_once_with(text_data="<div>Score!</div>")
+        consumer.score_update({"game_pk": 999999})
+        consumer.send.assert_not_called()
 
     @pytest.mark.django_db
     def test_game_score_update_no_game_does_not_send(self):
@@ -57,7 +58,8 @@ class TestLiveUpdatesConsumer:
         consumer.game_score_update({"game_pk": 999999})
         consumer.send.assert_not_called()
 
-    def test_score_update_empty_html(self):
+    @pytest.mark.django_db
+    def test_score_update_no_game_pk_does_not_send(self):
         consumer = self._make_consumer("dashboard")
         consumer.score_update({})
-        consumer.send.assert_called_once_with(text_data="")
+        consumer.send.assert_not_called()

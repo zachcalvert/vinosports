@@ -432,7 +432,7 @@ class ProfileView(TemplateView):
         # Recent bets (last 20 settled)
         recent_bets = (
             BetSlip.objects.filter(user=profile_user)
-            .exclude(status=BetSlip.Status.PENDING)
+            .exclude(status=BetStatus.PENDING)
             .select_related("match__home_team", "match__away_team")
             .order_by("-created_at")[:20]
         )
@@ -441,7 +441,7 @@ class ProfileView(TemplateView):
         # Recent parlays (last 10 settled)
         recent_parlays = (
             Parlay.objects.filter(user=profile_user)
-            .exclude(status=Parlay.Status.PENDING)
+            .exclude(status=BetStatus.PENDING)
             .prefetch_related("legs__match__home_team", "legs__match__away_team")
             .order_by("-created_at")[:10]
         )
@@ -563,7 +563,7 @@ class BailoutView(LoginRequiredMixin, View):
                 user=request.user, status=BetStatus.PENDING
             ).count()
             pending_parlays = Parlay.objects.filter(
-                user=request.user, status=Parlay.Status.PENDING
+                user=request.user, status=BetStatus.PENDING
             ).count()
 
             if (

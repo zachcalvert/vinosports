@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from decimal import Decimal
 
 from epl.betting.models import BetSlip
+from vinosports.betting.models import BetStatus
 
 logger = logging.getLogger(__name__)
 
@@ -115,11 +116,11 @@ def _perfect_matchweek(stats, ctx):
         BetSlip.objects.filter(
             user=stats.user,
             match__matchday=ctx.matchday,
-            status__in=[BetSlip.Status.WON, BetSlip.Status.LOST],
+            status__in=[BetStatus.WON, BetStatus.LOST],
         ).values_list("status", flat=True)
     )
     return len(settled_statuses) >= 1 and all(
-        s == BetSlip.Status.WON for s in settled_statuses
+        s == BetStatus.WON for s in settled_statuses
     )
 
 
@@ -133,12 +134,12 @@ def _underdog_hunter(stats, ctx):
     user = stats.user
     single_upsets = BetSlip.objects.filter(
         user=user,
-        status=BetSlip.Status.WON,
+        status=BetStatus.WON,
         odds_at_placement__gt=UPSET_ODDS_THRESHOLD,
     ).count()
     parlay_upsets = Parlay.objects.filter(
         user=user,
-        status=Parlay.Status.WON,
+        status=BetStatus.WON,
         combined_odds__gt=UPSET_ODDS_THRESHOLD,
     ).count()
     return (single_upsets + parlay_upsets) >= UNDERDOG_HUNTER_THRESHOLD

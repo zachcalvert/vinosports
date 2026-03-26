@@ -308,6 +308,7 @@ def generate_prematch_comments():
     ).select_related("home_team", "away_team")
 
     from epl.betting.models import BetSlip
+    from vinosports.betting.models import BetStatus
 
     dispatched = 0
     for match in upcoming:
@@ -330,7 +331,7 @@ def generate_prematch_comments():
                 continue
 
             existing_bet = BetSlip.objects.filter(
-                user=bot, match=match, status=BetSlip.Status.PENDING
+                user=bot, match=match, status=BetStatus.PENDING
             ).first()
             bet_slip_id = existing_bet.pk if existing_bet else None
             delay = random.randint(60, 600)  # 1-10 min stagger

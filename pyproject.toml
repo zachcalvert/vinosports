@@ -12,3 +12,18 @@ known-first-party = ["vinosports"]
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "config.settings"
 python_files = ["tests.py", "test_*.py"]
+addopts = "--cov=vinosports --cov=hub --cov=nba --cov=epl --cov-report=term-missing:skip-covered --cov-config=pyproject.toml -q"
+
+[tool.coverage.run]
+source = ["packages/vinosports-core/src/vinosports", "hub", "nba", "epl"]
+omit = ["*/migrations/*", "*/tests/*", "*/test_*", "*/conftest.py", "*/admin.py", "*/apps.py"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if __name__ ==",
+    "raise NotImplementedError",
+]

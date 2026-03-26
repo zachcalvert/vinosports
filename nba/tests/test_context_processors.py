@@ -22,6 +22,7 @@ class TestBankruptcyContextProcessor:
         factory = RequestFactory()
         request = factory.get("/")
         request.user = AnonymousUser()
+        request.league = "nba"
         result = bankruptcy(request)
         assert result == {}
 
@@ -29,6 +30,7 @@ class TestBankruptcyContextProcessor:
         factory = RequestFactory()
         request = factory.get("/")
         request.user = UserFactory()
+        request.league = "nba"
         result = bankruptcy(request)
         assert result == {}
 
@@ -38,6 +40,7 @@ class TestBankruptcyContextProcessor:
         user = UserFactory()
         UserBalanceFactory(user=user, balance=Decimal("100.00"))
         request.user = user
+        request.league = "nba"
         result = bankruptcy(request)
         assert result == {}
 
@@ -47,6 +50,7 @@ class TestBankruptcyContextProcessor:
         user = UserFactory()
         UserBalanceFactory(user=user, balance=Decimal("0.10"))
         request.user = user
+        request.league = "nba"
         result = bankruptcy(request)
         assert result.get("is_bankrupt") is True
         assert "bankrupt_balance" in result
@@ -60,6 +64,7 @@ class TestBankruptcyContextProcessor:
         game = GameFactory()
         BetSlipFactory(user=user, game=game, stake=Decimal("0.10"))
         request.user = user
+        request.league = "nba"
         result = bankruptcy(request)
         assert result == {}
 
@@ -71,6 +76,7 @@ class TestBankruptcyContextProcessor:
         Bankruptcy.objects.create(user=user, balance_at_bankruptcy=Decimal("0.10"))
         Bankruptcy.objects.create(user=user, balance_at_bankruptcy=Decimal("0.05"))
         request.user = user
+        request.league = "nba"
         result = bankruptcy(request)
         assert result["bankruptcy_count"] == 2
 
@@ -81,6 +87,7 @@ class TestParlaySlipContextProcessor:
         factory = RequestFactory()
         request = factory.get("/")
         request.user = AnonymousUser()
+        request.league = "nba"
         request.session = {}
         result = parlay_slip(request)
         assert result["parlay_leg_count"] == 0
@@ -95,6 +102,7 @@ class TestParlaySlipContextProcessor:
         request = factory.get("/")
         user = UserFactory()
         request.user = user
+        request.league = "nba"
         request.session = {}
         result = parlay_slip(request)
         assert result["parlay_leg_count"] == 0
@@ -107,6 +115,7 @@ class TestParlaySlipContextProcessor:
         user = UserFactory()
         game = GameFactory()
         request.user = user
+        request.league = "nba"
         request.session = {
             "parlay_slip": [
                 {
@@ -130,6 +139,7 @@ class TestParlaySlipContextProcessor:
         g1 = GameFactory()
         g2 = GameFactory()
         request.user = user
+        request.league = "nba"
         request.session = {
             "parlay_slip": [
                 {
@@ -158,6 +168,7 @@ class TestParlaySlipContextProcessor:
         request = factory.get("/")
         user = UserFactory()
         request.user = user
+        request.league = "nba"
         request.session = {}
         result = parlay_slip(request)
         min_legs = result["parlay_min_legs"]
@@ -168,6 +179,7 @@ class TestParlaySlipContextProcessor:
         request = factory.get("/")
         user = UserFactory()
         request.user = user
+        request.league = "nba"
         request.session = {
             "parlay_slip": [
                 {

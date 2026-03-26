@@ -17,6 +17,7 @@ from vinosports.betting.models import (
     Bailout,
     BalanceTransaction,
     Bankruptcy,
+    BetStatus,
     UserBalance,
 )
 
@@ -32,11 +33,11 @@ SELECTION_TO_ODDS_FIELD = {
 def get_available_matches_for_bot(bot_user):
     """Return bettable matches the bot hasn't already placed a pending bet on."""
     already_bet = BetSlip.objects.filter(
-        user=bot_user, status=BetSlip.Status.PENDING
+        user=bot_user, status=BetStatus.PENDING
     ).values_list("match_id", flat=True)
 
     already_in_parlay = ParlayLeg.objects.filter(
-        parlay__user=bot_user, parlay__status=Parlay.Status.PENDING
+        parlay__user=bot_user, parlay__status=BetStatus.PENDING
     ).values_list("match_id", flat=True)
 
     excluded = set(already_bet) | set(already_in_parlay)
@@ -251,10 +252,10 @@ def maybe_topup_bot(bot_user, min_balance=Decimal("50.00")):
         return
 
     pending_bets = BetSlip.objects.filter(
-        user=bot_user, status=BetSlip.Status.PENDING
+        user=bot_user, status=BetStatus.PENDING
     ).exists()
     pending_parlays = Parlay.objects.filter(
-        user=bot_user, status=Parlay.Status.PENDING
+        user=bot_user, status=BetStatus.PENDING
     ).exists()
 
     if pending_bets or pending_parlays:

@@ -9,7 +9,7 @@ from epl.betting.odds_engine import generate_all_upcoming_odds
 from epl.betting.stats import record_bet_result
 from epl.matches.models import Match, Odds
 from vinosports.betting.balance import log_transaction
-from vinosports.betting.models import BalanceTransaction, UserBalance
+from vinosports.betting.models import BalanceTransaction, BetStatus, UserBalance
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +32,7 @@ def _schedule_stat_update(
 
 def settle_parlay_legs(match, winning_selection):
     pending_legs = ParlayLeg.objects.filter(
-        match=match, status=ParlayLeg.Status.PENDING
+        match=match, status=BetStatus.PENDING
     ).select_related("parlay")
 
     if not pending_legs.exists():
@@ -42,11 +42,11 @@ def settle_parlay_legs(match, winning_selection):
 
     for leg in pending_legs:
         if winning_selection is None:
-            leg.status = ParlayLeg.Status.VOID
+            leg.status = BetStatus.VOID
         elif leg.selection == winning_selection:
-            leg.status = ParlayLeg.Status.WON
+            leg.status = BetStatus.WON
         else:
-            leg.status = ParlayLeg.Status.LOST
+            leg.status = BetStatus.LOST
         leg.save(update_fields=["status"])
         affected_parlay_ids.add(leg.parlay_id)
 
@@ -60,7 +60,7 @@ def settle_parlay_legs(match, winning_selection):
 
 
 def _recalculate_combined_odds(parlay, legs):
-    active_legs = [leg for leg in legs if leg.status != ParlayLeg.Status.VOID]
+    active_legs = [leg for leg in legs if leg.status != BetStatus.VOID]
     if not active_legs:
         parlay.combined_odds = Decimal("1.00")
     else:
@@ -74,7 +74,7 @@ def _evaluate_parlay(parlay_id):
     try:
         with transaction.atomic():
             parlay = Parlay.objects.select_for_update().get(pk=parlay_id)
-            if parlay.status != Parlay.Status.PENDING:
+            if parlay.status != BetStatus.PENDING:
                 return
 
             legs = list(parlay.legs.all())
@@ -82,7 +82,7 @@ def _evaluate_parlay(parlay_id):
                 logger.error(
                     "_evaluate_parlay: parlay %d has no legs — marking LOST", parlay_id
                 )
-                parlay.status = Parlay.Status.LOST
+                parlay.status = BetStatus.LOST
                 parlay.payout = Decimal("0")
                 parlay.save(update_fields=["status", "payout"])
                 _schedule_stat_update(
@@ -97,8 +97,8 @@ def _evaluate_parlay(parlay_id):
 
             statuses = {leg.status for leg in legs}
 
-            if ParlayLeg.Status.LOST in statuses:
-                parlay.status = Parlay.Status.LOST
+            if BetStatus.LOST in statuses:
+                parlay.status = BetStatus.LOST
                 parlay.payout = Decimal("0")
                 parlay.save(update_fields=["status", "payout"])
                 logger.info("_evaluate_parlay: parlay %d LOST", parlay_id)
@@ -113,14 +113,14 @@ def _evaluate_parlay(parlay_id):
                 )
                 return
 
-            if ParlayLeg.Status.PENDING in statuses:
-                if ParlayLeg.Status.VOID in statuses:
+            if BetStatus.PENDING in statuses:
+                if BetStatus.VOID in statuses:
                     _recalculate_combined_odds(parlay, legs)
                     parlay.save(update_fields=["combined_odds"])
                 return
 
-            if all(leg.status == ParlayLeg.Status.VOID for leg in legs):
-                parlay.status = Parlay.Status.VOID
+            if all(leg.status == BetStatus.VOID for leg in legs):
+                parlay.status = BetStatus.VOID
                 parlay.payout = parlay.stake
                 parlay.save(update_fields=["status", "payout"])
 
@@ -140,7 +140,7 @@ def _evaluate_parlay(parlay_id):
 
             _recalculate_combined_odds(parlay, legs)
             payout = min(parlay.stake * parlay.combined_odds, parlay.max_payout)
-            parlay.status = Parlay.Status.WON
+            parlay.status = BetStatus.WON
             parlay.payout = payout
             parlay.save(update_fields=["status", "payout", "combined_odds"])
 
@@ -254,9 +254,9 @@ def settle_match_bets(self, match_id):
         logger.error("settle_match_bets: match %d not found", match_id)
         return
 
-    pending_bets = BetSlip.objects.filter(match=match, status=BetSlip.Status.PENDING)
+    pending_bets = BetSlip.objects.filter(match=match, status=BetStatus.PENDING)
     pending_parlay_legs = ParlayLeg.objects.filter(
-        match=match, status=ParlayLeg.Status.PENDING
+        match=match, status=BetStatus.PENDING
     )
     if not pending_bets.exists() and not pending_parlay_legs.exists():
         logger.info(
@@ -267,7 +267,7 @@ def settle_match_bets(self, match_id):
     if match.status in (Match.Status.CANCELLED, Match.Status.POSTPONED):
         for bet in pending_bets.select_related("user"):
             with transaction.atomic():
-                bet.status = BetSlip.Status.VOID
+                bet.status = BetStatus.VOID
                 bet.payout = bet.stake
                 bet.save(update_fields=["status", "payout"])
 
@@ -314,7 +314,7 @@ def settle_match_bets(self, match_id):
         with transaction.atomic():
             if bet.selection == winning_selection:
                 payout = bet.stake * bet.odds_at_placement
-                bet.status = BetSlip.Status.WON
+                bet.status = BetStatus.WON
                 bet.payout = payout
                 bet.save(update_fields=["status", "payout"])
 
@@ -328,14 +328,14 @@ def settle_match_bets(self, match_id):
                 won_count += 1
             else:
                 payout = Decimal("0")
-                bet.status = BetSlip.Status.LOST
+                bet.status = BetStatus.LOST
                 bet.payout = payout
                 bet.save(update_fields=["status", "payout"])
                 lost_count += 1
 
         record_bet_result(
             bet.user,
-            won=(bet.status == BetSlip.Status.WON),
+            won=(bet.status == BetStatus.WON),
             stake=bet.stake,
             payout=bet.payout or Decimal("0"),
             odds=bet.odds_at_placement,

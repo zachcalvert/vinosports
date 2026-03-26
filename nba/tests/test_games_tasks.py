@@ -20,34 +20,34 @@ from nba.games.tasks import (
 
 
 class TestCurrentSeason:
-    @patch("nba.games.tasks.timezone")
-    def test_oct_returns_current_year(self, mock_tz):
-        mock_tz.now.return_value.date.return_value = date(2025, 10, 15)
+    @patch("nba.games.services.today_et")
+    def test_oct_returns_current_year(self, mock_today):
+        mock_today.return_value = date(2025, 10, 15)
         assert _current_season() == 2025
 
-    @patch("nba.games.tasks.timezone")
-    def test_nov_returns_current_year(self, mock_tz):
-        mock_tz.now.return_value.date.return_value = date(2025, 11, 1)
+    @patch("nba.games.services.today_et")
+    def test_nov_returns_current_year(self, mock_today):
+        mock_today.return_value = date(2025, 11, 1)
         assert _current_season() == 2025
 
-    @patch("nba.games.tasks.timezone")
-    def test_dec_returns_current_year(self, mock_tz):
-        mock_tz.now.return_value.date.return_value = date(2025, 12, 31)
+    @patch("nba.games.services.today_et")
+    def test_dec_returns_current_year(self, mock_today):
+        mock_today.return_value = date(2025, 12, 31)
         assert _current_season() == 2025
 
-    @patch("nba.games.tasks.timezone")
-    def test_jan_returns_previous_year(self, mock_tz):
-        mock_tz.now.return_value.date.return_value = date(2026, 1, 15)
+    @patch("nba.games.services.today_et")
+    def test_jan_returns_previous_year(self, mock_today):
+        mock_today.return_value = date(2026, 1, 15)
         assert _current_season() == 2025
 
-    @patch("nba.games.tasks.timezone")
-    def test_june_returns_previous_year(self, mock_tz):
-        mock_tz.now.return_value.date.return_value = date(2026, 6, 1)
+    @patch("nba.games.services.today_et")
+    def test_june_returns_previous_year(self, mock_today):
+        mock_today.return_value = date(2026, 6, 1)
         assert _current_season() == 2025
 
-    @patch("nba.games.tasks.timezone")
-    def test_sep_returns_previous_year(self, mock_tz):
-        mock_tz.now.return_value.date.return_value = date(2026, 9, 30)
+    @patch("nba.games.services.today_et")
+    def test_sep_returns_previous_year(self, mock_today):
+        mock_today.return_value = date(2026, 9, 30)
         assert _current_season() == 2025
 
 
