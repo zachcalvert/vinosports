@@ -2,7 +2,13 @@ import logging
 
 from celery import shared_task
 
-from nba.games.services import sync_games, sync_live_scores, sync_standings, sync_teams
+from nba.games.services import (
+    sync_games,
+    sync_live_scores,
+    sync_players,
+    sync_standings,
+    sync_teams,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -15,6 +21,17 @@ def fetch_teams(self):
         return {"synced": count}
     except Exception as exc:
         logger.error("fetch_teams failed: %s", exc)
+        raise self.retry(exc=exc)
+
+
+@shared_task(bind=True, max_retries=3, default_retry_delay=60)
+def fetch_players(self):
+    """Sync all NBA players from BallDontLie."""
+    try:
+        count = sync_players()
+        return {"synced": count}
+    except Exception as exc:
+        logger.error("fetch_players failed: %s", exc)
         raise self.retry(exc=exc)
 
 

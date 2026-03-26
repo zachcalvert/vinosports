@@ -8,7 +8,7 @@ from django.utils import timezone
 from nba.activity.models import ActivityEvent
 from nba.betting.models import BetSlip, Parlay, ParlayLeg
 from nba.discussions.models import Comment
-from nba.games.models import Conference, Game, GameStatus, Odds, Standing, Team
+from nba.games.models import Conference, Game, GameStatus, Odds, Player, Standing, Team
 from vinosports.betting.models import UserBalance
 from vinosports.bots.models import BotProfile, ScheduleTemplate, StrategyType
 from vinosports.users.models import User
@@ -67,6 +67,28 @@ class TeamFactory(factory.django.DjangoModelFactory):
     abbreviation = factory.Sequence(lambda n: f"T{n:02d}")
     conference = Conference.EAST
     division = "Atlantic"
+
+
+class PlayerFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Player
+
+    external_id = factory.Sequence(lambda n: 50000 + n)
+    first_name = factory.Sequence(lambda n: f"First{n}")
+    last_name = factory.Sequence(lambda n: f"Last{n}")
+    position = "G"
+    height = "6-3"
+    weight = 200
+    jersey_number = factory.Sequence(lambda n: str(n % 100))
+    college = "Test University"
+    country = "USA"
+    draft_year = 2020
+    draft_round = 1
+    draft_number = 10
+    team = factory.SubFactory(TeamFactory)
+    headshot_url = factory.LazyAttribute(
+        lambda o: f"https://cdn.nba.com/headshots/nba/latest/1040x760/{o.external_id}.png"
+    )
 
 
 class GameFactory(factory.django.DjangoModelFactory):

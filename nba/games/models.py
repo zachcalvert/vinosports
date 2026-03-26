@@ -34,6 +34,12 @@ class Team(BaseModel):
     def __str__(self):
         return self.short_name
 
+    def get_absolute_url(self):
+        return reverse(
+            "nba_games:team_detail",
+            kwargs={"abbreviation": self.abbreviation.lower()},
+        )
+
 
 class Game(BaseModel):
     external_id = models.IntegerField(unique=True)
@@ -110,13 +116,59 @@ class GameStats(BaseModel):
         return f"Stats for {self.game}"
 
 
+class Player(BaseModel):
+    """NBA player — synced from BallDontLie /players endpoint."""
+
+    external_id = models.IntegerField(unique=True)
+    first_name = models.CharField(max_length=100)
+    last_name = models.CharField(max_length=100)
+    position = models.CharField(max_length=10, blank=True)
+    height = models.CharField(max_length=10, blank=True)  # "6-9"
+    weight = models.PositiveSmallIntegerField(null=True, blank=True)  # pounds
+    jersey_number = models.CharField(max_length=20, blank=True)
+    college = models.CharField(max_length=100, blank=True)
+    country = models.CharField(max_length=100, blank=True)
+    draft_year = models.PositiveSmallIntegerField(null=True, blank=True)
+    draft_round = models.PositiveSmallIntegerField(null=True, blank=True)
+    draft_number = models.PositiveSmallIntegerField(null=True, blank=True)
+    team = models.ForeignKey(
+        Team,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="players",
+    )
+    is_active = models.BooleanField(default=False)
+    headshot_url = models.URLField(blank=True)  # NBA CDN
+
+    class Meta:
+        ordering = ["last_name", "first_name"]
+
+    def __str__(self):
+        return self.full_name
+
+    @property
+    def full_name(self):
+        return f"{self.first_name} {self.last_name}".strip()
+
+    def get_absolute_url(self):
+        return reverse("nba_games:player_detail", kwargs={"id_hash": self.id_hash})
+
+
 class PlayerBoxScore(BaseModel):
     """Per-player stats for a single game (box score line)."""
 
     game = models.ForeignKey(Game, on_delete=models.CASCADE, related_name="box_scores")
     team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name="box_scores")
+    player = models.ForeignKey(
+        Player,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="box_scores",
+    )
 
-    # Player identity (denormalized — no separate Player table needed)
+    # Player identity (denormalized — kept for backwards compatibility)
     player_external_id = models.IntegerField()
     player_name = models.CharField(max_length=100)
     player_position = models.CharField(max_length=10, blank=True)

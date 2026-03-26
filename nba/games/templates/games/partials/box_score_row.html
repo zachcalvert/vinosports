@@ -1,6 +1,10 @@
 <tr class="hover:bg-surface-alt/50 {% if not player.minutes %}text-muted{% endif %}">
     <td class="sticky left-0 bg-surface px-3 py-2 font-medium whitespace-nowrap">
-        {{ player.player_name }}
+        {% if player.player %}
+            <a href="{{ player.player.get_absolute_url }}" class="hover:underline">{{ player.player_name }}</a>
+        {% else %}
+            {{ player.player_name }}
+        {% endif %}
         {% if player.player_position %}
             <span class="text-muted ml-1">{{ player.player_position }}</span>
         {% endif %}

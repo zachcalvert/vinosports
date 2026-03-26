@@ -28,7 +28,7 @@
                         {% if standing.team.logo_url %}
                             <img src="{{ standing.team.logo_url }}" alt="" class="w-6 h-6 object-contain">
                         {% endif %}
-                        <span class="text-sm font-medium">{{ standing.team.short_name }}</span>
+                        <a href="{{ standing.team.get_absolute_url }}" class="text-sm font-medium hover:underline">{{ standing.team.short_name }}</a>
                         <span class="text-xs text-muted hidden lg:inline">{{ standing.team.abbreviation }}</span>
                     </div>
                 </td>

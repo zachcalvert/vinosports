@@ -14,8 +14,10 @@ from nba.games.models import (
     Game,
     GameStatus,
     Odds,
+    Player,
     PlayerBoxScore,
     Standing,
+    Team,
 )
 from vinosports.betting.models import BetStatus
 
@@ -163,6 +165,148 @@ class StandingsView(LoginRequiredMixin, View):
         if getattr(request, "htmx", False):
             return render(request, "games/partials/standings_panel.html", ctx)
         return render(request, "games/standings.html", ctx)
+
+
+class PlayerListView(LoginRequiredMixin, View):
+    def get(self, request):
+        team_abbr = request.GET.get("team")
+        position = request.GET.get("position")
+
+        players = (
+            Player.objects.select_related("team")
+            .filter(is_active=True)
+            .order_by("team__short_name", "last_name")
+        )
+
+        if team_abbr:
+            players = players.filter(team__abbreviation=team_abbr)
+        if position:
+            players = players.filter(position__icontains=position)
+
+        teams = Team.objects.order_by("short_name")
+
+        ctx = {
+            "players": players,
+            "teams": teams,
+            "selected_team": team_abbr,
+            "selected_position": position,
+        }
+        return render(request, "games/player_list.html", ctx)
+
+
+class PlayerDetailView(LoginRequiredMixin, View):
+    def get(self, request, id_hash):
+        player = get_object_or_404(
+            Player.objects.select_related("team"),
+            id_hash=id_hash,
+        )
+
+        # Recent box scores (last 10 games)
+        recent_box_scores = player.box_scores.select_related(
+            "game__home_team", "game__away_team"
+        ).order_by("-game__game_date")[:10]
+
+        # Season averages (current season, regular season only)
+        from django.db.models import Avg, Count
+
+        from nba.games.tasks import _current_season
+
+        season = _current_season()
+        season_games = player.box_scores.filter(
+            game__season=season,
+            game__postseason=False,
+            game__status=GameStatus.FINAL,
+        )
+        averages = season_games.aggregate(
+            games_played=Count("id"),
+            ppg=Avg("points"),
+            rpg=Avg("reb"),
+            apg=Avg("ast"),
+            spg=Avg("stl"),
+            bpg=Avg("blk"),
+            topg=Avg("turnovers"),
+            fgm_avg=Avg("fgm"),
+            fga_avg=Avg("fga"),
+            fg3m_avg=Avg("fg3m"),
+            fg3a_avg=Avg("fg3a"),
+            ftm_avg=Avg("ftm"),
+            fta_avg=Avg("fta"),
+        )
+
+        ctx = {
+            "player": player,
+            "recent_box_scores": recent_box_scores,
+            "averages": averages,
+            "season": season,
+        }
+        return render(request, "games/player_detail.html", ctx)
+
+
+class TeamDetailView(LoginRequiredMixin, View):
+    def get(self, request, abbreviation):
+        from nba.games.tasks import _current_season
+
+        team = get_object_or_404(Team, abbreviation__iexact=abbreviation)
+        season = _current_season()
+        today = timezone.localdate()
+
+        standing = Standing.objects.filter(team=team, season=season).first()
+
+        roster = Player.objects.filter(team=team, is_active=True).order_by(
+            "last_name", "first_name"
+        )
+
+        last_game = (
+            Game.objects.filter(
+                Q(home_team=team) | Q(away_team=team), status=GameStatus.FINAL
+            )
+            .select_related("home_team", "away_team")
+            .order_by("-game_date", "-tip_off")
+            .first()
+        )
+
+        next_game = (
+            Game.objects.filter(
+                Q(home_team=team) | Q(away_team=team),
+                status=GameStatus.SCHEDULED,
+                game_date__gte=today,
+            )
+            .select_related("home_team", "away_team")
+            .order_by("game_date", "tip_off")
+            .first()
+        )
+
+        # Opponent standings for game cards
+        opponent_ids = set()
+        if last_game:
+            opp = (
+                last_game.away_team
+                if last_game.home_team == team
+                else last_game.home_team
+            )
+            opponent_ids.add(opp.id)
+        if next_game:
+            opp = (
+                next_game.away_team
+                if next_game.home_team == team
+                else next_game.home_team
+            )
+            opponent_ids.add(opp.id)
+        standings_by_team = {}
+        if opponent_ids:
+            for s in Standing.objects.filter(team_id__in=opponent_ids, season=season):
+                standings_by_team[s.team_id] = s
+
+        ctx = {
+            "team": team,
+            "standing": standing,
+            "roster": roster,
+            "last_game": last_game,
+            "next_game": next_game,
+            "standings_by_team": standings_by_team,
+            "season": season,
+        }
+        return render(request, "games/team_detail.html", ctx)
 
 
 def _get_game_sentiment(game):
@@ -324,7 +468,9 @@ def _get_box_score_context(game):
     ):
         return {}
 
-    box_scores = PlayerBoxScore.objects.filter(game=game).select_related("team")
+    box_scores = PlayerBoxScore.objects.filter(game=game).select_related(
+        "team", "player"
+    )
 
     # On-demand fetch if no data exists yet
     if not box_scores.exists():
@@ -332,7 +478,9 @@ def _get_box_score_context(game):
 
         try:
             sync_box_score(game)
-            box_scores = PlayerBoxScore.objects.filter(game=game).select_related("team")
+            box_scores = PlayerBoxScore.objects.filter(game=game).select_related(
+                "team", "player"
+            )
         except Exception:
             return {}
 

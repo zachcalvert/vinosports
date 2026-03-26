@@ -15,6 +15,7 @@ from nba.tests.factories import (
     OddsFactory,
     ParlayFactory,
     ParlayLegFactory,
+    PlayerFactory,
     StandingFactory,
     TeamFactory,
 )
@@ -38,6 +39,37 @@ class TestTeam:
 
         names = list(Team.objects.values_list("short_name", flat=True))
         assert names.index("Alphas") < names.index("Zebras")
+
+
+# ---------------------------------------------------------------------------
+# Player
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.django_db
+class TestPlayer:
+    def test_str(self):
+        player = PlayerFactory(first_name="LeBron", last_name="James")
+        assert str(player) == "LeBron James"
+
+    def test_full_name_property(self):
+        player = PlayerFactory(first_name="Stephen", last_name="Curry")
+        assert player.full_name == "Stephen Curry"
+
+    def test_get_absolute_url(self):
+        player = PlayerFactory()
+        url = player.get_absolute_url()
+        assert url == f"/nba/games/players/{player.id_hash}/"
+
+    def test_unique_external_id(self):
+        PlayerFactory(external_id=99999)
+        with pytest.raises(IntegrityError):
+            PlayerFactory(external_id=99999)
+
+    def test_team_fk_nullable(self):
+        player = PlayerFactory(team=None)
+        assert player.team is None
+        assert player.pk is not None
 
 
 # ---------------------------------------------------------------------------

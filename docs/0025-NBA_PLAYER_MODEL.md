@@ -1,6 +1,7 @@
 # 0025 — NBA Player Model & Profile Pages
 
 **Date:** 2026-03-26
+**Status:** Implemented
 
 ## Overview
 
@@ -490,12 +491,21 @@ New normalizer tests:
 
 ## Migration Plan
 
-1. Generate and apply migration for the new `Player` model
-2. Generate and apply migration for the new `PlayerBoxScore.player` FK (nullable, no data migration needed)
-3. Run `fetch_players()` once (via `seed_nba.py` or manual task invocation) to populate the player table
-4. Existing `PlayerBoxScore` rows get back-filled with `player` FKs on the next `sync_box_score()` run
+1. Generate and apply migration for the new `Player` model + `PlayerBoxScore.player` FK (nullable)
+2. Generate and apply migration widening `Player.jersey_number` to `max_length=20` (BDL has long values)
+3. Generate and apply migration adding `Player.is_active` boolean flag
+4. Run `python manage.py backfill_players` to populate the player table (one-time, ~5500 players)
+5. Existing `PlayerBoxScore` rows get back-filled with `player` FKs on the next `sync_box_score()` run
 
 No destructive changes — the denormalized `player_name` / `player_position` / `player_external_id` columns on `PlayerBoxScore` are retained as-is. The new `player` FK is purely additive.
+
+---
+
+## Implementation Notes
+
+**Rate limiting:** The BDL `/players` endpoint returns ~5500 players across ~55 pages. Paginating without delays triggers 429s around page 30. The `backfill_players` command uses a 2s per-page delay by default and `_get_with_retry` adds exponential backoff on 429s. Player sync is intentionally excluded from `seed_nba` and the Celery beat schedule to avoid rate limit issues.
+
+**Active player filtering:** The `is_active` flag is a denormalized boolean set by `refresh_active_players()` (based on current-season box score presence) and by `sync_box_score()` (which marks players active when they appear in a game). The roster page filters on `is_active=True`, reducing ~5500 total players to ~450 active roster players.
 
 ---
 
@@ -503,16 +513,16 @@ No destructive changes — the denormalized `player_name` / `player_position` / 
 
 | File | Change |
 |------|--------|
-| `nba/games/models.py` | Add `Player` model; add nullable `player` FK to `PlayerBoxScore` |
-| `nba/games/services.py` | Add `NBADataClient._normalize_player()`, `NBADataClient.get_players()` (instance methods); add `sync_players()` module-level function; update `sync_box_score()` to resolve `player` FK |
-| `nba/games/tasks.py` | Add `fetch_players` Celery task |
-| `nba/games/views.py` | Add `PlayerListView`, `PlayerDetailView` |
+| `nba/games/models.py` | Add `Player` model (with `is_active` flag); add nullable `player` FK to `PlayerBoxScore` |
+| `nba/games/services.py` | Add `_normalize_player()`, `get_players()` (with `page_delay` + `on_page` callback), `sync_players()`, `refresh_active_players()`; add `_get_with_retry()` for 429 backoff; update `sync_box_score()` to resolve `player` FK and set `is_active` |
+| `nba/games/tasks.py` | Add `fetch_players` Celery task (available for manual use, not scheduled) |
+| `nba/games/views.py` | Add `PlayerListView` (filters `is_active=True`), `PlayerDetailView`; update box score queries to `select_related("player")` |
 | `nba/games/urls.py` | Add `players/` and `players/<id_hash>/` routes |
 | `nba/games/admin.py` | Register `PlayerAdmin` |
-| `nba/games/templates/games/player_list.html` | New — browsable roster page |
-| `nba/games/templates/games/player_detail.html` | New — player profile page |
-| `nba/games/templates/games/partials/box_score.html` | Wrap player name in link when `row.player` set |
-| `nba/games/management/commands/seed_nba.py` | Add `fetch_players()` call after `fetch_teams()` |
+| `nba/games/templates/games/player_list.html` | New — browsable roster page with team/position filters |
+| `nba/games/templates/games/player_detail.html` | New — player profile with season averages + game log |
+| `nba/games/templates/games/partials/box_score_row.html` | Wrap player name in link when `player` FK is set |
+| `nba/games/management/commands/backfill_players.py` | New — one-time bulk player import with rate-limit-safe pagination |
 | `nba/tests/test_models.py` | Add `TestPlayer` tests |
 | `nba/tests/test_games_services.py` | Add `TestSyncPlayers` + normalizer tests |
 | `nba/tests/test_games_tasks.py` | Add `TestFetchPlayers` tests |
@@ -528,5 +538,3 @@ No destructive changes — the denormalized `player_name` / `player_position` / 
 2. **Top performers widget** — a sidebar widget on the schedule page showing the day's leading scorer / rebounder / assists leader. Uses `PlayerBoxScore.objects.filter(game__game_date=today).order_by("-points")[:3]`.
 
 3. **Player search** — a quick-search input (HTMX `hx-get`) on the player list page that filters by name as you type, using a `?q=` param on `PlayerListView`.
-
-4. **Injured / inactive flag** — BDL doesn't expose injury data on the All-Star tier, but a manual `is_active` boolean field on `Player` could be admin-toggled to hide inactive players from the roster view.

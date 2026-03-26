@@ -1,0 +1,202 @@
+{% extends "nba_website/base.html" %}
+{% block title %}{{ player.full_name }}{% endblock %}
+
+{% block content %}
+<!-- Hero header -->
+<div class="rounded-xl border border-outline-variant bg-surface-container-lowest overflow-hidden mb-6">
+    <div class="p-5 sm:p-6 flex flex-col sm:flex-row items-start gap-5">
+        <!-- Headshot -->
+        {% if player.headshot_url %}
+            <img src="{{ player.headshot_url }}"
+                 alt="{{ player.full_name }}"
+                 class="w-32 h-24 sm:w-40 sm:h-[120px] object-cover object-top rounded-xl bg-surface-alt"
+                 onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+            <div class="w-32 h-24 sm:w-40 sm:h-[120px] rounded-xl bg-surface-alt items-center justify-center text-3xl font-bold text-muted hidden">
+                {{ player.first_name.0 }}{{ player.last_name.0 }}
+            </div>
+        {% else %}
+            <div class="w-32 h-24 sm:w-40 sm:h-[120px] rounded-xl bg-surface-alt flex items-center justify-center text-3xl font-bold text-muted">
+                {{ player.first_name.0 }}{{ player.last_name.0 }}
+            </div>
+        {% endif %}
+
+        <div class="flex-1">
+            <h1 class="font-headline italic font-black text-3xl sm:text-4xl uppercase tracking-tight leading-none">
+                {{ player.full_name }}
+            </h1>
+            <div class="flex flex-wrap items-center gap-3 mt-2 text-sm">
+                {% if player.position %}
+                    <span class="px-2 py-0.5 rounded bg-surface-alt font-semibold">{{ player.position }}</span>
+                {% endif %}
+                {% if player.jersey_number %}
+                    <span class="font-semibold">#{{ player.jersey_number }}</span>
+                {% endif %}
+                {% if player.team %}
+                    <a href="{{ player.team.get_absolute_url }}" class="text-muted hover:underline">{{ player.team.short_name }}</a>
+                {% endif %}
+            </div>
+            <!-- Bio row -->
+            <div class="flex flex-wrap gap-x-5 gap-y-1 mt-3 text-xs text-muted">
+                {% if player.height %}
+                    <span>{{ player.height }}</span>
+                {% endif %}
+                {% if player.weight %}
+                    <span>{{ player.weight }} lbs</span>
+                {% endif %}
+                {% if player.country %}
+                    <span>{{ player.country }}</span>
+                {% endif %}
+                {% if player.college and player.college != "None" %}
+                    <span>{{ player.college }}</span>
+                {% endif %}
+                {% if player.draft_year %}
+                    <span>{{ player.draft_year }} Draft: Rd {{ player.draft_round }}, Pick {{ player.draft_number }}</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Season averages -->
+<div class="rounded-xl border-b-4 border-outline-variant bg-surface-container-lowest overflow-hidden mb-6">
+    <div class="px-5 py-3 border-b border-outline-variant flex items-center gap-3">
+        <span class="w-1 h-6 rounded-full bg-nba"></span>
+        <h3 class="text-xs font-semibold uppercase tracking-widest">{{ season }}&ndash;{{ season|add:"1" }} Season Averages</h3>
+    </div>
+    {% if averages.games_played %}
+    <div class="grid grid-cols-5 sm:grid-cols-10 divide-x divide-outline-variant/50">
+        <div class="p-3 text-center">
+            <div class="text-[10px] font-semibold uppercase tracking-widest text-muted">GP</div>
+            <div class="text-lg font-bold font-mono mt-1">{{ averages.games_played }}</div>
+        </div>
+        <div class="p-3 text-center">
+            <div class="text-[10px] font-semibold uppercase tracking-widest text-muted">PPG</div>
+            <div class="text-lg font-bold font-mono mt-1">{{ averages.ppg|floatformat:1 }}</div>
+        </div>
+        <div class="p-3 text-center">
+            <div class="text-[10px] font-semibold uppercase tracking-widest text-muted">RPG</div>
+            <div class="text-lg font-bold font-mono mt-1">{{ averages.rpg|floatformat:1 }}</div>
+        </div>
+        <div class="p-3 text-center">
+            <div class="text-[10px] font-semibold uppercase tracking-widest text-muted">APG</div>
+            <div class="text-lg font-bold font-mono mt-1">{{ averages.apg|floatformat:1 }}</div>
+        </div>
+        <div class="p-3 text-center">
+            <div class="text-[10px] font-semibold uppercase tracking-widest text-muted">SPG</div>
+            <div class="text-lg font-bold font-mono mt-1">{{ averages.spg|floatformat:1 }}</div>
+        </div>
+        <div class="p-3 text-center">
+            <div class="text-[10px] font-semibold uppercase tracking-widest text-muted">BPG</div>
+            <div class="text-lg font-bold font-mono mt-1">{{ averages.bpg|floatformat:1 }}</div>
+        </div>
+        <div class="p-3 text-center">
+            <div class="text-[10px] font-semibold uppercase tracking-widest text-muted">TO</div>
+            <div class="text-lg font-bold font-mono mt-1">{{ averages.topg|floatformat:1 }}</div>
+        </div>
+        <div class="p-3 text-center">
+            <div class="text-[10px] font-semibold uppercase tracking-widest text-muted">FG%</div>
+            <div class="text-lg font-bold font-mono mt-1">
+                {% widthratio averages.fgm_avg 1 100 as fgm_x100 %}
+                {% if averages.fga_avg %}
+                    {% widthratio averages.fgm_avg averages.fga_avg 100 %}
+                {% else %}
+                    &mdash;
+                {% endif %}
+            </div>
+        </div>
+        <div class="p-3 text-center">
+            <div class="text-[10px] font-semibold uppercase tracking-widest text-muted">3P%</div>
+            <div class="text-lg font-bold font-mono mt-1">
+                {% if averages.fg3a_avg %}
+                    {% widthratio averages.fg3m_avg averages.fg3a_avg 100 %}
+                {% else %}
+                    &mdash;
+                {% endif %}
+            </div>
+        </div>
+        <div class="p-3 text-center">
+            <div class="text-[10px] font-semibold uppercase tracking-widest text-muted">FT%</div>
+            <div class="text-lg font-bold font-mono mt-1">
+                {% if averages.fta_avg %}
+                    {% widthratio averages.ftm_avg averages.fta_avg 100 %}
+                {% else %}
+                    &mdash;
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="p-6 text-center text-muted text-sm">
+        No stats for current season.
+    </div>
+    {% endif %}
+</div>
+
+<!-- Recent game log -->
+<div class="rounded-xl border-b-4 border-outline-variant bg-surface-container-lowest overflow-hidden mb-6">
+    <div class="px-5 py-3 border-b border-outline-variant flex items-center gap-3">
+        <span class="w-1 h-6 rounded-full bg-nba"></span>
+        <h3 class="text-xs font-semibold uppercase tracking-widest">Recent Games</h3>
+    </div>
+    {% if recent_box_scores %}
+    <div class="overflow-x-auto">
+        <table class="w-full text-xs">
+            <thead>
+                <tr class="text-left text-muted border-b border-outline-variant">
+                    <th class="px-3 py-2 font-semibold"></th>
+                    <th class="px-3 py-2 font-semibold min-w-[100px]">Date</th>
+                    <th class="px-3 py-2 font-semibold min-w-[120px]">Opponent</th>
+                    <th class="px-2 py-2 font-semibold text-right">MIN</th>
+                    <th class="px-2 py-2 font-semibold text-right">PTS</th>
+                    <th class="px-2 py-2 font-semibold text-right">REB</th>
+                    <th class="px-2 py-2 font-semibold text-right">AST</th>
+                    <th class="px-2 py-2 font-semibold text-right">STL</th>
+                    <th class="px-2 py-2 font-semibold text-right">BLK</th>
+                    <th class="px-2 py-2 font-semibold text-right">FG</th>
+                    <th class="px-2 py-2 font-semibold text-right">3PT</th>
+                    <th class="px-2 py-2 font-semibold text-right">FT</th>
+                    <th class="px-2 py-2 font-semibold text-right">+/-</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-outline-variant/50">
+                {% for bs in recent_box_scores %}
+                <tr class="hover:bg-surface-alt/50">
+                    <td class="px-3 py-2 text-center text-muted">{% if bs.starter %}<span title="Starter">&#9733;</span>{% endif %}</td>
+                    <td class="px-3 py-2 whitespace-nowrap">
+                        <a href="{{ bs.game.get_absolute_url }}" class="hover:underline">
+                            {{ bs.game.game_date|date:"M j" }}
+                        </a>
+                    </td>
+                    <td class="px-3 py-2 whitespace-nowrap">
+                        <a href="{{ bs.game.get_absolute_url }}" class="hover:underline">
+                            {% if bs.game.home_team == player.team %}
+                                vs {{ bs.game.away_team.abbreviation }}
+                            {% else %}
+                                @ {{ bs.game.home_team.abbreviation }}
+                            {% endif %}
+                        </a>
+                    </td>
+                    <td class="px-2 py-2 text-right font-mono">{{ bs.minutes|default:"—" }}</td>
+                    <td class="px-2 py-2 text-right font-mono font-semibold">{{ bs.points }}</td>
+                    <td class="px-2 py-2 text-right font-mono">{{ bs.reb }}</td>
+                    <td class="px-2 py-2 text-right font-mono">{{ bs.ast }}</td>
+                    <td class="px-2 py-2 text-right font-mono">{{ bs.stl }}</td>
+                    <td class="px-2 py-2 text-right font-mono">{{ bs.blk }}</td>
+                    <td class="px-2 py-2 text-right font-mono">{{ bs.fgm }}-{{ bs.fga }}</td>
+                    <td class="px-2 py-2 text-right font-mono">{{ bs.fg3m }}-{{ bs.fg3a }}</td>
+                    <td class="px-2 py-2 text-right font-mono">{{ bs.ftm }}-{{ bs.fta }}</td>
+                    <td class="px-2 py-2 text-right font-mono {% if bs.plus_minus > 0 %}text-positive{% elif bs.plus_minus < 0 %}text-danger{% endif %}">
+                        {% if bs.plus_minus > 0 %}+{% endif %}{{ bs.plus_minus }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="p-6 text-center text-muted text-sm">
+        No recent games.
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

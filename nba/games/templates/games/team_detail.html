@@ -1,0 +1,241 @@
+{% extends "nba_website/base.html" %}
+{% load game_tags %}
+{% block title %}{{ team.name }}{% endblock %}
+
+{% block content %}
+<!-- Hero header -->
+<div class="rounded-xl border border-outline-variant bg-surface-container-lowest overflow-hidden mb-6">
+    <div class="p-5 sm:p-6 flex flex-col sm:flex-row items-start gap-5">
+        {% if team.logo_url %}
+            <img src="{{ team.logo_url }}"
+                 alt="{{ team.name }}"
+                 class="w-20 h-20 object-contain">
+        {% else %}
+            <div class="w-20 h-20 rounded-xl bg-surface-alt flex items-center justify-center text-2xl font-bold text-muted">
+                {{ team.abbreviation }}
+            </div>
+        {% endif %}
+
+        <div class="flex-1">
+            <h1 class="font-headline italic font-black text-3xl sm:text-4xl uppercase tracking-tight leading-none">
+                {{ team.name }}
+            </h1>
+            <div class="flex flex-wrap items-center gap-3 mt-2 text-sm text-muted">
+                <span>{{ team.get_conference_display }} Conference</span>
+                <span>&middot;</span>
+                <span>{{ team.division }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Season stats bar -->
+    {% if standing %}
+    <div class="border-t border-outline-variant">
+        <div class="grid grid-cols-3 sm:grid-cols-7 divide-x divide-outline-variant/50">
+            <div class="p-3 text-center">
+                <div class="text-[10px] font-semibold uppercase tracking-widest text-muted">Seed</div>
+                <div class="text-lg font-bold font-mono mt-1">{{ standing.conference_rank|default:"—" }}</div>
+            </div>
+            <div class="p-3 text-center">
+                <div class="text-[10px] font-semibold uppercase tracking-widest text-muted">W</div>
+                <div class="text-lg font-bold font-mono mt-1">{{ standing.wins }}</div>
+            </div>
+            <div class="p-3 text-center">
+                <div class="text-[10px] font-semibold uppercase tracking-widest text-muted">L</div>
+                <div class="text-lg font-bold font-mono mt-1">{{ standing.losses }}</div>
+            </div>
+            <div class="p-3 text-center">
+                <div class="text-[10px] font-semibold uppercase tracking-widest text-muted">PCT</div>
+                <div class="text-lg font-bold font-mono mt-1">{{ standing.win_pct|floatformat:3 }}</div>
+            </div>
+            <div class="p-3 text-center">
+                <div class="text-[10px] font-semibold uppercase tracking-widest text-muted">Home</div>
+                <div class="text-lg font-bold font-mono mt-1">{{ standing.home_record|default:"—" }}</div>
+            </div>
+            <div class="p-3 text-center">
+                <div class="text-[10px] font-semibold uppercase tracking-widest text-muted">Away</div>
+                <div class="text-lg font-bold font-mono mt-1">{{ standing.away_record|default:"—" }}</div>
+            </div>
+            <div class="p-3 text-center">
+                <div class="text-[10px] font-semibold uppercase tracking-widest text-muted">Streak</div>
+                <div class="text-lg font-bold font-mono mt-1
+                    {% if standing.streak|first == 'W' %}text-positive{% elif standing.streak|first == 'L' %}text-danger{% endif %}">
+                    {{ standing.streak|default:"—" }}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="border-t border-outline-variant p-6 text-center text-muted text-sm">
+        No standings data for current season.
+    </div>
+    {% endif %}
+</div>
+
+<!-- Bento game cards -->
+{% if last_game or next_game %}
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+    {% if last_game %}
+    <div class="rounded-xl border-b-4 border-outline-variant bg-surface-container-lowest overflow-hidden relative">
+        <div class="absolute top-0 left-0 w-1 h-full bg-nba"></div>
+        <div class="px-5 py-3 border-b border-outline-variant flex items-center gap-3">
+            <span class="w-1 h-6 rounded-full bg-nba"></span>
+            <h3 class="text-xs font-semibold uppercase tracking-widest">Last Game</h3>
+            <span class="ml-auto font-label text-[10px] font-bold uppercase tracking-widest text-secondary">Final</span>
+        </div>
+        <a href="{{ last_game.get_absolute_url }}" class="block p-5 hover:bg-surface-alt/30 transition-colors">
+            {% if last_game.home_team == team %}
+                {% with opp=last_game.away_team %}
+                <div class="flex items-center gap-4">
+                    {% if opp.logo_url %}<img src="{{ opp.logo_url }}" alt="" class="w-12 h-12 object-contain">{% endif %}
+                    <div class="flex-1">
+                        <div class="text-sm text-muted">vs</div>
+                        <div class="font-headline font-bold italic text-lg">{{ opp.short_name }}</div>
+                        {% with opp_standing=standings_by_team|get_item:opp.id %}
+                        {% if opp_standing %}<div class="text-xs text-muted">{{ opp_standing.wins }}-{{ opp_standing.losses }}</div>{% endif %}
+                        {% endwith %}
+                    </div>
+                    <div class="text-right">
+                        <div class="font-headline font-black italic text-2xl">{{ last_game.home_score }}-{{ last_game.away_score }}</div>
+                        {% if last_game.home_score > last_game.away_score %}
+                            <span class="text-xs font-bold text-positive uppercase">Win</span>
+                        {% else %}
+                            <span class="text-xs font-bold text-danger uppercase">Loss</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endwith %}
+            {% else %}
+                {% with opp=last_game.home_team %}
+                <div class="flex items-center gap-4">
+                    {% if opp.logo_url %}<img src="{{ opp.logo_url }}" alt="" class="w-12 h-12 object-contain">{% endif %}
+                    <div class="flex-1">
+                        <div class="text-sm text-muted">@</div>
+                        <div class="font-headline font-bold italic text-lg">{{ opp.short_name }}</div>
+                        {% with opp_standing=standings_by_team|get_item:opp.id %}
+                        {% if opp_standing %}<div class="text-xs text-muted">{{ opp_standing.wins }}-{{ opp_standing.losses }}</div>{% endif %}
+                        {% endwith %}
+                    </div>
+                    <div class="text-right">
+                        <div class="font-headline font-black italic text-2xl">{{ last_game.away_score }}-{{ last_game.home_score }}</div>
+                        {% if last_game.away_score > last_game.home_score %}
+                            <span class="text-xs font-bold text-positive uppercase">Win</span>
+                        {% else %}
+                            <span class="text-xs font-bold text-danger uppercase">Loss</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endwith %}
+            {% endif %}
+            <div class="mt-3 text-xs text-muted">{{ last_game.game_date|date:"D, M j" }}</div>
+        </a>
+    </div>
+    {% endif %}
+
+    {% if next_game %}
+    <div class="rounded-xl border-b-4 border-outline-variant bg-surface-container-lowest overflow-hidden relative">
+        <div class="absolute top-0 left-0 w-1 h-full bg-primary"></div>
+        <div class="px-5 py-3 border-b border-outline-variant flex items-center gap-3">
+            <span class="w-1 h-6 rounded-full bg-primary"></span>
+            <h3 class="text-xs font-semibold uppercase tracking-widest">Next Game</h3>
+            {% if next_game.tip_off %}
+            <span class="ml-auto text-[10px] font-label uppercase font-bold text-primary">
+                <time class="local-time" datetime="{{ next_game.tip_off|date:'c' }}">{{ next_game.tip_off|date:"g:i A" }}</time>
+            </span>
+            {% endif %}
+        </div>
+        <a href="{{ next_game.get_absolute_url }}" class="block p-5 hover:bg-surface-alt/30 transition-colors">
+            {% if next_game.home_team == team %}
+                {% with opp=next_game.away_team %}
+                <div class="flex items-center gap-4">
+                    {% if opp.logo_url %}<img src="{{ opp.logo_url }}" alt="" class="w-12 h-12 object-contain">{% endif %}
+                    <div class="flex-1">
+                        <div class="text-sm text-muted">vs</div>
+                        <div class="font-headline font-bold italic text-lg">{{ opp.short_name }}</div>
+                        {% with opp_standing=standings_by_team|get_item:opp.id %}
+                        {% if opp_standing %}<div class="text-xs text-muted">{{ opp_standing.wins }}-{{ opp_standing.losses }}</div>{% endif %}
+                        {% endwith %}
+                    </div>
+                    <div class="text-right text-xs text-muted">
+                        <div>{{ next_game.game_date|date:"D, M j" }}</div>
+                        {% if next_game.arena %}<div class="mt-1">{{ next_game.arena }}</div>{% endif %}
+                    </div>
+                </div>
+                {% endwith %}
+            {% else %}
+                {% with opp=next_game.home_team %}
+                <div class="flex items-center gap-4">
+                    {% if opp.logo_url %}<img src="{{ opp.logo_url }}" alt="" class="w-12 h-12 object-contain">{% endif %}
+                    <div class="flex-1">
+                        <div class="text-sm text-muted">@</div>
+                        <div class="font-headline font-bold italic text-lg">{{ opp.short_name }}</div>
+                        {% with opp_standing=standings_by_team|get_item:opp.id %}
+                        {% if opp_standing %}<div class="text-xs text-muted">{{ opp_standing.wins }}-{{ opp_standing.losses }}</div>{% endif %}
+                        {% endwith %}
+                    </div>
+                    <div class="text-right text-xs text-muted">
+                        <div>{{ next_game.game_date|date:"D, M j" }}</div>
+                        {% if next_game.arena %}<div class="mt-1">{{ next_game.arena }}</div>{% endif %}
+                    </div>
+                </div>
+                {% endwith %}
+            {% endif %}
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+
+<!-- Roster -->
+<div class="rounded-xl border-b-4 border-outline-variant bg-surface-container-lowest overflow-hidden mb-6">
+    <div class="px-5 py-3 border-b border-outline-variant flex items-center gap-3">
+        <span class="w-1 h-6 rounded-full bg-nba"></span>
+        <h3 class="text-xs font-semibold uppercase tracking-widest">Roster</h3>
+        <span class="text-xs text-muted">({{ roster|length }})</span>
+    </div>
+    {% if roster %}
+    <div class="overflow-x-auto">
+        <table class="w-full text-xs">
+            <thead>
+                <tr class="text-left text-muted border-b border-outline-variant">
+                    <th class="px-3 py-2 font-semibold w-10">#</th>
+                    <th class="px-3 py-2 font-semibold min-w-[160px]">Player</th>
+                    <th class="px-3 py-2 font-semibold">Pos</th>
+                    <th class="px-3 py-2 font-semibold">Ht</th>
+                    <th class="px-3 py-2 font-semibold hidden sm:table-cell">Wt</th>
+                    <th class="px-3 py-2 font-semibold hidden md:table-cell">College</th>
+                    <th class="px-3 py-2 font-semibold hidden md:table-cell">Country</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-outline-variant/50">
+                {% for player in roster %}
+                <tr class="hover:bg-surface-alt/50">
+                    <td class="px-3 py-2 font-mono text-muted">{{ player.jersey_number|default:"—" }}</td>
+                    <td class="px-3 py-2">
+                        <a href="{{ player.get_absolute_url }}" class="font-medium hover:text-primary hover:underline transition-colors">
+                            {{ player.full_name }}
+                        </a>
+                    </td>
+                    <td class="px-3 py-2">
+                        {% if player.position %}
+                            <span class="px-1.5 py-0.5 rounded bg-surface-alt font-medium">{{ player.position }}</span>
+                        {% else %}
+                            —
+                        {% endif %}
+                    </td>
+                    <td class="px-3 py-2 font-mono">{{ player.height|default:"—" }}</td>
+                    <td class="px-3 py-2 font-mono hidden sm:table-cell">{% if player.weight %}{{ player.weight }}{% else %}—{% endif %}</td>
+                    <td class="px-3 py-2 text-muted hidden md:table-cell">{{ player.college|default:"—" }}</td>
+                    <td class="px-3 py-2 text-muted hidden md:table-cell">{{ player.country|default:"—" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="p-6 text-center text-muted text-sm">
+        No active players found.
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

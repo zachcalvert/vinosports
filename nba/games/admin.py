@@ -1,6 +1,14 @@
 from django.contrib import admin
 
-from nba.games.models import Game, GameStats, Odds, PlayerBoxScore, Standing, Team
+from nba.games.models import (
+    Game,
+    GameStats,
+    Odds,
+    Player,
+    PlayerBoxScore,
+    Standing,
+    Team,
+)
 
 
 @admin.register(Team)
@@ -8,6 +16,21 @@ class TeamAdmin(admin.ModelAdmin):
     list_display = ["short_name", "abbreviation", "conference", "division"]
     list_filter = ["conference", "division"]
     search_fields = ["name", "short_name", "abbreviation"]
+
+
+@admin.register(Player)
+class PlayerAdmin(admin.ModelAdmin):
+    list_display = [
+        "full_name",
+        "position",
+        "jersey_number",
+        "team",
+        "country",
+        "draft_year",
+    ]
+    list_filter = ["position", "team__conference", "team"]
+    search_fields = ["first_name", "last_name"]
+    raw_id_fields = ["team"]
 
 
 @admin.register(Game)

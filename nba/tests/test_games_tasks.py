@@ -8,6 +8,7 @@ import pytest
 from nba.games.tasks import (
     _current_season,
     fetch_live_scores,
+    fetch_players,
     fetch_schedule,
     fetch_standings,
     fetch_teams,
@@ -67,6 +68,25 @@ class TestFetchTeams:
     def test_retries_on_failure(self, mock_sync):
         with pytest.raises(Exception, match="API down"):
             fetch_teams()
+
+
+# ---------------------------------------------------------------------------
+# fetch_players
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.django_db
+class TestFetchPlayers:
+    @patch("nba.games.tasks.sync_players", return_value=500)
+    def test_fetch_players_calls_sync(self, mock_sync):
+        result = fetch_players()
+        assert result == {"synced": 500}
+        mock_sync.assert_called_once()
+
+    @patch("nba.games.tasks.sync_players", side_effect=Exception("API down"))
+    def test_fetch_players_retries_on_error(self, mock_sync):
+        with pytest.raises(Exception, match="API down"):
+            fetch_players()
 
 
 # ---------------------------------------------------------------------------

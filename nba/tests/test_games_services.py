@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from nba.games.models import Conference, Game, GameStatus, Standing, Team
+from nba.games.models import Conference, Game, GameStatus, Player, Standing, Team
 from nba.games.services import (
     NBADataClient,
     _compute_standings_from_games,
@@ -12,6 +12,7 @@ from nba.games.services import (
     _normalize_status,
     sync_games,
     sync_live_scores,
+    sync_players,
     sync_standings,
     sync_teams,
 )
@@ -200,6 +201,164 @@ class TestNBADataClientNormalizers:
         }
         result = self.client._normalize_standing(raw)
         assert result["win_pct"] == 0.0
+
+    def test_normalize_player_extracts_fields(self):
+        raw = {
+            "id": 237,
+            "first_name": "LeBron",
+            "last_name": "James",
+            "position": "F",
+            "height": "6-9",
+            "weight": "250",
+            "jersey_number": "23",
+            "college": "None",
+            "country": "USA",
+            "draft_year": 2003,
+            "draft_round": 1,
+            "draft_number": 1,
+            "team": {"id": 14},
+        }
+        result = self.client._normalize_player(raw)
+        assert result["external_id"] == 237
+        assert result["first_name"] == "LeBron"
+        assert result["last_name"] == "James"
+        assert result["position"] == "F"
+        assert result["height"] == "6-9"
+        assert result["weight"] == 250
+        assert result["jersey_number"] == "23"
+        assert result["team_external_id"] == 14
+        assert (
+            result["headshot_url"]
+            == "https://cdn.nba.com/headshots/nba/latest/1040x760/237.png"
+        )
+
+    def test_normalize_player_handles_null_team(self):
+        raw = {
+            "id": 100,
+            "first_name": "Free",
+            "last_name": "Agent",
+            "position": "G",
+            "height": "6-0",
+            "weight": "180",
+            "jersey_number": "",
+            "college": "",
+            "country": "USA",
+            "draft_year": None,
+            "draft_round": None,
+            "draft_number": None,
+            "team": None,
+        }
+        result = self.client._normalize_player(raw)
+        assert result["team_external_id"] is None
+
+    def test_normalize_player_converts_weight_to_int(self):
+        raw = {
+            "id": 101,
+            "first_name": "A",
+            "last_name": "B",
+            "position": "",
+            "height": "",
+            "weight": "220",
+            "jersey_number": "",
+            "college": "",
+            "country": "",
+            "draft_year": None,
+            "draft_round": None,
+            "draft_number": None,
+            "team": None,
+        }
+        result = self.client._normalize_player(raw)
+        assert result["weight"] == 220
+        assert isinstance(result["weight"], int)
+
+    def test_normalize_player_handles_invalid_weight(self):
+        raw = {
+            "id": 102,
+            "first_name": "A",
+            "last_name": "B",
+            "position": "",
+            "height": "",
+            "weight": "unknown",
+            "jersey_number": "",
+            "college": "",
+            "country": "",
+            "draft_year": None,
+            "draft_round": None,
+            "draft_number": None,
+            "team": None,
+        }
+        result = self.client._normalize_player(raw)
+        assert result["weight"] is None
+
+
+@pytest.mark.django_db
+class TestSyncPlayers:
+    def _make_mock_client(self, players):
+        mock_client = MagicMock()
+        mock_client.__enter__ = MagicMock(return_value=mock_client)
+        mock_client.__exit__ = MagicMock(return_value=False)
+        mock_client.get_players.return_value = players
+        return mock_client
+
+    def _player_data(self, external_id=237, team_external_id=None, **overrides):
+        data = {
+            "external_id": external_id,
+            "first_name": "LeBron",
+            "last_name": "James",
+            "position": "F",
+            "height": "6-9",
+            "weight": 250,
+            "jersey_number": "23",
+            "college": "None",
+            "country": "USA",
+            "draft_year": 2003,
+            "draft_round": 1,
+            "draft_number": 1,
+            "team_external_id": team_external_id,
+            "headshot_url": f"https://cdn.nba.com/headshots/nba/latest/1040x760/{external_id}.png",
+        }
+        data.update(overrides)
+        return data
+
+    def test_sync_players_creates_records(self):
+        client = self._make_mock_client([self._player_data(external_id=1001)])
+        count = sync_players(client=client)
+        assert count == 1
+        assert Player.objects.filter(external_id=1001).exists()
+
+    def test_sync_players_upserts_on_repeat(self):
+        data = [self._player_data(external_id=2001)]
+        client1 = self._make_mock_client(data)
+        client2 = self._make_mock_client(data)
+        sync_players(client=client1)
+        sync_players(client=client2)
+        assert Player.objects.filter(external_id=2001).count() == 1
+
+    def test_sync_players_sets_team_fk(self):
+        team = TeamFactory(external_id=14)
+        client = self._make_mock_client(
+            [self._player_data(external_id=3001, team_external_id=14)]
+        )
+        sync_players(client=client)
+        player = Player.objects.get(external_id=3001)
+        assert player.team == team
+
+    def test_sync_players_handles_free_agent(self):
+        client = self._make_mock_client(
+            [self._player_data(external_id=4001, team_external_id=None)]
+        )
+        sync_players(client=client)
+        player = Player.objects.get(external_id=4001)
+        assert player.team is None
+
+    def test_sync_players_builds_headshot_url(self):
+        client = self._make_mock_client([self._player_data(external_id=5001)])
+        sync_players(client=client)
+        player = Player.objects.get(external_id=5001)
+        assert (
+            player.headshot_url
+            == "https://cdn.nba.com/headshots/nba/latest/1040x760/5001.png"
+        )
 
 
 @pytest.mark.django_db

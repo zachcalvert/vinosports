@@ -6,6 +6,7 @@ Status strings from the API are normalized to GameStatus choices here.
 """
 
 import logging
+import time
 import zoneinfo
 from datetime import date, datetime
 from typing import Any
@@ -17,6 +18,7 @@ from nba.games.models import (
     Conference,
     Game,
     GameStatus,
+    Player,
     PlayerBoxScore,
     Standing,
     Team,
@@ -77,18 +79,41 @@ class NBADataClient:
         return response.json()
 
     def _get_all(self, path: str, params: dict | None = None) -> list[dict]:
-        """Paginate through all results for a list endpoint."""
+        """Paginate through all results for a list endpoint.
+
+        Retries with exponential backoff on 429 Too Many Requests.
+        """
         params = dict(params or {})
         params["per_page"] = 100
         results = []
         while True:
-            data = self._get(path, params=params)
+            data = self._get_with_retry(path, params=params)
             results.extend(data.get("data", []))
             cursor = data.get("meta", {}).get("next_cursor")
             if not cursor:
                 break
             params["cursor"] = cursor
         return results
+
+    def _get_with_retry(
+        self, path: str, params: dict | None = None, max_retries: int = 5
+    ) -> Any:
+        """GET with retry on 429 (rate limit) responses."""
+        for attempt in range(max_retries + 1):
+            try:
+                return self._get(path, params=params)
+            except httpx.HTTPStatusError as exc:
+                if exc.response.status_code != 429 or attempt == max_retries:
+                    raise
+                wait = 2**attempt  # 1, 2, 4, 8, 16 seconds
+                logger.info(
+                    "Rate limited on %s, retrying in %ds (attempt %d/%d)",
+                    path,
+                    wait,
+                    attempt + 1,
+                    max_retries,
+                )
+                time.sleep(wait)
 
     # --- Public data methods ---
 
@@ -117,6 +142,33 @@ class NBADataClient:
         data = self._get("/standings", params={"season": season})
         raw = data.get("data", []) if isinstance(data, dict) else data
         return [self._normalize_standing(s) for s in raw]
+
+    def get_players(
+        self,
+        page_delay: float = 0,
+        on_page=None,
+    ) -> list[dict]:
+        """Return all players (active + historical), normalized.
+
+        Args:
+            page_delay: Seconds to sleep between paginated requests.
+                        Use 1-2s for bulk backfills to avoid 429s.
+            on_page: Optional callback(total_fetched) called after each page.
+        """
+        params: dict[str, Any] = {"per_page": 100}
+        raw: list[dict] = []
+        while True:
+            data = self._get_with_retry("/players", params=params)
+            raw.extend(data.get("data", []))
+            if on_page:
+                on_page(len(raw))
+            cursor = data.get("meta", {}).get("next_cursor")
+            if not cursor:
+                break
+            params["cursor"] = cursor
+            if page_delay:
+                time.sleep(page_delay)
+        return [self._normalize_player(p) for p in raw]
 
     def get_game_stats(self, game_external_id: int) -> list[dict]:
         """Return per-player stats for a single game (box score lines)."""
@@ -211,6 +263,33 @@ class NBADataClient:
             "conference_rank": s.get("conference_rank"),
         }
 
+    def _normalize_player(self, p: dict) -> dict:
+        team = p.get("team")
+        weight_raw = p.get("weight") or ""
+        try:
+            weight = int(weight_raw) if weight_raw else None
+        except ValueError:
+            weight = None
+        external_id = p["id"]
+        return {
+            "external_id": external_id,
+            "first_name": p.get("first_name", ""),
+            "last_name": p.get("last_name", ""),
+            "position": p.get("position") or "",
+            "height": p.get("height") or "",
+            "weight": weight,
+            "jersey_number": p.get("jersey_number") or "",
+            "college": p.get("college") or "",
+            "country": p.get("country") or "",
+            "draft_year": p.get("draft_year"),
+            "draft_round": p.get("draft_round"),
+            "draft_number": p.get("draft_number"),
+            "team_external_id": team["id"] if team else None,
+            "headshot_url": (
+                f"https://cdn.nba.com/headshots/nba/latest/1040x760/{external_id}.png"
+            ),
+        }
+
     def _normalize_player_stat(self, s: dict) -> dict:
         player = s.get("player", {})
         team = s.get("team", {})
@@ -265,6 +344,63 @@ def sync_teams(client: NBADataClient | None = None) -> int:
         )
         count += 1
     logger.info("sync_teams: synced %d teams", count)
+    return count
+
+
+def sync_players(
+    client: NBADataClient | None = None,
+    page_delay: float = 0,
+    on_page=None,
+) -> int:
+    """Upsert all players from BDL. Returns count of players synced."""
+    with client or NBADataClient() as c:
+        players = c.get_players(page_delay=page_delay, on_page=on_page)
+
+    # Build team lookup once
+    team_ext_ids = {p["team_external_id"] for p in players if p["team_external_id"]}
+    teams_by_ext = {
+        t.external_id: t for t in Team.objects.filter(external_id__in=team_ext_ids)
+    }
+
+    count = 0
+    for p in players:
+        fields = dict(p)  # copy to avoid mutating input
+        team_ext_id = fields.pop("team_external_id")
+        fields["team"] = teams_by_ext.get(team_ext_id)
+        Player.objects.update_or_create(
+            external_id=fields.pop("external_id"),
+            defaults=fields,
+        )
+        count += 1
+
+    logger.info("sync_players: synced %d players", count)
+    return count
+
+
+def refresh_active_players(season: int | None = None) -> int:
+    """Mark players as active/inactive based on current-season box scores.
+
+    A player is active if they have at least one box score in the given season.
+    Returns count of players marked active.
+    """
+    if season is None:
+        from nba.games.tasks import _current_season
+
+        season = _current_season()
+
+    active_ext_ids = set(
+        PlayerBoxScore.objects.filter(game__season=season)
+        .values_list("player_external_id", flat=True)
+        .distinct()
+    )
+
+    # Deactivate all, then activate those with box scores
+    Player.objects.filter(is_active=True).exclude(
+        external_id__in=active_ext_ids
+    ).update(is_active=False)
+
+    count = Player.objects.filter(external_id__in=active_ext_ids).update(is_active=True)
+    logger.info("refresh_active_players: %d active (season=%s)", count, season)
     return count
 
 
@@ -501,6 +637,23 @@ def sync_box_score(game: Game, client: NBADataClient | None = None) -> int:
             defaults=s,
         )
         count += 1
+
+    # Bulk-resolve Player FKs from external IDs
+    ext_ids = [s["player_external_id"] for s in stats]
+    players_by_ext = {
+        p.external_id: p for p in Player.objects.filter(external_id__in=ext_ids)
+    }
+    for s in stats:
+        ext_id = s["player_external_id"]
+        if ext_id in players_by_ext:
+            PlayerBoxScore.objects.filter(game=game, player_external_id=ext_id).update(
+                player=players_by_ext[ext_id]
+            )
+
+    # Mark these players as active (they appeared in a game)
+    Player.objects.filter(external_id__in=ext_ids, is_active=False).update(
+        is_active=True
+    )
 
     logger.info("sync_box_score: synced %d player stats for game %s", count, game)
     return count

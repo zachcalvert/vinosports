@@ -1,0 +1,81 @@
+{% extends "nba_website/base.html" %}
+{% block title %}NBA Rosters{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <h1 class="font-headline italic font-black text-4xl sm:text-5xl uppercase tracking-tight leading-none">
+        NBA Rosters
+    </h1>
+    <div class="flex items-center gap-2 mt-3">
+        <span class="w-1 h-5 rounded-full bg-primary"></span>
+        <p class="text-muted text-sm uppercase tracking-wider font-medium">Current Season Players</p>
+    </div>
+</div>
+
+<!-- Filters -->
+<form method="get" class="flex flex-wrap items-center gap-3 mb-6">
+    <select name="team" class="px-3 py-2 rounded-lg border border-outline-variant bg-surface text-sm">
+        <option value="">All Teams</option>
+        {% for team in teams %}
+            <option value="{{ team.abbreviation }}" {% if selected_team == team.abbreviation %}selected{% endif %}>
+                {{ team.short_name }}
+            </option>
+        {% endfor %}
+    </select>
+    <select name="position" class="px-3 py-2 rounded-lg border border-outline-variant bg-surface text-sm">
+        <option value="">All Positions</option>
+        <option value="G" {% if selected_position == "G" %}selected{% endif %}>Guard (G)</option>
+        <option value="F" {% if selected_position == "F" %}selected{% endif %}>Forward (F)</option>
+        <option value="C" {% if selected_position == "C" %}selected{% endif %}>Center (C)</option>
+    </select>
+    <button type="submit" class="px-5 py-2 rounded-full bg-primary text-on-primary text-sm font-semibold">
+        Filter
+    </button>
+    {% if selected_team or selected_position %}
+        <a href="{% url 'nba_games:player_list' %}" class="text-sm text-muted hover:text-foreground">Clear</a>
+    {% endif %}
+</form>
+
+<!-- Player grid -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+    {% for player in players %}
+    <a href="{{ player.get_absolute_url }}"
+       class="group rounded-xl border border-outline-variant bg-surface-container-lowest hover:border-primary/40 transition-colors p-4 flex items-center gap-4">
+        {% if player.headshot_url %}
+            <img src="{{ player.headshot_url }}"
+                 alt="{{ player.full_name }}"
+                 class="w-16 h-12 object-cover object-top rounded-lg bg-surface-alt"
+                 loading="lazy"
+                 onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+            <div class="w-16 h-12 rounded-lg bg-surface-alt items-center justify-center text-lg font-bold text-muted hidden">
+                {{ player.first_name.0 }}{{ player.last_name.0 }}
+            </div>
+        {% else %}
+            <div class="w-16 h-12 rounded-lg bg-surface-alt flex items-center justify-center text-lg font-bold text-muted">
+                {{ player.first_name.0 }}{{ player.last_name.0 }}
+            </div>
+        {% endif %}
+        <div class="flex-1 min-w-0">
+            <div class="font-semibold text-sm group-hover:text-primary transition-colors truncate">
+                {{ player.full_name }}
+            </div>
+            <div class="flex items-center gap-2 mt-1 text-xs text-muted">
+                {% if player.position %}
+                    <span class="px-1.5 py-0.5 rounded bg-surface-alt font-medium">{{ player.position }}</span>
+                {% endif %}
+                {% if player.jersey_number %}
+                    <span>#{{ player.jersey_number }}</span>
+                {% endif %}
+            </div>
+            {% if player.team %}
+                <a href="{{ player.team.get_absolute_url }}" class="text-xs text-muted mt-1 truncate hover:underline block">{{ player.team.short_name }}</a>
+            {% endif %}
+        </div>
+    </a>
+    {% empty %}
+    <div class="col-span-full text-center py-12 text-muted">
+        No players found matching your filters.
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
