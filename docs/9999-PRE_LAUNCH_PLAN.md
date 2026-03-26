@@ -87,10 +87,19 @@ Also found and fixed a **production bug**: EPL settlement code referenced nonexi
 
 See `docs/0027-TEST_INFRASTRUCTURE.md` for full details.
 
-### 4b. Squash Migrations
+### 4b–4d → Moved to Phase 5
+Squash migrations, CI, and Fly.io moved to Phase 5 — more models expected before we lock down the schema.
+
+---
+
+## Phase 5: Deploy Prep
+
+Everything here depends on the schema being finalized. No more model changes after this phase starts.
+
+### 5a. Squash Migrations
 Both EPL and NBA apps have accumulated dev migrations, plus the new migrations from Phase 2. Squash them all down to clean initial migrations before the first deploy creates a production database. This is the last step before infra — no more schema changes after this.
 
-### 4c. CI Workflows
+### 5b. CI Workflows
 Define and implement the CI pipeline. Decisions needed:
 - **Trigger**: on push to `main`? On PR? Both?
 - **Steps**: lint (ruff), test (pytest across core/epl/nba), build Docker images
@@ -98,7 +107,7 @@ Define and implement the CI pipeline. Decisions needed:
 - **Secrets**: `BDL_API_KEY`, `ANTHROPIC_API_KEY`, `DATABASE_URL`, `REDIS_URL` — managed via Fly secrets
 - **DB migrations**: run as a Fly release command on deploy
 
-### 4d. Fly.io Configuration
+### 5c. Fly.io Configuration
 Set up the single Fly app with multiple processes:
 - `fly.toml` with `[processes]` for hub-web, epl-web, nba-web, epl-worker, epl-beat, nba-worker, nba-beat
 - Reverse proxy (nginx or Caddy) as the entrypoint to route subpaths to the right process
