@@ -796,9 +796,11 @@ class TestBroadcastScoreUpdates:
         mock_send = MagicMock()
         mock_channel_layer = MagicMock()
 
-        with patch("channels.layers.get_channel_layer", return_value=mock_channel_layer), \
-             patch("asgiref.sync.async_to_sync", return_value=mock_send), \
-             patch("nba.games.services.sync_box_score"):
+        with (
+            patch("channels.layers.get_channel_layer", return_value=mock_channel_layer),
+            patch("asgiref.sync.async_to_sync", return_value=mock_send),
+            patch("nba.games.services.sync_box_score"),
+        ):
             _broadcast_score_updates([game.pk])
 
         assert ActivityEvent.objects.filter(
@@ -812,8 +814,10 @@ class TestBroadcastScoreUpdates:
         mock_send = MagicMock()
         mock_channel_layer = MagicMock()
 
-        with patch("channels.layers.get_channel_layer", return_value=mock_channel_layer), \
-             patch("asgiref.sync.async_to_sync", return_value=mock_send):
+        with (
+            patch("channels.layers.get_channel_layer", return_value=mock_channel_layer),
+            patch("asgiref.sync.async_to_sync", return_value=mock_send),
+        ):
             _broadcast_score_updates([999999])
 
         assert not ActivityEvent.objects.filter(
@@ -829,9 +833,11 @@ class TestBroadcastScoreUpdates:
         mock_send = MagicMock()
         mock_channel_layer = MagicMock()
 
-        with patch("channels.layers.get_channel_layer", return_value=mock_channel_layer), \
-             patch("asgiref.sync.async_to_sync", return_value=mock_send), \
-             patch("nba.games.services.sync_box_score", side_effect=Exception("API error")):
+        with (
+            patch("channels.layers.get_channel_layer", return_value=mock_channel_layer),
+            patch("asgiref.sync.async_to_sync", return_value=mock_send),
+            patch("nba.games.services.sync_box_score", side_effect=Exception("API error")),
+        ):
             _broadcast_score_updates([game.pk])
 
         # Should still create activity event even if box score sync fails

@@ -146,7 +146,9 @@ class TestDismissRewardView:
             description="Another reward",
         )
         distribution = RewardDistribution.objects.create(
-            reward=reward, user=user, seen=False
+            reward=reward,
+            user=user,
+            seen=False,
         )
         response = c.post(f"/nba/rewards/{distribution.pk}/dismiss/")
         assert response.content == b""
