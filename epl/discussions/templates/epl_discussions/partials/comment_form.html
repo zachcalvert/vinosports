@@ -1,8 +1,8 @@
 <form id="comment-form"
       hx-post="{% url 'epl_discussions:create_comment' match.slug %}"
       hx-target="#comment-list"
-      hx-swap="beforeend"
-      hx-on::after-request="if(event.detail.successful) this.reset()"
+      hx-swap="afterbegin"
+      hx-on::after-request="if(event.detail.successful){this.reset();var empty=document.getElementById('no-comments');if(empty)empty.remove()}"
       hx-disabled-elt="find button[type='submit']">
     {% csrf_token %}
     {{ form.body }}
