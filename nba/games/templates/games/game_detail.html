@@ -76,22 +76,13 @@
             </div>
             <div class="px-5 py-4">
                 {% if user.is_authenticated %}
-                <form method="post" action="{% url 'nba_games:game_detail' game.id_hash %}" class="mb-6">
-                    {% csrf_token %}
-                    <div class="flex gap-3">
-                        <div class="flex-1">
-                            {{ comment_form.body }}
-                        </div>
-                        <button type="submit"
-                                class="self-end bg-primary text-dark font-bold py-2 px-4 rounded-md hover:bg-primary/90 transition-colors text-sm">
-                            Post
-                        </button>
-                    </div>
-                </form>
+                {% with form=comment_form %}
+                    {% include "nba_discussions/partials/comment_form.html" %}
+                {% endwith %}
                 {% endif %}
 
+                <div id="comment-list" class="space-y-4">
                 {% if comments %}
-                <div class="space-y-4">
                     {% for comment in comments %}
                     <div class="flex gap-3">
                         <div class="w-8 h-8 rounded-full bg-accent-light flex items-center justify-center text-xs font-bold text-accent shrink-0">
@@ -127,10 +118,10 @@
                         </div>
                     </div>
                     {% endfor %}
-                </div>
                 {% else %}
                 <p class="text-sm text-muted text-center py-6">No comments yet. Be the first to weigh in.</p>
                 {% endif %}
+                </div>
             </div>
         </div>
     </div>
