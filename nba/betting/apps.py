@@ -9,3 +9,7 @@ class NbaBettingConfig(AppConfig):
 
     def ready(self):
         import nba.betting.signals  # noqa: F401
+        from nba.betting.parlay_adapter import NBAParlayAdapter
+        from vinosports.betting.parlay_builder import register_adapter
+
+        register_adapter("nba", NBAParlayAdapter)

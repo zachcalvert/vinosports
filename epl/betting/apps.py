@@ -9,3 +9,7 @@ class EplBettingConfig(AppConfig):
 
     def ready(self):
         import epl.betting.signals  # noqa: F401
+        from epl.betting.parlay_adapter import EPLParlayAdapter
+        from vinosports.betting.parlay_builder import register_adapter
+
+        register_adapter("epl", EPLParlayAdapter)

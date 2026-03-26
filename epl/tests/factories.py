@@ -50,7 +50,7 @@ class TeamFactory(factory.django.DjangoModelFactory):
     external_id = factory.Sequence(lambda n: 60 + n)
     name = factory.Sequence(lambda n: f"Team {n}")
     short_name = factory.Sequence(lambda n: f"Team{n}")
-    tla = factory.Sequence(lambda n: f"T{n:02d}")
+    tla = factory.Sequence(lambda n: f"{n:03X}"[:3])
 
 
 class MatchFactory(factory.django.DjangoModelFactory):
