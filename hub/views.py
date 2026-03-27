@@ -1,11 +1,14 @@
 import logging
+from datetime import timedelta
 from decimal import Decimal
 
 from django.contrib.auth import authenticate, get_user_model, login, logout
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.db import transaction
 from django.db.models import Sum
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 from django.views import View
 from django.views.generic import TemplateView
 
@@ -25,7 +28,13 @@ from vinosports.betting.models import (
 )
 from vinosports.bots.models import BotProfile
 
-from .forms import CurrencyForm, DisplayNameForm, LoginForm, SignupForm
+from .forms import (
+    CurrencyForm,
+    DisplayNameForm,
+    LoginForm,
+    ProfileImageForm,
+    SignupForm,
+)
 from .models import SiteSettings
 from .promo import evaluate_promo_code
 
@@ -215,8 +224,10 @@ def _account_context(
     user,
     display_name_form=None,
     currency_form=None,
+    profile_image_form=None,
     save_success=False,
     currency_save_success=False,
+    image_save_success=False,
 ):
     try:
         balance = user.balance.balance
@@ -225,13 +236,34 @@ def _account_context(
 
     masked_email = user.email.split("@")[0][:3] + "***@" + user.email.split("@")[1]
 
+    # Stats
+    try:
+        stats = user.stats
+    except UserStats.DoesNotExist:
+        stats = None
+
+    # Badge grid — all badges with earned date (or None if locked)
+    earned_map = {
+        ub.badge_id: ub.earned_at
+        for ub in UserBadge.objects.filter(user=user).select_related("badge")
+    }
+    all_badges = []
+    for badge in Badge.objects.all():
+        badge.earned = earned_map.get(badge.pk)
+        all_badges.append(badge)
+
     return {
         "display_name_form": display_name_form or DisplayNameForm(instance=user),
         "currency_form": currency_form or CurrencyForm(instance=user),
+        "profile_image_form": profile_image_form or ProfileImageForm(instance=user),
         "balance": balance,
         "account_masked_email": masked_email,
         "save_success": save_success,
         "currency_save_success": currency_save_success,
+        "image_save_success": image_save_success,
+        "stats": stats,
+        "user_rank": get_user_rank(user),
+        "all_badges": all_badges,
     }
 
 
@@ -273,6 +305,59 @@ class CurrencyUpdateView(LoginRequiredMixin, View):
                 ),
             )
         return redirect("hub:account")
+
+
+class ProfileImageUploadView(LoginRequiredMixin, View):
+    def post(self, request):
+        form = ProfileImageForm(request.POST, request.FILES, instance=request.user)
+        if form.is_valid():
+            form.save()
+            return render(
+                request,
+                "hub/account.html",
+                _account_context(
+                    request.user,
+                    profile_image_form=ProfileImageForm(instance=request.user),
+                    image_save_success=True,
+                ),
+            )
+        return render(
+            request,
+            "hub/account.html",
+            _account_context(request.user, profile_image_form=form),
+        )
+
+
+class BalanceHistoryAPI(LoginRequiredMixin, View):
+    """Return daily balance history (last 10 days) as JSON for chart rendering."""
+
+    WINDOW_DAYS = 10
+
+    def get(self, request, slug):
+        if request.user.slug != slug:
+            return JsonResponse({"error": "Forbidden"}, status=403)
+
+        all_txns = list(
+            BalanceTransaction.objects.filter(user=request.user)
+            .order_by("created_at")
+            .values_list("created_at", "balance_after")
+        )
+
+        if not all_txns:
+            return JsonResponse({"data": []})
+
+        today = timezone.now().date()
+        data = []
+        for i in range(self.WINDOW_DAYS - 1, -1, -1):
+            day = today - timedelta(days=i)
+            day_balance = next(
+                (bal for ts, bal in reversed(all_txns) if ts.date() <= day),
+                None,
+            )
+            if day_balance is not None:
+                data.append({"t": day.isoformat(), "y": float(day_balance)})
+
+        return JsonResponse({"data": data})
 
 
 # ---------------------------------------------------------------------------
