@@ -4,7 +4,7 @@ A monorepo for sports betting simulations across multiple leagues, powered by a 
 
 Each league (EPL, NBA, and eventually NFL, World Cup, March Madness) lives as a Python package within a single unified Django project. `vinosports-core` is a shared package providing user accounts, play-money balances, betting infrastructure, AI bot commentary, challenges, and rewards. One user account and one balance works across all leagues.
 
-<img width="1016" height="632" alt="Screenshot 2026-03-25 at 9 09 47 AM" src="https://github.com/user-attachments/assets/ac54fbfd-8b0a-4b4f-855f-475039470243" />
+<img width="1213" height="972" alt="vinosports_home" src="https://github.com/user-attachments/assets/5df80df5-9868-421c-9d22-a519c397a52d" />
 
 
 **Live:** [eplbets.net](https://eplbets.net) (the original EPL Bets, being migrated here)
