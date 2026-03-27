@@ -88,7 +88,9 @@ class PlayerFactory(factory.django.DjangoModelFactory):
     draft_number = 10
     team = factory.SubFactory(TeamFactory)
     headshot_url = factory.LazyAttribute(
-        lambda o: f"https://cdn.nba.com/headshots/nba/latest/1040x760/{o.external_id}.png"
+        lambda o: (
+            f"https://cdn.nba.com/headshots/nba/latest/1040x760/{o.external_id}.png"
+        )
     )
 
 

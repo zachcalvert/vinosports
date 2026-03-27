@@ -272,7 +272,7 @@ class TestSyncOdds:
     def test_applies_team_alias_resolution(self):
         home = TeamFactory(short_name="Los Angeles Clippers")
         away = TeamFactory(short_name="Miami Heat")
-        game = GameFactory(home_team=home, away_team=away, status="SCHEDULED")
+        GameFactory(home_team=home, away_team=away, status="SCHEDULED")
 
         raw_games = [
             {
@@ -291,8 +291,8 @@ class TestSyncOdds:
         assert count == 1
 
     def test_skips_game_with_no_matching_db_game(self):
-        home = TeamFactory(short_name="Chicago Bulls")
-        away = TeamFactory(short_name="Detroit Pistons")
+        TeamFactory(short_name="Chicago Bulls")
+        TeamFactory(short_name="Detroit Pistons")
         # No Game object created in DB
 
         raw_games = [
@@ -338,7 +338,7 @@ class TestOddsClientInit:
         with patch("nba.betting.services.httpx.Client") as mock_client_cls:
             mock_instance = MagicMock()
             mock_client_cls.return_value = mock_instance
-            client = OddsClient(api_key="key")
+            OddsClient(api_key="key")
         mock_client_cls.assert_called_once()
         call_kwargs = mock_client_cls.call_args[1]
         assert "base_url" in call_kwargs or mock_client_cls.call_args[0]

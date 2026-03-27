@@ -4,7 +4,6 @@ import pytest
 from django.test import Client
 
 from nba.tests.factories import UserFactory
-from vinosports.challenges.models import Challenge, UserChallenge
 from vinosports.rewards.models import RewardDistribution
 
 

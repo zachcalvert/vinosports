@@ -218,7 +218,12 @@ class TestStandingsViewAdditional:
 
         for i in range(9):
             team = TeamFactory(conference=Conference.WEST)
-            StandingFactory(team=team, season=season, conference=Conference.WEST, conference_rank=i + 1)
+            StandingFactory(
+                team=team,
+                season=season,
+                conference=Conference.WEST,
+                conference_rank=i + 1,
+            )
 
         response = c.get("/nba/games/standings/?tab=west")
         assert response.status_code == 200
