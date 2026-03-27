@@ -1,6 +1,6 @@
 """Additional tests for hub.views — coverage for uncovered views and edge cases.
 
-Complements test_views.py; does NOT duplicate tests already there.
+Complements test_views.py; does NOT duplicate tests there.
 """
 
 from decimal import Decimal
@@ -429,9 +429,7 @@ class TestHubBalanceHistoryAPI:
 
     def test_forbidden_for_other_user_slug(self, authed_client, user):
         other = UserFactory()
-        resp = authed_client.get(
-            reverse("hub:balance_history_api", args=[other.slug])
-        )
+        resp = authed_client.get(reverse("hub:balance_history_api", args=[other.slug]))
         assert resp.status_code == 403
 
     def test_returns_data_with_transactions(self, authed_client, user):
