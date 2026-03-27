@@ -6,8 +6,7 @@ Order:
   1. seed_epl              — teams, fixtures, standings, odds (external APIs)
   2. seed_challenge_templates — ChallengeTemplate rows
   3. seed_badges            — Badge rows
-  4. seed_bots              — bot user accounts
-  5. backfill_stats         — UserStats from existing bet history
+  4. seed_rewards           — Reward and RewardRule rows
 """
 
 from django.core.management import call_command
@@ -59,3 +58,7 @@ class Command(BaseCommand):
         # 3. Badges
         section("seed_badges")
         call_command("seed_badges", verbosity=verbosity)
+
+        # 4. Rewards
+        section("seed_rewards")
+        call_command("seed_rewards", verbosity=verbosity)
