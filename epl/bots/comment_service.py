@@ -138,6 +138,16 @@ FOOTBALL_KEYWORDS = {
 }
 
 
+def _trim_to_last_sentence(text):
+    """Trim text to the last sentence-ending punctuation mark."""
+    # Find the last sentence-ending punctuation
+    for i in range(len(text) - 1, -1, -1):
+        if text[i] in ".!?":
+            return text[: i + 1]
+    # No sentence-ending punctuation found — return as-is
+    return text
+
+
 def _get_bot_profile(bot_user):
     """Return the BotProfile for a bot user, or None."""
     try:
@@ -218,12 +228,18 @@ def generate_bot_comment(
         client = anthropic.Anthropic(api_key=api_key)
         response = client.messages.create(
             model="claude-sonnet-4-20250514",
-            max_tokens=100,
+            max_tokens=150,
             temperature=0.9,
             system=system_prompt,
             messages=[{"role": "user", "content": user_prompt}],
         )
         raw_text = response.content[0].text.strip()
+
+        # If the model hit the token limit mid-sentence, trim to the last
+        # complete sentence so comments don't end abruptly.
+        if response.stop_reason == "max_tokens":
+            raw_text = _trim_to_last_sentence(raw_text)
+
     except Exception:
         logger.exception("Claude API call failed for bot %s", bot_user.display_name)
         bc.error = "API call failed"
@@ -540,8 +556,8 @@ def _build_user_prompt(match, trigger_type, bet_slip=None, parent_comment=None):
         lines.append(f'"{quoted}"')
         lines.append("")
         lines.append(
-            "Write a short reply to this comment. Agree, disagree, or dunk "
-            "on it — stay in character."
+            "Write a short reply (1-2 sentences max) to this comment. "
+            "Agree, disagree, or dunk on it — stay in character."
         )
 
     elif trigger_type == BotComment.TriggerType.POST_BET and bet_slip:
@@ -552,7 +568,7 @@ def _build_user_prompt(match, trigger_type, bet_slip=None, parent_comment=None):
         )
         lines.append("")
         lines.append(
-            "Write a comment reacting to the bet you just placed on this match."
+            "Write a short comment (1-2 sentences max) reacting to the bet you just placed on this match."
         )
 
     elif trigger_type == BotComment.TriggerType.POST_MATCH:
@@ -568,7 +584,9 @@ def _build_user_prompt(match, trigger_type, bet_slip=None, parent_comment=None):
             if won and bet_slip.payout:
                 lines.append(f"Payout: {bet_slip.payout} credits")
         lines.append("")
-        lines.append("Write a comment reacting to the final result of this match.")
+        lines.append(
+            "Write a short comment (1-2 sentences max) reacting to the final result of this match."
+        )
 
     elif trigger_type == BotComment.TriggerType.PRE_MATCH:
         if bet_slip:
@@ -578,12 +596,14 @@ def _build_user_prompt(match, trigger_type, bet_slip=None, parent_comment=None):
             )
             lines.append("")
             lines.append(
-                "Write a pre-match comment hyping or defending your pick. "
+                "Write a short pre-match comment (1-2 sentences max) hyping or defending your pick. "
                 "Reference your actual bet — brag, justify, or tempt fate."
             )
         else:
             lines.append("")
-            lines.append("Write a pre-match hype comment about this upcoming match.")
+            lines.append(
+                "Write a short pre-match hype comment (1-2 sentences max) about this upcoming match."
+            )
 
     return "\n".join(lines)
 

@@ -31,7 +31,22 @@ def _generate_comment_body(persona_prompt: str, context: str) -> str:
         system=persona_prompt or "You are a passionate NBA betting fan.",
         messages=[{"role": "user", "content": context}],
     )
-    return message.content[0].text.strip()
+    text = message.content[0].text.strip()
+
+    # If the model hit the token limit mid-sentence, trim to the last
+    # complete sentence so comments don't end abruptly.
+    if message.stop_reason == "max_tokens":
+        text = _trim_to_last_sentence(text)
+
+    return text
+
+
+def _trim_to_last_sentence(text):
+    """Trim text to the last sentence-ending punctuation mark."""
+    for i in range(len(text) - 1, -1, -1):
+        if text[i] in ".!?":
+            return text[: i + 1]
+    return text
 
 
 @shared_task
