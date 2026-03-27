@@ -8,6 +8,7 @@ Order:
   3. seed_badges            — Badge rows
   4. seed_bots              — bot user accounts
   5. backfill_stats         — UserStats from existing bet history
+  6. seed_challenges        — active Challenge instances (daily + weekly)
 """
 
 from django.core.management import call_command
@@ -59,3 +60,8 @@ class Command(BaseCommand):
         # 3. Badges
         section("seed_badges")
         call_command("seed_badges", verbosity=verbosity)
+
+        # 6. Active challenge instances (daily + weekly for both EPL and NBA;
+        #    skipped per-league if no templates exist yet)
+        section("seed_challenges")
+        call_command("seed_challenges", verbosity=verbosity)
