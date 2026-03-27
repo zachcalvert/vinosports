@@ -1,5 +1,3 @@
-"""Tests for website/management/commands/seed_challenges.py."""
-
 from datetime import timedelta
 
 import pytest
@@ -32,10 +30,14 @@ class TestSeedChallengesCommand:
 
         call_command("seed_challenges")
 
-        count = Challenge.objects.filter(
-            status=Challenge.Status.ACTIVE,
-            template__challenge_type=ChallengeTemplate.ChallengeType.DAILY,
-        ).exclude(template__slug__startswith="nba-").count()
+        count = (
+            Challenge.objects.filter(
+                status=Challenge.Status.ACTIVE,
+                template__challenge_type=ChallengeTemplate.ChallengeType.DAILY,
+            )
+            .exclude(template__slug__startswith="nba-")
+            .count()
+        )
         assert count == 3
 
     def test_creates_daily_challenges_for_nba(self):
@@ -57,10 +59,14 @@ class TestSeedChallengesCommand:
 
         call_command("seed_challenges")
 
-        count = Challenge.objects.filter(
-            status=Challenge.Status.ACTIVE,
-            template__challenge_type=ChallengeTemplate.ChallengeType.WEEKLY,
-        ).exclude(template__slug__startswith="nba-").count()
+        count = (
+            Challenge.objects.filter(
+                status=Challenge.Status.ACTIVE,
+                template__challenge_type=ChallengeTemplate.ChallengeType.WEEKLY,
+            )
+            .exclude(template__slug__startswith="nba-")
+            .count()
+        )
         assert count == 2
 
     def test_creates_weekly_challenges_for_nba(self):
@@ -90,10 +96,14 @@ class TestSeedChallengesCommand:
         call_command("seed_challenges")
 
         # Should still be exactly 1 (not duplicated)
-        count = Challenge.objects.filter(
-            status=Challenge.Status.ACTIVE,
-            template__challenge_type=ChallengeTemplate.ChallengeType.DAILY,
-        ).exclude(template__slug__startswith="nba-").count()
+        count = (
+            Challenge.objects.filter(
+                status=Challenge.Status.ACTIVE,
+                template__challenge_type=ChallengeTemplate.ChallengeType.DAILY,
+            )
+            .exclude(template__slug__startswith="nba-")
+            .count()
+        )
         assert count == 1
 
     def test_skips_nba_weekly_when_already_active(self):
@@ -129,10 +139,14 @@ class TestSeedChallengesCommand:
 
         call_command("seed_challenges")
 
-        epl_count = Challenge.objects.filter(
-            status=Challenge.Status.ACTIVE,
-            template__challenge_type=ChallengeTemplate.ChallengeType.DAILY,
-        ).exclude(template__slug__startswith="nba-").count()
+        epl_count = (
+            Challenge.objects.filter(
+                status=Challenge.Status.ACTIVE,
+                template__challenge_type=ChallengeTemplate.ChallengeType.DAILY,
+            )
+            .exclude(template__slug__startswith="nba-")
+            .count()
+        )
         nba_count = Challenge.objects.filter(
             status=Challenge.Status.ACTIVE,
             template__challenge_type=ChallengeTemplate.ChallengeType.DAILY,
@@ -154,7 +168,9 @@ class TestSeedChallengesCommand:
         for i in range(5):
             _make_template(ChallengeTemplate.ChallengeType.DAILY, f"daily-epl-idem-{i}")
         for i in range(5):
-            _make_template(ChallengeTemplate.ChallengeType.WEEKLY, f"weekly-epl-idem-{i}")
+            _make_template(
+                ChallengeTemplate.ChallengeType.WEEKLY, f"weekly-epl-idem-{i}"
+            )
 
         call_command("seed_challenges")
         first_run_count = Challenge.objects.count()
