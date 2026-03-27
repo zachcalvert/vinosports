@@ -208,7 +208,8 @@ class TestGenerateBotCommentTask:
         assert result == "match not found"
 
     @patch("epl.bots.comment_service.anthropic.Anthropic")
-    def test_successful_comment(self, MockAnthropic):
+    def test_successful_comment(self, MockAnthropic, settings):
+        settings.ANTHROPIC_API_KEY = "test-key"
         match = MatchFactory()
         OddsFactory(match=match)
         profile = BotProfileFactory()

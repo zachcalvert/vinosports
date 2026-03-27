@@ -460,7 +460,8 @@ class TestGenerateBotComment:
         return profile.user, match
 
     @patch("epl.bots.comment_service.anthropic.Anthropic")
-    def test_successful_comment_creation(self, MockAnthropic):
+    def test_successful_comment_creation(self, MockAnthropic, settings):
+        settings.ANTHROPIC_API_KEY = "test-key"
         bot_user, match = self._make_bot_with_match()
         mock_response = MagicMock()
         mock_response.content = [
@@ -468,15 +469,6 @@ class TestGenerateBotComment:
         ]
         mock_response.stop_reason = "end_turn"
         MockAnthropic.return_value.messages.create.return_value = mock_response
-
-        with patch.object(
-            type(bot_user),
-            "bot_profile",
-            new_callable=lambda: property(
-                lambda self: BotProfileFactory.build(user=self)
-            ),
-        ):
-            pass
 
         comment = generate_bot_comment(
             bot_user, match, BotComment.TriggerType.PRE_MATCH
@@ -487,7 +479,8 @@ class TestGenerateBotComment:
         assert comment.match == match
 
     @patch("epl.bots.comment_service.anthropic.Anthropic")
-    def test_dedup_prevents_second_comment(self, MockAnthropic):
+    def test_dedup_prevents_second_comment(self, MockAnthropic, settings):
+        settings.ANTHROPIC_API_KEY = "test-key"
         bot_user, match = self._make_bot_with_match()
         mock_response = MagicMock()
         mock_response.content = [MagicMock(text="Great odds on this match today")]
@@ -511,7 +504,8 @@ class TestGenerateBotComment:
         assert result is None
 
     @patch("epl.bots.comment_service.anthropic.Anthropic")
-    def test_filtered_comment_returns_none(self, MockAnthropic):
+    def test_filtered_comment_returns_none(self, MockAnthropic, settings):
+        settings.ANTHROPIC_API_KEY = "test-key"
         bot_user, match = self._make_bot_with_match()
         mock_response = MagicMock()
         mock_response.content = [MagicMock(text="Too short")]
@@ -536,7 +530,8 @@ class TestGenerateBotComment:
         assert "ANTHROPIC_API_KEY" in bc.error
 
     @patch("epl.bots.comment_service.anthropic.Anthropic")
-    def test_api_exception_returns_none(self, MockAnthropic):
+    def test_api_exception_returns_none(self, MockAnthropic, settings):
+        settings.ANTHROPIC_API_KEY = "test-key"
         bot_user, match = self._make_bot_with_match()
         MockAnthropic.return_value.messages.create.side_effect = Exception("API down")
 
@@ -566,7 +561,8 @@ class TestGenerateBotComment:
         assert result is None
 
     @patch("epl.bots.comment_service.anthropic.Anthropic")
-    def test_max_tokens_trims_to_sentence(self, MockAnthropic):
+    def test_max_tokens_trims_to_sentence(self, MockAnthropic, settings):
+        settings.ANTHROPIC_API_KEY = "test-key"
         bot_user, match = self._make_bot_with_match()
         mock_response = MagicMock()
         mock_response.content = [
@@ -584,8 +580,9 @@ class TestGenerateBotComment:
         assert comment.body.endswith(".")
 
     @patch("epl.bots.comment_service.anthropic.Anthropic")
-    def test_reply_normalizes_parent(self, MockAnthropic):
+    def test_reply_normalizes_parent(self, MockAnthropic, settings):
         """Replies to replies should nest under the top-level comment."""
+        settings.ANTHROPIC_API_KEY = "test-key"
         match = MatchFactory()
         OddsFactory(match=match)
         profile = BotProfileFactory()
