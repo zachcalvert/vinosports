@@ -163,6 +163,30 @@ class FootballDataClient:
 # ---------------------------------------------------------------------------
 
 
+TEAM_CREST_URLS = {
+    "AFC Bournemouth": "https://upload.wikimedia.org/wikipedia/en/e/e5/AFC_Bournemouth_%282013%29.svg",
+    "Arsenal": "https://upload.wikimedia.org/wikipedia/sco/5/53/Arsenal_FC.svg",
+    "Aston Villa": "https://upload.wikimedia.org/wikipedia/en/9/9a/Aston_Villa_FC_new_crest.svg",
+    "Brentford": "https://upload.wikimedia.org/wikipedia/en/2/2a/Brentford_FC_crest.svg",
+    "Brighton & Hove Albion": "https://upload.wikimedia.org/wikipedia/sco/f/fd/Brighton_%26_Hove_Albion_logo.svg",
+    "Burnley": "https://upload.wikimedia.org/wikipedia/en/6/6d/Burnley_FC_Logo.svg",
+    "Chelsea": "https://upload.wikimedia.org/wikipedia/sco/c/cc/Chelsea_FC.svg",
+    "Crystal Palace": "https://upload.wikimedia.org/wikipedia/sco/0/0c/Crystal_Palace_FC_logo.svg",
+    "Everton": "https://upload.wikimedia.org/wikipedia/sco/7/7c/Everton_FC_logo.svg",
+    "Fulham": "https://upload.wikimedia.org/wikipedia/sco/e/eb/Fulham_FC_%28shield%29.svg",
+    "Leeds United": "https://upload.wikimedia.org/wikipedia/en/5/54/Leeds_United_F.C._logo.svg",
+    "Liverpool": "https://upload.wikimedia.org/wikipedia/sco/0/0c/Liverpool_FC.svg",
+    "Manchester City": "https://upload.wikimedia.org/wikipedia/sco/e/eb/Manchester_City_FC_badge.svg",
+    "Manchester United": "https://upload.wikimedia.org/wikipedia/sco/7/7a/Manchester_United_FC_crest.svg",
+    "Newcastle United": "https://upload.wikimedia.org/wikipedia/sco/5/56/Newcastle_United_Logo.svg",
+    "Nottingham Forest": "https://upload.wikimedia.org/wikipedia/sco/d/d2/Nottingham_Forest_logo.svg",
+    "Sunderland": "https://upload.wikimedia.org/wikipedia/sco/7/77/Logo_Sunderland.svg",
+    "Tottenham Hotspur": "https://upload.wikimedia.org/wikipedia/sco/b/b4/Tottenham_Hotspur.svg",
+    "West Ham United": "https://upload.wikimedia.org/wikipedia/sco/c/c2/West_Ham_United_FC_logo.svg",
+    "Wolverhampton Wanderers": "https://upload.wikimedia.org/wikipedia/sco/f/fc/Wolverhampton_Wanderers.svg",
+}
+
+
 def sync_teams(season, offline=False):
     if offline:
         with open(STATIC_DATA_DIR / "teams.json") as f:
@@ -173,13 +197,14 @@ def sync_teams(season, offline=False):
 
     created = updated = 0
     for t in teams_data:
+        crest_url = TEAM_CREST_URLS.get(t["name"], t["crest_url"])
         _, was_created = Team.objects.update_or_create(
             external_id=t["external_id"],
             defaults={
                 "name": t["name"],
                 "short_name": t["short_name"],
                 "tla": t["tla"],
-                "crest_url": t["crest_url"],
+                "crest_url": crest_url,
                 "venue": t["venue"],
             },
         )
