@@ -6,9 +6,11 @@ import factory
 from django.utils import timezone
 
 from epl.betting.models import BetSlip, Parlay, ParlayLeg
+from epl.bots.models import BotComment
 from epl.discussions.models import Comment
 from epl.matches.models import Match, Odds, Standing, Team
 from vinosports.betting.models import UserBalance, UserStats
+from vinosports.bots.models import BotProfile, ScheduleTemplate, StrategyType
 from vinosports.users.models import User
 
 
@@ -123,6 +125,54 @@ class ParlayLegFactory(factory.django.DjangoModelFactory):
     match = factory.SubFactory(MatchFactory)
     selection = BetSlip.Selection.HOME_WIN
     odds_at_placement = Decimal("2.10")
+
+
+class BotUserFactory(UserFactory):
+    display_name = factory.Sequence(lambda n: f"EplBot{n}")
+    is_bot = True
+
+
+class ScheduleTemplateFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = ScheduleTemplate
+
+    name = factory.Sequence(lambda n: f"Template {n}")
+    slug = factory.Sequence(lambda n: f"template-{n}")
+    windows = factory.LazyFunction(
+        lambda: [
+            {
+                "days": [0, 1, 2, 3, 4, 5, 6],
+                "hours": list(range(24)),
+                "bet_probability": 0.8,
+                "comment_probability": 0.8,
+                "max_bets": 5,
+                "max_comments": 3,
+            }
+        ]
+    )
+
+
+class BotProfileFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = BotProfile
+
+    user = factory.SubFactory(BotUserFactory)
+    strategy_type = StrategyType.FRONTRUNNER
+    is_active = True
+    active_in_epl = True
+    risk_multiplier = 1.0
+    max_daily_bets = 5
+    persona_prompt = "You are a confident EPL betting personality."
+
+
+class BotCommentFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = BotComment
+
+    user = factory.SubFactory(BotUserFactory)
+    match = factory.SubFactory(MatchFactory)
+    trigger_type = BotComment.TriggerType.PRE_MATCH
+    prompt_used = "test prompt"
 
 
 class CommentFactory(factory.django.DjangoModelFactory):

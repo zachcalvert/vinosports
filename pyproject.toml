@@ -17,7 +17,18 @@ addopts = "--cov=vinosports --cov=hub --cov=nba --cov=epl --cov-report=term-miss
 
 [tool.coverage.run]
 source = ["/packages/vinosports-core/src/vinosports", "hub", "nba", "epl"]
-omit = ["*/migrations/*", "*/tests/*", "*/test_*", "*/conftest.py", "*/admin.py", "*/apps.py"]
+omit = [
+    "*/migrations/*",
+    "*/tests/*",
+    "*/test_*",
+    "*/conftest.py",
+    "*/admin.py",
+    "*/apps.py",
+    "*/management/commands/*",
+    "*/consumers.py",
+    "*/routing.py",
+    "*/asgi.py",
+]
 
 [tool.coverage.report]
 show_missing = true
