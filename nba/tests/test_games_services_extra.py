@@ -1,12 +1,12 @@
 """Additional tests for nba/games/services.py — covers previously untested paths."""
 
 from datetime import date
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import MagicMock, patch
 
 import httpx
 import pytest
 
-from nba.games.models import Conference, Game, GameStatus, Player, PlayerBoxScore
+from nba.games.models import Conference, GameStatus, PlayerBoxScore
 from nba.games.services import (
     NBADataClient,
     _compute_standings_from_games,
@@ -14,7 +14,6 @@ from nba.games.services import (
     sync_box_score,
 )
 from nba.tests.factories import GameFactory, PlayerFactory, TeamFactory
-
 
 # ---------------------------------------------------------------------------
 # NBADataClient normalizers
@@ -187,9 +186,10 @@ class TestGetGames:
         self.client._get_all = MagicMock(return_value=[])
         target_date = date(2026, 3, 15)
         self.client.get_games(2026, game_date=target_date)
-        call_params = self.client._get_all.call_args[1].get(
-            "params"
-        ) or self.client._get_all.call_args[0][1]
+        call_params = (
+            self.client._get_all.call_args[1].get("params")
+            or self.client._get_all.call_args[0][1]
+        )
         assert call_params.get("dates[]") == "2026-03-15"
         assert "seasons[]" not in call_params
 
@@ -197,9 +197,10 @@ class TestGetGames:
         self.client._normalize_game = MagicMock(side_effect=lambda x: x)
         self.client._get_all = MagicMock(return_value=[])
         self.client.get_games(2026)
-        call_params = self.client._get_all.call_args[1].get(
-            "params"
-        ) or self.client._get_all.call_args[0][1]
+        call_params = (
+            self.client._get_all.call_args[1].get("params")
+            or self.client._get_all.call_args[0][1]
+        )
         assert call_params.get("seasons[]") == 2026
         assert "dates[]" not in call_params
 
@@ -297,10 +298,10 @@ class TestGetLiveScores:
         assert result == []
 
     def test_fetches_when_live_game_exists(self):
-        from django.utils import timezone
+        from nba.games.services import today_et
 
         GameFactory(
-            game_date=timezone.localdate(),
+            game_date=today_et(),
             status=GameStatus.IN_PROGRESS,
         )
         self.client._get_all = MagicMock(return_value=[])
@@ -310,10 +311,10 @@ class TestGetLiveScores:
         self.client._get_all.assert_called_once()
 
     def test_fetches_when_only_scheduled_games_today(self):
-        from django.utils import timezone
+        from nba.games.services import today_et
 
         GameFactory(
-            game_date=timezone.localdate(),
+            game_date=today_et(),
             status=GameStatus.SCHEDULED,
         )
         self.client._get_all = MagicMock(return_value=[])
@@ -361,13 +362,9 @@ class TestRefreshActivePlayers:
 
     def test_uses_current_season_when_none_passed(self):
         with patch("nba.games.services.PlayerBoxScore") as mock_pbs:
-            mock_pbs.objects.filter.return_value.values_list.return_value.distinct.return_value = (
-                []
-            )
+            mock_pbs.objects.filter.return_value.values_list.return_value.distinct.return_value = []
             with patch("nba.games.services.Player") as mock_player:
-                mock_player.objects.filter.return_value.exclude.return_value.update.return_value = (
-                    0
-                )
+                mock_player.objects.filter.return_value.exclude.return_value.update.return_value = 0
                 mock_player.objects.filter.return_value.update.return_value = 0
                 with patch("nba.games.tasks._current_season", return_value=2026):
                     refresh_active_players(season=None)
@@ -534,7 +531,9 @@ class TestSyncBoxScore:
         mock_client = self._make_mock_client(stats)
         sync_box_score(game, client=mock_client)
 
-        box = PlayerBoxScore.objects.get(game=game, player_external_id=player.external_id)
+        box = PlayerBoxScore.objects.get(
+            game=game, player_external_id=player.external_id
+        )
         assert box.player == player
         player.refresh_from_db()
         assert player.is_active is True
@@ -836,7 +835,9 @@ class TestBroadcastScoreUpdates:
         with (
             patch("channels.layers.get_channel_layer", return_value=mock_channel_layer),
             patch("asgiref.sync.async_to_sync", return_value=mock_send),
-            patch("nba.games.services.sync_box_score", side_effect=Exception("API error")),
+            patch(
+                "nba.games.services.sync_box_score", side_effect=Exception("API error")
+            ),
         ):
             _broadcast_score_updates([game.pk])
 

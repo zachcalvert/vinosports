@@ -9,6 +9,7 @@ from nba.activity.models import ActivityEvent
 from nba.betting.models import BetSlip, Parlay, ParlayLeg
 from nba.discussions.models import Comment
 from nba.games.models import Conference, Game, GameStatus, Odds, Player, Standing, Team
+from nba.games.services import today_et
 from vinosports.betting.models import UserBalance
 from vinosports.bots.models import BotProfile, ScheduleTemplate, StrategyType
 from vinosports.users.models import User
@@ -99,7 +100,7 @@ class GameFactory(factory.django.DjangoModelFactory):
     home_team = factory.SubFactory(TeamFactory)
     away_team = factory.SubFactory(TeamFactory)
     status = GameStatus.SCHEDULED
-    game_date = factory.LazyFunction(lambda: timezone.localdate())
+    game_date = factory.LazyFunction(today_et)
     season = 2026
     arena = "Test Arena"
 

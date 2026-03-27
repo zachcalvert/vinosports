@@ -49,7 +49,7 @@ def run_bot_strategies(self):
             continue
 
         bets_today = BetSlip.objects.filter(
-            user=profile.user, created_at__date=today
+            user=profile.user, game__game_date=today
         ).count()
         if bets_today >= profile.max_daily_bets:
             continue
@@ -118,7 +118,7 @@ def execute_bot_strategy(self, bot_user_id: int, window_max_bets: int | None = N
         .distinct("game_id")
     )
 
-    bets_today = BetSlip.objects.filter(user=user, created_at__date=today).count()
+    bets_today = BetSlip.objects.filter(user=user, game__game_date=today).count()
     daily_remaining = max(0, profile.max_daily_bets - bets_today)
     # Also respect the window-level cap if provided
     remaining = (

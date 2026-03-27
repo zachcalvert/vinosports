@@ -7,6 +7,7 @@ import pytest
 from django.utils import timezone
 
 from nba.games.models import GameStatus
+from nba.games.services import today_et
 from nba.tests.factories import GameFactory, UserFactory
 from nba.website.challenge_tasks import (
     expire_challenges,
@@ -42,7 +43,7 @@ class TestRotateDailyChallenges:
 
     def test_creates_challenges_when_games_exist(self):
         """rotate_daily_challenges should create challenges when games are scheduled."""
-        GameFactory(status=GameStatus.SCHEDULED, game_date=timezone.localdate())
+        GameFactory(status=GameStatus.SCHEDULED, game_date=today_et())
         _make_challenge_template(ChallengeTemplate.ChallengeType.DAILY, "with-games-1")
         _make_challenge_template(ChallengeTemplate.ChallengeType.DAILY, "with-games-2")
         _make_challenge_template(ChallengeTemplate.ChallengeType.DAILY, "with-games-3")
@@ -56,7 +57,7 @@ class TestRotateDailyChallenges:
 
     def test_expires_active_daily_challenges_before_creating(self):
         """Existing ACTIVE daily challenges should be expired before new ones are created."""
-        GameFactory(status=GameStatus.SCHEDULED, game_date=timezone.localdate())
+        GameFactory(status=GameStatus.SCHEDULED, game_date=today_et())
         template = _make_challenge_template(
             ChallengeTemplate.ChallengeType.DAILY, "expire-before"
         )
@@ -74,7 +75,7 @@ class TestRotateDailyChallenges:
 
     def test_fails_in_progress_user_challenges(self):
         """IN_PROGRESS UserChallenges should be marked FAILED when their challenge expires."""
-        GameFactory(status=GameStatus.SCHEDULED, game_date=timezone.localdate())
+        GameFactory(status=GameStatus.SCHEDULED, game_date=today_et())
         template = _make_challenge_template(
             ChallengeTemplate.ChallengeType.DAILY, "fail-user-challenges"
         )
@@ -100,7 +101,7 @@ class TestRotateDailyChallenges:
 
     def test_uses_fallback_when_all_templates_recently_used(self):
         """When all templates were recently used, fall back to using all templates."""
-        GameFactory(status=GameStatus.SCHEDULED, game_date=timezone.localdate())
+        GameFactory(status=GameStatus.SCHEDULED, game_date=today_et())
         template = _make_challenge_template(
             ChallengeTemplate.ChallengeType.DAILY, "recently-used"
         )
@@ -119,7 +120,7 @@ class TestRotateDailyChallenges:
 
     def test_creates_at_most_daily_count_challenges(self):
         """Should create at most 3 daily challenges (DAILY_COUNT)."""
-        GameFactory(status=GameStatus.SCHEDULED, game_date=timezone.localdate())
+        GameFactory(status=GameStatus.SCHEDULED, game_date=today_et())
         for i in range(5):
             _make_challenge_template(
                 ChallengeTemplate.ChallengeType.DAILY, f"daily-max-{i}"
