@@ -79,3 +79,26 @@
 select.themed-input {
     appearance: auto;
 }
+
+
+/* --------------------------------------------------------------------------
+   3. PROFILE IMAGE UPLOAD
+   -------------------------------------------------------------------------- */
+
+.profile-upload-zone {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 0.625rem;
+    padding: 0.625rem 0.875rem;
+    border: 2px dashed rgb(var(--color-border));
+    border-radius: 0.5rem;
+    background-color: rgb(var(--color-bg));
+    cursor: pointer;
+    transition: border-color 0.15s, background-color 0.15s;
+}
+
+.profile-upload-zone:hover {
+    border-color: rgb(var(--color-accent));
+    background-color: rgb(var(--color-accent) / 0.05);
+}

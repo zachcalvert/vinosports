@@ -15,7 +15,8 @@
             {% endif %}
 
             <a href="{{ hub_url }}" class="global-nav-logo">
-                <span class="global-nav-logo-text">VINO</span><span class="global-nav-logo-accent">SPORTS</span>
+                <span class="global-nav-logo-full"><span class="global-nav-logo-text">VINO</span><span class="global-nav-logo-accent">SPORTS</span></span>
+                <span class="global-nav-logo-compact">VS</span>
             </a>
 
             <div class="league-switcher">
@@ -46,7 +47,11 @@
                         aria-label="User menu"
                         aria-expanded="false"
                         aria-haspopup="true">
+                    {% if user.profile_image %}
+                    <img src="{{ user.profile_image.url }}" alt="" class="global-nav-avatar">
+                    {% else %}
                     <i class="ph-duotone ph-user-circle text-xl"></i>
+                    {% endif %}
                     <span id="global-user-balance" class="font-mono text-accent font-semibold text-sm">
                         {{ user.balance.balance|currency:user }}
                     </span>
@@ -72,15 +77,9 @@
                         <a href="{% url 'hub:standings' %}" class="dropdown-link">
                             <i class="ph-duotone ph-ranking text-base"></i> Leaderboard
                         </a>
-                        {% if request.league %}
-                        <a href="/{{ request.league }}/account/" class="dropdown-link">
-                            <i class="ph-duotone ph-gear text-base"></i> Profile &amp; Settings
-                        </a>
-                        {% else %}
                         <a href="{% url 'hub:account' %}" class="dropdown-link">
                             <i class="ph-duotone ph-gear text-base"></i> Account
                         </a>
-                        {% endif %}
                     </div>
                     <!-- Logout -->
                     <div class="border-t border-border py-1">
@@ -174,6 +173,14 @@
 }
 .global-nav-logo-text { color: #b3262f; }
 .global-nav-logo-accent { color: #b3262f; }
+.global-nav-logo-compact {
+    display: none;
+    color: #b3262f;
+}
+@media (max-width: 639px) {
+    .global-nav-logo-full { display: none; }
+    .global-nav-logo-compact { display: inline; }
+}
 
 .league-switcher {
     display: inline-flex;
@@ -222,8 +229,9 @@
     color: #8d706e;
     background-color: transparent;
 }
-/* Hide icons on small screens to keep switcher compact */
+/* Compact switcher on small screens */
 @media (max-width: 639px) {
+    .league-switcher { margin-left: 0.75rem; }
     .league-switcher-icon { display: none; }
     .league-switcher-btn { padding: 0.3125rem 0.5rem; font-size: 0.75rem; }
 }
@@ -260,6 +268,13 @@
 }
 .global-nav-user-btn:hover {
     background-color: rgba(72, 95, 132, 0.06);
+}
+.global-nav-avatar {
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 9999px;
+    object-fit: cover;
+    border: 1.5px solid #b3262f;
 }
 
 .global-nav-dropdown {
