@@ -34,4 +34,4 @@ test:
 	docker compose run --rm web python -m pytest -n auto --reuse-db
 
 test-ci:
-	docker compose run --rm web python -m pytest -n auto --cov=vinosports --cov=hub --cov=nba --cov=epl --cov-report=term-missing:skip-covered --cov-config=pyproject.toml
+	docker compose run --rm web python -m pytest -n auto --dist worksteal --cov=vinosports --cov=hub --cov=nba --cov=epl --cov-report=term-missing:skip-covered --cov-config=pyproject.toml
