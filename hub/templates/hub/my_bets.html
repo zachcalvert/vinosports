@@ -142,7 +142,7 @@
                             {% for leg in entry.item.legs.all %}
                             <li class="flex items-center gap-3 text-xs text-muted">
                                 <span class="w-2 h-2 rounded-full inline-block
-                                    {% if leg.status == 'WON' %}bg-primary{% elif leg.status == 'LOST' %}bg-danger{% elif leg.status == 'VOID' %}bg-gray-500{% else %}bg-warning{% endif %}">
+                                    {% if leg.status == 'WON' %}bg-positive{% elif leg.status == 'LOST' %}bg-danger{% elif leg.status == 'VOID' %}bg-gray-500{% else %}bg-warning{% endif %}">
                                 </span>
                                 <span>
                                     {% if entry.league == "epl" %}
@@ -157,7 +157,7 @@
                                         <span class="font-mono">@ {% if leg.odds_at_placement > 0 %}+{% endif %}{{ leg.odds_at_placement }}</span>
                                     {% endif %}
                                 </span>
-                                <span class="{% if leg.status == 'WON' %}text-primary{% elif leg.status == 'LOST' %}text-danger{% elif leg.status == 'VOID' %}text-muted{% else %}text-warning{% endif %}">
+                                <span class="{% if leg.status == 'WON' %}text-positive{% elif leg.status == 'LOST' %}text-danger{% elif leg.status == 'VOID' %}text-muted{% else %}text-warning{% endif %}">
                                     {{ leg.get_status_display }}
                                 </span>
                             </li>
@@ -213,7 +213,7 @@
                 </div>
                 <div>
                     <div class="text-xs text-muted">Payout</div>
-                    <div class="font-mono text-sm {% if entry.item.payout %}text-primary{% else %}text-muted{% endif %}">
+                    <div class="font-mono text-sm {% if entry.item.payout %}text-positive font-bold{% else %}text-muted{% endif %}">
                         {% if entry.item.payout != None %}{{ entry.item.payout|currency:user }}{% else %}&mdash;{% endif %}
                     </div>
                 </div>
@@ -237,7 +237,7 @@
                 {% for leg in entry.item.legs.all %}
                 <li class="flex items-center gap-2 text-xs">
                     <span class="w-1.5 h-1.5 rounded-full shrink-0
-                        {% if leg.status == 'WON' %}bg-primary{% elif leg.status == 'LOST' %}bg-danger{% elif leg.status == 'VOID' %}bg-gray-500{% else %}bg-warning{% endif %}">
+                        {% if leg.status == 'WON' %}bg-positive{% elif leg.status == 'LOST' %}bg-danger{% elif leg.status == 'VOID' %}bg-gray-500{% else %}bg-warning{% endif %}">
                     </span>
                     <span class="text-muted truncate">
                         {% if entry.league == "epl" %}
@@ -264,7 +264,7 @@
                 </div>
                 <div>
                     <div class="text-xs text-muted">Payout</div>
-                    <div class="font-mono text-sm {% if entry.item.payout %}text-primary{% else %}text-muted{% endif %}">
+                    <div class="font-mono text-sm {% if entry.item.payout %}text-positive font-bold{% else %}text-muted{% endif %}">
                         {% if entry.item.payout != None %}{{ entry.item.payout|currency:user }}{% else %}&mdash;{% endif %}
                     </div>
                 </div>
