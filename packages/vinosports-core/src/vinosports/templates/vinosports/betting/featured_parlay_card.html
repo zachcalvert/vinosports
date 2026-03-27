@@ -1,4 +1,4 @@
-<div class="bg-surface-container-lowest rounded-xl border border-outline-variant overflow-hidden">
+<div class="bg-surface-container-lowest rounded-xl border border-outline-variant overflow-hidden flex flex-col h-full">
     {# Header: sponsor + league badge #}
     <div class="flex items-center justify-between px-5 pt-5 pb-3">
         <div class="flex items-center gap-3">
@@ -50,7 +50,7 @@
     </div>
 
     {# Footer: combined odds + payout #}
-    <div class="flex items-center justify-between px-5 py-3 bg-surface-container border-t border-outline-variant">
+    <div class="flex items-center justify-between px-5 py-3 bg-surface-container border-t border-outline-variant mt-auto">
         <div>
             <span class="text-[10px] font-label text-muted uppercase tracking-widest">Combined Odds</span>
             <p class="font-mono font-bold text-primary text-lg leading-tight">{{ parlay.combined_odds }}x</p>

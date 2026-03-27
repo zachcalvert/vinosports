@@ -2,7 +2,7 @@
 {% with bet_eligible=match.status|stringformat:"s" %}
 <div id="match-{{ match.pk }}"
    class="bg-surface-container-lowest rounded-xl p-4 border-b-4 border-primary
-          hover:bg-surface-container-low transition-all duration-300
+          hover:bg-surface-container-high transition-all duration-300
           {% if match.status == 'IN_PLAY' or match.status == 'PAUSED' %}live-match-card{% endif %}">
     <a href="{% url 'epl_matches:match_detail' match.slug %}" class="block">
         <div class="flex items-center justify-between mb-3">
