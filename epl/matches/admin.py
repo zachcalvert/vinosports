@@ -5,8 +5,28 @@ from epl.matches.models import Match, MatchNotes, MatchStats, Standing, Team
 
 @admin.register(Team)
 class TeamAdmin(admin.ModelAdmin):
-    list_display = ["name", "tla", "venue"]
+    list_display = ["name", "tla", "venue", "has_crest"]
     search_fields = ["name", "short_name", "tla"]
+    readonly_fields = ["crest_preview"]
+    fieldsets = [
+        (None, {"fields": ["external_id", "name", "short_name", "tla", "venue"]}),
+        ("Crest", {"fields": ["crest_image", "crest_url", "crest_preview"]}),
+    ]
+
+    @admin.display(boolean=True, description="Crest?")
+    def has_crest(self, obj):
+        return bool(obj.crest_image or obj.crest_url)
+
+    @admin.display(description="Preview")
+    def crest_preview(self, obj):
+        from django.utils.html import format_html
+
+        url = obj.crest
+        if url:
+            return format_html(
+                '<img src="{}" style="max-height:80px;max-width:80px;">', url
+            )
+        return "—"
 
 
 @admin.register(Match)

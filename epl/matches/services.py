@@ -108,7 +108,7 @@ class FootballDataClient:
             "name": t["name"],
             "short_name": t.get("short_name", ""),
             "tla": t.get("abbreviation", ""),
-            "crest_url": "",
+            "crest_url": t.get("crest", t.get("crest_url", "")),
             "venue": "",
         }
 

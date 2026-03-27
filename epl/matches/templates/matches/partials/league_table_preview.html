@@ -24,8 +24,8 @@
                     </td>
                     <td class="px-2 py-2">
                         <div class="flex items-center gap-1.5">
-                            {% if standing.team.crest_url %}
-                                <img src="{{ standing.team.crest_url }}" alt="" class="w-4 h-4 object-contain flex-shrink-0">
+                            {% if standing.team.crest %}
+                                <img src="{{ standing.team.crest }}" alt="" class="w-4 h-4 object-contain flex-shrink-0">
                             {% endif %}
                             <span class="font-medium truncate">{{ standing.team.short_name|default:standing.team.name }}</span>
                         </div>

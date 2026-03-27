@@ -1,5 +1,6 @@
 from django.contrib.auth import logout
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db import models
 from django.http import Http404
 from django.shortcuts import redirect, render
 from django.urls import reverse
@@ -236,11 +237,7 @@ class AccountView(LoginRequiredMixin, View):
 
         # Avatar picker data
         avatar_frames = get_unlocked_frames(user)
-        avatar_teams = list(
-            Team.objects.exclude(crest_url="")
-            .order_by("short_name")
-            .values("short_name", "crest_url")
-        )
+        avatar_teams = get_avatar_teams()
 
         return {
             "display_name_form": form or DisplayNameForm(instance=user),
@@ -339,12 +336,9 @@ class CurrencyUpdateView(LoginRequiredMixin, View):
 
 def get_avatar_teams():
     return list(
-        Team.objects.exclude(crest_url="")
-        .order_by("short_name")
-        .values(
-            "short_name",
-            "crest_url",
-        )
+        Team.objects.filter(
+            models.Q(crest_image__gt="") | ~models.Q(crest_url="")
+        ).order_by("short_name")
     )
 
 

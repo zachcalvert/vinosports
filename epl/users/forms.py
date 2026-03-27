@@ -19,9 +19,11 @@ class AvatarForm(forms.Form):
         value = self.cleaned_data.get("avatar_crest_url", "").strip()
         if not value:
             return ""
-        if not Team.objects.filter(crest_url=value).exists():
-            raise forms.ValidationError("Invalid crest URL.")
-        return value
+        # Check both crest_url and crest_image (via the crest property)
+        for team in Team.objects.exclude(crest_url="", crest_image=""):
+            if team.crest == value:
+                return value
+        raise forms.ValidationError("Invalid crest URL.")
 
     def clean_avatar_frame(self):
         slug = self.cleaned_data.get("avatar_frame", "").strip()

@@ -6,8 +6,8 @@
     <div class="flex items-center justify-between text-center gap-4">
         <!-- Home team -->
         <div>
-            {% if next_big_match.home_team.crest_url %}
-                <img src="{{ next_big_match.home_team.crest_url }}" alt="" class="w-10 h-10 object-contain mx-auto mb-2">
+            {% if next_big_match.home_team.crest %}
+                <img src="{{ next_big_match.home_team.crest }}" alt="" class="w-10 h-10 object-contain mx-auto mb-2">
             {% else %}
                 <div class="w-10 h-10 bg-primary rounded-lg mx-auto mb-2 flex items-center justify-center font-black italic text-xs text-white">{{ next_big_match.home_team.tla }}</div>
             {% endif %}
@@ -22,8 +22,8 @@
 
         <!-- Away team -->
         <div>
-            {% if next_big_match.away_team.crest_url %}
-                <img src="{{ next_big_match.away_team.crest_url }}" alt="" class="w-10 h-10 object-contain mx-auto mb-2">
+            {% if next_big_match.away_team.crest %}
+                <img src="{{ next_big_match.away_team.crest }}" alt="" class="w-10 h-10 object-contain mx-auto mb-2">
             {% else %}
                 <div class="w-10 h-10 bg-secondary rounded-lg mx-auto mb-2 flex items-center justify-center font-black italic text-xs text-white">{{ next_big_match.away_team.tla }}</div>
             {% endif %}

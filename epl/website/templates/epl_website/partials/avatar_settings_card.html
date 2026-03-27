@@ -53,13 +53,13 @@
                 {% for team in avatar_teams %}
                 <button
                     type="button"
-                    class="avatar-picker-btn avatar-picker-btn--crest{% if request.user.avatar_crest_url == team.crest_url %} selected{% endif %}"
+                    class="avatar-picker-btn avatar-picker-btn--crest{% if request.user.avatar_crest_url == team.crest %} selected{% endif %}"
                     data-pick="crest"
-                    data-value="{{ team.crest_url }}"
+                    data-value="{{ team.crest }}"
                     title="{{ team.short_name }}"
                     style="width: 48px; height: 48px;"
                 >
-                    <img src="{{ team.crest_url }}" alt="{{ team.short_name }}" style="width: 30px; height: 30px; object-fit: contain;">
+                    <img src="{{ team.crest }}" alt="{{ team.short_name }}" style="width: 30px; height: 30px; object-fit: contain;">
                 </button>
                 {% endfor %}
             </div>

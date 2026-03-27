@@ -13,8 +13,8 @@
         <div class="space-y-2 mb-3">
             <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2">
-                    {% if match.home_team.crest_url %}
-                        <img src="{{ match.home_team.crest_url }}" alt="" class="w-5 h-5 object-contain">
+                    {% if match.home_team.crest %}
+                        <img src="{{ match.home_team.crest }}" alt="" class="w-5 h-5 object-contain">
                     {% endif %}
                     <span class="text-sm font-semibold">{{ match.home_team.short_name|default:match.home_team.name }}</span>
                 </div>
@@ -24,8 +24,8 @@
             </div>
             <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2">
-                    {% if match.away_team.crest_url %}
-                        <img src="{{ match.away_team.crest_url }}" alt="" class="w-5 h-5 object-contain">
+                    {% if match.away_team.crest %}
+                        <img src="{{ match.away_team.crest }}" alt="" class="w-5 h-5 object-contain">
                     {% endif %}
                     <span class="text-sm font-semibold">{{ match.away_team.short_name|default:match.away_team.name }}</span>
                 </div>

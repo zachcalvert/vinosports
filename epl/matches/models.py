@@ -15,6 +15,9 @@ class Team(BaseModel):
     short_name = models.CharField(_("short name"), max_length=50, blank=True)
     tla = models.CharField(_("TLA"), max_length=3, blank=True)
     crest_url = models.URLField(_("crest URL"), blank=True)
+    crest_image = models.ImageField(
+        _("crest image"), upload_to="epl/crests/", blank=True
+    )
     venue = models.CharField(_("venue"), max_length=200, blank=True)
 
     class Meta:
@@ -22,6 +25,13 @@ class Team(BaseModel):
 
     def __str__(self):
         return self.name
+
+    @property
+    def crest(self):
+        """Return the best available crest: uploaded image first, then URL."""
+        if self.crest_image:
+            return self.crest_image.url
+        return self.crest_url
 
 
 class Match(BaseModel):

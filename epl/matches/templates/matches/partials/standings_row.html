@@ -15,8 +15,8 @@
     </td>
     <td class="px-3 py-3">
         <div class="flex items-center gap-3">
-            {% if standing.team.crest_url %}
-                <img src="{{ standing.team.crest_url }}" alt="" class="w-6 h-6 object-contain">
+            {% if standing.team.crest %}
+                <img src="{{ standing.team.crest }}" alt="" class="w-6 h-6 object-contain">
             {% elif standing.team.tla %}
                 <div class="w-6 h-6 bg-primary/20 rounded-sm flex items-center justify-center text-[10px] font-black italic text-primary">{{ standing.team.tla }}</div>
             {% endif %}

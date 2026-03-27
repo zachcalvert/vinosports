@@ -19,8 +19,8 @@
     <div class="flex items-center justify-center gap-8 md:gap-16">
         <!-- Home team -->
         <div class="text-center flex-1">
-            {% if match.home_team.crest_url %}
-                <img src="{{ match.home_team.crest_url }}" alt="" class="w-16 h-16 mx-auto mb-2 object-contain">
+            {% if match.home_team.crest %}
+                <img src="{{ match.home_team.crest }}" alt="" class="w-16 h-16 mx-auto mb-2 object-contain">
             {% endif %}
             <h2 class="text-lg font-bold">{{ match.home_team.short_name|default:match.home_team.name }}</h2>
             <h3 class="text-sm text-muted mt-1">
@@ -38,8 +38,8 @@
 
         <!-- Away team -->
         <div class="text-center flex-1">
-            {% if match.away_team.crest_url %}
-                <img src="{{ match.away_team.crest_url }}" alt="" class="w-16 h-16 mx-auto mb-2 object-contain">
+            {% if match.away_team.crest %}
+                <img src="{{ match.away_team.crest }}" alt="" class="w-16 h-16 mx-auto mb-2 object-contain">
             {% endif %}
             <h2 class="text-lg font-bold">{{ match.away_team.short_name|default:match.away_team.name }}</h2>
             <h3 class="text-sm text-muted mt-1">
