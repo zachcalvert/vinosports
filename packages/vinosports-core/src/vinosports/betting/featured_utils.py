@@ -72,6 +72,12 @@ def generate_parlay_copy(
             messages=[{"role": "user", "content": prompt}],
         )
         text = response.content[0].text.strip()
+        if not text:
+            logger.warning("Claude returned empty response for featured parlay copy")
+            return _fallback(league, theme)
+        # Strip markdown fences if present
+        if text.startswith("```"):
+            text = text.strip("`").removeprefix("json").strip()
         result = json.loads(text)
         return {
             "title": str(result.get("title", ""))[:120],

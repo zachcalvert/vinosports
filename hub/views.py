@@ -37,10 +37,16 @@ class HomeView(TemplateView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx["bot_profiles"] = (
+        bot_profiles = (
             BotProfile.objects.filter(is_active=True)
             .select_related("user")
             .order_by("user__date_joined")
+        )
+        ctx["bot_profiles"] = bot_profiles
+        ctx["hero_bots"] = (
+            bot_profiles.exclude(user__profile_image="")
+            .exclude(user__profile_image__isnull=True)
+            .order_by("?")[:4]
         )
         from vinosports.betting.featured import FeaturedParlay
 
