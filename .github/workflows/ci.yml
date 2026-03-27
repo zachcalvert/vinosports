@@ -70,10 +70,10 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -e packages/vinosports-core
-          pip install psycopg2-binary whitenoise pytest pytest-django pytest-cov factory-boy
+          pip install psycopg2-binary whitenoise pytest pytest-django pytest-cov pytest-xdist factory-boy
 
       - name: Run migrations
         run: python manage.py migrate --noinput
 
       - name: Run tests
-        run: python -m pytest
+        run: python -m pytest -n auto --cov=vinosports --cov=hub --cov=nba --cov=epl --cov-report=term-missing:skip-covered --cov-config=pyproject.toml

@@ -13,7 +13,7 @@ known-first-party = ["vinosports"]
 DJANGO_SETTINGS_MODULE = "config.settings"
 python_files = ["tests.py", "test_*.py"]
 testpaths = [".", "/packages/vinosports-core/src/tests"]
-addopts = "--cov=vinosports --cov=hub --cov=nba --cov=epl --cov-report=term-missing:skip-covered --cov-config=pyproject.toml -q"
+addopts = "-q"
 
 [tool.coverage.run]
 source = ["/packages/vinosports-core/src/vinosports", "hub", "nba", "epl"]
