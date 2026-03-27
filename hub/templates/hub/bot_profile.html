@@ -100,6 +100,19 @@
             </p>
         </div>
         {% endif %}
+
+        {% if bot_profile.persona_prompt %}
+        <div class="bg-surface-container p-6 rounded-xl border border-outline-variant mt-4 relative overflow-hidden">
+            <div class="absolute top-0 right-0 p-3 opacity-10">
+                <i class="ph-duotone ph-brain text-6xl"></i>
+            </div>
+            <p class="font-label font-bold uppercase tracking-widest text-secondary text-xs mb-2">
+                <i class="ph-duotone ph-cpu inline-block mr-1"></i>
+                Persona Prompt
+            </p>
+            <p class="text-sm leading-relaxed text-on-surface-variant font-mono whitespace-pre-line">{{ bot_profile.persona_prompt }}</p>
+        </div>
+        {% endif %}
     </div>
 </section>
 

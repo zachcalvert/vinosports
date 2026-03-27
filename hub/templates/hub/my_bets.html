@@ -20,13 +20,13 @@
             <div class="font-label text-[10px] font-bold text-secondary uppercase tracking-widest mb-1">Total Staked</div>
             <div class="text-2xl font-mono font-bold">{{ total_staked|currency:user }}</div>
         </div>
-        <div class="bg-surface-container-lowest rounded-xl border-b-4 border-outline-variant p-4 text-center">
+        <div class="bg-surface-container-lowest rounded-xl border-b-4 border-positive p-4 text-center">
             <div class="font-label text-[10px] font-bold text-secondary uppercase tracking-widest mb-1">Total Won</div>
-            <div class="text-2xl font-mono font-bold">{{ total_payout|currency:user }}</div>
+            <div class="text-2xl font-mono font-bold text-positive">{{ total_payout|currency:user }}</div>
         </div>
         <div class="bg-surface-container-lowest rounded-xl border-b-4 border-outline-variant p-4 text-center">
             <div class="font-label text-[10px] font-bold text-secondary uppercase tracking-widest mb-1">Net P&amp;L</div>
-            <div class="text-2xl font-mono font-bold {% if net_pnl >= 0 %}text-primary{% else %}text-danger{% endif %}">
+            <div class="text-2xl font-mono font-bold {% if net_pnl >= 0 %}text-positive{% else %}text-danger{% endif %}">
                 {% if net_pnl >= 0 %}+{% endif %}{{ net_pnl|currency:user }}
             </div>
         </div>
@@ -88,7 +88,7 @@
                         {% endif %}
                     </td>
                     <td class="py-3 px-2 text-right font-mono">{{ entry.item.stake|currency:user }}</td>
-                    <td class="py-3 px-2 text-right font-mono {% if entry.item.payout %}text-primary{% else %}text-muted{% endif %}">
+                    <td class="py-3 px-2 text-right font-mono {% if entry.item.payout %}text-positive font-bold{% else %}text-muted{% endif %}">
                         {% if entry.item.payout != None %}{{ entry.item.payout|currency:user }}{% else %}&mdash;{% endif %}
                     </td>
                     <td class="py-3 px-2 text-center">
@@ -128,7 +128,7 @@
                         {% endif %}
                     </td>
                     <td class="py-3 px-2 text-right font-mono">{{ entry.item.stake|currency:user }}</td>
-                    <td class="py-3 px-2 text-right font-mono {% if entry.item.payout %}text-primary{% else %}text-muted{% endif %}">
+                    <td class="py-3 px-2 text-right font-mono {% if entry.item.payout %}text-positive font-bold{% else %}text-muted{% endif %}">
                         {% if entry.item.payout != None %}{{ entry.item.payout|currency:user }}{% else %}&mdash;{% endif %}
                     </td>
                     <td class="py-3 px-2 text-center">
