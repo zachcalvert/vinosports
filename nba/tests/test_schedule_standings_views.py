@@ -175,3 +175,53 @@ class TestStandingsView:
         response = auth_client.get("/nba/games/standings/", HTTP_HX_REQUEST="true")
         templates = [t.name for t in response.templates]
         assert "games/partials/standings_table.html" in templates
+
+
+@pytest.mark.django_db
+class TestScheduleViewAdditional:
+    def test_featured_game_is_first_when_all_final(self, auth_client):
+        """When all games are FINAL, featured_game = first game in list."""
+        from nba.games.models import GameStatus
+
+        c = auth_client
+        today = timezone.localdate()
+        GameFactory(
+            game_date=today, status=GameStatus.FINAL, home_score=110, away_score=100
+        )
+        response = c.get(f"/nba/games/schedule/?date={today.isoformat()}")
+        assert response.status_code == 200
+        featured = response.context.get("featured_game")
+        assert featured is not None
+
+    def test_odds_appear_in_context_when_game_has_odds(self, auth_client):
+        """When a game has odds, they appear in the odds_by_game context."""
+        from nba.tests.factories import OddsFactory
+
+        c = auth_client
+        today = timezone.localdate()
+        game = GameFactory(game_date=today)
+        OddsFactory(game=game)
+        response = c.get(f"/nba/games/schedule/?date={today.isoformat()}")
+        assert response.status_code == 200
+        odds_by_game = response.context.get("odds_by_game", {})
+        assert game.id in odds_by_game
+
+
+@pytest.mark.django_db
+class TestStandingsViewAdditional:
+    def test_projected_matchup_shown_with_8_plus_standings(self, auth_client):
+        """When 8+ standings exist, projected_matchup is populated."""
+        from nba.games.tasks import _current_season
+
+        c = auth_client
+        season = _current_season()
+
+        for i in range(9):
+            team = TeamFactory(conference=Conference.WEST)
+            StandingFactory(team=team, season=season, conference=Conference.WEST, conference_rank=i + 1)
+
+        response = c.get("/nba/games/standings/?tab=west")
+        assert response.status_code == 200
+        matchup = response.context.get("projected_matchup", {})
+        assert "seed_1" in matchup
+        assert "seed_8" in matchup

@@ -1,4 +1,4 @@
-"""Tests for discussions/views.py (CreateCommentView, CreateReplyView)."""
+"""Tests for discussions/views.py (CreateCommentView, CreateReplyView, DeleteCommentView)."""
 
 import pytest
 from django.test import Client
@@ -178,3 +178,93 @@ class TestCreateReplyView:
             {"body": "test"},
         )
         assert response.status_code == 404
+
+
+@pytest.mark.django_db
+class TestDeleteCommentView:
+    def test_unauthenticated_redirected(self):
+        c = Client()
+        game = GameFactory()
+        comment = CommentFactory(game=game)
+        response = c.post(
+            f"/nba/game/{game.id_hash}/comments/{comment.pk}/delete/",
+        )
+        assert response.status_code in (301, 302)
+
+    def test_owner_can_delete_comment(self, auth_client):
+        c, user = auth_client
+        game = GameFactory()
+        comment = CommentFactory(game=game, user=user)
+        response = c.post(
+            f"/nba/game/{game.id_hash}/comments/{comment.pk}/delete/",
+        )
+        assert response.status_code == 200
+        comment.refresh_from_db()
+        assert comment.is_deleted is True
+
+    def test_non_owner_gets_403(self, auth_client):
+        c, user = auth_client
+        other_user = UserFactory()
+        game = GameFactory()
+        comment = CommentFactory(game=game, user=other_user)
+        response = c.post(
+            f"/nba/game/{game.id_hash}/comments/{comment.pk}/delete/",
+        )
+        assert response.status_code == 403
+        comment.refresh_from_db()
+        assert comment.is_deleted is False
+
+    def test_returns_empty_html_when_no_replies(self, auth_client):
+        c, user = auth_client
+        game = GameFactory()
+        comment = CommentFactory(game=game, user=user)
+        response = c.post(
+            f"/nba/game/{game.id_hash}/comments/{comment.pk}/delete/",
+        )
+        assert response.status_code == 200
+        assert response.content == b""
+
+    def test_returns_html_when_replies_exist(self, auth_client):
+        c, user = auth_client
+        game = GameFactory()
+        comment = CommentFactory(game=game, user=user)
+        CommentFactory(game=game, parent=comment)  # a reply
+        response = c.post(
+            f"/nba/game/{game.id_hash}/comments/{comment.pk}/delete/",
+        )
+        assert response.status_code == 200
+        assert len(response.content) > 0
+
+    def test_comment_not_found_returns_404(self, auth_client):
+        c, user = auth_client
+        game = GameFactory()
+        response = c.post(
+            f"/nba/game/{game.id_hash}/comments/999999/delete/",
+        )
+        assert response.status_code == 404
+
+
+@pytest.mark.django_db
+class TestCreateCommentViewHtmx:
+    def test_htmx_returns_partial_html(self, auth_client):
+        c, user = auth_client
+        game = GameFactory()
+        response = c.post(
+            f"/nba/game/{game.id_hash}/comments/create/",
+            {"body": "HTMX comment!"},
+            HTTP_HX_REQUEST="true",
+        )
+        assert response.status_code == 200
+        assert len(response.content) > 0
+
+    def test_htmx_reply_returns_partial_html(self, auth_client):
+        c, user = auth_client
+        game = GameFactory()
+        parent = CommentFactory(game=game)
+        response = c.post(
+            f"/nba/game/{game.id_hash}/comments/{parent.pk}/reply/",
+            {"body": "HTMX reply!"},
+            HTTP_HX_REQUEST="true",
+        )
+        assert response.status_code == 200
+        assert len(response.content) > 0

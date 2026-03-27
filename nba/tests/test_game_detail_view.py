@@ -116,3 +116,99 @@ class TestGameDetailView:
         c, user = auth_client
         response = c.get("/nba/games/nonexistent/")
         assert response.status_code == 404
+
+
+@pytest.mark.django_db
+class TestGameDetailViewSentiment:
+    """Tests covering _get_game_sentiment, _get_spread_sentiment, _get_total_sentiment."""
+
+    def test_moneyline_sentiment_when_bets_exist(self, auth_client):
+        """_get_game_sentiment returns non-None when moneyline bets exist."""
+        from decimal import Decimal
+        from nba.betting.models import BetSlip
+        from nba.tests.factories import BetSlipFactory
+
+        c, user = auth_client
+        game = GameFactory(status=GameStatus.SCHEDULED)
+        BetSlipFactory(
+            game=game,
+            market=BetSlip.Market.MONEYLINE,
+            selection=BetSlip.Selection.HOME,
+        )
+        BetSlipFactory(
+            game=game,
+            market=BetSlip.Market.MONEYLINE,
+            selection=BetSlip.Selection.AWAY,
+        )
+        response = c.get(f"/nba/games/{game.id_hash}/")
+        assert response.status_code == 200
+        sentiment = response.context.get("sentiment")
+        assert sentiment is not None
+        assert "home_pct" in sentiment
+        assert "away_pct" in sentiment
+
+    def test_spread_sentiment_when_spread_bets_exist(self, auth_client):
+        """_get_spread_sentiment returns non-None when spread bets exist."""
+        from nba.betting.models import BetSlip
+        from nba.tests.factories import BetSlipFactory
+
+        c, user = auth_client
+        game = GameFactory(status=GameStatus.SCHEDULED)
+        BetSlipFactory(
+            game=game,
+            market=BetSlip.Market.SPREAD,
+            selection=BetSlip.Selection.HOME,
+        )
+        response = c.get(f"/nba/games/{game.id_hash}/")
+        assert response.status_code == 200
+        spread_sentiment = response.context.get("spread_sentiment")
+        assert spread_sentiment is not None
+        assert "home_pct" in spread_sentiment
+
+    def test_total_sentiment_when_total_bets_exist(self, auth_client):
+        """_get_total_sentiment returns non-None when total bets exist."""
+        from nba.betting.models import BetSlip
+        from nba.tests.factories import BetSlipFactory
+
+        c, user = auth_client
+        game = GameFactory(status=GameStatus.SCHEDULED)
+        BetSlipFactory(
+            game=game,
+            market=BetSlip.Market.TOTAL,
+            selection=BetSlip.Selection.OVER,
+        )
+        response = c.get(f"/nba/games/{game.id_hash}/")
+        assert response.status_code == 200
+        total_sentiment = response.context.get("total_sentiment")
+        assert total_sentiment is not None
+        assert "over_pct" in total_sentiment
+
+
+@pytest.mark.django_db
+class TestGameDetailViewRecap:
+    """Tests covering _get_recap_context for FINAL games."""
+
+    def test_recap_context_included_for_final_game(self, auth_client):
+        """For a FINAL game, recap_ctx is populated with result_context."""
+        c, user = auth_client
+        game = GameFactory(
+            status=GameStatus.FINAL,
+            home_score=100,
+            away_score=115,
+        )
+        response = c.get(f"/nba/games/{game.id_hash}/")
+        assert response.status_code == 200
+        assert "result_context" in response.context
+        assert "headline" in response.context["result_context"]
+
+    def test_away_team_wins_recap(self, auth_client):
+        """When away score > home score, actual_result is AWAY."""
+        c, user = auth_client
+        game = GameFactory(
+            status=GameStatus.FINAL,
+            home_score=90,
+            away_score=110,
+        )
+        response = c.get(f"/nba/games/{game.id_hash}/")
+        assert response.status_code == 200
+        assert response.context.get("actual_result") == "AWAY"
