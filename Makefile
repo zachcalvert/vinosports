@@ -1,4 +1,4 @@
-.PHONY: up down restart logs shell migrate seed lint format test
+.PHONY: up down restart logs shell migrate seed lint format test test-ci
 
 up:
 	docker compose up --build -d
@@ -31,4 +31,7 @@ format:
 	ruff format .
 
 test:
-	docker compose run --rm web python -m pytest
+	docker compose run --rm web python -m pytest -n auto --reuse-db
+
+test-ci:
+	docker compose run --rm web python -m pytest -n auto --dist worksteal --cov=vinosports --cov=hub --cov=nba --cov=epl --cov-report=term-missing:skip-covered --cov-config=pyproject.toml

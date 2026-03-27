@@ -10,7 +10,7 @@ COPY packages/vinosports-core /packages/vinosports-core
 RUN pip install -e /packages/vinosports-core
 
 # Install additional dependencies
-RUN pip install psycopg2-binary whitenoise gunicorn pytest pytest-django pytest-cov factory-boy
+RUN pip install psycopg2-binary whitenoise gunicorn pytest pytest-django pytest-cov pytest-xdist factory-boy
 
 # Copy project code
 COPY config/ config/

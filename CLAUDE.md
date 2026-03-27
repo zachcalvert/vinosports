@@ -101,7 +101,8 @@ make shell             # exec into web container
 make migrate           # run migrations
 make seed              # populate EPL + NBA data
 make lint              # ruff check + format
-make test              # run all test suites
+make test              # run tests (parallel + reuse-db, ~30s)
+make test-ci           # run tests with coverage report (parallel, no reuse-db)
 ```
 
 ## Dev Workflow
@@ -126,14 +127,18 @@ make test              # run all test suites
 
 ## Testing
 
+~1,392 tests at ~90% source coverage. Tests run in parallel via pytest-xdist (`-n auto`).
+
 ```bash
-make test              # run all tests from web container
+make test              # fast local dev: parallel + --reuse-db (~30s)
+make test-ci           # CI mode: parallel + coverage (no --reuse-db)
 ```
 
 - Use factories, not JSON fixtures
 - Test behavior (bet settled, balance updated), not implementation
 - Celery tasks: use `task_always_eager=True` in test settings
 - WebSocket: use `channels.testing.WebsocketCommunicator`
+- Coverage is opt-in (not in `addopts`); use `make test-ci` or pass `--cov` flags explicitly
 
 ## Linting
 
@@ -152,3 +157,5 @@ See `docs/` for architecture decisions and setup guides:
 - `0007-CENTRALIZED_AUTH.md` — Auth centralization into hub
 - `0009-BOT_SCHEDULE_TEMPLATES.md` — Bot schedule template system
 - `0019-UNIFIED_DJANGO_PROJECT.md` — Merge from three projects into one (this refactor)
+- `0027-TEST_INFRASTRUCTURE.md` — Test infrastructure and baseline coverage
+- `0028-TEST_COVERAGE_AND_PERFORMANCE.md` — Coverage push to 90% and parallelization

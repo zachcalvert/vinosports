@@ -88,7 +88,8 @@ A `Makefile` wraps the most-used workflows:
 | `make seed` | Populate EPL + NBA data |
 | `make shell` | Shell into the web container |
 | `make lint` | Run ruff check + format |
-| `make test` | Run all test suites |
+| `make test` | Run tests (parallel, fast) |
+| `make test-ci` | Run tests with coverage report |
 
 ### Hot Reload
 
@@ -131,8 +132,11 @@ python manage.py runserver
 
 ## Testing
 
+The test suite covers ~90% of source code across 1,392 tests. Tests run in parallel via pytest-xdist.
+
 ```bash
-make test    # Run all tests
+make test       # Fast: parallel, reuses DB (~30s after first run)
+make test-ci    # CI: parallel + coverage report
 ```
 
 ### Test Guidelines
@@ -141,6 +145,12 @@ make test    # Run all tests
 - **Use factories over fixtures.** Create test data with factory functions or `Model.objects.create()`, not JSON fixtures.
 - **Integration tests for Celery tasks.** Use `task_always_eager=True` in test settings so tasks run synchronously.
 - **WebSocket tests.** Use `channels.testing.WebsocketCommunicator` for consumer tests.
+
+See [docs/0028-TEST_COVERAGE_AND_PERFORMANCE.md](docs/0028-TEST_COVERAGE_AND_PERFORMANCE.md) for the full story on coverage and performance.
+
+## Contributing
+
+Contributions are welcome! Please include tests with your changes — the CI pipeline enforces lint and test gates on all pull requests. If you're adding a new feature or fixing a bug, write tests that cover the behavior. Run `make test` locally before pushing to catch issues early.
 
 ## Linting
 
