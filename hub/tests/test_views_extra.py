@@ -1,6 +1,6 @@
 """Additional tests for hub.views — coverage for uncovered views and edge cases.
 
-Complements test_views.py; does NOT duplicate tests already there.
+Complements test_views.py; does NOT duplicate tests there.
 """
 
 from decimal import Decimal
@@ -359,6 +359,94 @@ class TestAccountViewExtra:
     def test_currency_form_in_context(self, authed_client):
         resp = authed_client.get(reverse("hub:account"))
         assert "currency_form" in resp.context
+
+    def test_all_badges_in_context(self, authed_client):
+        resp = authed_client.get(reverse("hub:account"))
+        assert "all_badges" in resp.context
+
+    def test_profile_image_form_in_context(self, authed_client):
+        resp = authed_client.get(reverse("hub:account"))
+        assert "profile_image_form" in resp.context
+
+    def test_stats_in_context(self, authed_client):
+        resp = authed_client.get(reverse("hub:account"))
+        assert "stats" in resp.context
+
+    def test_user_rank_in_context(self, authed_client):
+        resp = authed_client.get(reverse("hub:account"))
+        assert "user_rank" in resp.context
+
+
+# ---------------------------------------------------------------------------
+# ProfileImageUploadView
+# ---------------------------------------------------------------------------
+
+
+class TestProfileImageUploadView:
+    def test_requires_login(self, client):
+        resp = client.post(reverse("hub:profile_image_upload"), {})
+        assert resp.status_code == 302
+
+    def test_upload_valid_image(self, authed_client, user, tmp_path):
+        import io
+
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        from PIL import Image
+
+        buf = io.BytesIO()
+        Image.new("RGB", (10, 10), color=(100, 100, 100)).save(buf, format="PNG")
+        buf.seek(0)
+        img = SimpleUploadedFile("test.png", buf.read(), content_type="image/png")
+        resp = authed_client.post(
+            reverse("hub:profile_image_upload"),
+            {"profile_image": img},
+        )
+        assert resp.status_code == 200
+        assert resp.context["image_save_success"] is True
+        user.refresh_from_db()
+        assert user.profile_image
+
+
+# ---------------------------------------------------------------------------
+# BalanceHistoryAPI (hub)
+# ---------------------------------------------------------------------------
+
+
+class TestHubBalanceHistoryAPI:
+    def test_requires_login(self, client, user):
+        resp = client.get(reverse("hub:balance_history_api", args=[user.slug]))
+        assert resp.status_code == 302
+
+    def test_returns_json(self, authed_client, user):
+        resp = authed_client.get(reverse("hub:balance_history_api", args=[user.slug]))
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "data" in data
+
+    def test_empty_when_no_transactions(self, authed_client, user):
+        resp = authed_client.get(reverse("hub:balance_history_api", args=[user.slug]))
+        assert resp.json()["data"] == []
+
+    def test_forbidden_for_other_user_slug(self, authed_client, user):
+        other = UserFactory()
+        resp = authed_client.get(reverse("hub:balance_history_api", args=[other.slug]))
+        assert resp.status_code == 403
+
+    def test_returns_data_with_transactions(self, authed_client, user):
+        from vinosports.betting.models import BalanceTransaction
+
+        BalanceTransaction.objects.create(
+            user=user,
+            amount=Decimal("1000.00"),
+            balance_after=Decimal("1000.00"),
+            transaction_type=BalanceTransaction.Type.SIGNUP,
+        )
+        resp = authed_client.get(reverse("hub:balance_history_api", args=[user.slug]))
+        assert resp.status_code == 200
+        data = resp.json()["data"]
+        assert len(data) > 0
+        assert "t" in data[0]
+        assert "y" in data[0]
 
 
 class TestCurrencyUpdateView:

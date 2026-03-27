@@ -4,6 +4,17 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 
 
+class ProfileImageForm(forms.ModelForm):
+    class Meta:
+        model = User
+        fields = ("profile_image",)
+        widgets = {
+            "profile_image": forms.ClearableFileInput(
+                attrs={"class": "themed-input themed-input-sm", "accept": "image/*"}
+            )
+        }
+
+
 class DisplayNameForm(forms.ModelForm):
     class Meta:
         model = User

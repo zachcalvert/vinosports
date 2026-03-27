@@ -13,6 +13,16 @@ urlpatterns = [
     path(
         "account/currency/", views.CurrencyUpdateView.as_view(), name="currency_update"
     ),
+    path(
+        "account/profile-image/",
+        views.ProfileImageUploadView.as_view(),
+        name="profile_image_upload",
+    ),
+    path(
+        "api/balance-history/<slug:slug>/",
+        views.BalanceHistoryAPI.as_view(),
+        name="balance_history_api",
+    ),
     path("bots/<slug:slug>/", views.BotProfileView.as_view(), name="bot_profile"),
     # Global standings
     path("standings/", views.StandingsView.as_view(), name="standings"),
