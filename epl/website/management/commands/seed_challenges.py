@@ -3,9 +3,6 @@
 Creates daily and weekly Challenge instances from existing ChallengeTemplate
 records for both EPL and NBA leagues. Safe to run multiple times — each
 league section is skipped when active challenges already exist for it.
-
-EPL templates are identified by slugs that do NOT start with "nba-".
-NBA templates are identified by slugs that start with "nba-".
 """
 
 import random
@@ -47,10 +44,14 @@ class Command(BaseCommand):
         template_filter = league["template_filter"]
         challenge_filter = league["challenge_filter"]
 
-        existing = Challenge.objects.filter(
-            status=Challenge.Status.ACTIVE,
-            template__challenge_type=ChallengeTemplate.ChallengeType.DAILY,
-        ).filter(challenge_filter).count()
+        existing = (
+            Challenge.objects.filter(
+                status=Challenge.Status.ACTIVE,
+                template__challenge_type=ChallengeTemplate.ChallengeType.DAILY,
+            )
+            .filter(challenge_filter)
+            .count()
+        )
 
         if existing:
             self.stdout.write(
@@ -89,9 +90,7 @@ class Command(BaseCommand):
             )
 
         self.stdout.write(
-            self.style.SUCCESS(
-                f"  [{label}] Daily challenges: {len(selected)} created"
-            )
+            self.style.SUCCESS(f"  [{label}] Daily challenges: {len(selected)} created")
         )
 
     def _seed_weekly(self, league):
@@ -99,10 +98,14 @@ class Command(BaseCommand):
         template_filter = league["template_filter"]
         challenge_filter = league["challenge_filter"]
 
-        existing = Challenge.objects.filter(
-            status=Challenge.Status.ACTIVE,
-            template__challenge_type=ChallengeTemplate.ChallengeType.WEEKLY,
-        ).filter(challenge_filter).count()
+        existing = (
+            Challenge.objects.filter(
+                status=Challenge.Status.ACTIVE,
+                template__challenge_type=ChallengeTemplate.ChallengeType.WEEKLY,
+            )
+            .filter(challenge_filter)
+            .count()
+        )
 
         if existing:
             self.stdout.write(

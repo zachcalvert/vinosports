@@ -7,6 +7,7 @@ Order:
   2. seed_challenge_templates — ChallengeTemplate rows
   3. seed_badges            — Badge rows
   4. seed_rewards           — Reward and RewardRule rows
+  5. seed_challenges          — creates active Challenge instances based on templates
 """
 
 from django.core.management import call_command
@@ -62,7 +63,7 @@ class Command(BaseCommand):
         # 4. Active challenge instances (daily + weekly for both EPL and NBA;
         section("seed_challenges")
         call_command("seed_challenges", verbosity=verbosity)
-  
+
         # 5. Rewards
         section("seed_rewards")
         call_command("seed_rewards", verbosity=verbosity)
