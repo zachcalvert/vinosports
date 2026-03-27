@@ -2,8 +2,6 @@
 
 from decimal import Decimal
 
-import pytest
-
 from nba.games.templatetags.game_tags import get_item as games_get_item
 from nba.website.templatetags.currency_tags import (
     currency,
@@ -13,7 +11,6 @@ from nba.website.templatetags.currency_tags import (
     negate,
 )
 from nba.website.templatetags.dashboard_tags import get_item
-
 
 # ---------------------------------------------------------------------------
 # nba/website/templatetags/dashboard_tags.py — get_item

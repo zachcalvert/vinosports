@@ -103,7 +103,7 @@ class TestTeamDetailView:
         team = TeamFactory()
         opponent = TeamFactory()
         season = _current_season()
-        game = GameFactory(
+        GameFactory(
             home_team=opponent,
             away_team=team,
             status=GameStatus.FINAL,

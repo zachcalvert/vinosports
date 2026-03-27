@@ -205,6 +205,7 @@ class TestActivityToastsContextProcessor:
         request.user = AnonymousUser()
 
         from nba.activity.context_processors import activity_toasts
+
         result = activity_toasts(request)
         assert result == {}
 
@@ -215,11 +216,13 @@ class TestActivityToastsContextProcessor:
         request.user = AnonymousUser()
 
         from nba.activity.context_processors import activity_toasts
+
         result = activity_toasts(request)
         assert result == {"show_activity_toasts": True}
 
     def test_authenticated_user_returns_user_preference(self):
         from nba.activity.context_processors import activity_toasts
+
         factory = RequestFactory()
         request = factory.get("/")
         request.league = "nba"
@@ -233,6 +236,7 @@ class TestActivityToastsContextProcessor:
 class TestUnseenRewardsContextProcessor:
     def test_non_nba_league_returns_empty_list(self):
         from nba.rewards.context_processors import unseen_rewards
+
         factory = RequestFactory()
         request = factory.get("/")
         request.league = "epl"
@@ -242,6 +246,7 @@ class TestUnseenRewardsContextProcessor:
 
     def test_unauthenticated_returns_empty_list(self):
         from nba.rewards.context_processors import unseen_rewards
+
         factory = RequestFactory()
         request = factory.get("/")
         request.league = "nba"
@@ -253,6 +258,7 @@ class TestUnseenRewardsContextProcessor:
 class TestThemeContextProcessor:
     def test_non_nba_league_returns_empty(self):
         from nba.website.context_processors import theme
+
         factory = RequestFactory()
         request = factory.get("/")
         request.league = "hub"
@@ -263,25 +269,31 @@ class TestThemeContextProcessor:
 class TestNormalizeTheme:
     def test_invalid_theme_falls_back_to_default(self):
         from nba.website.theme import normalize_theme
+
         assert normalize_theme("invalid") == "light"
 
     def test_valid_dark_theme(self):
         from nba.website.theme import normalize_theme
+
         assert normalize_theme("dark") == "dark"
 
 
 class TestGetToggleTheme:
     def test_toggle_from_dark_returns_light(self):
-        from nba.website.theme import get_toggle_theme
         from unittest.mock import MagicMock
+
+        from nba.website.theme import get_toggle_theme
+
         request = MagicMock()
         request.session = {"theme_preference": "dark"}
         result = get_toggle_theme(request)
         assert result == "light"
 
     def test_toggle_from_light_returns_dark(self):
-        from nba.website.theme import get_toggle_theme
         from unittest.mock import MagicMock
+
+        from nba.website.theme import get_toggle_theme
+
         request = MagicMock()
         request.session = {"theme_preference": "light"}
         result = get_toggle_theme(request)

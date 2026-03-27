@@ -124,7 +124,6 @@ class TestGameDetailViewSentiment:
 
     def test_moneyline_sentiment_when_bets_exist(self, auth_client):
         """_get_game_sentiment returns non-None when moneyline bets exist."""
-        from decimal import Decimal
         from nba.betting.models import BetSlip
         from nba.tests.factories import BetSlipFactory
 

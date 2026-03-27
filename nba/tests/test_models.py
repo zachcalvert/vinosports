@@ -269,7 +269,9 @@ class TestOdds:
 class TestActivityEventStr:
     def test_str_shows_sent_status_when_broadcast(self):
         from django.utils import timezone
+
         from nba.activity.models import ActivityEvent
+
         event = ActivityEvent.objects.create(
             event_type=ActivityEvent.EventType.SCORE_CHANGE,
             message="LAL 110 - BOS 105",
@@ -279,6 +281,7 @@ class TestActivityEventStr:
 
     def test_str_shows_queued_status_when_not_broadcast(self):
         from nba.activity.models import ActivityEvent
+
         event = ActivityEvent.objects.create(
             event_type=ActivityEvent.EventType.BOT_BET,
             message="Bot placed a bet",
