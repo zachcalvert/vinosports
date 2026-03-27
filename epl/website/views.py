@@ -140,10 +140,6 @@ FLOW_PATHS = {
 }
 
 
-class HomeView(TemplateView):
-    template_name = "epl_website/home.html"
-
-
 class HowItWorksView(TemplateView):
     template_name = "epl_website/how_it_works.html"
 

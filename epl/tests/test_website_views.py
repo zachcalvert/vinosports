@@ -1,4 +1,4 @@
-"""Tests for website/views.py — HomeView, AccountView, ThemeToggleView, etc."""
+"""Tests for website/views.py — AccountView, ThemeToggleView, etc."""
 
 import pytest
 from django.test import Client
@@ -19,14 +19,6 @@ def authed_client():
     c = Client()
     c.login(email=user.email, password="testpass123")
     return c, user
-
-
-class TestHomeView:
-    def test_renders_publicly(self, client):
-        resp = client.get("/epl/")
-        # HomeView is at the root of epl_website urls, but the matches dashboard
-        # is also at /epl/. The matches dashboard should take precedence.
-        assert resp.status_code == 200
 
 
 class TestHowItWorksView:

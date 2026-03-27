@@ -29,8 +29,9 @@
 </div>
 {% endif %}
 
-<div class="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_24rem] gap-6 items-start">
-    <div class="order-2 xl:order-1" id="match-grid"
+<div class="grid grid-cols-1">
+    <h2 class="text-lg font-headline font-bold uppercase tracking-wider mb-3">Matchday</h2>
+    <div id="match-grid"
          hx-ext="ws" ws-connect="/epl/ws/live/dashboard/">
         <div class="mb-4">
             {% include "epl_website/components/matchday_tabs.html" %}
@@ -43,11 +44,6 @@
                 {% include "matches/partials/fixture_list.html" %}
             </div>
         </div>
-    </div>
-
-    <div class="hidden xl:block order-1 xl:order-2 space-y-6">
-        {% include "matches/partials/league_table_preview.html" %}
-        {% include "matches/partials/leaderboard.html" %}
     </div>
 </div>
 {% endblock %}
