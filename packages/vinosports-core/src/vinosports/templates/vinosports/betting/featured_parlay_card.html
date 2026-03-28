@@ -77,10 +77,20 @@
               hx-target="#featured-parlay-{{ parlay.pk }}"
               hx-swap="outerHTML">
             {% csrf_token %}
-            <button type="submit"
-                    class="w-full py-2.5 rounded-lg bg-primary text-on-primary font-headline font-bold text-sm uppercase tracking-widest hover:bg-primary/90 transition-colors">
-                Bet ${{ parlay.reference_stake }}
-            </button>
+            <div class="flex items-center gap-2">
+                <div class="relative flex-1">
+                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-muted font-mono text-sm">$</span>
+                    <input type="number" name="stake" value="{{ parlay.reference_stake }}"
+                           min="0.50" max="10000" step="0.50"
+                           class="w-full pl-7 pr-3 py-2.5 rounded-lg bg-surface-container border border-outline-variant
+                                  font-mono text-sm text-secondary focus:border-primary focus:outline-none"
+                           aria-label="Wager amount">
+                </div>
+                <button type="submit"
+                        class="flex-shrink-0 px-5 py-2.5 rounded-lg bg-primary text-on-primary font-headline font-bold text-sm uppercase tracking-widest hover:bg-primary/90 transition-colors">
+                    Place Bet
+                </button>
+            </div>
         </form>
         {% else %}
         <a href="{% url 'hub:signup' %}"

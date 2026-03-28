@@ -1,4 +1,4 @@
-"""Tests for one-click featured parlay opt-in (EPL)."""
+"""Tests for featured parlay opt-in (EPL)."""
 
 from datetime import timedelta
 from decimal import Decimal
@@ -44,6 +44,18 @@ def _create_featured_parlay(matches, sponsor=None):
     return fp
 
 
+def _matches_with_odds(n=2):
+    matches = [MatchFactory() for _ in range(n)]
+    for m in matches:
+        OddsFactory(
+            match=m,
+            home_win=Decimal("2.00"),
+            draw=Decimal("3.00"),
+            away_win=Decimal("4.00"),
+        )
+    return matches
+
+
 @pytest.fixture
 def user_with_balance():
     user = UserFactory(password="testpass123")
@@ -59,20 +71,13 @@ def auth_client(user_with_balance):
 
 
 class TestPlaceFeaturedParlaySuccess:
-    def test_places_parlay(self, auth_client):
+    def test_places_parlay_with_default_stake(self, auth_client):
         c, user = auth_client
-        matches = [MatchFactory() for _ in range(3)]
-        for m in matches:
-            OddsFactory(
-                match=m,
-                home_win=Decimal("2.00"),
-                draw=Decimal("3.00"),
-                away_win=Decimal("4.00"),
-            )
+        matches = _matches_with_odds(3)
         fp = _create_featured_parlay(matches)
 
         url = reverse("epl_betting:place_featured_parlay", args=[fp.pk])
-        resp = c.post(url)
+        resp = c.post(url, {"stake": "10.00"})
 
         assert resp.status_code == 200
         parlay = Parlay.objects.get(user=user)
@@ -80,23 +85,28 @@ class TestPlaceFeaturedParlaySuccess:
         assert parlay.stake == Decimal("10.00")
         assert parlay.legs.count() == 3
 
-    def test_deducts_balance(self, auth_client):
+    def test_places_parlay_with_custom_stake(self, auth_client):
         c, user = auth_client
-        matches = [MatchFactory() for _ in range(2)]
-        for m in matches:
-            OddsFactory(
-                match=m,
-                home_win=Decimal("2.00"),
-                draw=Decimal("3.00"),
-                away_win=Decimal("4.00"),
-            )
+        matches = _matches_with_odds(2)
         fp = _create_featured_parlay(matches)
 
         url = reverse("epl_betting:place_featured_parlay", args=[fp.pk])
-        c.post(url)
+        resp = c.post(url, {"stake": "25.00"})
+
+        assert resp.status_code == 200
+        parlay = Parlay.objects.get(user=user)
+        assert parlay.stake == Decimal("25.00")
+
+    def test_deducts_custom_stake_from_balance(self, auth_client):
+        c, user = auth_client
+        matches = _matches_with_odds(2)
+        fp = _create_featured_parlay(matches)
+
+        url = reverse("epl_betting:place_featured_parlay", args=[fp.pk])
+        c.post(url, {"stake": "50.00"})
 
         balance = UserBalance.objects.get(user=user)
-        assert balance.balance == Decimal("990.00")
+        assert balance.balance == Decimal("950.00")
 
     def test_uses_current_odds_not_snapshot(self, auth_client):
         c, user = auth_client
@@ -111,7 +121,7 @@ class TestPlaceFeaturedParlaySuccess:
         fp = _create_featured_parlay(matches)
 
         url = reverse("epl_betting:place_featured_parlay", args=[fp.pk])
-        c.post(url)
+        c.post(url, {"stake": "10.00"})
 
         parlay = Parlay.objects.get(user=user)
         # Odds should be the live odds (3.00 and 6.00), not the snapshot (2.00)
@@ -119,38 +129,74 @@ class TestPlaceFeaturedParlaySuccess:
 
     def test_renders_confirmation(self, auth_client):
         c, user = auth_client
-        matches = [MatchFactory() for _ in range(2)]
-        for m in matches:
-            OddsFactory(
-                match=m,
-                home_win=Decimal("2.00"),
-                draw=Decimal("3.00"),
-                away_win=Decimal("4.00"),
-            )
+        matches = _matches_with_odds(2)
+        fp = _create_featured_parlay(matches)
+
+        url = reverse("epl_betting:place_featured_parlay", args=[fp.pk])
+        resp = c.post(url, {"stake": "10.00"})
+
+        assert b"Parlay Placed!" in resp.content
+
+
+class TestPlaceFeaturedParlayStakeValidation:
+    def test_missing_stake_returns_error(self, auth_client):
+        c, _ = auth_client
+        matches = _matches_with_odds(2)
         fp = _create_featured_parlay(matches)
 
         url = reverse("epl_betting:place_featured_parlay", args=[fp.pk])
         resp = c.post(url)
 
-        assert b"Parlay Placed!" in resp.content
+        assert resp.status_code == 200
+        assert b"valid wager" in resp.content
+        assert Parlay.objects.count() == 0
+
+    def test_invalid_stake_returns_error(self, auth_client):
+        c, _ = auth_client
+        matches = _matches_with_odds(2)
+        fp = _create_featured_parlay(matches)
+
+        url = reverse("epl_betting:place_featured_parlay", args=[fp.pk])
+        resp = c.post(url, {"stake": "abc"})
+
+        assert resp.status_code == 200
+        assert b"valid wager" in resp.content
+        assert Parlay.objects.count() == 0
+
+    def test_stake_below_minimum(self, auth_client):
+        c, _ = auth_client
+        matches = _matches_with_odds(2)
+        fp = _create_featured_parlay(matches)
+
+        url = reverse("epl_betting:place_featured_parlay", args=[fp.pk])
+        resp = c.post(url, {"stake": "0.10"})
+
+        assert resp.status_code == 200
+        assert b"Minimum wager" in resp.content
+        assert Parlay.objects.count() == 0
+
+    def test_stake_above_maximum(self, auth_client):
+        c, _ = auth_client
+        matches = _matches_with_odds(2)
+        fp = _create_featured_parlay(matches)
+
+        url = reverse("epl_betting:place_featured_parlay", args=[fp.pk])
+        resp = c.post(url, {"stake": "20000"})
+
+        assert resp.status_code == 200
+        assert b"Maximum wager" in resp.content
+        assert Parlay.objects.count() == 0
 
 
 class TestPlaceFeaturedParlayErrors:
     def test_duplicate_placement_rejected(self, auth_client):
         c, user = auth_client
-        matches = [MatchFactory() for _ in range(2)]
-        for m in matches:
-            OddsFactory(
-                match=m,
-                home_win=Decimal("2.00"),
-                draw=Decimal("3.00"),
-                away_win=Decimal("4.00"),
-            )
+        matches = _matches_with_odds(2)
         fp = _create_featured_parlay(matches)
 
         url = reverse("epl_betting:place_featured_parlay", args=[fp.pk])
-        c.post(url)
-        resp = c.post(url)
+        c.post(url, {"stake": "10.00"})
+        resp = c.post(url, {"stake": "10.00"})
 
         assert resp.status_code == 200
         assert b"already placed" in resp.content
@@ -158,15 +204,13 @@ class TestPlaceFeaturedParlayErrors:
 
     def test_expired_parlay_404(self, auth_client):
         c, user = auth_client
-        matches = [MatchFactory() for _ in range(2)]
-        for m in matches:
-            OddsFactory(match=m)
+        matches = _matches_with_odds(2)
         fp = _create_featured_parlay(matches)
         fp.status = FeaturedParlay.Status.EXPIRED
         fp.save()
 
         url = reverse("epl_betting:place_featured_parlay", args=[fp.pk])
-        resp = c.post(url)
+        resp = c.post(url, {"stake": "10.00"})
 
         assert resp.status_code == 404
 
@@ -183,7 +227,7 @@ class TestPlaceFeaturedParlayErrors:
         )
 
         url = reverse("epl_betting:place_featured_parlay", args=[fp.pk])
-        resp = c.post(url)
+        resp = c.post(url, {"stake": "10.00"})
 
         assert resp.status_code == 404
 
@@ -191,14 +235,7 @@ class TestPlaceFeaturedParlayErrors:
         from epl.matches.models import Match
 
         c, _ = auth_client
-        matches = [MatchFactory() for _ in range(2)]
-        for m in matches:
-            OddsFactory(
-                match=m,
-                home_win=Decimal("2.00"),
-                draw=Decimal("3.00"),
-                away_win=Decimal("4.00"),
-            )
+        matches = _matches_with_odds(2)
 
         # Start one match so it's no longer bettable
         matches[0].status = Match.Status.IN_PLAY
@@ -207,7 +244,7 @@ class TestPlaceFeaturedParlayErrors:
         fp = _create_featured_parlay(matches)
 
         url = reverse("epl_betting:place_featured_parlay", args=[fp.pk])
-        resp = c.post(url)
+        resp = c.post(url, {"stake": "10.00"})
 
         assert resp.status_code == 200
         assert b"no longer accepting bets" in resp.content
@@ -217,18 +254,11 @@ class TestPlaceFeaturedParlayErrors:
         c, user = auth_client
         UserBalance.objects.filter(user=user).update(balance=Decimal("5.00"))
 
-        matches = [MatchFactory() for _ in range(2)]
-        for m in matches:
-            OddsFactory(
-                match=m,
-                home_win=Decimal("2.00"),
-                draw=Decimal("3.00"),
-                away_win=Decimal("4.00"),
-            )
+        matches = _matches_with_odds(2)
         fp = _create_featured_parlay(matches)
 
         url = reverse("epl_betting:place_featured_parlay", args=[fp.pk])
-        resp = c.post(url)
+        resp = c.post(url, {"stake": "10.00"})
 
         assert resp.status_code == 200
         assert b"Insufficient balance" in resp.content
@@ -241,7 +271,7 @@ class TestPlaceFeaturedParlayErrors:
         fp = _create_featured_parlay(matches)
 
         url = reverse("epl_betting:place_featured_parlay", args=[fp.pk])
-        resp = c.post(url)
+        resp = c.post(url, {"stake": "10.00"})
 
         assert resp.status_code == 200
         assert b"No odds available" in resp.content
@@ -251,13 +281,11 @@ class TestPlaceFeaturedParlayErrors:
 class TestPlaceFeaturedParlayAuth:
     def test_unauthenticated_redirects(self):
         c = Client()
-        matches = [MatchFactory() for _ in range(2)]
-        for m in matches:
-            OddsFactory(match=m)
+        matches = _matches_with_odds(2)
         fp = _create_featured_parlay(matches)
 
         url = reverse("epl_betting:place_featured_parlay", args=[fp.pk])
-        resp = c.post(url)
+        resp = c.post(url, {"stake": "10.00"})
 
         assert resp.status_code == 302
         assert "/login/" in resp.url

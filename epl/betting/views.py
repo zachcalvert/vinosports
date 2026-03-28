@@ -889,7 +889,14 @@ class PlaceParlayView(LoginRequiredMixin, View):
 
 
 class PlaceFeaturedParlayView(LoginRequiredMixin, View):
-    """One-click placement of a featured parlay."""
+    """Place a parlay matching a featured parlay's legs at a user-chosen stake."""
+
+    def _card_error(self, request, fp, msg):
+        return render(
+            request,
+            "vinosports/betting/featured_parlay_card.html",
+            {"parlay": fp, "featured_error": msg},
+        )
 
     def post(self, request, pk):
         fp = get_object_or_404(
@@ -898,6 +905,16 @@ class PlaceFeaturedParlayView(LoginRequiredMixin, View):
             league="epl",
             status=FeaturedParlay.Status.ACTIVE,
         )
+
+        # Validate stake from form input
+        try:
+            stake = Decimal(request.POST.get("stake", ""))
+        except Exception:
+            return self._card_error(request, fp, "Please enter a valid wager amount.")
+        if stake < Decimal("0.50"):
+            return self._card_error(request, fp, "Minimum wager is $0.50.")
+        if stake > Decimal("10000"):
+            return self._card_error(request, fp, "Maximum wager is $10,000.")
 
         # Prevent duplicate opt-ins
         if Parlay.objects.filter(user=request.user, featured_parlay=fp).exists():
@@ -973,7 +990,6 @@ class PlaceFeaturedParlayView(LoginRequiredMixin, View):
             combined_odds *= ld["odds"]
         combined_odds = combined_odds.quantize(Decimal("0.01"))
 
-        stake = fp.reference_stake
         potential_payout = min(stake * combined_odds, PARLAY_MAX_PAYOUT)
 
         try:
