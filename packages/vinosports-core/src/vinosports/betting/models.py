@@ -284,6 +284,14 @@ class AbstractParlay(BaseModel):
     max_payout = models.DecimalField(
         _("max payout"), max_digits=12, decimal_places=2, default=PARLAY_MAX_PAYOUT
     )
+    featured_parlay = models.ForeignKey(
+        "betting.FeaturedParlay",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="%(app_label)s_placed_parlays",
+        verbose_name=_("featured parlay"),
+    )
 
     class Meta:
         abstract = True

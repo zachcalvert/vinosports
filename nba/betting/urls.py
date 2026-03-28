@@ -7,6 +7,7 @@ from nba.betting.views import (
     ClearParlayView,
     MyBetsView,
     PlaceBetView,
+    PlaceFeaturedParlayView,
     PlaceParlayView,
     QuickBetFormView,
     RemoveFromParlayView,
@@ -24,4 +25,9 @@ urlpatterns = [
     path("parlay/remove/", RemoveFromParlayView.as_view(), name="parlay_remove"),
     path("parlay/clear/", ClearParlayView.as_view(), name="parlay_clear"),
     path("parlay/place/", PlaceParlayView.as_view(), name="parlay_place"),
+    path(
+        "parlay/featured/<int:pk>/place/",
+        PlaceFeaturedParlayView.as_view(),
+        name="place_featured_parlay",
+    ),
 ]

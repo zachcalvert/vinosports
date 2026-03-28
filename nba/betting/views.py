@@ -18,6 +18,7 @@ from nba.betting.settlement import (
 )
 from nba.games.models import Game, GameStatus
 from vinosports.betting.constants import PARLAY_MAX_LEGS, PARLAY_MIN_LEGS
+from vinosports.betting.featured import FeaturedParlay
 from vinosports.betting.models import BalanceTransaction
 
 
@@ -393,3 +394,185 @@ class PlaceParlayView(LoginRequiredMixin, View):
                 {"parlay": parlay},
             )
         return redirect("nba_betting:my_bets")
+
+
+# Market+selection → Odds model field (reuses QuickBetFormView mapping)
+_MARKET_ODDS_MAP = {
+    ("MONEYLINE", "HOME"): "home_moneyline",
+    ("MONEYLINE", "AWAY"): "away_moneyline",
+    ("SPREAD", "HOME"): "spread_home",
+    ("SPREAD", "AWAY"): "spread_away",
+    ("TOTAL", "OVER"): "over_odds",
+    ("TOTAL", "UNDER"): "under_odds",
+}
+
+# Market+selection → line field (when applicable)
+_MARKET_LINE_MAP = {
+    "SPREAD": "spread_line",
+    "TOTAL": "total_line",
+}
+
+
+class PlaceFeaturedParlayView(LoginRequiredMixin, View):
+    """Place a parlay matching a featured parlay's legs at a user-chosen stake."""
+
+    def _card_error(self, request, fp, msg):
+        return render(
+            request,
+            "vinosports/betting/featured_parlay_card.html",
+            {"parlay": fp, "featured_error": msg},
+        )
+
+    def post(self, request, pk):
+        fp = get_object_or_404(
+            FeaturedParlay.objects.prefetch_related("legs"),
+            pk=pk,
+            league="nba",
+            status=FeaturedParlay.Status.ACTIVE,
+        )
+
+        # Validate stake from form input
+        try:
+            stake = Decimal(request.POST.get("stake", ""))
+        except Exception:
+            return self._card_error(request, fp, "Please enter a valid wager amount.")
+        if stake < Decimal("0.50"):
+            return self._card_error(request, fp, "Minimum wager is $0.50.")
+        if stake > Decimal("10000"):
+            return self._card_error(request, fp, "Maximum wager is $10,000.")
+
+        # Prevent duplicate opt-ins
+        if Parlay.objects.filter(user=request.user, featured_parlay=fp).exists():
+            return render(
+                request,
+                "vinosports/betting/featured_parlay_card.html",
+                {"parlay": fp, "featured_error": "You've already placed this parlay."},
+            )
+
+        legs = list(fp.legs.all())
+        if len(legs) < PARLAY_MIN_LEGS:
+            return render(
+                request,
+                "vinosports/betting/featured_parlay_card.html",
+                {
+                    "parlay": fp,
+                    "featured_error": "This parlay doesn't have enough legs.",
+                },
+            )
+
+        # Validate every leg and collect current odds
+        leg_data = []
+        for leg in legs:
+            try:
+                game = Game.objects.select_related("home_team", "away_team").get(
+                    pk=leg.event_id, status=GameStatus.SCHEDULED
+                )
+            except Game.DoesNotExist:
+                return render(
+                    request,
+                    "vinosports/betting/featured_parlay_card.html",
+                    {
+                        "parlay": fp,
+                        "featured_error": f"{leg.event_label} is no longer accepting bets.",
+                    },
+                )
+
+            market = leg.extras_json.get("market", "MONEYLINE")
+            selection = leg.selection
+            odds_field = _MARKET_ODDS_MAP.get((market, selection))
+            if not odds_field:
+                return render(
+                    request,
+                    "vinosports/betting/featured_parlay_card.html",
+                    {"parlay": fp, "featured_error": "Invalid selection in parlay."},
+                )
+
+            best_odds_row = game.odds.order_by("-fetched_at").first()
+            current_odds = (
+                getattr(best_odds_row, odds_field, None) if best_odds_row else None
+            )
+            if not current_odds:
+                return render(
+                    request,
+                    "vinosports/betting/featured_parlay_card.html",
+                    {
+                        "parlay": fp,
+                        "featured_error": f"No odds available for {leg.event_label}.",
+                    },
+                )
+
+            line = None
+            line_field = _MARKET_LINE_MAP.get(market)
+            if line_field and best_odds_row:
+                line = getattr(best_odds_row, line_field, None)
+                # Spread away line is the inverse of the home line
+                if market == "SPREAD" and selection == "AWAY" and line is not None:
+                    line = -line
+
+            leg_data.append(
+                {
+                    "game": game,
+                    "market": market,
+                    "selection": selection,
+                    "odds": current_odds,
+                    "line": line,
+                }
+            )
+
+        # Compute combined odds (American → decimal → multiply → back to American)
+        combined_decimal = Decimal("1")
+        for ld in leg_data:
+            combined_decimal *= american_to_decimal(int(ld["odds"]))
+
+        combined_odds = decimal_to_american(combined_decimal)
+        max_payout = min(calculate_payout(stake, combined_odds), Decimal("10000.00"))
+
+        try:
+            balance_obj = log_transaction(
+                request.user,
+                -stake,
+                BalanceTransaction.Type.PARLAY_PLACEMENT,
+                f"Featured parlay: {fp.title}",
+            )
+        except ValueError:
+            return render(
+                request,
+                "vinosports/betting/featured_parlay_card.html",
+                {"parlay": fp, "featured_error": "Insufficient balance."},
+            )
+
+        parlay = Parlay.objects.create(
+            user=request.user,
+            stake=stake,
+            combined_odds=combined_odds,
+            max_payout=max_payout,
+            featured_parlay=fp,
+        )
+        ParlayLeg.objects.bulk_create(
+            [
+                ParlayLeg(
+                    parlay=parlay,
+                    game=ld["game"],
+                    market=ld["market"],
+                    selection=ld["selection"],
+                    line=ld["line"],
+                    odds_at_placement=ld["odds"],
+                )
+                for ld in leg_data
+            ]
+        )
+
+        return render(
+            request,
+            "vinosports/betting/featured_parlay_confirmed.html",
+            {
+                "parlay": parlay,
+                "featured_parlay": fp,
+                "leg_data": leg_data,
+                "combined_odds": combined_odds,
+                "potential_payout": max_payout,
+                "stake": stake,
+                "balance": balance_obj.balance,
+                "my_bets_url": "nba_betting:my_bets",
+            },
+        )

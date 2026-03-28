@@ -27,6 +27,7 @@ from vinosports.betting.constants import (
     PARLAY_MAX_PAYOUT,
     PARLAY_MIN_LEGS,
 )
+from vinosports.betting.featured import FeaturedParlay
 from vinosports.betting.leaderboard import get_public_identity, get_user_rank
 from vinosports.betting.models import (
     Badge,
@@ -883,5 +884,185 @@ class PlaceParlayView(LoginRequiredMixin, View):
                 "potential_payout": potential_payout,
                 "stake": stake,
                 "balance": balance.balance,
+            },
+        )
+
+
+class PlaceFeaturedParlayView(LoginRequiredMixin, View):
+    """Place a parlay matching a featured parlay's legs at a user-chosen stake."""
+
+    def _card_error(self, request, fp, msg):
+        return render(
+            request,
+            "vinosports/betting/featured_parlay_card.html",
+            {"parlay": fp, "featured_error": msg},
+        )
+
+    def post(self, request, pk):
+        fp = get_object_or_404(
+            FeaturedParlay.objects.prefetch_related("legs"),
+            pk=pk,
+            league="epl",
+            status=FeaturedParlay.Status.ACTIVE,
+        )
+
+        # Validate stake from form input
+        try:
+            stake = Decimal(request.POST.get("stake", ""))
+        except Exception:
+            return self._card_error(request, fp, "Please enter a valid wager amount.")
+        if stake < Decimal("0.50"):
+            return self._card_error(request, fp, "Minimum wager is $0.50.")
+        if stake > Decimal("10000"):
+            return self._card_error(request, fp, "Maximum wager is $10,000.")
+
+        # Prevent duplicate opt-ins
+        if Parlay.objects.filter(user=request.user, featured_parlay=fp).exists():
+            return render(
+                request,
+                "vinosports/betting/featured_parlay_card.html",
+                {"parlay": fp, "featured_error": "You've already placed this parlay."},
+            )
+
+        legs = list(fp.legs.all())
+        if len(legs) < PARLAY_MIN_LEGS:
+            return render(
+                request,
+                "vinosports/betting/featured_parlay_card.html",
+                {
+                    "parlay": fp,
+                    "featured_error": "This parlay doesn't have enough legs.",
+                },
+            )
+
+        # Validate every leg and collect current odds
+        match_ids = [leg.event_id for leg in legs]
+        matches_by_id = {
+            m.pk: m
+            for m in Match.objects.filter(pk__in=match_ids).select_related(
+                "home_team", "away_team"
+            )
+        }
+
+        leg_data = []
+        for leg in legs:
+            match = matches_by_id.get(leg.event_id)
+            if not match or match.status not in (
+                Match.Status.SCHEDULED,
+                Match.Status.TIMED,
+            ):
+                return render(
+                    request,
+                    "vinosports/betting/featured_parlay_card.html",
+                    {
+                        "parlay": fp,
+                        "featured_error": f"{leg.event_label} is no longer accepting bets.",
+                    },
+                )
+            odds_field = _ODDS_FIELD_MAP.get(leg.selection)
+            if not odds_field:
+                return render(
+                    request,
+                    "vinosports/betting/featured_parlay_card.html",
+                    {"parlay": fp, "featured_error": "Invalid selection in parlay."},
+                )
+            best_odds = (
+                Odds.objects.filter(match=match)
+                .aggregate(best=Min(odds_field))
+                .get("best")
+            )
+            if not best_odds:
+                return render(
+                    request,
+                    "vinosports/betting/featured_parlay_card.html",
+                    {
+                        "parlay": fp,
+                        "featured_error": f"No odds available for {leg.event_label}.",
+                    },
+                )
+            leg_data.append(
+                {"match": match, "selection": leg.selection, "odds": best_odds}
+            )
+
+        # Compute combined odds
+        combined_odds = Decimal("1.00")
+        for ld in leg_data:
+            combined_odds *= ld["odds"]
+        combined_odds = combined_odds.quantize(Decimal("0.01"))
+
+        potential_payout = min(stake * combined_odds, PARLAY_MAX_PAYOUT)
+
+        try:
+            with transaction.atomic():
+                balance = UserBalance.objects.select_for_update().get(user=request.user)
+
+                if balance.balance < stake:
+                    return render(
+                        request,
+                        "vinosports/betting/featured_parlay_card.html",
+                        {
+                            "parlay": fp,
+                            "featured_error": f"Insufficient balance. You have {format_currency(balance.balance, request.user.currency)}.",
+                        },
+                    )
+
+                log_transaction(
+                    balance,
+                    -stake,
+                    BalanceTransaction.Type.PARLAY_PLACEMENT,
+                    f"Featured parlay: {fp.title}",
+                )
+
+                parlay = Parlay.objects.create(
+                    user=request.user,
+                    stake=stake,
+                    combined_odds=combined_odds,
+                    max_payout=PARLAY_MAX_PAYOUT,
+                    featured_parlay=fp,
+                )
+                ParlayLeg.objects.bulk_create(
+                    [
+                        ParlayLeg(
+                            parlay=parlay,
+                            match=ld["match"],
+                            selection=ld["selection"],
+                            odds_at_placement=ld["odds"],
+                        )
+                        for ld in leg_data
+                    ]
+                )
+        except UserBalance.DoesNotExist:
+            return render(
+                request,
+                "vinosports/betting/featured_parlay_card.html",
+                {
+                    "parlay": fp,
+                    "featured_error": "Balance not found. Please refresh and try again.",
+                },
+            )
+
+        # Update challenge progress
+        _user = request.user
+        _ctx = {
+            "stake": stake,
+            "leg_count": len(leg_data),
+            "combined_odds": combined_odds,
+        }
+        transaction.on_commit(
+            lambda: update_challenge_progress(_user, "parlay_placed", _ctx)
+        )
+
+        return render(
+            request,
+            "vinosports/betting/featured_parlay_confirmed.html",
+            {
+                "parlay": parlay,
+                "featured_parlay": fp,
+                "leg_data": leg_data,
+                "combined_odds": combined_odds,
+                "potential_payout": potential_payout,
+                "stake": stake,
+                "balance": balance.balance,
+                "my_bets_url": "epl_betting:my_bets",
             },
         )

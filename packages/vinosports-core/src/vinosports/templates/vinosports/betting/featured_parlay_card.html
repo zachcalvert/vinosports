@@ -1,4 +1,13 @@
-<div class="bg-surface-container-lowest rounded-xl border border-outline-variant overflow-hidden flex flex-col h-full">
+{% load i18n %}
+<div id="featured-parlay-{{ parlay.pk }}" class="bg-surface-container-lowest rounded-xl border border-outline-variant overflow-hidden flex flex-col h-full">
+    {% if featured_error %}
+    <div class="px-5 pt-3">
+        <div class="rounded-lg bg-error/10 border border-error/20 px-3 py-2">
+            <p class="text-xs font-label text-error">{{ featured_error }}</p>
+        </div>
+    </div>
+    {% endif %}
+
     {# Header: sponsor + league badge #}
     <div class="flex items-center justify-between px-5 pt-5 pb-3">
         <div class="flex items-center gap-3">
@@ -59,5 +68,35 @@
             <span class="text-[10px] font-label text-muted uppercase tracking-widest">${{ parlay.reference_stake }} returns</span>
             <p class="font-mono font-bold text-positive text-lg leading-tight">${{ parlay.potential_payout }}</p>
         </div>
+    </div>
+
+    {# Opt-in button #}
+    <div class="px-5 pb-4 pt-2">
+        {% if user.is_authenticated %}
+        <form {% if parlay.league == 'epl' %}hx-post="{% url 'epl_betting:place_featured_parlay' parlay.pk %}"{% else %}hx-post="{% url 'nba_betting:place_featured_parlay' parlay.pk %}"{% endif %}
+              hx-target="#featured-parlay-{{ parlay.pk }}"
+              hx-swap="outerHTML">
+            {% csrf_token %}
+            <div class="flex items-center gap-2">
+                <div class="relative flex-1">
+                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-muted font-mono text-sm">$</span>
+                    <input type="number" name="stake" value="{{ parlay.reference_stake }}"
+                           min="0.50" max="10000" step="0.50"
+                           class="w-full pl-7 pr-3 py-2.5 rounded-lg bg-surface-container border border-outline-variant
+                                  font-mono text-sm text-secondary focus:border-primary focus:outline-none"
+                           aria-label="Wager amount">
+                </div>
+                <button type="submit"
+                        class="flex-shrink-0 px-5 py-2.5 rounded-lg bg-primary text-on-primary font-headline font-bold text-sm uppercase tracking-widest hover:bg-primary/90 transition-colors">
+                    Place Bet
+                </button>
+            </div>
+        </form>
+        {% else %}
+        <a href="{% url 'hub:signup' %}"
+           class="block w-full py-2.5 rounded-lg bg-primary text-on-primary font-headline font-bold text-sm uppercase tracking-widest text-center hover:bg-primary/90 transition-colors">
+            Sign Up to Bet
+        </a>
+        {% endif %}
     </div>
 </div>
