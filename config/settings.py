@@ -155,8 +155,28 @@ USE_TZ = True
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
-MEDIA_URL = "media/"
 MEDIA_ROOT = BASE_DIR / "media"
+
+# Media storage: Tigris (S3-compatible) in production, local filesystem in dev
+_S3_ENDPOINT = os.environ.get("AWS_ENDPOINT_URL_S3", "")
+if _S3_ENDPOINT:
+    STORAGES = {
+        "default": {
+            "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
+        },
+        "staticfiles": {
+            "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        },
+    }
+    AWS_STORAGE_BUCKET_NAME = os.environ.get("BUCKET_NAME", "vinosports-media")
+    AWS_S3_ENDPOINT_URL = _S3_ENDPOINT
+    AWS_S3_REGION_NAME = os.environ.get("AWS_REGION", "auto")
+    AWS_DEFAULT_ACL = "public-read"
+    AWS_S3_OBJECT_PARAMETERS = {"CacheControl": "max-age=86400"}
+    AWS_QUERYSTRING_AUTH = False
+    MEDIA_URL = f"{_S3_ENDPOINT}/{AWS_STORAGE_BUCKET_NAME}/"
+else:
+    MEDIA_URL = "media/"
 STATICFILES_DIRS = []
 
 # EPL and NBA project-level static (team logos, etc.)

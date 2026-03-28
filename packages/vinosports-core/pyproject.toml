@@ -19,6 +19,7 @@ dependencies = [
     "Pillow>=10.0",
     "dj-database-url>=2.1",
     "sentry-sdk[django]>=2.0",
+    "django-storages[s3]>=1.14",
 ]
 
 [tool.hatch.build.targets.wheel]
