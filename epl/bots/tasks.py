@@ -518,16 +518,16 @@ def generate_featured_parlays():
         logger.info("EPL featured parlays: no odds available, skipping")
         return
 
-    # Pick a sponsor bot
-    sponsor_bot = (
+    # Get all active EPL bots and shuffle them so each parlay gets a unique sponsor
+    available_bots = list(
         BotProfile.objects.filter(is_active=True, active_in_epl=True)
         .select_related("user")
-        .order_by("?")
-        .first()
     )
-    if not sponsor_bot:
+    if not available_bots:
         logger.warning("EPL featured parlays: no active EPL bot found")
         return
+    random.shuffle(available_bots)
+    bot_iter = iter(available_bots)
 
     # Build themed parlays
     themes = _build_epl_parlay_themes(matches, odds_map)
@@ -540,6 +540,14 @@ def generate_featured_parlays():
     created = 0
     for theme_name, legs_data in themes.items():
         if len(legs_data) < 2:
+            continue
+
+        sponsor_bot = next(bot_iter, None)
+        if not sponsor_bot:
+            logger.info(
+                "EPL featured parlays: no remaining bot for theme '%s', skipping",
+                theme_name,
+            )
             continue
 
         try:

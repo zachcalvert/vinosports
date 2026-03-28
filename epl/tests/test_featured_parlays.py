@@ -231,3 +231,47 @@ class TestEPLGenerateFeaturedParlays:
         generate_featured_parlays()
 
         assert FeaturedParlay.objects.count() == 0
+
+    @patch("vinosports.betting.featured_utils.generate_parlay_copy")
+    def test_each_parlay_has_unique_sponsor(self, mock_copy):
+        """Multiple parlays created in one run should each have a different sponsor bot."""
+        from tests.factories import ScheduleTemplateFactory
+
+        mock_copy.return_value = {
+            "title": "Test Parlay",
+            "description": "A test description.",
+        }
+        # Create 3 bots with unique names so all 3 themes can each get a unique sponsor
+        for i in range(3):
+            bot_user = UserFactory(is_bot=True)
+            UserBalanceFactory(user=bot_user)
+            template = ScheduleTemplateFactory()
+            BotProfile.objects.create(
+                user=bot_user,
+                strategy_type=StrategyType.PARLAY,
+                is_active=True,
+                active_in_epl=True,
+                schedule_template=template,
+                persona_prompt="Test bot",
+            )
+
+        matches = [MatchFactory() for _ in range(4)]
+        for m in matches:
+            OddsFactory(
+                match=m,
+                home_win=Decimal("1.80"),
+                draw=Decimal("3.50"),
+                away_win=Decimal("4.20"),
+            )
+
+        from epl.bots.tasks import generate_featured_parlays
+
+        generate_featured_parlays()
+
+        parlays = FeaturedParlay.objects.filter(league="epl")
+        assert parlays.count() >= 2
+
+        sponsor_ids = list(parlays.values_list("sponsor_id", flat=True))
+        assert len(sponsor_ids) == len(set(sponsor_ids)), (
+            "Each featured parlay should have a unique sponsor bot"
+        )
