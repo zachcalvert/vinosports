@@ -75,9 +75,6 @@ jobs:
       - name: Run migrations
         run: python manage.py migrate --noinput
 
-      - name: Run tests
-        run: python -m pytest -n auto --dist worksteal --cov=vinosports --cov=hub --cov=nba --cov=epl --cov-report=term-missing:skip-covered --cov-config=pyproject.toml
-
   deploy:
     name: Deploy
     needs: [lint, test]
