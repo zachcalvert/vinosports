@@ -20,7 +20,7 @@
 </div>
 
 {% if leaderboard %}
-<div class="overflow-x-auto">
+<div class="bg-surface-container-lowest rounded-xl p-4 overflow-x-auto">
     <table class="w-full" id="standings-table">
         <thead>
             <tr class="border-b-2 border-outline-variant text-xs font-label font-bold text-secondary uppercase tracking-widest">
@@ -59,7 +59,7 @@
 
                 {% if board_type == "balance" %}
                 <td class="px-2 sm:px-3 py-3 text-right">
-                    <span class="font-mono text-sm font-bold text-primary">{{ entry.balance|currency:request.user }}</span>
+                    <span class="font-mono text-sm font-bold text-positive">{{ entry.balance|currency:request.user }}</span>
                 </td>
                 <td class="px-2 sm:px-3 py-3 text-right hidden sm:table-cell">
                     <span class="text-xs text-muted">{{ entry.user.date_joined|date:"M Y" }}</span>
