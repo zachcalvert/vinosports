@@ -2,36 +2,40 @@
 
 ## Infrastructure (Fly.io)
 
-### Organization Layout
+### Architecture
 
-All services live under a single Fly organization:
+One Fly app, three process groups. The unified Django project (hub + EPL + NBA) runs as a single deployable unit.
 
 ```
-vinosports (Fly org)
-├── vinosports-epl        # EPL Django app (web + worker + beat processes)
-├── vinosports-nba        # NBA Django app (web + worker + beat processes)
-├── vinosports-db          # Shared Postgres cluster
-└── vinosports-redis       # Upstash Redis (shared)
+vinosports (Fly app, iad region)
+├── web     → daphne (HTTP + WebSocket)
+├── worker  → celery worker -Q epl,nba,default
+└── beat    → celery beat
 ```
 
-### Per-League Fly App
+Attached services:
+- **Fly Postgres** (`vinosports-db`) — shared database for all leagues
+- **Upstash Redis** (`vinosports-redis`) — Celery broker, Channels layer, cache
 
-Each league deploys as one Fly app with three process groups:
+### Why One App (Not Per-League)
 
-```toml
-# apps/epl/fly.toml
-[processes]
-  web = "daphne -b 0.0.0.0 -p 8000 config.asgi:application"
-  worker = "celery -A config worker -l info"
-  beat = "celery -A config beat -l info"
-```
+The project was unified into a single Django process (see `docs/0019-UNIFIED_DJANGO_PROJECT.md`). One app means:
+- Shared sessions and cookies work naturally (one domain, one DB)
+- Single deploy deploys everything
+- No cross-service networking complexity
+- `LeagueMiddleware` handles `/epl/` and `/nba/` routing within the single process
 
-`fly deploy` from a league directory deploys all three processes together. Worker and beat run as separate machines for clean monitoring and independent restarts.
+### Domain
 
-### Shared Services
+`vinosports.com` with subpaths (`/epl/`, `/nba/`). Fly handles TLS termination via Let's Encrypt. Daphne serves both HTTP and WebSocket — no nginx needed in production.
 
-- **Postgres**: One Fly Postgres cluster, one database (`vinosports`), one `public` schema. All league projects share the same user accounts, balances, badges, challenges, and rewards tables. League-specific tables (matches, games, odds, bets) coexist in the same schema with distinct table name prefixes via Django app labels.
-- **Redis**: Upstash Redis (Fly's official Redis partner). Used for Celery broker/results, Django Channels layer, and caching. Upstash free tier (10K commands/day) is sufficient for ~200 users + 25 bots; paid tier ($10/mo) available if needed.
+### Process Sizing
+
+| Process | Memory | CPU | Purpose |
+|---------|--------|-----|---------|
+| web | 512MB | shared-1x | Daphne ASGI (HTTP + WS) |
+| worker | 512MB | shared-1x | Celery (data ingestion, odds, bots, settlement) |
+| beat | 256MB | shared-1x | Celery beat scheduler |
 
 ### Estimated Monthly Cost (~200 users, ~25 bots)
 
@@ -39,58 +43,84 @@ Each league deploys as one Fly app with three process groups:
 |---------|------|------|
 | Postgres (Fly) | shared-cpu, 256MB, 1GB disk | ~$7 |
 | Redis (Upstash) | Free or $10 plan | $0–10 |
-| EPL web | shared-cpu-1x, 256MB | ~$3 |
-| EPL worker | shared-cpu-1x, 256MB | ~$3 |
-| EPL beat | shared-cpu-1x, 256MB | ~$3 |
-| NBA web | shared-cpu-1x, 256MB | ~$3 |
-| NBA worker | shared-cpu-1x, 256MB | ~$3 |
-| NBA beat | shared-cpu-1x, 256MB | ~$3 |
-| **Total** | | **~$25–35/mo** |
+| web | shared-cpu-1x, 512MB | ~$5 |
+| worker | shared-cpu-1x, 512MB | ~$5 |
+| beat | shared-cpu-1x, 256MB | ~$3 |
+| Sentry | Free tier (5K errors/mo) | $0 |
+| **Total** | | **~$20–30/mo** |
 
 Claude API costs for bot commentary are separate and will likely exceed infrastructure costs.
 
+---
+
 ## CI (GitHub Actions)
 
-### Test Suites
-
-Three independent test suites, each runnable in isolation:
+### Pipeline: `.github/workflows/ci.yml`
 
 ```
-packages/vinosports-core/tests/    # Shared models, balance logic, utilities
-apps/epl/tests/                    # EPL-specific: odds engine, settlement, data ingestion
-apps/nba/tests/                    # NBA-specific: spread/total settlement, API client
+push to main / PR → lint → test → deploy (main only)
 ```
 
-### Path-Based Workflow Triggers
+**Lint** — Ruff check + format (v0.15.7)
 
-Each workflow only runs when relevant files change:
+**Test** — pytest with parallel execution (`-n auto`), coverage across vinosports-core, hub, EPL, NBA. Services: PostgreSQL 16 + Redis 7.
 
-- **vinosports-core changes** → run core tests + EPL tests + NBA tests → deploy both leagues
-- **EPL-only changes** → run EPL tests only → deploy EPL only
-- **NBA-only changes** → run NBA tests only → deploy NBA only
-
-```yaml
-# .github/workflows/vinosports-core.yml
-on:
-  push:
-    paths:
-      - 'packages/vinosports-core/**'
-
-# .github/workflows/epl.yml
-on:
-  push:
-    paths:
-      - 'packages/vinosports-core/**'   # core changes affect EPL
-      - 'apps/epl/**'
-
-# .github/workflows/nba.yml
-on:
-  push:
-    paths:
-      - 'packages/vinosports-core/**'   # core changes affect NBA
-      - 'apps/nba/**'
-```
+**Deploy** — `flyctl deploy --remote-only` after lint+test pass. Only runs on pushes to `main` (not PRs). Requires `FLY_API_TOKEN` GitHub secret.
 
 ### Deploy Flow
 
-CI runs tests, then deploys on success. Each league has its own `fly.toml` and deploys independently via `flyctl deploy` scoped to its directory. The Docker build context is the monorepo root (to access `packages/vinosports-core`), with the league-specific Dockerfile.
+1. Push to `main` triggers CI
+2. Lint and test run in parallel
+3. On success, `flyctl deploy --remote-only` builds the Docker image on Fly's remote builders
+4. Fly runs the release command (`python manage.py migrate --noinput`)
+5. New machines roll out (web, worker, beat)
+
+---
+
+## Monitoring (Sentry)
+
+Error tracking via Sentry cloud (free tier). SDK auto-discovers Django and Celery integrations.
+
+- **DSN** set via `SENTRY_DSN` Fly secret
+- **PII collection** enabled (`send_default_pii=True`) for request headers and user info
+- **Performance** traces sampled at 10%
+- **Profiles** sampled at 10%
+
+---
+
+## Provisioning Checklist
+
+```bash
+# Create app
+fly apps create vinosports
+
+# Postgres
+fly postgres create --name vinosports-db --region iad --vm-size shared-cpu-1x --volume-size 1
+fly postgres attach vinosports-db --app vinosports
+
+# Redis
+fly redis create --name vinosports-redis --region iad
+
+# Secrets
+fly secrets set \
+  SECRET_KEY="$(python -c 'import secrets; print(secrets.token_urlsafe(50))')" \
+  REDIS_URL="<from fly redis create output>" \
+  BDL_API_KEY="<key>" \
+  ANTHROPIC_API_KEY="<key>" \
+  SENTRY_DSN="<from sentry project>"
+
+# Domain
+fly certs add vinosports.com
+fly certs add www.vinosports.com
+
+# GitHub Actions secret
+fly tokens create deploy -x 999999h
+# → Add as FLY_API_TOKEN in GitHub repo settings
+
+# First deploy
+fly deploy
+
+# Seed data
+fly ssh console
+python manage.py seed
+```

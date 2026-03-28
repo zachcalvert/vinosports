@@ -7,10 +7,10 @@ WORKDIR /app
 
 # Install vinosports-core first (changes less frequently)
 COPY packages/vinosports-core /packages/vinosports-core
-RUN pip install -e /packages/vinosports-core
+RUN pip install /packages/vinosports-core
 
-# Install additional dependencies
-RUN pip install psycopg2-binary whitenoise gunicorn pytest pytest-django pytest-cov pytest-xdist factory-boy
+# Install additional dependencies not in core
+RUN pip install psycopg2-binary whitenoise
 
 # Copy project code
 COPY config/ config/
@@ -18,6 +18,9 @@ COPY epl/ epl/
 COPY nba/ nba/
 COPY hub/ hub/
 COPY manage.py .
+
+# Collect static files at build time
+RUN SECRET_KEY=build-only python manage.py collectstatic --noinput
 
 EXPOSE 8000
 
