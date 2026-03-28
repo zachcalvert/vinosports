@@ -237,11 +237,11 @@ class TestLoginViewExtra:
 
 
 # ---------------------------------------------------------------------------
-# BotProfileView
+# ProfileView
 # ---------------------------------------------------------------------------
 
 
-class TestBotProfileView:
+class TestProfileView:
     @pytest.fixture
     def bot_with_profile(self):
         bot_user = UserFactory(is_bot=True)
@@ -254,73 +254,79 @@ class TestBotProfileView:
 
     def test_renders_bot_profile(self, client, bot_with_profile):
         bot_user, bp = bot_with_profile
-        resp = client.get(reverse("hub:bot_profile", args=[bot_user.slug]))
+        resp = client.get(reverse("hub:profile", args=[bot_user.slug]))
+        assert resp.status_code == 200
+
+    def test_renders_regular_user_profile(self, client, user):
+        resp = client.get(reverse("hub:profile", args=[user.slug]))
         assert resp.status_code == 200
 
     def test_context_has_profile_user(self, client, bot_with_profile):
         bot_user, bp = bot_with_profile
-        resp = client.get(reverse("hub:bot_profile", args=[bot_user.slug]))
+        resp = client.get(reverse("hub:profile", args=[bot_user.slug]))
         assert resp.context["profile_user"] == bot_user
 
     def test_context_has_bot_profile(self, client, bot_with_profile):
         bot_user, bp = bot_with_profile
-        resp = client.get(reverse("hub:bot_profile", args=[bot_user.slug]))
+        resp = client.get(reverse("hub:profile", args=[bot_user.slug]))
         assert resp.context["bot_profile"] == bp
 
     def test_context_has_stats_none_when_missing(self, client, bot_with_profile):
         bot_user, bp = bot_with_profile
-        resp = client.get(reverse("hub:bot_profile", args=[bot_user.slug]))
+        resp = client.get(reverse("hub:profile", args=[bot_user.slug]))
         assert resp.context["stats"] is None
 
     def test_context_has_stats_when_present(self, client, bot_with_profile):
         bot_user, bp = bot_with_profile
         stats = UserStats.objects.create(user=bot_user)
-        resp = client.get(reverse("hub:bot_profile", args=[bot_user.slug]))
+        resp = client.get(reverse("hub:profile", args=[bot_user.slug]))
         assert resp.context["stats"] == stats
 
     def test_default_balance_when_missing(self, client, bot_with_profile):
         bot_user, bp = bot_with_profile
-        resp = client.get(reverse("hub:bot_profile", args=[bot_user.slug]))
+        resp = client.get(reverse("hub:profile", args=[bot_user.slug]))
         assert resp.context["balance"] == Decimal("1000.00")
 
     def test_real_balance_when_present(self, client, bot_with_profile):
         bot_user, bp = bot_with_profile
         UserBalance.objects.create(user=bot_user, balance=Decimal("2500.00"))
-        resp = client.get(reverse("hub:bot_profile", args=[bot_user.slug]))
+        resp = client.get(reverse("hub:profile", args=[bot_user.slug]))
         assert resp.context["balance"] == Decimal("2500.00")
 
     def test_badge_grid_in_context(self, client, bot_with_profile):
         bot_user, bp = bot_with_profile
-        resp = client.get(reverse("hub:bot_profile", args=[bot_user.slug]))
+        resp = client.get(reverse("hub:profile", args=[bot_user.slug]))
         assert "all_badges" in resp.context
 
     def test_earned_badge_has_earned_date(self, client, bot_with_profile):
         bot_user, bp = bot_with_profile
         badge = Badge.objects.create(slug="test_badge", name="Test Badge")
         UserBadge.objects.create(user=bot_user, badge=badge)
-        resp = client.get(reverse("hub:bot_profile", args=[bot_user.slug]))
+        resp = client.get(reverse("hub:profile", args=[bot_user.slug]))
         earned_badge = next(
             (b for b in resp.context["all_badges"] if b.slug == "test_badge"), None
         )
         assert earned_badge is not None
         assert earned_badge.earned is not None
 
-    def test_404_for_non_bot_user(self, client, user):
-        resp = client.get(reverse("hub:bot_profile", args=[user.slug]))
+    def test_404_for_nonexistent_slug(self, client):
+        resp = client.get(reverse("hub:profile", args=["no-such-user"]))
         assert resp.status_code == 404
 
-    def test_404_for_nonexistent_slug(self, client):
-        resp = client.get(reverse("hub:bot_profile", args=["no-such-bot"]))
-        assert resp.status_code == 404
+    def test_old_bot_url_redirects(self, client, bot_with_profile):
+        bot_user, bp = bot_with_profile
+        resp = client.get(reverse("hub:bot_profile", args=[bot_user.slug]))
+        assert resp.status_code == 301
+        assert f"/profile/{bot_user.slug}/" in resp["Location"]
 
     def test_context_has_user_rank(self, client, bot_with_profile):
         bot_user, bp = bot_with_profile
-        resp = client.get(reverse("hub:bot_profile", args=[bot_user.slug]))
+        resp = client.get(reverse("hub:profile", args=[bot_user.slug]))
         assert "user_rank" in resp.context
 
     def test_context_has_display_identity(self, client, bot_with_profile):
         bot_user, bp = bot_with_profile
-        resp = client.get(reverse("hub:bot_profile", args=[bot_user.slug]))
+        resp = client.get(reverse("hub:profile", args=[bot_user.slug]))
         assert "display_identity" in resp.context
 
 

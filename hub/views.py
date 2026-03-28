@@ -68,15 +68,15 @@ class HomeView(TemplateView):
         return ctx
 
 
-class BotProfileView(TemplateView):
-    """Public profile page for bot users — persona, stats, and badges."""
+class ProfileView(TemplateView):
+    """Public profile page for any user — persona, stats, and badges."""
 
-    template_name = "hub/bot_profile.html"
+    template_name = "hub/profile.html"
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         User = get_user_model()
-        profile_user = get_object_or_404(User, slug=self.kwargs["slug"], is_bot=True)
+        profile_user = get_object_or_404(User, slug=self.kwargs["slug"])
 
         # Identity
         ctx["profile_user"] = profile_user

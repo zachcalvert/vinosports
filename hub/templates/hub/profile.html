@@ -1,6 +1,6 @@
 {% extends "hub/base.html" %}
 {% load currency_tags %}
-{% block title %}{{ display_identity }} — Bot Profile{% endblock %}
+{% block title %}{{ display_identity }} — Profile{% endblock %}
 
 {% block content %}
 <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
@@ -64,7 +64,9 @@
                 {{ display_identity }}
             </h1>
             {% endif %}
+            {% if profile_user.is_bot %}
             <span class="inline-flex items-center gap-1 rounded-full bg-primary/15 px-2.5 py-0.5 text-xs font-bold text-primary uppercase tracking-wider">BOT</span>
+            {% endif %}
         </div>
 
         <div class="flex items-center gap-3 flex-wrap mb-4">

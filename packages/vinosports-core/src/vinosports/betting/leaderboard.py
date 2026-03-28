@@ -1,11 +1,13 @@
 import logging
+from datetime import timedelta
 
 from django.core.cache import cache
 from django.db import models
-from django.db.models import Case, F, Q, Value, When
+from django.db.models import Case, F, OuterRef, Q, Subquery, Value, When
 from django.db.models.functions import Cast
+from django.utils import timezone
 
-from vinosports.betting.models import UserBalance, UserStats
+from vinosports.betting.models import BalanceTransaction, UserBalance, UserStats
 
 logger = logging.getLogger(__name__)
 
@@ -59,15 +61,48 @@ def _annotate_identity(entries):
     return entries
 
 
+def _balance_at_cutoff_subquery(cutoff):
+    """Subquery: last balance_after before the cutoff for each user."""
+    return Subquery(
+        BalanceTransaction.objects.filter(
+            user=OuterRef("user"),
+            created_at__lte=cutoff,
+        )
+        .order_by("-created_at")
+        .values("balance_after")[:1]
+    )
+
+
+def _annotate_balance_changes(qs):
+    """Annotate a UserBalance queryset with 24h and 7d balance deltas."""
+    now = timezone.now()
+    return qs.annotate(
+        balance_24h_ago=_balance_at_cutoff_subquery(now - timedelta(hours=24)),
+        balance_7d_ago=_balance_at_cutoff_subquery(now - timedelta(days=7)),
+    )
+
+
+def _compute_balance_deltas(entries):
+    """Set change_24h and change_7d on each entry from annotations."""
+    for entry in entries:
+        b24 = getattr(entry, "balance_24h_ago", None)
+        b7 = getattr(entry, "balance_7d_ago", None)
+        entry.change_24h = entry.balance - b24 if b24 is not None else None
+        entry.change_7d = entry.balance - b7 if b7 is not None else None
+    return entries
+
+
 def _get_balance_leaderboard(limit):
     qs = (
         UserBalance.objects.select_related("user")
         .filter(user__is_superuser=False)
         .order_by("-balance", "user_id")
     )
+    qs = _annotate_balance_changes(qs)
     if limit is not None:
         qs = qs[:limit]
-    return _annotate_identity(list(qs))
+    entries = _annotate_identity(list(qs))
+    return _compute_balance_deltas(entries)
 
 
 def _get_profit_leaderboard(limit):
@@ -130,7 +165,8 @@ def get_user_rank(user, leaderboard=None, board_type="balance"):
 
 def _get_balance_rank(user):
     try:
-        balance = user.balance
+        qs = _annotate_balance_changes(UserBalance.objects.filter(user=user))
+        balance = qs.get()
     except UserBalance.DoesNotExist:
         return None
 
@@ -145,6 +181,7 @@ def _get_balance_rank(user):
 
     balance.display_identity = get_public_identity(user)
     balance.rank = higher_ranked_count + 1
+    _compute_balance_deltas([balance])
     return balance
 
 

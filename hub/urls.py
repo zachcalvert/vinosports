@@ -1,4 +1,5 @@
 from django.urls import path
+from django.views.generic import RedirectView
 
 from . import views
 
@@ -23,7 +24,12 @@ urlpatterns = [
         views.BalanceHistoryAPI.as_view(),
         name="balance_history_api",
     ),
-    path("bots/<slug:slug>/", views.BotProfileView.as_view(), name="bot_profile"),
+    path("profile/<slug:slug>/", views.ProfileView.as_view(), name="profile"),
+    path(
+        "bots/<slug:slug>/",
+        RedirectView.as_view(pattern_name="hub:profile", permanent=True),
+        name="bot_profile",
+    ),
     # Global standings
     path("standings/", views.StandingsView.as_view(), name="standings"),
     # My Bets (cross-league)

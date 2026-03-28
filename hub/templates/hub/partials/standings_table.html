@@ -29,7 +29,8 @@
 
                 {% if board_type == "balance" %}
                 <th class="px-2 sm:px-3 py-3 text-right">Balance</th>
-                <th class="px-2 sm:px-3 py-3 text-right hidden sm:table-cell">Joined</th>
+                <th class="px-2 sm:px-3 py-3 text-right">24h</th>
+                <th class="px-2 sm:px-3 py-3 text-right hidden sm:table-cell">7d</th>
 
                 {% elif board_type == "profit" %}
                 <th class="px-2 sm:px-3 py-3 text-right">Net Profit</th>
@@ -54,15 +55,30 @@
                     </div>
                 </td>
                 <td class="px-2 sm:px-3 py-3">
-                    <span class="text-sm font-semibold">{{ entry.display_identity }}</span>
+                    <a href="{% url 'hub:profile' entry.user.slug %}" class="text-sm font-semibold hover:text-primary transition-colors">{{ entry.display_identity }}</a>
                 </td>
 
                 {% if board_type == "balance" %}
                 <td class="px-2 sm:px-3 py-3 text-right">
                     <span class="font-mono text-sm font-bold text-positive">{{ entry.balance|currency:request.user }}</span>
                 </td>
+                <td class="px-2 sm:px-3 py-3 text-right">
+                    {% if entry.change_24h != None %}
+                    <span class="font-mono text-xs font-semibold {% if entry.change_24h > 0 %}text-positive{% elif entry.change_24h < 0 %}text-danger{% else %}text-muted{% endif %}">
+                        {% if entry.change_24h > 0 %}+{% endif %}{{ entry.change_24h|currency:request.user }}
+                    </span>
+                    {% else %}
+                    <span class="text-xs text-muted">—</span>
+                    {% endif %}
+                </td>
                 <td class="px-2 sm:px-3 py-3 text-right hidden sm:table-cell">
-                    <span class="text-xs text-muted">{{ entry.user.date_joined|date:"M Y" }}</span>
+                    {% if entry.change_7d != None %}
+                    <span class="font-mono text-xs font-semibold {% if entry.change_7d > 0 %}text-positive{% elif entry.change_7d < 0 %}text-danger{% else %}text-muted{% endif %}">
+                        {% if entry.change_7d > 0 %}+{% endif %}{{ entry.change_7d|currency:request.user }}
+                    </span>
+                    {% else %}
+                    <span class="text-xs text-muted">—</span>
+                    {% endif %}
                 </td>
 
                 {% elif board_type == "profit" %}
@@ -114,6 +130,11 @@
             <div class="shrink-0 text-right">
                 {% if board_type == "balance" %}
                 <p class="font-mono text-sm font-bold text-primary">{{ user_rank.balance|currency:request.user }}</p>
+                {% if user_rank.change_24h != None %}
+                <p class="font-mono text-xs {% if user_rank.change_24h > 0 %}text-positive{% elif user_rank.change_24h < 0 %}text-danger{% else %}text-muted{% endif %}">
+                    24h: {% if user_rank.change_24h > 0 %}+{% endif %}{{ user_rank.change_24h|currency:request.user }}
+                </p>
+                {% endif %}
                 {% elif board_type == "profit" %}
                 <p class="font-mono text-sm font-bold {% if user_rank.net_profit > 0 %}text-positive{% elif user_rank.net_profit < 0 %}text-danger{% else %}text-primary{% endif %}">
                     {% if user_rank.net_profit > 0 %}+{% endif %}{{ user_rank.net_profit|currency:request.user }}
