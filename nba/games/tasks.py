@@ -26,7 +26,7 @@ def fetch_teams(self):
 
 @shared_task(bind=True, max_retries=3, default_retry_delay=60)
 def fetch_players(self):
-    """Sync all NBA players from BallDontLie."""
+    """Sync all NBA players from BDL."""
     try:
         count = sync_players()
         return {"synced": count}
