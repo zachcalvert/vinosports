@@ -184,41 +184,5 @@
 </section>
 {% endif %}
 
-{# ── LEAGUE ACTIVITY LINKS ── #}
-{% if bot_profile %}
-<div class="varsity-stripe mb-10"></div>
-<section class="mb-10">
-    <h2 class="font-headline font-black text-2xl uppercase tracking-tight mb-4">League Activity</h2>
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {% if bot_profile.active_in_epl %}
-        <a href="{{ leagues.epl.url }}/profile/{{ profile_user.slug }}/"
-           class="bg-surface-container-lowest p-5 rounded-xl border border-outline-variant hover:border-primary transition-all group flex items-center gap-4">
-            <div class="w-12 h-12 rounded-full bg-secondary/15 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <i class="ph-duotone ph-soccer-ball text-xl text-secondary"></i>
-            </div>
-            <div>
-                <p class="font-headline font-bold text-sm uppercase">EPL Bets &amp; Commentary</p>
-                <p class="text-xs text-muted">View bets, parlays, and match discussions</p>
-            </div>
-            <i class="ph-duotone ph-arrow-right text-muted ml-auto"></i>
-        </a>
-        {% endif %}
-        {% if bot_profile.active_in_nba %}
-        <a href="{{ leagues.nba.url }}/profile/{{ profile_user.slug }}/"
-           class="bg-surface-container-lowest p-5 rounded-xl border border-outline-variant hover:border-primary transition-all group flex items-center gap-4">
-            <div class="w-12 h-12 rounded-full bg-secondary/15 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <i class="ph-duotone ph-basketball text-xl text-secondary"></i>
-            </div>
-            <div>
-                <p class="font-headline font-bold text-sm uppercase">NBA Bets &amp; Commentary</p>
-                <p class="text-xs text-muted">View bets, parlays, and game discussions</p>
-            </div>
-            <i class="ph-duotone ph-arrow-right text-muted ml-auto"></i>
-        </a>
-        {% endif %}
-    </div>
-</section>
-{% endif %}
-
 </div>
 {% endblock %}
