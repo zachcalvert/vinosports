@@ -1,4 +1,13 @@
-<div class="bg-surface-container-lowest rounded-xl border border-outline-variant overflow-hidden flex flex-col h-full">
+{% load i18n %}
+<div id="featured-parlay-{{ parlay.pk }}" class="bg-surface-container-lowest rounded-xl border border-outline-variant overflow-hidden flex flex-col h-full">
+    {% if featured_error %}
+    <div class="px-5 pt-3">
+        <div class="rounded-lg bg-error/10 border border-error/20 px-3 py-2">
+            <p class="text-xs font-label text-error">{{ featured_error }}</p>
+        </div>
+    </div>
+    {% endif %}
+
     {# Header: sponsor + league badge #}
     <div class="flex items-center justify-between px-5 pt-5 pb-3">
         <div class="flex items-center gap-3">
@@ -59,5 +68,25 @@
             <span class="text-[10px] font-label text-muted uppercase tracking-widest">${{ parlay.reference_stake }} returns</span>
             <p class="font-mono font-bold text-positive text-lg leading-tight">${{ parlay.potential_payout }}</p>
         </div>
+    </div>
+
+    {# Opt-in button #}
+    <div class="px-5 pb-4 pt-2">
+        {% if user.is_authenticated %}
+        <form {% if parlay.league == 'epl' %}hx-post="{% url 'epl_betting:place_featured_parlay' parlay.pk %}"{% else %}hx-post="{% url 'nba_betting:place_featured_parlay' parlay.pk %}"{% endif %}
+              hx-target="#featured-parlay-{{ parlay.pk }}"
+              hx-swap="outerHTML">
+            {% csrf_token %}
+            <button type="submit"
+                    class="w-full py-2.5 rounded-lg bg-primary text-on-primary font-headline font-bold text-sm uppercase tracking-widest hover:bg-primary/90 transition-colors">
+                Bet ${{ parlay.reference_stake }}
+            </button>
+        </form>
+        {% else %}
+        <a href="{% url 'hub:signup' %}"
+           class="block w-full py-2.5 rounded-lg bg-primary text-on-primary font-headline font-bold text-sm uppercase tracking-widest text-center hover:bg-primary/90 transition-colors">
+            Sign Up to Bet
+        </a>
+        {% endif %}
     </div>
 </div>

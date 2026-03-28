@@ -1,0 +1,26 @@
+<div id="featured-parlay-{{ featured_parlay.pk }}" class="bg-surface-container-lowest rounded-xl border border-accent/30 overflow-hidden flex flex-col h-full">
+    <div class="p-5 text-center flex flex-col items-center justify-center h-full">
+        <div class="text-accent text-3xl mb-2">&#10003;</div>
+        <h3 class="font-headline font-bold text-lg text-secondary mb-1">Parlay Placed!</h3>
+        <p class="text-xs text-muted mb-1 font-body">{{ featured_parlay.title }}</p>
+        <p class="text-xs text-muted mb-4 font-body">{{ leg_data|length }}-leg accumulator</p>
+
+        <div class="grid grid-cols-3 gap-3 text-center mb-4 w-full">
+            <div>
+                <div class="text-[10px] font-label text-muted uppercase tracking-widest">Stake</div>
+                <div class="font-mono font-bold text-sm text-secondary">${{ stake }}</div>
+            </div>
+            <div>
+                <div class="text-[10px] font-label text-muted uppercase tracking-widest">Odds</div>
+                <div class="font-mono font-bold text-sm text-secondary">{{ combined_odds }}x</div>
+            </div>
+            <div>
+                <div class="text-[10px] font-label text-muted uppercase tracking-widest">Payout</div>
+                <div class="font-mono font-bold text-sm text-accent">${{ potential_payout }}</div>
+            </div>
+        </div>
+
+        <a href="{% url my_bets_url %}"
+           class="text-sm font-label text-accent hover:underline">View My Bets &rarr;</a>
+    </div>
+</div>

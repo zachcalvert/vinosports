@@ -9,6 +9,7 @@ from epl.betting.views import (
     OddsBoardView,
     ParlaySlipPartialView,
     PlaceBetView,
+    PlaceFeaturedParlayView,
     PlaceParlayView,
     QuickBetFormView,
     RemoveFromParlayView,
@@ -33,4 +34,9 @@ urlpatterns = [
     path("parlay/clear/", ClearParlayView.as_view(), name="parlay_clear"),
     path("parlay/slip/", ParlaySlipPartialView.as_view(), name="parlay_slip"),
     path("parlay/place/", PlaceParlayView.as_view(), name="parlay_place"),
+    path(
+        "parlay/featured/<int:pk>/place/",
+        PlaceFeaturedParlayView.as_view(),
+        name="place_featured_parlay",
+    ),
 ]
