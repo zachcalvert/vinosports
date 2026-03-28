@@ -164,9 +164,6 @@ if _S3_ENDPOINT:
         "default": {
             "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
         },
-        "staticfiles": {
-            "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
-        },
     }
     AWS_STORAGE_BUCKET_NAME = os.environ.get("BUCKET_NAME", "vinosports-media")
     AWS_S3_ENDPOINT_URL = _S3_ENDPOINT
