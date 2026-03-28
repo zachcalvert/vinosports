@@ -3,10 +3,11 @@ Celery tasks for bot betting.
 
 run_bot_strategies() is the orchestrator — runs hourly and dispatches
 execute_bot_strategy() only for bots whose schedule template has an active
-window at the current time.
+window at the current time
 """
 
 import logging
+import random
 from decimal import Decimal
 
 from celery import shared_task
@@ -189,16 +190,17 @@ def generate_featured_parlays():
         logger.info("NBA featured parlays: no odds available, skipping")
         return
 
-    # Pick a sponsor bot
-    sponsor_bot = (
-        BotProfile.objects.filter(is_active=True, active_in_nba=True)
-        .select_related("user")
-        .order_by("?")
-        .first()
+    # Get all active NBA bots and shuffle them so each parlay gets a unique sponsor
+    available_bots = list(
+        BotProfile.objects.filter(is_active=True, active_in_nba=True).select_related(
+            "user"
+        )
     )
-    if not sponsor_bot:
+    if not available_bots:
         logger.warning("NBA featured parlays: no active NBA bot found")
         return
+    random.shuffle(available_bots)
+    bot_iter = iter(available_bots)
 
     themes = _build_nba_parlay_themes(games, odds_by_game)
 
@@ -211,6 +213,14 @@ def generate_featured_parlays():
     created = 0
     for theme_name, legs_data in themes.items():
         if len(legs_data) < 2:
+            continue
+
+        sponsor_bot = next(bot_iter, None)
+        if not sponsor_bot:
+            logger.info(
+                "NBA featured parlays: no remaining bot for theme '%s', skipping",
+                theme_name,
+            )
             continue
 
         try:

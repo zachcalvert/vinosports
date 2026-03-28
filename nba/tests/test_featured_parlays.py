@@ -120,3 +120,44 @@ class TestNBAGenerateFeaturedParlays:
 
         # At least the favorites theme should have been created
         assert FeaturedParlay.objects.count() >= 1
+
+    @patch("vinosports.betting.featured_utils.generate_parlay_copy")
+    @patch("nba.bots.tasks.today_et")
+    def test_each_parlay_has_unique_sponsor(self, mock_today, mock_copy):
+        """Multiple parlays created in one run should each have a different sponsor bot."""
+        from nba.bots.tasks import generate_featured_parlays
+
+        mock_copy.return_value = {"title": "Test Parlay", "description": ""}
+        today = timezone.localdate()
+        mock_today.return_value = today
+
+        # Create 2 bots with unique names so both themes can each get a unique sponsor
+        for _ in range(2):
+            bot_user = UserFactory(is_bot=True)
+            UserBalanceFactory(user=bot_user)
+            template = ScheduleTemplateFactory()
+            BotProfile.objects.create(
+                user=bot_user,
+                strategy_type=StrategyType.PARLAY,
+                is_active=True,
+                active_in_nba=True,
+                schedule_template=template,
+                persona_prompt="Test NBA bot",
+            )
+
+        games = [
+            GameFactory(game_date=today, tip_off=timezone.now() + timedelta(hours=6))
+            for _ in range(4)
+        ]
+        for g in games:
+            OddsFactory(game=g, spread_home=-110, spread_line=-3.5)
+
+        generate_featured_parlays()
+
+        parlays = FeaturedParlay.objects.filter(league="nba")
+        assert parlays.count() >= 2
+
+        sponsor_ids = list(parlays.values_list("sponsor_id", flat=True))
+        assert len(sponsor_ids) == len(set(sponsor_ids)), (
+            "Each featured parlay should have a unique sponsor bot"
+        )
