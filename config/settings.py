@@ -171,10 +171,11 @@ if _S3_ENDPOINT:
     AWS_STORAGE_BUCKET_NAME = os.environ.get("BUCKET_NAME", "vinosports-media")
     AWS_S3_ENDPOINT_URL = _S3_ENDPOINT
     AWS_S3_REGION_NAME = os.environ.get("AWS_REGION", "auto")
+    AWS_S3_CUSTOM_DOMAIN = f"{AWS_STORAGE_BUCKET_NAME}.fly.storage.tigris.dev"
     AWS_DEFAULT_ACL = "public-read"
     AWS_S3_OBJECT_PARAMETERS = {"CacheControl": "max-age=86400"}
     AWS_QUERYSTRING_AUTH = False
-    MEDIA_URL = f"{_S3_ENDPOINT}/{AWS_STORAGE_BUCKET_NAME}/"
+    MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/"
 else:
     MEDIA_URL = "media/"
 STATICFILES_DIRS = []
