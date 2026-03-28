@@ -539,12 +539,21 @@ class GameDetailView(LoginRequiredMixin, View):
         odds = Odds.objects.filter(game=game).order_by("-fetched_at")
         best_odds = odds.first()
 
+        from django.db.models import Prefetch
+
         from nba.discussions.models import Comment
 
+        replies_qs = (
+            Comment.objects.filter(is_deleted=False)
+            .select_related("user")
+            .order_by("created_at")
+        )
         comments = (
             Comment.objects.filter(game=game, parent__isnull=True)
             .select_related("user")
-            .prefetch_related("replies__user")
+            .prefetch_related(
+                Prefetch("replies", queryset=replies_qs, to_attr="prefetched_replies")
+            )
             .order_by("-created_at")[:50]
         )
 

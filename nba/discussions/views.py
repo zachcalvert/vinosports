@@ -1,6 +1,6 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpResponse, HttpResponseForbidden
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404
 from django.template.loader import render_to_string
 from django.views import View
 
@@ -23,25 +23,34 @@ class CreateCommentView(LoginRequiredMixin, View):
             body=form.cleaned_data["body"],
         )
 
-        if getattr(request, "htmx", False):
-            return render(
-                request,
-                "nba_discussions/partials/comment.html",
-                {"comment": comment, "game": game},
-            )
-        from django.shortcuts import redirect
+        comment.prefetched_replies = []
 
-        return redirect("nba_games:game_detail", id_hash=game.id_hash)
+        html = render_to_string(
+            "nba_discussions/partials/comment.html",
+            {"comment": comment, "game": game, "is_reply": False},
+            request=request,
+        )
+        return HttpResponse(html)
 
 
 class CreateReplyView(LoginRequiredMixin, View):
     def post(self, request, id_hash, comment_id):
         game = get_object_or_404(Game, id_hash=id_hash)
         parent = get_object_or_404(Comment, pk=comment_id, game=game)
-        form = CommentForm(request.POST)
 
+        if parent.parent_id is not None:
+            return HttpResponse("Cannot reply to a reply.", status=400)
+
+        form = CommentForm(request.POST)
         if not form.is_valid():
-            return HttpResponse("Invalid reply", status=400)
+            error_msg = (
+                form.errors["body"][0] if "body" in form.errors else "Invalid reply."
+            )
+            html = (
+                f'<div id="reply-error-{parent.id_hash}" hx-swap-oob="true" '
+                f'class="text-danger text-xs mt-1">{error_msg}</div>'
+            )
+            return HttpResponse(html, status=422)
 
         reply = Comment.objects.create(
             user=request.user,
@@ -50,15 +59,14 @@ class CreateReplyView(LoginRequiredMixin, View):
             body=form.cleaned_data["body"],
         )
 
-        if getattr(request, "htmx", False):
-            return render(
-                request,
-                "nba_discussions/partials/comment.html",
-                {"comment": reply, "game": game},
-            )
-        from django.shortcuts import redirect
+        reply.prefetched_replies = []
 
-        return redirect("nba_games:game_detail", id_hash=game.id_hash)
+        html = render_to_string(
+            "nba_discussions/partials/comment.html",
+            {"comment": reply, "game": game, "is_reply": True},
+            request=request,
+        )
+        return HttpResponse(html)
 
 
 class DeleteCommentView(LoginRequiredMixin, View):
@@ -79,9 +87,15 @@ class DeleteCommentView(LoginRequiredMixin, View):
         has_replies = comment.replies.filter(is_deleted=False).exists()
 
         if has_replies:
+            comment.prefetched_replies = list(
+                comment.replies.filter(is_deleted=False)
+                .select_related("user")
+                .order_by("created_at")
+            )
+            is_reply = comment.parent_id is not None
             html = render_to_string(
                 "nba_discussions/partials/comment.html",
-                {"comment": comment, "game": game},
+                {"comment": comment, "game": game, "is_reply": is_reply},
                 request=request,
             )
         else:

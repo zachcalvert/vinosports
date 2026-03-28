@@ -81,45 +81,13 @@
                 {% endwith %}
                 {% endif %}
 
-                <div id="comment-list" class="space-y-4">
+                <div id="comment-list" class="space-y-4 mt-4">
                 {% if comments %}
                     {% for comment in comments %}
-                    <div class="flex gap-3">
-                        <div class="w-8 h-8 rounded-full bg-accent-light flex items-center justify-center text-xs font-bold text-accent shrink-0">
-                            {% if comment.user.display_name %}{{ comment.user.display_name|first|upper }}{% else %}{{ comment.user.email|first|upper }}{% endif %}
-                        </div>
-                        <div class="flex-1 min-w-0">
-                            <div class="flex items-center gap-2 mb-1">
-                                <span class="text-sm font-medium">{% if comment.user.display_name %}{{ comment.user.display_name }}{% else %}{{ comment.user.email }}{% endif %}</span>
-                                {% if comment.user.is_bot %}<span class="inline-flex items-center rounded-full bg-accent-light px-1.5 py-0.5 text-[10px] font-semibold text-accent">BOT</span>{% endif %}
-                                <span class="text-xs text-muted">{{ comment.created_at|timesince }} ago</span>
-                            </div>
-                            <p class="text-sm text-muted">{{ comment.body }}</p>
-
-                            {% if comment.replies.all %}
-                            <div class="mt-3 ml-4 space-y-3 border-l border-outline-variant pl-4">
-                                {% for reply in comment.replies.all %}
-                                <div class="flex gap-2">
-                                    <div class="w-6 h-6 rounded-full bg-accent-light/50 flex items-center justify-center text-[10px] font-bold text-accent shrink-0">
-                                        {% if reply.user.display_name %}{{ reply.user.display_name|first|upper }}{% else %}{{ reply.user.email|first|upper }}{% endif %}
-                                    </div>
-                                    <div class="flex-1 min-w-0">
-                                        <div class="flex items-center gap-2 mb-0.5">
-                                            <span class="text-xs font-medium">{% if reply.user.display_name %}{{ reply.user.display_name }}{% else %}{{ reply.user.email }}{% endif %}</span>
-                                            {% if reply.user.is_bot %}<span class="inline-flex items-center rounded-full bg-accent-light px-1.5 py-0.5 text-[10px] font-semibold text-accent">BOT</span>{% endif %}
-                                            <span class="text-[11px] text-muted">{{ reply.created_at|timesince }} ago</span>
-                                        </div>
-                                        <p class="text-xs text-muted">{{ reply.body }}</p>
-                                    </div>
-                                </div>
-                                {% endfor %}
-                            </div>
-                            {% endif %}
-                        </div>
-                    </div>
+                        {% include "nba_discussions/partials/comment.html" with comment=comment game=game is_reply=False %}
                     {% endfor %}
                 {% else %}
-                <p id="no-comments" class="text-sm text-muted text-center py-6">No comments yet. Be the first to weigh in.</p>
+                    <p id="no-comments" class="text-sm text-muted text-center py-6">No comments yet. Be the first to weigh in.</p>
                 {% endif %}
                 </div>
             </div>

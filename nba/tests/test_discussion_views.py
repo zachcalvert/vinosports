@@ -48,14 +48,15 @@ class TestCreateCommentView:
         assert comment.game == game
         assert comment.body == "This is my comment."
 
-    def test_valid_comment_redirects(self, auth_client):
+    def test_valid_comment_returns_html(self, auth_client):
         c, user = auth_client
         game = GameFactory()
         response = c.post(
             f"/nba/game/{game.id_hash}/comments/create/",
             {"body": "Nice!"},
         )
-        assert response.status_code in (301, 302)
+        assert response.status_code == 200
+        assert len(response.content) > 0
 
     def test_empty_body_returns_400(self, auth_client):
         c, user = auth_client
@@ -130,7 +131,7 @@ class TestCreateReplyView:
         assert reply.game == game
         assert reply.user == user
 
-    def test_reply_redirects(self, auth_client):
+    def test_reply_returns_html(self, auth_client):
         c, user = auth_client
         game = GameFactory()
         parent = CommentFactory(game=game)
@@ -138,9 +139,10 @@ class TestCreateReplyView:
             f"/nba/game/{game.id_hash}/comments/{parent.pk}/reply/",
             {"body": "Agreed!"},
         )
-        assert response.status_code in (301, 302)
+        assert response.status_code == 200
+        assert len(response.content) > 0
 
-    def test_empty_body_returns_400(self, auth_client):
+    def test_empty_body_returns_422(self, auth_client):
         c, user = auth_client
         game = GameFactory()
         parent = CommentFactory(game=game)
@@ -148,7 +150,7 @@ class TestCreateReplyView:
             f"/nba/game/{game.id_hash}/comments/{parent.pk}/reply/",
             {"body": ""},
         )
-        assert response.status_code == 400
+        assert response.status_code == 422
 
     def test_game_not_found_returns_404(self, auth_client):
         c, user = auth_client
@@ -167,6 +169,17 @@ class TestCreateReplyView:
             {"body": "test"},
         )
         assert response.status_code == 404
+
+    def test_cannot_reply_to_a_reply(self, auth_client):
+        c, user = auth_client
+        game = GameFactory()
+        parent = CommentFactory(game=game)
+        reply = CommentFactory(game=game, parent=parent)
+        response = c.post(
+            f"/nba/game/{game.id_hash}/comments/{reply.pk}/reply/",
+            {"body": "Nested reply attempt"},
+        )
+        assert response.status_code == 400
 
     def test_parent_from_different_game_returns_404(self, auth_client):
         c, user = auth_client

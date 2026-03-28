@@ -48,23 +48,12 @@
                               class="themed-input flex-1 text-sm"
                               required></textarea>
                     <button type="submit"
-                            class="bg-primary text-dark font-bold py-1.5 px-3 rounded-md text-xs shrink-0 hover:bg-accent/90 transition-colors">
-                        <span class="htmx-indicator"><span class="spinner spinner-sm mr-1"></span></span>
+                            class="bg-primary text-on-primary font-bold py-1.5 px-3 rounded-md text-xs shrink-0 hover:bg-primary/90 transition-colors">
                         Reply
                     </button>
                 </div>
                 <div id="reply-error-{{ comment.id_hash }}" class="text-danger text-xs mt-1"></div>
             </form>
-            {% endif %}
-
-            {% if request.user == comment.user and not comment.is_deleted %}
-            <button hx-post="{% url 'nba_discussions:delete_comment' game.id_hash comment.pk %}"
-                    hx-target="#comment-{{ comment.id_hash }}"
-                    hx-swap="outerHTML"
-                    hx-confirm="Delete this comment?"
-                    class="text-xs text-muted hover:text-danger transition-colors {% if not is_reply %}ml-auto{% endif %}">
-                Delete
-            </button>
             {% endif %}
         </div>
         {% endif %}

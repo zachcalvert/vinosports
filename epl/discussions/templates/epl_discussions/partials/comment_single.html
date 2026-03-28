@@ -58,16 +58,6 @@
                 <div id="reply-error-{{ comment.id_hash }}" class="text-danger text-xs mt-1"></div>
             </form>
             {% endif %}
-
-            {% if request.user == comment.user and not comment.is_deleted %}
-            <button hx-post="{% url 'epl_discussions:delete_comment' match.slug comment.pk %}"
-                    hx-target="#comment-{{ comment.id_hash }}"
-                    hx-swap="outerHTML"
-                    hx-confirm="Delete this comment?"
-                    class="text-xs text-muted hover:text-danger transition-colors {% if not is_reply %}ml-auto{% endif %}">
-                Delete
-            </button>
-            {% endif %}
         </div>
         {% endif %}
     </div>
