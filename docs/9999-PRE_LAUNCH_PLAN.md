@@ -92,40 +92,32 @@ Squash migrations, CI, and Fly.io moved to Phase 5 — more models expected befo
 
 ---
 
-## Phase 5: Deploy Prep
+## ~~Phase 5: Deploy Prep~~ DONE
 
-Everything here depends on the schema being finalized. No more model changes after this phase starts.
+### ~~5a. Squash Migrations~~ DONE
+All 30 migrations across 16 apps squashed to clean initial migrations. Fresh production DB created on first deploy.
 
-### 5a. Squash Migrations
-Both EPL and NBA apps have accumulated dev migrations, plus the new migrations from Phase 2. Squash them all down to clean initial migrations before the first deploy creates a production database. This is the last step before infra — no more schema changes after this.
+### ~~5b. CI Workflows~~ DONE
+GitHub Actions pipeline: lint → test → auto-deploy on push to `main`. `FLY_API_TOKEN` stored as GitHub secret.
 
-### 5b. CI Workflows
-Define and implement the CI pipeline. Decisions needed:
-- **Trigger**: on push to `main`? On PR? Both?
-- **Steps**: lint (ruff), test (pytest across core/epl/nba), build Docker images
-- **Deploy**: auto-deploy to Fly on merge to `main`, or manual promote?
-- **Secrets**: `BDL_API_KEY`, `ANTHROPIC_API_KEY`, `DATABASE_URL`, `REDIS_URL` — managed via Fly secrets
-- **DB migrations**: run as a Fly release command on deploy
+### ~~5c. Fly.io Configuration~~ DONE
+Single Fly app (`vinosports`) with three process groups: `web` (Daphne), `worker` (Celery), `beat`. Simplified from the originally planned per-league process groups — the unified Django project needs only one web process. No reverse proxy needed; Fly's proxy handles TLS and routes to Daphne directly.
 
-### 5c. Fly.io Configuration
-Set up the single Fly app with multiple processes:
-- `fly.toml` with `[processes]` for hub-web, epl-web, nba-web, epl-worker, epl-beat, nba-worker, nba-beat
-- Reverse proxy (nginx or Caddy) as the entrypoint to route subpaths to the right process
-- Shared PostgreSQL and Redis as Fly-managed or attached services
-- Environment-aware settings (dev ports vs. prod subpaths)
+**Production infrastructure (live at vinosports.com):**
+- Fly Postgres (`vinosports-db`)
+- Upstash Redis (`vinosports-redis`)
+- Tigris S3 (`vinosports-media`) — public bucket for media uploads
+- Sentry (free tier) — error tracking and performance monitoring
+- Dedicated IPv4 + IPv6
+- Let's Encrypt TLS for `vinosports.com` and `www.vinosports.com`
 
----
-
-## Out of Scope
-
-### NFL
-No NFL work before launch. NFL can be added as a third league post-launch following the same pattern as NBA.
+See `docs/0001-CI_DEPLOYMENT.md` for full infrastructure details, provisioning checklist, and debugging guide.
 
 ---
 
 ## Decisions
 
-- **Deploy topology**: One Fly app with multiple processes. Each Django project (hub, epl, nba) and each background service (workers, beat schedulers) runs as a separate process within the single app. This keeps shared sessions simple (one DB, one cookie domain) while still allowing `epl-web`, `nba-beat`, etc. as distinct process types in `fly.toml`
-- **Domain structure**: `vinosports.com` with subpaths (`/epl/`, `/nba/`). Simplest option — one domain means shared cookies work naturally, no CORS issues, and the global navbar links are just relative paths. Likely needs a reverse proxy (Fly's built-in routing or nginx) to fan out subpaths to the right process
-- **Bot globalization order**: Before first deploy. No rush on deploying, so do the migration to global bot profiles and templates cleanly before there's a production DB to worry about
-- **Schedule template granularity**: League-specific window overrides. A bot gets one base set of windows from its template, but leagues can override specific values (e.g., EPL bots go dormant in summer, NBA bots ramp up during playoffs). This keeps the common case simple while handling seasonal differences
+- **Deploy topology**: One Fly app with three processes (`web`, `worker`, `beat`). Single Django process serves hub + all leagues. Shared sessions work naturally with one domain and one DB
+- **Domain structure**: `vinosports.com` with subpaths (`/epl/`, `/nba/`). One domain means shared cookies, no CORS issues, and relative navbar links. Daphne handles all routing internally via `LeagueMiddleware`
+- **Bot globalization order**: Before first deploy. Global bot profiles and schedule templates migrated cleanly before production DB existed
+- **Schedule template granularity**: League-specific window overrides. A bot gets one base set of windows from its template, but leagues can override specific values (e.g., EPL bots go dormant in summer, NBA bots ramp up during playoffs)

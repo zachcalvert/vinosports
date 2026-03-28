@@ -44,6 +44,19 @@ nba/             # NBA — fully featured (games, betting, bots, discussions, we
 - **HTMX frontend**: Server-rendered templates with HTMX for interactivity. No JS framework
 - **WebSocket routing**: Defined in `config/asgi.py` with nested `URLRouter` — `path("epl/", URLRouter(...))`, `path("nba/", URLRouter(...))`
 
+## Production
+
+Live at **vinosports.com**. Hosted on Fly.io (iad region). See `docs/0001-CI_DEPLOYMENT.md` for full infrastructure details.
+
+- **CI/CD**: Push to `main` → lint → test → auto-deploy via GitHub Actions
+- **Processes**: `web` (Daphne), `worker` (Celery), `beat` — all in one Fly app
+- **Database**: Fly Postgres (`vinosports-db`)
+- **Redis**: Upstash Redis (`vinosports-redis`)
+- **Media**: Tigris S3 (`vinosports-media`) — profile images, bot portraits
+- **Static files**: WhiteNoise (served from Docker image, not S3)
+- **Monitoring**: Sentry (free tier)
+- **Config**: `fly.toml` at repo root. Secrets managed via `fly secrets set`
+
 ## Running Locally
 
 ```bash
@@ -108,7 +121,7 @@ make test-ci           # run tests with coverage report (parallel, no reuse-db)
 ## Dev Workflow
 
 - Docker volume mounts provide **hot reload** — edit Python files and the dev server auto-restarts
-- Web service uses `runserver` in dev (auto-reload). Dockerfile keeps Daphne for prod
+- Web service uses `runserver` in dev (auto-reload). Production uses Daphne (see `fly.toml`)
 - Worker/beat services mount code too but need manual container restart for changes
 - Pre-commit hooks run ruff on every commit
 - **Host dependency**: `ruff` must be installed locally for `make lint` / `make format` (`pip install ruff` or `brew install ruff`)
@@ -127,7 +140,7 @@ make test-ci           # run tests with coverage report (parallel, no reuse-db)
 
 ## Testing
 
-~1,392 tests at ~90% source coverage. Tests run in parallel via pytest-xdist (`-n auto`).
+~1,453 tests at ~90% source coverage. Tests run in parallel via pytest-xdist (`-n auto`).
 
 ```bash
 make test              # fast local dev: parallel + --reuse-db (~30s)
@@ -152,6 +165,7 @@ Ruff is configured in root `pyproject.toml`:
 
 See `docs/` for architecture decisions and setup guides:
 - `0000-INITIAL_VISION.md` — Original architectural rationale
+- `0001-CI_DEPLOYMENT.md` — CI/CD, Fly.io infrastructure, Sentry, Tigris, provisioning guide
 - `0004-DESIGN_SYSTEM.md` — Design system
 - `0005-HUB_APPLICATION.md` — Hub architecture and global account management
 - `0007-CENTRALIZED_AUTH.md` — Auth centralization into hub
@@ -159,3 +173,4 @@ See `docs/` for architecture decisions and setup guides:
 - `0019-UNIFIED_DJANGO_PROJECT.md` — Merge from three projects into one (this refactor)
 - `0027-TEST_INFRASTRUCTURE.md` — Test infrastructure and baseline coverage
 - `0028-TEST_COVERAGE_AND_PERFORMANCE.md` — Coverage push to 90% and parallelization
+- `9999-PRE_LAUNCH_PLAN.md` — Pre-launch checklist (all phases complete)
