@@ -30,6 +30,14 @@ primary_region = "iad"
     port = 443
     handlers = ["tls", "http"]
 
+  [[services.http_checks]]
+    interval = 10000
+    grace_period = "10s"
+    method = "get"
+    path = "/healthz"
+    protocol = "http"
+    timeout = 2000
+
   [services.concurrency]
     type = "connections"
     hard_limit = 100
