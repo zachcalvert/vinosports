@@ -9,9 +9,6 @@
                 <span class="text-sm font-semibold">
                     {{ comment.user.display_name|default:comment.user.email|truncatechars:20 }}
                 </span>
-                {% if comment.user.is_bot %}
-                <span class="bot-badge">BOT</span>
-                {% endif %}
                 {% if comment.bet_position %}
                 <span class="inline-flex items-center gap-1 rounded-full bg-primary/15 px-2 py-0.5 text-xs font-medium text-primary">
                     <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
