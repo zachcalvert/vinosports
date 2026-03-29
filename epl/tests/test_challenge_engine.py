@@ -246,7 +246,7 @@ class TestApplyProgress:
         assert uc.progress == 2
         assert uc.status == UserChallenge.Status.IN_PROGRESS
 
-    @patch("epl.website.challenge_engine._broadcast_challenge_complete")
+    @patch("vinosports.challenges.engine._broadcast_challenge_complete")
     def test_completes_and_rewards(self, mock_broadcast):
         user = UserFactory()
         UserBalance.objects.create(user=user, balance=Decimal("100.00"))
