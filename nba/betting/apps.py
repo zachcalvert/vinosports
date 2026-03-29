@@ -13,3 +13,8 @@ class NbaBettingConfig(AppConfig):
         from vinosports.betting.parlay_builder import register_adapter
 
         register_adapter("nba", NBAParlayAdapter)
+
+        from nba.betting.models import BetSlip, Parlay
+        from vinosports.challenges.engine import register_league_models
+
+        register_league_models("nba", BetSlip, Parlay, event_fk_field="game")

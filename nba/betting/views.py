@@ -20,6 +20,7 @@ from nba.games.models import Game, GameStatus
 from vinosports.betting.constants import PARLAY_MAX_LEGS, PARLAY_MIN_LEGS
 from vinosports.betting.featured import FeaturedParlay
 from vinosports.betting.models import BalanceTransaction
+from vinosports.challenges.engine import update_challenge_progress
 
 
 class BetFormView(LoginRequiredMixin, View):
@@ -184,6 +185,18 @@ class PlaceBetView(LoginRequiredMixin, View):
             odds_at_placement=odds,
             line=line,
             stake=stake,
+        )
+
+        _user = request.user
+        _ctx = {
+            "game": game,
+            "odds": odds,
+            "stake": stake,
+            "selection": selection,
+            "league": "nba",
+        }
+        transaction.on_commit(
+            lambda: update_challenge_progress(_user, "bet_placed", _ctx)
         )
 
         from nba.activity.services import queue_activity_event
@@ -384,6 +397,17 @@ class PlaceParlayView(LoginRequiredMixin, View):
                     odds_at_placement=entry.get("odds", 0),
                 )
 
+        _user = request.user
+        _ctx = {
+            "stake": stake,
+            "leg_count": len(slip),
+            "combined_odds": combined_odds,
+            "league": "nba",
+        }
+        transaction.on_commit(
+            lambda: update_challenge_progress(_user, "parlay_placed", _ctx)
+        )
+
         request.session[PARLAY_SESSION_KEY] = []
         request.session.modified = True
 
@@ -560,6 +584,17 @@ class PlaceFeaturedParlayView(LoginRequiredMixin, View):
                 )
                 for ld in leg_data
             ]
+        )
+
+        _user = request.user
+        _ctx = {
+            "stake": stake,
+            "leg_count": len(leg_data),
+            "combined_odds": combined_odds,
+            "league": "nba",
+        }
+        transaction.on_commit(
+            lambda: update_challenge_progress(_user, "parlay_placed", _ctx)
         )
 
         return render(

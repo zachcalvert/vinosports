@@ -19,6 +19,13 @@ COPY nba/ nba/
 COPY hub/ hub/
 COPY manage.py .
 
+# Test/dev dependencies — opt-in via build arg (default off for production)
+ARG INSTALL_TEST_DEPS=false
+COPY requirements-test.txt .
+RUN if [ "$INSTALL_TEST_DEPS" = "true" ]; then \
+      pip install -r requirements-test.txt; \
+    fi
+
 # Collect static files at build time
 RUN SECRET_KEY=build-only python manage.py collectstatic --noinput
 

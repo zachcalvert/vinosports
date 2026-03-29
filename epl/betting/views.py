@@ -317,6 +317,7 @@ class PlaceBetView(LoginRequiredMixin, View):
             "odds": best_odds_val,
             "stake": stake,
             "selection": selection,
+            "league": "epl",
         }
         transaction.on_commit(
             lambda: update_challenge_progress(_user, "bet_placed", _ctx)
@@ -869,6 +870,7 @@ class PlaceParlayView(LoginRequiredMixin, View):
             "stake": stake,
             "leg_count": len(leg_data),
             "combined_odds": combined_odds,
+            "league": "epl",
         }
         transaction.on_commit(
             lambda: update_challenge_progress(_user, "parlay_placed", _ctx)
@@ -1047,6 +1049,7 @@ class PlaceFeaturedParlayView(LoginRequiredMixin, View):
             "stake": stake,
             "leg_count": len(leg_data),
             "combined_odds": combined_odds,
+            "league": "epl",
         }
         transaction.on_commit(
             lambda: update_challenge_progress(_user, "parlay_placed", _ctx)
