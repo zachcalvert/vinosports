@@ -115,6 +115,91 @@ class ProfileView(TemplateView):
             all_badges.append(badge)
         ctx["all_badges"] = all_badges
 
+        # Recent bets & comments — bot profiles only (for now)
+        if profile_user.is_bot:
+            from epl.betting.models import BetSlip as EplBetSlip
+            from epl.betting.models import Parlay as EplParlay
+            from epl.discussions.models import Comment as EplComment
+            from nba.betting.models import BetSlip as NbaBetSlip
+            from nba.betting.models import Parlay as NbaParlay
+            from nba.discussions.models import Comment as NbaComment
+
+            # Recent bets + parlays → unified activity feed
+            activity = []
+            for bet in (
+                EplBetSlip.objects.filter(user=profile_user)
+                .select_related("match__home_team", "match__away_team")
+                .order_by("-created_at")[:10]
+            ):
+                activity.append(
+                    {
+                        "type": "bet",
+                        "league": "epl",
+                        "date": bet.created_at,
+                        "item": bet,
+                    }
+                )
+            for bet in (
+                NbaBetSlip.objects.filter(user=profile_user)
+                .select_related("game__home_team", "game__away_team")
+                .order_by("-created_at")[:10]
+            ):
+                activity.append(
+                    {
+                        "type": "bet",
+                        "league": "nba",
+                        "date": bet.created_at,
+                        "item": bet,
+                    }
+                )
+            for parlay in (
+                EplParlay.objects.filter(user=profile_user)
+                .prefetch_related("legs__match__home_team", "legs__match__away_team")
+                .order_by("-created_at")[:5]
+            ):
+                activity.append(
+                    {
+                        "type": "parlay",
+                        "league": "epl",
+                        "date": parlay.created_at,
+                        "item": parlay,
+                    }
+                )
+            for parlay in (
+                NbaParlay.objects.filter(user=profile_user)
+                .prefetch_related("legs__game__home_team", "legs__game__away_team")
+                .order_by("-created_at")[:5]
+            ):
+                activity.append(
+                    {
+                        "type": "parlay",
+                        "league": "nba",
+                        "date": parlay.created_at,
+                        "item": parlay,
+                    }
+                )
+
+            activity.sort(key=lambda a: a["date"], reverse=True)
+            ctx["recent_activity"] = activity[:10]
+
+            # Recent comments
+            comments = []
+            for c in (
+                EplComment.objects.filter(user=profile_user, is_deleted=False)
+                .select_related("match__home_team", "match__away_team", "parent")
+                .order_by("-created_at")[:10]
+            ):
+                comments.append({"league": "epl", "comment": c})
+            for c in (
+                NbaComment.objects.filter(user=profile_user, is_deleted=False)
+                .select_related("game__home_team", "game__away_team", "parent")
+                .order_by("-created_at")[:10]
+            ):
+                comments.append({"league": "nba", "comment": c})
+
+            comments.sort(key=lambda c: c["comment"].created_at, reverse=True)
+            ctx["recent_comments"] = comments[:10]
+
         return ctx
 
 

@@ -330,6 +330,91 @@ class TestProfileView:
         assert "display_identity" in resp.context
 
 
+class TestProfileViewRecentActivity:
+    """Recent bets and comments on bot profile pages."""
+
+    @pytest.fixture
+    def bot_with_profile(self):
+        bot_user = UserFactory(is_bot=True)
+        bp = BotProfile.objects.create(
+            user=bot_user,
+            persona_prompt="I am a test bot",
+            is_active=True,
+        )
+        return bot_user, bp
+
+    def test_bot_profile_has_recent_activity(self, client, bot_with_profile):
+        from epl.tests.factories import BetSlipFactory as EplBetSlipFactory
+
+        bot_user, bp = bot_with_profile
+        EplBetSlipFactory(user=bot_user)
+        resp = client.get(reverse("hub:profile", args=[bot_user.slug]))
+        assert len(resp.context["recent_activity"]) == 1
+        assert resp.context["recent_activity"][0]["league"] == "epl"
+
+    def test_bot_profile_has_recent_comments(self, client, bot_with_profile):
+        from epl.tests.factories import CommentFactory as EplCommentFactory
+
+        bot_user, bp = bot_with_profile
+        EplCommentFactory(user=bot_user)
+        resp = client.get(reverse("hub:profile", args=[bot_user.slug]))
+        assert len(resp.context["recent_comments"]) == 1
+        assert resp.context["recent_comments"][0]["league"] == "epl"
+
+    def test_regular_user_no_recent_activity(self, client):
+        regular_user = UserFactory(is_bot=False)
+        resp = client.get(reverse("hub:profile", args=[regular_user.slug]))
+        assert "recent_activity" not in resp.context
+        assert "recent_comments" not in resp.context
+
+    def test_cross_league_activity(self, client, bot_with_profile):
+        from epl.tests.factories import BetSlipFactory as EplBetSlipFactory
+        from nba.tests.factories import BetSlipFactory as NbaBetSlipFactory
+
+        bot_user, bp = bot_with_profile
+        EplBetSlipFactory(user=bot_user)
+        NbaBetSlipFactory(user=bot_user)
+        resp = client.get(reverse("hub:profile", args=[bot_user.slug]))
+        leagues = {e["league"] for e in resp.context["recent_activity"]}
+        assert leagues == {"epl", "nba"}
+
+    def test_recent_activity_capped_at_10(self, client, bot_with_profile):
+        from epl.tests.factories import BetSlipFactory as EplBetSlipFactory
+
+        bot_user, bp = bot_with_profile
+        for _ in range(12):
+            EplBetSlipFactory(user=bot_user)
+        resp = client.get(reverse("hub:profile", args=[bot_user.slug]))
+        assert len(resp.context["recent_activity"]) == 10
+
+    def test_recent_activity_sorted_newest_first(self, client, bot_with_profile):
+        from epl.tests.factories import BetSlipFactory as EplBetSlipFactory
+
+        bot_user, bp = bot_with_profile
+        EplBetSlipFactory(user=bot_user)
+        EplBetSlipFactory(user=bot_user)
+        resp = client.get(reverse("hub:profile", args=[bot_user.slug]))
+        dates = [e["date"] for e in resp.context["recent_activity"]]
+        assert dates == sorted(dates, reverse=True)
+
+    def test_deleted_comments_excluded(self, client, bot_with_profile):
+        from epl.tests.factories import CommentFactory as EplCommentFactory
+
+        bot_user, bp = bot_with_profile
+        EplCommentFactory(user=bot_user, is_deleted=True)
+        EplCommentFactory(user=bot_user, is_deleted=False)
+        resp = client.get(reverse("hub:profile", args=[bot_user.slug]))
+        assert len(resp.context["recent_comments"]) == 1
+
+    def test_parlays_in_activity(self, client, bot_with_profile):
+        from epl.tests.factories import ParlayFactory as EplParlayFactory
+
+        bot_user, bp = bot_with_profile
+        EplParlayFactory(user=bot_user)
+        resp = client.get(reverse("hub:profile", args=[bot_user.slug]))
+        assert any(e["type"] == "parlay" for e in resp.context["recent_activity"])
+
+
 # ---------------------------------------------------------------------------
 # AccountView — balance context & currency update
 # ---------------------------------------------------------------------------
