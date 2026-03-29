@@ -9,9 +9,9 @@ Context expected:
   away_standing   — Standing instance or None
 {% endcomment %}
 
-<div id="scoreboard" class="bg-surface-container-lowest rounded-xl border-b-4 border-outline-variant border-t-4 border-t-nba p-6 mb-6">
+<div id="scoreboard" class="bg-surface-container-lowest rounded-xl border-b-4 border-outline-variant border-t-4 border-t-nba p-4 sm:p-6 mb-6">
     <!-- Status row -->
-    <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <div class="mb-3 sm:mb-4 flex flex-col gap-2 sm:gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div class="flex items-center gap-3">
             <div id="game-status">
             {% if game.status == "FINAL" %}
@@ -35,42 +35,44 @@ Context expected:
     </div>
 
     <!-- Teams + Score -->
-    <div class="flex items-center justify-center gap-8 md:gap-16">
+    <div class="flex flex-row items-center justify-center gap-2 sm:gap-8 md:gap-16">
         <!-- Away team -->
-        <a href="{% url 'nba_games:team_detail' game.away_team.abbreviation %}" class="text-center flex-1 hover:opacity-80 transition-opacity">
+        <a href="{% url 'nba_games:team_detail' game.away_team.abbreviation %}" class="text-center flex-1 min-w-0 hover:opacity-80 transition-opacity">
             {% if game.away_team.logo_url %}
-                <img src="{{ game.away_team.logo_url }}" alt="" class="w-16 h-16 mx-auto mb-2 object-contain">
+                <img src="{{ game.away_team.logo_url }}" alt="" class="w-10 h-10 sm:w-16 sm:h-16 mx-auto mb-1 sm:mb-2 object-contain">
             {% endif %}
-            <h2 class="text-lg font-bold {% if game.is_final and game.winner != game.away_team %}text-muted{% endif %}">{{ game.away_team.short_name }}</h2>
-            <p class="text-sm text-muted mt-0.5">{{ game.away_team.abbreviation }}</p>
+            <h2 class="font-bold leading-tight {% if game.is_final and game.winner != game.away_team %}text-muted{% endif %}">
+                <span class="text-sm sm:hidden">{{ game.away_team.abbreviation }}</span>
+                <span class="hidden sm:inline text-lg">{{ game.away_team.short_name }}</span>
+            </h2>
             {% if game.is_final %}
                 {% if game.winner == game.away_team %}
-                    <span class="inline-block mt-1 text-xs font-semibold text-positive">W</span>
+                    <span class="inline-block mt-0.5 sm:mt-1 text-xs font-semibold text-positive">W</span>
                 {% else %}
-                    <span class="inline-block mt-1 text-xs font-semibold text-danger">L</span>
+                    <span class="inline-block mt-0.5 sm:mt-1 text-xs font-semibold text-danger">L</span>
                 {% endif %}
             {% elif away_standing %}
-                <p class="text-xs text-muted mt-1">{% if away_standing.conference_rank %}#{{ away_standing.conference_rank }} &middot; {% endif %}{{ away_standing.wins }}-{{ away_standing.losses }}</p>
+                <p class="text-[10px] sm:text-xs text-muted mt-0.5 sm:mt-1">{% if away_standing.conference_rank %}#{{ away_standing.conference_rank }} &middot; {% endif %}{{ away_standing.wins }}-{{ away_standing.losses }}</p>
             {% endif %}
         </a>
 
         <!-- Score / vs -->
-        <div id="score-display" class="text-center">
+        <div id="score-display" class="text-center shrink-0">
             {% if game.is_live or game.is_final %}
-                <div class="flex items-center gap-3">
-                    <span class="text-4xl font-bold font-mono {% if game.is_final and game.winner == game.away_team %}text-primary{% endif %}">{{ game.away_score }}</span>
-                    <span class="text-lg text-muted">&ndash;</span>
-                    <span class="text-4xl font-bold font-mono {% if game.is_final and game.winner == game.home_team %}text-primary{% endif %}">{{ game.home_score }}</span>
+                <div class="flex items-center gap-2 sm:gap-3">
+                    <span class="text-3xl sm:text-4xl font-bold font-mono {% if game.is_final and game.winner == game.away_team %}text-primary{% endif %}">{{ game.away_score }}</span>
+                    <span class="text-base sm:text-lg text-muted">&ndash;</span>
+                    <span class="text-3xl sm:text-4xl font-bold font-mono {% if game.is_final and game.winner == game.home_team %}text-primary{% endif %}">{{ game.home_score }}</span>
                 </div>
             {% else %}
-                <span class="text-3xl font-bold text-muted">vs</span>
+                <span class="text-xl sm:text-3xl font-bold text-muted">vs</span>
                 {% if best_odds %}
-                <div class="mt-2 flex flex-col items-center gap-1 text-xs text-muted">
+                <div class="mt-1 sm:mt-2 flex flex-col items-center gap-0.5 sm:gap-1 text-[10px] sm:text-xs text-muted">
                     {% if best_odds.spread_line is not None %}
-                        <span class="font-mono">Line: {{ game.home_team.abbreviation }} {% if best_odds.spread_line > 0 %}+{% endif %}{{ best_odds.spread_line|floatformat:1 }}</span>
+                        <span class="font-mono">{{ game.home_team.abbreviation }} {% if best_odds.spread_line > 0 %}+{% endif %}{{ best_odds.spread_line|floatformat:1 }}</span>
                     {% endif %}
                     {% if best_odds.total_line is not None %}
-                        <span class="font-mono">O/U: {{ best_odds.total_line|floatformat:1 }}</span>
+                        <span class="font-mono">O/U {{ best_odds.total_line|floatformat:1 }}</span>
                     {% endif %}
                 </div>
                 {% endif %}
@@ -78,26 +80,28 @@ Context expected:
         </div>
 
         <!-- Home team -->
-        <a href="{% url 'nba_games:team_detail' game.home_team.abbreviation %}" class="text-center flex-1 hover:opacity-80 transition-opacity">
+        <a href="{% url 'nba_games:team_detail' game.home_team.abbreviation %}" class="text-center flex-1 min-w-0 hover:opacity-80 transition-opacity">
             {% if game.home_team.logo_url %}
-                <img src="{{ game.home_team.logo_url }}" alt="" class="w-16 h-16 mx-auto mb-2 object-contain">
+                <img src="{{ game.home_team.logo_url }}" alt="" class="w-10 h-10 sm:w-16 sm:h-16 mx-auto mb-1 sm:mb-2 object-contain">
             {% endif %}
-            <h2 class="text-lg font-bold {% if game.is_final and game.winner != game.home_team %}text-muted{% endif %}">{{ game.home_team.short_name }}</h2>
-            <p class="text-sm text-muted mt-0.5">{{ game.home_team.abbreviation }}</p>
+            <h2 class="font-bold leading-tight {% if game.is_final and game.winner != game.home_team %}text-muted{% endif %}">
+                <span class="text-sm sm:hidden">{{ game.home_team.abbreviation }}</span>
+                <span class="hidden sm:inline text-lg">{{ game.home_team.short_name }}</span>
+            </h2>
             {% if game.is_final %}
                 {% if game.winner == game.home_team %}
-                    <span class="inline-block mt-1 text-xs font-semibold text-positive">W</span>
+                    <span class="inline-block mt-0.5 sm:mt-1 text-xs font-semibold text-positive">W</span>
                 {% else %}
-                    <span class="inline-block mt-1 text-xs font-semibold text-danger">L</span>
+                    <span class="inline-block mt-0.5 sm:mt-1 text-xs font-semibold text-danger">L</span>
                 {% endif %}
             {% elif home_standing %}
-                <p class="text-xs text-muted mt-1">{% if home_standing.conference_rank %}#{{ home_standing.conference_rank }} &middot; {% endif %}{{ home_standing.wins }}-{{ home_standing.losses }}</p>
+                <p class="text-[10px] sm:text-xs text-muted mt-0.5 sm:mt-1">{% if home_standing.conference_rank %}#{{ home_standing.conference_rank }} &middot; {% endif %}{{ home_standing.wins }}-{{ home_standing.losses }}</p>
             {% endif %}
         </a>
     </div>
 
     <!-- Footer info -->
-    <div class="text-center mt-4 text-sm text-muted">
+    <div class="text-center mt-3 sm:mt-4 text-xs sm:text-sm text-muted">
         {% if game.is_live %}
             <span id="last-updated" class="text-xs">Score updated just now</span>
             <span class="ws-status mt-1">

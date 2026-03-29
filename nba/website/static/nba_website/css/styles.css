@@ -392,16 +392,3 @@ a.activity-toast:hover {
     animation: live-pulse 1.5s ease-in-out infinite;
 }
 
-/* Responsive scoreboard — stack on small screens */
-@media (max-width: 479px) {
-    #scoreboard .flex.items-center.justify-center {
-        flex-direction: column;
-        gap: 1rem;
-    }
-    #score-display {
-        order: -1;
-    }
-    #score-display .flex.items-center.gap-3 {
-        gap: 1rem;
-    }
-}
