@@ -7,7 +7,7 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import IntegrityError, transaction
-from django.db.models import Count, Max, Min, Sum
+from django.db.models import Count, Max, Min
 from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, render
 from django.utils import timezone
@@ -46,7 +46,6 @@ from vinosports.betting.models import (
     UserBalance,
     UserStats,
 )
-from vinosports.rewards.models import RewardDistribution
 
 logger = logging.getLogger(__name__)
 
@@ -341,68 +340,6 @@ class PlaceBetView(LoginRequiredMixin, View):
                 "sentiment": _get_match_sentiment(match),
             },
         )
-
-
-class MyBetsView(LoginRequiredMixin, TemplateView):
-    template_name = "epl_betting/my_bets.html"
-
-    def get_context_data(self, **kwargs):
-        ctx = super().get_context_data(**kwargs)
-        user = self.request.user
-
-        bets = BetSlip.objects.filter(user=user).select_related(
-            "match__home_team", "match__away_team"
-        )
-
-        parlays = Parlay.objects.filter(user=user).prefetch_related(
-            "legs__match__home_team", "legs__match__away_team"
-        )
-
-        bet_totals = bets.aggregate(
-            total_staked=Sum("stake"),
-            total_payout=Sum("payout"),
-        )
-        parlay_totals = parlays.aggregate(
-            parlay_staked=Sum("stake"),
-            parlay_payout=Sum("payout"),
-        )
-        total_staked = (bet_totals["total_staked"] or Decimal("0")) + (
-            parlay_totals["parlay_staked"] or Decimal("0")
-        )
-        total_payout = (bet_totals["total_payout"] or Decimal("0")) + (
-            parlay_totals["parlay_payout"] or Decimal("0")
-        )
-
-        balance = getattr(user, "balance", None)
-        current_balance = balance.balance if balance else Decimal("1000.00")
-
-        reward_distributions = RewardDistribution.objects.filter(
-            user=user
-        ).select_related("reward")
-        total_rewards = reward_distributions.aggregate(total=Sum("reward__amount"))[
-            "total"
-        ] or Decimal("0")
-
-        # Build unified activity feed sorted by date descending
-        activity = []
-        for bet in bets:
-            activity.append({"type": "bet", "date": bet.created_at, "item": bet})
-        for parlay in parlays:
-            activity.append(
-                {"type": "parlay", "date": parlay.created_at, "item": parlay}
-            )
-        for dist in reward_distributions:
-            activity.append({"type": "reward", "date": dist.created_at, "item": dist})
-        activity.sort(key=lambda a: a["date"], reverse=True)
-
-        ctx["bets"] = bets
-        ctx["total_staked"] = total_staked
-        ctx["total_payout"] = total_payout
-        ctx["net_pnl"] = total_payout - total_staked
-        ctx["current_balance"] = current_balance
-        ctx["total_rewards"] = total_rewards
-        ctx["activity"] = activity
-        return ctx
 
 
 class ProfileView(TemplateView):
@@ -1073,7 +1010,7 @@ class PlaceFeaturedParlayView(LoginRequiredMixin, View):
                 "potential_payout": potential_payout,
                 "stake": stake,
                 "balance": balance.balance,
-                "my_bets_url": "epl_betting:my_bets",
+                "my_bets_url": "hub:my_bets",
             },
         )
 

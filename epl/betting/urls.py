@@ -7,7 +7,6 @@ from epl.betting.views import (
     FuturesBetFormView,
     FuturesListView,
     FuturesMarketDetailView,
-    MyBetsView,
     OddsBoardPartialView,
     OddsBoardView,
     ParlaySlipPartialView,
@@ -25,7 +24,6 @@ urlpatterns = [
     path("", OddsBoardView.as_view(), name="odds"),
     path("partial/", OddsBoardPartialView.as_view(), name="odds_partial"),
     path("place/<slug:match_slug>/", PlaceBetView.as_view(), name="place_bet"),
-    path("my-bets/", MyBetsView.as_view(), name="my_bets"),
     path(
         "quick-bet/<slug:match_slug>/",
         QuickBetFormView.as_view(),

@@ -9,7 +9,6 @@ from nba.betting.context_processors import PARLAY_SESSION_KEY
 from nba.betting.models import BetSlip, Parlay
 from nba.games.models import GameStatus
 from nba.tests.factories import (
-    BetSlipFactory,
     GameFactory,
     UserBalanceFactory,
     UserFactory,
@@ -145,65 +144,6 @@ class TestPlaceBetView:
             },
         )
         assert response.status_code in (301, 302)
-
-
-@pytest.mark.django_db
-class TestMyBetsView:
-    def test_unauthenticated_redirected(self):
-        c = Client()
-        response = c.get("/nba/odds/my-bets/")
-        assert response.status_code in (301, 302)
-
-    def test_renders_my_bets_template(self, auth_client):
-        c, user = auth_client
-        response = c.get("/nba/odds/my-bets/")
-        assert response.status_code == 200
-        assert "nba_betting/my_bets.html" in [t.name for t in response.templates]
-
-    def test_default_tab_is_pending(self, auth_client):
-        c, user = auth_client
-        response = c.get("/nba/odds/my-bets/")
-        assert response.context["tab"] == "pending"
-
-    def test_pending_tab_shows_pending_bets(self, auth_client):
-        c, user = auth_client
-        game = GameFactory()
-        BetSlipFactory(user=user, game=game, status="PENDING")
-        BetSlipFactory(user=user, game=game, status="WON")
-        response = c.get("/nba/odds/my-bets/?tab=pending")
-        bets = list(response.context["bets"])
-        assert all(b.status == "PENDING" for b in bets)
-
-    def test_won_tab_shows_won_bets(self, auth_client):
-        c, user = auth_client
-        game = GameFactory()
-        BetSlipFactory(user=user, game=game, status="WON")
-        BetSlipFactory(user=user, game=game, status="PENDING")
-        response = c.get("/nba/odds/my-bets/?tab=won")
-        bets = list(response.context["bets"])
-        assert all(b.status == "WON" for b in bets)
-
-    def test_lost_tab_shows_lost_bets(self, auth_client):
-        c, user = auth_client
-        game = GameFactory()
-        BetSlipFactory(user=user, game=game, status="LOST")
-        response = c.get("/nba/odds/my-bets/?tab=lost")
-        bets = list(response.context["bets"])
-        assert all(b.status == "LOST" for b in bets)
-
-    def test_unknown_tab_shows_all_bets(self, auth_client):
-        c, user = auth_client
-        game = GameFactory()
-        BetSlipFactory(user=user, game=game, status="WON")
-        BetSlipFactory(user=user, game=game, status="LOST")
-        response = c.get("/nba/odds/my-bets/?tab=all")
-        bets = list(response.context["bets"])
-        assert len(bets) == 2
-
-    def test_context_has_parlays(self, auth_client):
-        c, user = auth_client
-        response = c.get("/nba/odds/my-bets/")
-        assert "parlays" in response.context
 
 
 @pytest.mark.django_db

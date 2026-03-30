@@ -251,40 +251,6 @@ class PlaceBetView(LoginRequiredMixin, View):
         return redirect("nba_games:game_detail", id_hash=game.id_hash)
 
 
-class MyBetsView(LoginRequiredMixin, View):
-    def get(self, request):
-        tab = request.GET.get("tab", "pending")
-        from vinosports.betting.models import BetStatus
-
-        if tab == "pending":
-            bets = BetSlip.objects.filter(user=request.user, status=BetStatus.PENDING)
-        elif tab == "won":
-            bets = BetSlip.objects.filter(user=request.user, status=BetStatus.WON)
-        elif tab == "lost":
-            bets = BetSlip.objects.filter(user=request.user, status=BetStatus.LOST)
-        else:
-            bets = BetSlip.objects.filter(user=request.user)
-
-        bets = bets.select_related(
-            "game", "game__home_team", "game__away_team"
-        ).order_by("-created_at")[:50]
-        parlays = (
-            Parlay.objects.filter(user=request.user)
-            .prefetch_related("legs__game__home_team", "legs__game__away_team")
-            .order_by("-created_at")[:20]
-        )
-
-        ctx = {
-            "bets": bets,
-            "parlays": parlays,
-            "tab": tab,
-        }
-
-        if getattr(request, "htmx", False):
-            return render(request, "nba_betting/partials/bet_list.html", ctx)
-        return render(request, "nba_betting/my_bets.html", ctx)
-
-
 class BailoutView(LoginRequiredMixin, View):
     def post(self, request):
         try:
@@ -429,7 +395,7 @@ class PlaceParlayView(LoginRequiredMixin, View):
                 "nba_betting/partials/parlay_confirmation.html",
                 {"parlay": parlay},
             )
-        return redirect("nba_betting:my_bets")
+        return redirect("hub:my_bets")
 
 
 # Market+selection → Odds model field (reuses QuickBetFormView mapping)
@@ -620,7 +586,7 @@ class PlaceFeaturedParlayView(LoginRequiredMixin, View):
                 "potential_payout": max_payout,
                 "stake": stake,
                 "balance": balance_obj.balance,
-                "my_bets_url": "nba_betting:my_bets",
+                "my_bets_url": "hub:my_bets",
             },
         )
 

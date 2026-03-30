@@ -19,8 +19,6 @@ from .factories import (
     BetSlipFactory,
     MatchFactory,
     OddsFactory,
-    ParlayFactory,
-    ParlayLegFactory,
     UserBalanceFactory,
     UserFactory,
 )
@@ -254,63 +252,6 @@ class TestPlaceBetView:
             {"selection": "HOME_WIN", "stake": "50.00", "container_id": "qb-1"},
         )
         assert resp.status_code == 200
-
-
-# ---------------------------------------------------------------------------
-# MyBetsView (EPL)
-# ---------------------------------------------------------------------------
-
-
-class TestMyBetsView:
-    def test_requires_login(self, client):
-        resp = client.get(reverse("epl_betting:my_bets"))
-        assert resp.status_code == 302
-
-    def test_renders(self, auth_client):
-        c, user = auth_client
-        resp = c.get(reverse("epl_betting:my_bets"))
-        assert resp.status_code == 200
-
-    def test_context_has_totals(self, auth_client):
-        c, user = auth_client
-        resp = c.get(reverse("epl_betting:my_bets"))
-        assert "total_staked" in resp.context
-        assert "total_payout" in resp.context
-        assert "net_pnl" in resp.context
-        assert "current_balance" in resp.context
-
-    def test_shows_user_bets(self, auth_client):
-        c, user = auth_client
-        match = MatchFactory()
-        BetSlipFactory(user=user, match=match, stake=Decimal("50.00"))
-        resp = c.get(reverse("epl_betting:my_bets"))
-        assert resp.context["total_staked"] == Decimal("50.00")
-
-    def test_shows_user_parlays(self, auth_client):
-        c, user = auth_client
-        parlay = ParlayFactory(user=user, stake=Decimal("30.00"))
-        match = MatchFactory()
-        ParlayLegFactory(parlay=parlay, match=match)
-        resp = c.get(reverse("epl_betting:my_bets"))
-        activity = resp.context["activity"]
-        assert any(a["type"] == "parlay" for a in activity)
-
-    def test_default_balance_when_no_balance(self, auth_client):
-        c, user = auth_client
-        UserBalance.objects.filter(user=user).delete()
-        resp = c.get(reverse("epl_betting:my_bets"))
-        assert resp.context["current_balance"] == Decimal("1000.00")
-
-    def test_activity_sorted_by_date(self, auth_client):
-        c, user = auth_client
-        match1 = MatchFactory()
-        match2 = MatchFactory()
-        BetSlipFactory(user=user, match=match1)
-        BetSlipFactory(user=user, match=match2)
-        resp = c.get(reverse("epl_betting:my_bets"))
-        activity = resp.context["activity"]
-        dates = [a["date"] for a in activity]
-        assert dates == sorted(dates, reverse=True)
 
 
 # ---------------------------------------------------------------------------
