@@ -119,7 +119,11 @@ def _get_profit_leaderboard(limit):
 def _get_win_rate_leaderboard(limit):
     qs = (
         UserStats.objects.select_related("user")
-        .filter(total_bets__gte=WIN_RATE_MIN_BETS, user__is_superuser=False, user__is_active=True)
+        .filter(
+            total_bets__gte=WIN_RATE_MIN_BETS,
+            user__is_superuser=False,
+            user__is_active=True,
+        )
         .annotate(
             _win_rate=Case(
                 When(total_bets=0, then=Value(0.0)),
@@ -210,7 +214,9 @@ def _get_stats_rank(user, board_type):
         user_bets = stats.total_bets
         higher = (
             UserStats.objects.filter(
-                total_bets__gte=WIN_RATE_MIN_BETS, user__is_superuser=False, user__is_active=True
+                total_bets__gte=WIN_RATE_MIN_BETS,
+                user__is_superuser=False,
+                user__is_active=True,
             )
             .annotate(
                 _cross_theirs=F("total_wins") * Value(user_bets),
