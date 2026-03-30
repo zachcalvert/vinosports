@@ -351,8 +351,29 @@ Mock all HTTP calls with `respx` (same as NBA/EPL test suites).
 8. **Static fixtures** — `teams.json` for offline seeding
 9. **Tests** — factories, model tests, service tests, command tests
 
-## Open Questions for Implementation
+## Implementation Notes
 
-1. **BDL NFL response shapes**: We need to hit the API once for teams + games to see exact field names and status strings. Should we do a quick exploratory script first?
-2. **Logo URLs**: BDL probably doesn't return logos. We'll need to source a logo map for 32 teams (same pattern as NBA's `TEAM_LOGOS` dict).
-3. **Player sync timing**: With ~1,800 active NFL players and 5 req/min on free tier, a full player sync could take a while with pagination. Should we defer full player sync to All-Star tier and only seed a `teams.json` fixture for offline mode?
+### Resolved from Open Questions
+
+1. **BDL NFL response shapes**: Explored via live API calls. Teams return `id`, `conference` ("AFC"/"NFC"), `division` ("EAST"/"NORTH"/etc.), `location`, `name`, `full_name`, `abbreviation`. Games return nested team objects as `home_team`/`visitor_team`, quarter scores as `home_team_q1`..`home_team_ot`/`visitor_team_q1`..`visitor_team_ot`, and `week`/`season`/`postseason` fields. Statuses observed: "Final" and "Final/OT".
+2. **Logo URLs**: BDL does not return logos. Used ESPN CDN URLs (`a.espncdn.com/i/teamlogos/nfl/500/{abbr}.png`) keyed by BDL external_id in the seed command.
+3. **Player sync timing**: Included `--skip-players` flag on seed_nfl. When syncing players, uses 12s page delay to stay under free tier's 5 req/min. Full sync is slow but functional.
+
+### Additional Config Changes Made
+
+- **Dockerfile**: Added `COPY nfl/ nfl/` to project copy step.
+- **docker-compose.yml**: Added `./nfl:/app/nfl` volume mounts to web, worker, and beat services. Added `nfl` to worker Celery queue.
+- **LeagueMiddleware**: Added `nfl` path detection (`request.league = "nfl"`).
+- **Celery autodiscover**: Added all NFL app modules.
+
+### Dropped from Plan
+
+- `nfl.challenges` app — NBA/EPL handle challenges in their website apps, not as separate apps. Followed the same pattern.
+
+### Season Convention
+
+BDL uses the year the season starts: the 2025 NFL season (Sep 2025–Feb 2026) = `season=2025`. Note: querying `season=2025` currently returns older data — BDL may not have 2026 season data until closer to kickoff.
+
+### Test Results
+
+44 tests passing. Full suite (1,497 tests) passes with no regressions.

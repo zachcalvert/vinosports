@@ -173,7 +173,7 @@ _Child doc: TBD_
 
 | Phase | Doc | Status |
 |-------|-----|--------|
-| Phase 1: Foundation | [0030-NFL_FOUNDATION.md](0030-NFL_FOUNDATION.md) | Planning |
+| Phase 1: Foundation | [0030-NFL_FOUNDATION.md](0030-NFL_FOUNDATION.md) | Complete |
 | Phase 2: Betting Engine | TBD | Not started |
 | Phase 3: Bot System | TBD | Not started |
 | Phase 4: Website & Views | TBD | Not started |
