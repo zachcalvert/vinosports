@@ -110,13 +110,14 @@ _Child doc: [0030-NFL_FOUNDATION.md](0030-NFL_FOUNDATION.md)_
 - Static data fixtures for offline seeding
 
 ### Phase 2: Betting Engine
-_Child doc: TBD_
+_Child doc: [0031-NFL_BETTING_ENGINE.md](0031-NFL_BETTING_ENGINE.md)_
 
-- Odds sync (moneyline, spread, total — the NFL core three)
-- BetSlip and Parlay models (concrete from abstract)
-- Settlement engine adapted for NFL specifics
-- Consider: props, teasers, or keep initial scope to core markets
-- Futures markets (Super Bowl winner, conference winners, division winners, MVP)
+- Concrete models: BetSlip (moneyline/spread/total), Parlay, ParlayLeg, Odds (all American format)
+- Settlement engine: same moneyline/spread/total evaluation as NBA, with NFL tie handling
+- House odds engine: algorithmic generation from standings + point differential
+- Futures: Super Bowl, AFC/NFC Champion, Division Winner markets (NFL-specific division markets)
+- Parlay adapter for core ParlayBuilder
+- Props, teasers, game props deferred to post-launch
 
 ### Phase 3: Bot System
 _Child doc: TBD_
@@ -174,7 +175,7 @@ _Child doc: TBD_
 | Phase | Doc | Status |
 |-------|-----|--------|
 | Phase 1: Foundation | [0030-NFL_FOUNDATION.md](0030-NFL_FOUNDATION.md) | Complete |
-| Phase 2: Betting Engine | TBD | Not started |
+| Phase 2: Betting Engine | [0031-NFL_BETTING_ENGINE.md](0031-NFL_BETTING_ENGINE.md) | Planning |
 | Phase 3: Bot System | TBD | Not started |
 | Phase 4: Website & Views | TBD | Not started |
 | Phase 5: Celery Tasks | TBD | Not started |
