@@ -1,12 +1,12 @@
 """
-Management command: seed_futures (NBA)
+Management command: seed_nba_futures (NBA)
 
 Creates futures markets (Champion, Conference Winner) for the current season
 with outcomes for all teams. Runs the odds engine to generate initial odds.
 
 Usage:
-  python manage.py seed_futures
-  python manage.py seed_futures --season 2025
+  python manage.py seed_nba_futures
+  python manage.py seed_nba_futures --season 2025
 """
 
 import logging
@@ -59,15 +59,21 @@ class Command(BaseCommand):
             conference="",
         )
 
+        # Pre-fetch standings for the season to avoid per-team queries
+        standings = list(
+            Standing.objects.filter(season=season).values("team_id", "conference")
+        )
+        conference_team_ids = {"EAST": set(), "WEST": set()}
+        for standing in standings:
+            conf = standing.get("conference")
+            team_id = standing.get("team_id")
+            if conf in conference_team_ids and team_id is not None:
+                conference_team_ids[conf].add(team_id)
+
         # Conference markets — filtered by conference
         for conf in ["EAST", "WEST"]:
-            conf_teams = [
-                t
-                for t in teams
-                if Standing.objects.filter(
-                    team=t, season=season, conference=conf
-                ).exists()
-            ]
+            team_ids_for_conf = conference_team_ids.get(conf, set())
+            conf_teams = [t for t in teams if t.id in team_ids_for_conf]
             if not conf_teams:
                 # Fallback: include all teams if standings not available
                 conf_teams = teams

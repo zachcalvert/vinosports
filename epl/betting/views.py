@@ -1216,7 +1216,7 @@ class PlaceFuturesBetView(LoginRequiredMixin, View):
                 },
             )
 
-        potential_payout = (stake * outcome.odds).quantize(Decimal("0.01"))
+        potential_payout = (stake * bet.odds_at_placement).quantize(Decimal("0.01"))
 
         return render(
             request,

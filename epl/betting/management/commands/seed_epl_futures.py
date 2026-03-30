@@ -1,12 +1,12 @@
 """
-Management command: seed_futures (EPL)
+Management command: seed_epl_futures (EPL)
 
 Creates futures markets (Winner, Top 4, Relegation) for the current season
 with outcomes for all teams. Runs the odds engine to generate initial odds.
 
 Usage:
-  python manage.py seed_futures
-  python manage.py seed_futures --season 2025
+  python manage.py seed_epl_futures
+  python manage.py seed_epl_futures --season 2025
 """
 
 import logging
