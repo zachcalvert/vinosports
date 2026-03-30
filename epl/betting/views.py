@@ -1034,16 +1034,27 @@ class FuturesListView(TemplateView):
             status=FuturesMarketStatus.OPEN,
         ).order_by("market_type")
 
-        markets_with_outcomes = []
+        # Separate winner from secondary markets for bento layout
+        winner = None
+        secondary_markets = []
         for market in markets:
-            outcomes = (
-                FuturesOutcome.objects.filter(market=market, is_active=True)
-                .select_related("team")
-                .order_by("odds")[:10]
-            )
-            markets_with_outcomes.append({"market": market, "outcomes": outcomes})
+            if market.market_type == FuturesMarket.MarketType.WINNER:
+                outcomes = (
+                    FuturesOutcome.objects.filter(market=market, is_active=True)
+                    .select_related("team")
+                    .order_by("odds")[:10]
+                )
+                winner = {"market": market, "outcomes": outcomes}
+            else:
+                outcomes = (
+                    FuturesOutcome.objects.filter(market=market, is_active=True)
+                    .select_related("team")
+                    .order_by("odds")[:5]
+                )
+                secondary_markets.append({"market": market, "outcomes": outcomes})
 
-        ctx["markets"] = markets_with_outcomes
+        ctx["winner"] = winner
+        ctx["secondary_markets"] = secondary_markets
         return ctx
 
 

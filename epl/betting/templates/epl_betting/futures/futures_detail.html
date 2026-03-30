@@ -4,36 +4,75 @@
 {% block title %}{{ market.name }} — Futures{% endblock %}
 
 {% block content %}
+{# ── Breadcrumb ── #}
 <div class="mb-8">
-    <a href="{% url 'epl_betting:futures' %}" class="text-xs text-primary font-semibold uppercase tracking-wider hover:underline mb-3 inline-block">&larr; All Futures</a>
-    <div class="w-12 h-1 bg-accent rounded-full mb-3"></div>
-    <h1 class="text-2xl font-headline font-black uppercase tracking-wider">{{ market.name }}</h1>
-    {% if market.description %}
-        <p class="text-sm text-muted mt-1">{{ market.description }}</p>
-    {% endif %}
+    <a href="{% url 'epl_betting:futures' %}"
+       class="inline-flex items-center gap-2 text-secondary font-bold text-xs uppercase tracking-widest hover:text-primary transition-colors">
+        <i class="ph-bold ph-arrow-left text-sm"></i>
+        All Futures
+    </a>
 </div>
 
-<div class="bg-surface rounded-xl border border-outline-variant overflow-hidden">
-    <div class="divide-y divide-outline-variant">
+{# ── Page Header ── #}
+<header class="mb-10">
+    <span class="text-xs font-bold uppercase tracking-widest text-secondary mb-2 block">
+        English Premier League &bull; {{ market.season }} Season
+    </span>
+    <h1 class="font-headline text-4xl sm:text-5xl font-black italic uppercase tracking-tight leading-tight">
+        {{ market.name }}
+    </h1>
+    {% if market.description %}
+        <p class="text-secondary text-sm mt-2 max-w-xl">{{ market.description }}</p>
+    {% endif %}
+</header>
+
+{# ── Market Table ── #}
+<div class="bg-surface rounded-xl overflow-hidden shadow-sm">
+    {# Column headers #}
+    <div class="hidden sm:grid grid-cols-12 bg-surface-container-highest px-6 py-4 border-b border-outline-variant">
+        <div class="col-span-6 text-xs font-bold uppercase tracking-widest text-secondary">Club</div>
+        <div class="col-span-3 text-xs font-bold uppercase tracking-widest text-secondary text-center">Current Odds</div>
+        <div class="col-span-3 text-xs font-bold uppercase tracking-widest text-secondary text-right">Action</div>
+    </div>
+
+    {# Outcome rows #}
+    <div class="divide-y divide-outline-variant/30">
         {% for outcome in outcomes %}
-        <div class="flex items-center justify-between px-4 py-3 hover:bg-surface-container-low transition-colors"
+        <div class="grid grid-cols-12 px-4 sm:px-6 py-4 sm:py-5 items-center hover:bg-surface-container-low transition-colors"
              id="futures-outcome-{{ outcome.id_hash }}">
-            <div class="flex items-center gap-3">
+            {# Team cell #}
+            <div class="col-span-6 flex items-center gap-3 sm:gap-4">
                 {% if outcome.team.crest %}
-                    <img src="{{ outcome.team.crest }}" alt="" class="w-6 h-6 object-contain">
+                    <img src="{{ outcome.team.crest }}" alt=""
+                         class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg object-contain bg-surface-container-highest p-0.5">
+                {% else %}
+                    <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-surface-container-highest flex items-center justify-center">
+                        <i class="ph-duotone ph-shield text-secondary opacity-40"></i>
+                    </div>
                 {% endif %}
-                <span class="text-sm font-medium">{{ outcome.team.name }}</span>
+                <span class="font-headline font-bold italic text-base sm:text-lg leading-none">{{ outcome.team.name }}</span>
             </div>
-            <div class="flex items-center gap-3">
-                <span class="text-sm font-mono font-bold text-primary">{{ outcome.odds }}</span>
+
+            {# Odds cell #}
+            <div class="col-span-3 text-center">
+                <span class="font-headline font-bold text-lg sm:text-xl text-primary">{{ outcome.odds }}</span>
+            </div>
+
+            {# Action cell #}
+            <div class="col-span-3 text-right">
                 {% if user.is_authenticated %}
                     <button
                         hx-get="{% url 'epl_betting:futures_bet_form' outcome.id_hash %}"
                         hx-target="#futures-outcome-{{ outcome.id_hash }}"
                         hx-swap="outerHTML"
-                        class="text-xs font-semibold uppercase tracking-wider text-primary hover:underline">
+                        class="futures-bet-btn">
                         Bet
                     </button>
+                {% else %}
+                    <a href="{% url 'hub:login' %}?next={{ request.path }}"
+                       class="futures-bet-btn inline-block text-center no-underline">
+                        Bet
+                    </a>
                 {% endif %}
             </div>
         </div>

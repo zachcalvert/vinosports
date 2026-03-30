@@ -3,21 +3,113 @@
 {% block title %}Futures — EPL{% endblock %}
 
 {% block content %}
-<div class="mb-8">
-    <div class="w-12 h-1 bg-accent rounded-full mb-3"></div>
-    <h1 class="text-2xl font-headline font-black uppercase tracking-wider">Futures</h1>
-    <p class="text-sm text-muted mt-1">Season-long markets. Bet on who wins the league, finishes top 4, or gets relegated.</p>
+{# ── Page Header ── #}
+<div class="mb-10">
+    <span class="text-xs font-bold uppercase tracking-widest text-primary mb-2 block">Premium Betting Markets</span>
+    <h1 class="font-headline text-4xl sm:text-5xl font-black italic uppercase tracking-tight leading-none">
+        EPL <span class="text-primary">Futures</span>
+    </h1>
+    <p class="text-secondary text-base mt-3 max-w-xl">
+        Season-long markets. Bet on who wins the league, finishes top 4, or gets relegated.
+    </p>
 </div>
 
-{% if markets %}
-    <div class="space-y-8">
-        {% for item in markets %}
-            {% include "epl_betting/futures/partials/_market_card.html" with market=item.market outcomes=item.outcomes %}
+{% if winner or secondary_markets %}
+{# ── Bento Grid ── #}
+<div class="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
+
+    {# ── League Winner Card (7 cols) ── #}
+    {% if winner %}
+    <section class="xl:col-span-7 bg-surface rounded-xl border-l-4 border-primary p-6 futures-card--winner shadow-sm">
+        <div class="flex items-center justify-between mb-6">
+            <div>
+                <h2 class="font-headline text-2xl font-black italic uppercase tracking-tight">League Winner</h2>
+                <p class="text-xs text-secondary mt-0.5">{{ winner.market.season }} Season Outright</p>
+            </div>
+            <a href="{% url 'epl_betting:futures_detail' winner.market.id_hash %}"
+               class="text-xs text-primary font-bold uppercase tracking-wider hover:underline">
+                View All &rarr;
+            </a>
+        </div>
+
+        {# Column headers #}
+        <div class="hidden sm:grid grid-cols-12 px-4 py-2 text-xs font-bold uppercase tracking-widest text-secondary">
+            <div class="col-span-7">Club</div>
+            <div class="col-span-2 text-right">Odds</div>
+            <div class="col-span-3"></div>
+        </div>
+
+        {# Team rows #}
+        <div class="space-y-1">
+            {% for outcome in winner.outcomes %}
+            <a href="{% url 'epl_betting:futures_detail' winner.market.id_hash %}"
+               class="grid grid-cols-12 items-center px-4 py-3 rounded-lg transition-colors hover:bg-surface-container-low {% if forloop.counter|divisibleby:2 %}bg-surface-container-low/50{% endif %}">
+                <div class="col-span-7 sm:col-span-7 flex items-center gap-3">
+                    {% if outcome.team.crest %}
+                        <img src="{{ outcome.team.crest }}" alt="" class="w-8 h-8 rounded-lg object-contain bg-surface-container-highest p-0.5">
+                    {% else %}
+                        <div class="w-8 h-8 rounded-lg bg-surface-container-highest flex items-center justify-center">
+                            <i class="ph-duotone ph-shield text-secondary opacity-40"></i>
+                        </div>
+                    {% endif %}
+                    <span class="font-headline font-bold text-sm sm:text-base">{{ outcome.team.name }}</span>
+                </div>
+                <div class="col-span-3 sm:col-span-2 text-right">
+                    <span class="font-headline font-bold text-primary text-base sm:text-lg">{{ outcome.odds }}</span>
+                </div>
+                <div class="col-span-2 sm:col-span-3 text-right">
+                    <span class="text-xs text-secondary font-bold uppercase tracking-wider hidden sm:inline">View &rarr;</span>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+
+    {# ── Secondary Market Cards (5 cols, stacked) ── #}
+    {% if secondary_markets %}
+    <div class="xl:col-span-5 flex flex-col gap-6">
+        {% for item in secondary_markets %}
+        <section class="bg-surface rounded-xl p-5 shadow-sm border-l-4 {% if item.market.market_type == 'TOP_4' %}border-secondary{% else %}border-primary{% endif %}">
+            <div class="flex items-center justify-between mb-5">
+                <h3 class="font-headline text-lg font-black italic uppercase tracking-tight">
+                    {{ item.market.get_market_type_display }}
+                </h3>
+                <span class="text-xs font-bold uppercase tracking-tight px-3 py-0.5 rounded-full {% if item.market.market_type == 'TOP_4' %}bg-secondary text-white{% else %}bg-primary text-white{% endif %}">
+                    Market
+                </span>
+            </div>
+
+            <div class="space-y-2">
+                {% for outcome in item.outcomes %}
+                <div class="flex items-center justify-between p-3 bg-surface-container-low rounded-lg">
+                    <div class="flex items-center gap-2">
+                        {% if outcome.team.crest %}
+                            <img src="{{ outcome.team.crest }}" alt="" class="w-5 h-5 object-contain">
+                        {% endif %}
+                        <span class="font-headline font-bold text-sm">{{ outcome.team.name }}</span>
+                    </div>
+                    <span class="font-bold text-primary text-sm font-mono">{{ outcome.odds }}</span>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="mt-4 pt-3 border-t border-outline-variant">
+                <a href="{% url 'epl_betting:futures_detail' item.market.id_hash %}"
+                   class="text-xs text-primary font-bold uppercase tracking-wider hover:underline">
+                    View All &rarr;
+                </a>
+            </div>
+        </section>
         {% endfor %}
     </div>
+    {% endif %}
+
+</div>
+
 {% else %}
-    <div class="bg-surface rounded-xl border border-outline-variant p-8 text-center">
-        <p class="text-muted">No futures markets are open right now. Check back soon.</p>
-    </div>
+<div class="bg-surface rounded-xl border border-outline-variant p-8 text-center">
+    <p class="text-muted">No futures markets are open right now. Check back soon.</p>
+</div>
 {% endif %}
 {% endblock %}
