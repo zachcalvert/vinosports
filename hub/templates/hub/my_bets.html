@@ -97,6 +97,50 @@
                     <td class="py-3 px-2 text-right text-muted text-xs">{{ entry.date|date:"d M H:i" }}</td>
                 </tr>
 
+                {% elif entry.type == "futures" %}
+                <tr class="hover:bg-surface-container-low transition-colors border-l-2 border-l-tertiary/40">
+                    <td class="py-3 px-2">
+                        <span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider
+                            {% if entry.league == 'epl' %}bg-green-500/15 text-green-400{% else %}bg-blue-500/15 text-blue-400{% endif %}">
+                            {{ entry.league|upper }}
+                        </span>
+                    </td>
+                    <td class="py-3 px-2">
+                        {% if entry.league == "epl" %}
+                            <a href="{% url 'epl_betting:futures_detail' entry.item.outcome.market.id_hash %}" class="hover:text-primary transition-colors">
+                                {{ entry.item.outcome.market.name }}
+                            </a>
+                        {% else %}
+                            <a href="{% url 'nba_betting:futures_detail' entry.item.outcome.market.id_hash %}" class="hover:text-primary transition-colors">
+                                {{ entry.item.outcome.market.name }}
+                            </a>
+                        {% endif %}
+                    </td>
+                    <td class="py-3 px-2 text-muted">
+                        {% if entry.league == "epl" and entry.item.outcome.team.crest %}
+                            <img src="{{ entry.item.outcome.team.crest }}" alt="" class="w-4 h-4 object-contain inline mr-1">
+                        {% elif entry.league == "nba" and entry.item.outcome.team.logo %}
+                            <img src="{{ entry.item.outcome.team.logo }}" alt="" class="w-4 h-4 object-contain inline mr-1">
+                        {% endif %}
+                        {{ entry.item.outcome.team.name }}
+                    </td>
+                    <td class="py-3 px-2 text-right font-mono text-muted">
+                        {% if entry.league == "epl" %}
+                            {{ entry.item.odds_at_placement|floatformat:2 }}
+                        {% else %}
+                            {% if entry.item.odds_at_placement > 0 %}+{% endif %}{{ entry.item.odds_at_placement }}
+                        {% endif %}
+                    </td>
+                    <td class="py-3 px-2 text-right font-mono">{{ entry.item.stake|currency:user }}</td>
+                    <td class="py-3 px-2 text-right font-mono {% if entry.item.payout %}text-positive font-bold{% else %}text-muted{% endif %}">
+                        {% if entry.item.payout != None %}{{ entry.item.payout|currency:user }}{% else %}&mdash;{% endif %}
+                    </td>
+                    <td class="py-3 px-2 text-center">
+                        {% include "hub/partials/status_badge.html" with status=entry.item.status %}
+                    </td>
+                    <td class="py-3 px-2 text-right text-muted text-xs">{{ entry.date|date:"d M H:i" }}</td>
+                </tr>
+
                 {% elif entry.type == "parlay" %}
                 <tr class="hover:bg-surface-container-low transition-colors border-l-2 border-l-secondary/40" id="parlay-row-{{ entry.item.id_hash }}">
                     <td class="py-3 px-2">
@@ -200,6 +244,46 @@
                 {% if entry.league == "epl" %}{{ entry.item.get_selection_display }}{% else %}{{ entry.item.get_market_display }}: {{ entry.item.get_selection_display }}{% endif %}
                 &middot; {{ entry.date|date:"d M H:i" }}
             </div>
+            <div class="grid grid-cols-3 gap-3 text-center">
+                <div>
+                    <div class="text-xs text-muted">Odds</div>
+                    <div class="font-mono text-sm text-muted">
+                        {% if entry.league == "epl" %}{{ entry.item.odds_at_placement|floatformat:2 }}{% else %}{% if entry.item.odds_at_placement > 0 %}+{% endif %}{{ entry.item.odds_at_placement }}{% endif %}
+                    </div>
+                </div>
+                <div>
+                    <div class="text-xs text-muted">Stake</div>
+                    <div class="font-mono text-sm">{{ entry.item.stake|currency:user }}</div>
+                </div>
+                <div>
+                    <div class="text-xs text-muted">Payout</div>
+                    <div class="font-mono text-sm {% if entry.item.payout %}text-positive font-bold{% else %}text-muted{% endif %}">
+                        {% if entry.item.payout != None %}{{ entry.item.payout|currency:user }}{% else %}&mdash;{% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% elif entry.type == "futures" %}
+        <div class="bg-surface-container-lowest rounded-lg border border-tertiary/30 p-4">
+            <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center gap-2">
+                    <span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider
+                        {% if entry.league == 'epl' %}bg-green-500/15 text-green-400{% else %}bg-blue-500/15 text-blue-400{% endif %}">
+                        {{ entry.league|upper }}
+                    </span>
+                    <span class="text-sm font-medium">
+                        {% if entry.league == "epl" and entry.item.outcome.team.crest %}
+                            <img src="{{ entry.item.outcome.team.crest }}" alt="" class="w-4 h-4 object-contain inline mr-1">
+                        {% elif entry.league == "nba" and entry.item.outcome.team.logo %}
+                            <img src="{{ entry.item.outcome.team.logo }}" alt="" class="w-4 h-4 object-contain inline mr-1">
+                        {% endif %}
+                        {{ entry.item.outcome.team.name }}
+                    </span>
+                </div>
+                {% include "hub/partials/status_badge.html" with status=entry.item.status %}
+            </div>
+            <div class="text-xs text-muted mb-2">{{ entry.item.outcome.market.name }} &middot; {{ entry.date|date:"d M H:i" }}</div>
             <div class="grid grid-cols-3 gap-3 text-center">
                 <div>
                     <div class="text-xs text-muted">Odds</div>
