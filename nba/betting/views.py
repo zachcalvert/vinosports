@@ -613,16 +613,30 @@ class FuturesListView(TemplateView):
             status=FuturesMarketStatus.OPEN,
         ).order_by("market_type")
 
-        markets_with_outcomes = []
+        # Separate champion from conference markets for bento layout
+        champion = None
+        conference_markets = []
         for market in markets:
-            outcomes = (
-                FuturesOutcome.objects.filter(market=market, is_active=True)
-                .select_related("team")
-                .order_by("odds")[:10]
-            )
-            markets_with_outcomes.append({"market": market, "outcomes": outcomes})
+            if market.market_type == FuturesMarket.MarketType.CHAMPION:
+                outcomes = (
+                    FuturesOutcome.objects.filter(market=market, is_active=True)
+                    .select_related("team")
+                    .order_by("odds")[:10]
+                )
+                champion = {"market": market, "outcomes": outcomes}
+            elif market.market_type == FuturesMarket.MarketType.CONFERENCE:
+                outcomes = (
+                    FuturesOutcome.objects.filter(market=market, is_active=True)
+                    .select_related("team")
+                    .order_by("odds")[:5]
+                )
+                conference_markets.append({"market": market, "outcomes": outcomes})
 
-        ctx["markets"] = markets_with_outcomes
+        # Sort conference markets: East first, then West
+        conference_markets.sort(key=lambda m: m["market"].conference or "")
+
+        ctx["champion"] = champion
+        ctx["conference_markets"] = conference_markets
         return ctx
 
 

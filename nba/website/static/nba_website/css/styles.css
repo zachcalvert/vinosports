@@ -392,3 +392,63 @@ a.activity-toast:hover {
     animation: live-pulse 1.5s ease-in-out infinite;
 }
 
+
+/* --------------------------------------------------------------------------
+   12. FUTURES
+   -------------------------------------------------------------------------- */
+
+/* Outlined BET button — hover fills with primary */
+.futures-bet-btn {
+    display: inline-block;
+    border: 2px solid rgb(var(--color-accent));
+    color: rgb(var(--color-accent));
+    font-family: 'Epilogue', sans-serif;
+    font-weight: 700;
+    font-style: italic;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    padding: 0.5rem 1.5rem;
+    border-radius: 0.5rem;
+    transition: background-color 0.15s, color 0.15s, transform 0.1s;
+    cursor: pointer;
+}
+.futures-bet-btn:hover {
+    background-color: rgb(var(--color-accent));
+    color: #fff;
+}
+.futures-bet-btn:active {
+    transform: scale(0.95);
+}
+.futures-bet-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Active row — inline bet form highlight */
+.futures-row--active {
+    background-color: rgba(var(--color-accent) / 0.03);
+    border-bottom: 2px solid rgb(var(--color-accent));
+}
+
+/* Confirmed row — green success tint */
+.futures-row--confirmed {
+    background-color: rgba(22, 163, 74, 0.04);
+}
+
+/* Champion card decorative watermark */
+.futures-card--champion {
+    position: relative;
+    overflow: hidden;
+}
+.futures-card--champion::after {
+    content: "🏆";
+    position: absolute;
+    top: -0.5rem;
+    right: -0.5rem;
+    font-size: 5rem;
+    opacity: 0.06;
+    pointer-events: none;
+    user-select: none;
+}
+
