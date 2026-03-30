@@ -19,7 +19,7 @@
     <div class="grid grid-cols-3 gap-2 text-center text-xs mt-3">
         <div>
             <span class="text-muted block">Stake</span>
-            <span class="font-mono font-bold">{{ bet.stake|format_currency:request }}</span>
+            <span class="font-mono font-bold">{{ bet.stake|currency:request.user }}</span>
         </div>
         <div>
             <span class="text-muted block">Odds</span>
@@ -27,7 +27,7 @@
         </div>
         <div>
             <span class="text-muted block">Potential Payout</span>
-            <span class="font-mono font-bold text-positive">{{ potential_payout|format_currency:request }}</span>
+            <span class="font-mono font-bold text-positive">{{ potential_payout|currency:request.user }}</span>
         </div>
     </div>
 

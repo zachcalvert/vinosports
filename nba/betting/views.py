@@ -727,33 +727,42 @@ class PlaceFuturesBetView(LoginRequiredMixin, View):
         stake = form.cleaned_data["stake"]
 
         try:
-            with transaction.atomic():
-                balance = UserBalance.objects.select_for_update().get(user=request.user)
-                if balance.balance < stake:
-                    return render(
-                        request,
-                        "nba_betting/futures/partials/_bet_form.html",
-                        {
-                            "outcome": outcome,
-                            "form": form,
-                            "error": "Insufficient balance.",
-                        },
-                    )
-
-                log_transaction(
-                    balance,
-                    -stake,
-                    BalanceTransaction.Type.FUTURES_PLACEMENT,
-                    f"Futures bet: {outcome.team.name} to win {outcome.market.name}",
+            balance = UserBalance.objects.get(user=request.user)
+            if balance.balance < stake:
+                return render(
+                    request,
+                    "nba_betting/futures/partials/_bet_form.html",
+                    {
+                        "outcome": outcome,
+                        "form": form,
+                        "error": "Insufficient balance.",
+                    },
                 )
 
-                bet = FuturesBet.objects.create(
-                    user=request.user,
-                    outcome=outcome,
-                    stake=stake,
-                    odds_at_placement=outcome.odds,
-                )
+            log_transaction(
+                request.user,
+                -stake,
+                BalanceTransaction.Type.FUTURES_PLACEMENT,
+                f"Futures bet: {outcome.team.name} to win {outcome.market.name}",
+            )
 
+            bet = FuturesBet.objects.create(
+                user=request.user,
+                outcome=outcome,
+                stake=stake,
+                odds_at_placement=outcome.odds,
+            )
+
+        except ValueError:
+            return render(
+                request,
+                "nba_betting/futures/partials/_bet_form.html",
+                {
+                    "outcome": outcome,
+                    "form": form,
+                    "error": "Insufficient balance.",
+                },
+            )
         except Exception:
             logger.exception("PlaceFuturesBetView: error placing bet")
             return render(
