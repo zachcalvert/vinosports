@@ -150,6 +150,16 @@ def _get_streak_leaderboard(limit):
     return _annotate_identity(list(qs))
 
 
+def get_user_balance_with_deltas(user):
+    """Return the user's UserBalance with change_24h and change_7d, or None."""
+    try:
+        ub = _annotate_balance_changes(UserBalance.objects.filter(user=user)).get()
+    except UserBalance.DoesNotExist:
+        return None
+    _compute_balance_deltas([ub])
+    return ub
+
+
 def get_user_rank(user, leaderboard=None, board_type="balance"):
     if not getattr(user, "is_authenticated", False):
         return None

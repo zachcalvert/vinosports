@@ -5,7 +5,7 @@ from decimal import Decimal
 from django.contrib.auth import authenticate, get_user_model, login, logout
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.db import transaction
-from django.db.models import Sum
+from django.db.models import Count, Sum
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -17,6 +17,7 @@ from vinosports.betting.leaderboard import (
     BOARD_TYPES,
     get_leaderboard_entries,
     get_public_identity,
+    get_user_balance_with_deltas,
     get_user_rank,
 )
 from vinosports.betting.models import (
@@ -65,6 +66,57 @@ class HomeView(TemplateView):
             .prefetch_related("legs")
             .order_by("-created_at")[:4]
         )
+
+        # ── Authenticated user dashboard ──
+        user = self.request.user
+        if user.is_authenticated:
+            # Balance with 24h/7d deltas
+            ub = get_user_balance_with_deltas(user)
+            if ub:
+                ctx["dash_balance"] = ub.balance
+                ctx["dash_change_24h"] = ub.change_24h
+                ctx["dash_change_7d"] = ub.change_7d
+
+            # Aggregated stats
+            try:
+                stats = user.stats
+                ctx["dash_win_rate"] = stats.win_rate
+                ctx["dash_current_streak"] = stats.current_streak
+                ctx["dash_net_profit"] = stats.net_profit
+                ctx["dash_total_bets"] = stats.total_bets
+                ctx["dash_record"] = f"{stats.total_wins}W\u2013{stats.total_losses}L"
+            except UserStats.DoesNotExist:
+                ctx["dash_total_bets"] = 0
+
+            # Pending bets across both leagues
+            from epl.betting.models import BetSlip as EplBetSlip
+            from epl.betting.models import FuturesBet as EplFuturesBet
+            from epl.betting.models import Parlay as EplParlay
+            from nba.betting.models import BetSlip as NbaBetSlip
+            from nba.betting.models import FuturesBet as NbaFuturesBet
+            from nba.betting.models import Parlay as NbaParlay
+
+            pending_agg = {"count": Count("id"), "stake": Sum("stake")}
+            pending_filter = {"user": user, "status": "PENDING"}
+            totals = [
+                model.objects.filter(**pending_filter).aggregate(**pending_agg)
+                for model in (
+                    EplBetSlip,
+                    NbaBetSlip,
+                    EplParlay,
+                    NbaParlay,
+                    EplFuturesBet,
+                    NbaFuturesBet,
+                )
+            ]
+            ctx["dash_pending_count"] = sum(t["count"] or 0 for t in totals)
+            ctx["dash_at_stake"] = sum(t["stake"] or 0 for t in totals)
+
+            # Leaderboard rank
+            rank_entry = get_user_rank(user, board_type="balance")
+            if rank_entry:
+                ctx["dash_rank"] = rank_entry.rank
+
         return ctx
 
 
