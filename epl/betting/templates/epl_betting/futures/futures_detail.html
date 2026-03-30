@@ -1,0 +1,43 @@
+{% extends "epl_website/base.html" %}
+{% load currency_tags %}
+
+{% block title %}{{ market.name }} — Futures{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <a href="{% url 'epl_betting:futures' %}" class="text-xs text-primary font-semibold uppercase tracking-wider hover:underline mb-3 inline-block">&larr; All Futures</a>
+    <div class="w-12 h-1 bg-accent rounded-full mb-3"></div>
+    <h1 class="text-2xl font-headline font-black uppercase tracking-wider">{{ market.name }}</h1>
+    {% if market.description %}
+        <p class="text-sm text-muted mt-1">{{ market.description }}</p>
+    {% endif %}
+</div>
+
+<div class="bg-surface rounded-xl border border-outline-variant overflow-hidden">
+    <div class="divide-y divide-outline-variant">
+        {% for outcome in outcomes %}
+        <div class="flex items-center justify-between px-4 py-3 hover:bg-surface-container-low transition-colors"
+             id="futures-outcome-{{ outcome.id_hash }}">
+            <div class="flex items-center gap-3">
+                {% if outcome.team.crest %}
+                    <img src="{{ outcome.team.crest }}" alt="" class="w-6 h-6 object-contain">
+                {% endif %}
+                <span class="text-sm font-medium">{{ outcome.team.name }}</span>
+            </div>
+            <div class="flex items-center gap-3">
+                <span class="text-sm font-mono font-bold text-primary">{{ outcome.odds }}</span>
+                {% if user.is_authenticated %}
+                    <button
+                        hx-get="{% url 'epl_betting:futures_bet_form' outcome.id_hash %}"
+                        hx-target="#futures-outcome-{{ outcome.id_hash }}"
+                        hx-swap="outerHTML"
+                        class="text-xs font-semibold uppercase tracking-wider text-primary hover:underline">
+                        Bet
+                    </button>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

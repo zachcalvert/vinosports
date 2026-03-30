@@ -1,0 +1,23 @@
+<div class="bg-surface rounded-xl border border-outline-variant p-4">
+    <div class="flex items-center justify-between mb-4">
+        <h3 class="text-xs uppercase tracking-wider text-primary font-bold">{{ market.get_market_type_display }}</h3>
+        <a href="{% url 'epl_betting:futures_detail' market.id_hash %}"
+           class="text-xs text-primary font-semibold uppercase tracking-wider hover:underline">
+            View All
+        </a>
+    </div>
+
+    <div class="space-y-3">
+        {% for outcome in outcomes %}
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                {% if outcome.team.crest %}
+                    <img src="{{ outcome.team.crest }}" alt="" class="w-5 h-5 object-contain">
+                {% endif %}
+                <span class="text-sm font-medium">{{ outcome.team.name }}</span>
+            </div>
+            <span class="text-sm font-mono font-bold text-primary">{{ outcome.odds }}</span>
+        </div>
+        {% endfor %}
+    </div>
+</div>

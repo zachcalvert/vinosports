@@ -1,15 +1,25 @@
+import logging
 from decimal import Decimal
 
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import transaction
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 from django.views import View
+from django.views.generic import TemplateView
 
 from nba.betting.balance import log_transaction
 from nba.betting.context_processors import PARLAY_SESSION_KEY
-from nba.betting.forms import PlaceBetForm, PlaceParlayForm
-from nba.betting.models import BetSlip, Parlay, ParlayLeg
+from nba.betting.forms import PlaceBetForm, PlaceFuturesBetForm, PlaceParlayForm
+from nba.betting.models import (
+    BetSlip,
+    FuturesBet,
+    FuturesMarket,
+    FuturesOutcome,
+    Parlay,
+    ParlayLeg,
+)
 from nba.betting.settlement import (
     american_to_decimal,
     calculate_payout,
@@ -19,8 +29,10 @@ from nba.betting.settlement import (
 from nba.games.models import Game, GameStatus
 from vinosports.betting.constants import PARLAY_MAX_LEGS, PARLAY_MIN_LEGS
 from vinosports.betting.featured import FeaturedParlay
-from vinosports.betting.models import BalanceTransaction
+from vinosports.betting.models import BalanceTransaction, UserBalance
 from vinosports.challenges.engine import update_challenge_progress
+
+logger = logging.getLogger(__name__)
 
 
 class BetFormView(LoginRequiredMixin, View):
@@ -609,5 +621,160 @@ class PlaceFeaturedParlayView(LoginRequiredMixin, View):
                 "stake": stake,
                 "balance": balance_obj.balance,
                 "my_bets_url": "nba_betting:my_bets",
+            },
+        )
+
+
+# ---------------------------------------------------------------------------
+# Futures views
+# ---------------------------------------------------------------------------
+
+
+class FuturesListView(TemplateView):
+    """List all open futures markets for the current season."""
+
+    template_name = "nba_betting/futures/futures_list.html"
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        from vinosports.betting.models import FuturesMarketStatus
+
+        today = timezone.now().date()
+        season = str(today.year if today.month >= 10 else today.year - 1)
+
+        markets = FuturesMarket.objects.filter(
+            season=season,
+            status=FuturesMarketStatus.OPEN,
+        ).order_by("market_type")
+
+        markets_with_outcomes = []
+        for market in markets:
+            outcomes = (
+                FuturesOutcome.objects.filter(market=market, is_active=True)
+                .select_related("team")
+                .order_by("odds")[:10]
+            )
+            markets_with_outcomes.append({"market": market, "outcomes": outcomes})
+
+        ctx["markets"] = markets_with_outcomes
+        return ctx
+
+
+class FuturesMarketDetailView(TemplateView):
+    """Show all outcomes for a single futures market."""
+
+    template_name = "nba_betting/futures/futures_detail.html"
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        market = get_object_or_404(FuturesMarket, id_hash=kwargs["id_hash"])
+        outcomes = (
+            FuturesOutcome.objects.filter(market=market, is_active=True)
+            .select_related("team")
+            .order_by("odds")
+        )
+        ctx["market"] = market
+        ctx["outcomes"] = outcomes
+        return ctx
+
+
+class FuturesBetFormView(LoginRequiredMixin, View):
+    """HTMX GET — return inline bet form for a futures outcome."""
+
+    def get(self, request, id_hash):
+        outcome = get_object_or_404(
+            FuturesOutcome.objects.select_related("market", "team"),
+            id_hash=id_hash,
+        )
+        form = PlaceFuturesBetForm()
+        return render(
+            request,
+            "nba_betting/futures/partials/_bet_form.html",
+            {"outcome": outcome, "form": form},
+        )
+
+
+class PlaceFuturesBetView(LoginRequiredMixin, View):
+    """Handle futures bet placement via HTMX POST."""
+
+    def post(self, request, id_hash):
+        outcome = get_object_or_404(
+            FuturesOutcome.objects.select_related("market", "team"),
+            id_hash=id_hash,
+        )
+
+        from vinosports.betting.models import FuturesMarketStatus
+
+        if outcome.market.status != FuturesMarketStatus.OPEN:
+            return render(
+                request,
+                "nba_betting/futures/partials/_bet_form.html",
+                {
+                    "outcome": outcome,
+                    "form": PlaceFuturesBetForm(),
+                    "error": "This market is no longer accepting bets.",
+                },
+            )
+
+        form = PlaceFuturesBetForm(request.POST)
+        if not form.is_valid():
+            return render(
+                request,
+                "nba_betting/futures/partials/_bet_form.html",
+                {"outcome": outcome, "form": form, "error": "Invalid stake."},
+            )
+
+        stake = form.cleaned_data["stake"]
+
+        try:
+            with transaction.atomic():
+                balance = UserBalance.objects.select_for_update().get(user=request.user)
+                if balance.balance < stake:
+                    return render(
+                        request,
+                        "nba_betting/futures/partials/_bet_form.html",
+                        {
+                            "outcome": outcome,
+                            "form": form,
+                            "error": "Insufficient balance.",
+                        },
+                    )
+
+                log_transaction(
+                    balance,
+                    -stake,
+                    BalanceTransaction.Type.FUTURES_PLACEMENT,
+                    f"Futures bet: {outcome.team.name} to win {outcome.market.name}",
+                )
+
+                bet = FuturesBet.objects.create(
+                    user=request.user,
+                    outcome=outcome,
+                    stake=stake,
+                    odds_at_placement=outcome.odds,
+                )
+
+        except Exception:
+            logger.exception("PlaceFuturesBetView: error placing bet")
+            return render(
+                request,
+                "nba_betting/futures/partials/_bet_form.html",
+                {
+                    "outcome": outcome,
+                    "form": form,
+                    "error": "Something went wrong. Please try again.",
+                },
+            )
+
+        potential_payout = bet.calculate_payout()
+
+        return render(
+            request,
+            "nba_betting/futures/partials/_bet_confirmation.html",
+            {
+                "bet": bet,
+                "outcome": outcome,
+                "potential_payout": potential_payout,
+                "balance": UserBalance.objects.get(user=request.user).balance,
             },
         )

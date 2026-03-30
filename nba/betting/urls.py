@@ -5,9 +5,13 @@ from nba.betting.views import (
     BailoutView,
     BetFormView,
     ClearParlayView,
+    FuturesBetFormView,
+    FuturesListView,
+    FuturesMarketDetailView,
     MyBetsView,
     PlaceBetView,
     PlaceFeaturedParlayView,
+    PlaceFuturesBetView,
     PlaceParlayView,
     QuickBetFormView,
     RemoveFromParlayView,
@@ -29,5 +33,22 @@ urlpatterns = [
         "parlay/featured/<int:pk>/place/",
         PlaceFeaturedParlayView.as_view(),
         name="place_featured_parlay",
+    ),
+    # Futures
+    path("futures/", FuturesListView.as_view(), name="futures"),
+    path(
+        "futures/<str:id_hash>/",
+        FuturesMarketDetailView.as_view(),
+        name="futures_detail",
+    ),
+    path(
+        "futures/bet/<str:id_hash>/",
+        FuturesBetFormView.as_view(),
+        name="futures_bet_form",
+    ),
+    path(
+        "futures/place/<str:id_hash>/",
+        PlaceFuturesBetView.as_view(),
+        name="place_futures_bet",
     ),
 ]

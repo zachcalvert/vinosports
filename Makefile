@@ -23,6 +23,8 @@ seed:
 	docker compose exec web python manage.py seed_nba
 	docker compose exec web python manage.py seed_challenge_templates
 	docker compose exec web python manage.py seed_challenges
+	docker compose exec web python manage.py seed_epl_futures
+	docker compose exec web python manage.py seed_nba_futures
 
 lint:
 	ruff check . --fix

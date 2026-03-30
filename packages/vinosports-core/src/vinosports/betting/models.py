@@ -42,6 +42,9 @@ class BalanceTransaction(BaseModel):
         BAILOUT = "BAILOUT", _("Bailout")
         PROMO_CODE = "PROMO_CODE", _("Promo code bonus")
         ADMIN_RESET = "ADMIN_RESET", _("Admin reset")
+        FUTURES_PLACEMENT = "FUTURES_PLACEMENT", _("Futures bet placed")
+        FUTURES_WIN = "FUTURES_WIN", _("Futures bet won")
+        FUTURES_VOID = "FUTURES_VOID", _("Futures bet voided")
 
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -318,6 +321,92 @@ class AbstractParlayLeg(BaseModel):
     class Meta:
         abstract = True
         ordering = ["created_at"]
+
+
+class FuturesMarketStatus(models.TextChoices):
+    """Status choices for futures markets."""
+
+    OPEN = "OPEN", _("Open")
+    SUSPENDED = "SUSPENDED", _("Suspended")
+    SETTLED = "SETTLED", _("Settled")
+    CANCELLED = "CANCELLED", _("Cancelled")
+
+
+class AbstractFuturesMarket(BaseModel):
+    """Abstract base for a futures market (e.g., "NBA Champion 2025-26").
+
+    League projects must add:
+    - A market_type field with league-specific choices
+    """
+
+    name = models.CharField(_("name"), max_length=200)
+    season = models.CharField(_("season"), max_length=10)
+    status = models.CharField(
+        _("status"),
+        max_length=10,
+        choices=FuturesMarketStatus.choices,
+        default=FuturesMarketStatus.OPEN,
+    )
+    settled_at = models.DateTimeField(_("settled at"), null=True, blank=True)
+    description = models.TextField(_("description"), blank=True, default="")
+
+    class Meta:
+        abstract = True
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.name} ({self.season})"
+
+
+class AbstractFuturesOutcome(BaseModel):
+    """Abstract base for a single outcome within a futures market.
+
+    League projects must add:
+    - A ForeignKey to their FuturesMarket model
+    - A ForeignKey to their Team model
+    - Odds representation field(s) in native format
+    - An odds_updated_at DateTimeField
+    """
+
+    is_winner = models.BooleanField(_("is winner"), default=False)
+    is_active = models.BooleanField(
+        _("is active"),
+        default=True,
+        help_text=_("Deactivate if team is eliminated"),
+    )
+
+    class Meta:
+        abstract = True
+
+
+class AbstractFuturesBet(BaseModel):
+    """Abstract base for a futures bet.
+
+    League projects must add:
+    - A ForeignKey to their FuturesOutcome model
+    - Odds at placement field(s) in native format
+    """
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="%(app_label)s_futures_bets",
+        verbose_name=_("user"),
+    )
+    stake = models.DecimalField(_("stake"), max_digits=10, decimal_places=2)
+    status = models.CharField(
+        _("status"),
+        max_length=10,
+        choices=BetStatus.choices,
+        default=BetStatus.PENDING,
+    )
+    payout = models.DecimalField(
+        _("payout"), max_digits=10, decimal_places=2, null=True, blank=True
+    )
+
+    class Meta:
+        abstract = True
+        ordering = ["-created_at"]
 
 
 # Import concrete models so Django discovers them in this app.

@@ -15,8 +15,15 @@ from django.views import View
 from django.views.generic import TemplateView
 
 from epl.betting.context_processors import parlay_slip as _parlay_slip_ctx
-from epl.betting.forms import PlaceBetForm, PlaceParlayForm
-from epl.betting.models import BetSlip, Parlay, ParlayLeg
+from epl.betting.forms import PlaceBetForm, PlaceFuturesBetForm, PlaceParlayForm
+from epl.betting.models import (
+    BetSlip,
+    FuturesBet,
+    FuturesMarket,
+    FuturesOutcome,
+    Parlay,
+    ParlayLeg,
+)
 from epl.discussions.models import Comment
 from epl.matches.models import Match, Odds
 from epl.website.challenge_engine import update_challenge_progress
@@ -1067,5 +1074,157 @@ class PlaceFeaturedParlayView(LoginRequiredMixin, View):
                 "stake": stake,
                 "balance": balance.balance,
                 "my_bets_url": "epl_betting:my_bets",
+            },
+        )
+
+
+# ---------------------------------------------------------------------------
+# Futures views
+# ---------------------------------------------------------------------------
+
+
+class FuturesListView(TemplateView):
+    """List all open futures markets for the current season."""
+
+    template_name = "epl_betting/futures/futures_list.html"
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        from vinosports.betting.models import FuturesMarketStatus
+
+        markets = FuturesMarket.objects.filter(
+            season=settings.EPL_CURRENT_SEASON,
+            status=FuturesMarketStatus.OPEN,
+        ).order_by("market_type")
+
+        markets_with_outcomes = []
+        for market in markets:
+            outcomes = (
+                FuturesOutcome.objects.filter(market=market, is_active=True)
+                .select_related("team")
+                .order_by("odds")[:10]
+            )
+            markets_with_outcomes.append({"market": market, "outcomes": outcomes})
+
+        ctx["markets"] = markets_with_outcomes
+        return ctx
+
+
+class FuturesMarketDetailView(TemplateView):
+    """Show all outcomes for a single futures market."""
+
+    template_name = "epl_betting/futures/futures_detail.html"
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        market = get_object_or_404(FuturesMarket, id_hash=kwargs["id_hash"])
+        outcomes = (
+            FuturesOutcome.objects.filter(market=market, is_active=True)
+            .select_related("team")
+            .order_by("odds")
+        )
+        ctx["market"] = market
+        ctx["outcomes"] = outcomes
+        return ctx
+
+
+class FuturesBetFormView(LoginRequiredMixin, View):
+    """HTMX GET — return inline bet form for a futures outcome."""
+
+    def get(self, request, id_hash):
+        outcome = get_object_or_404(
+            FuturesOutcome.objects.select_related("market", "team"),
+            id_hash=id_hash,
+        )
+        form = PlaceFuturesBetForm()
+        return render(
+            request,
+            "epl_betting/futures/partials/_bet_form.html",
+            {"outcome": outcome, "form": form},
+        )
+
+
+class PlaceFuturesBetView(LoginRequiredMixin, View):
+    """Handle futures bet placement via HTMX POST."""
+
+    def post(self, request, id_hash):
+        outcome = get_object_or_404(
+            FuturesOutcome.objects.select_related("market", "team"),
+            id_hash=id_hash,
+        )
+
+        from vinosports.betting.models import FuturesMarketStatus
+
+        if outcome.market.status != FuturesMarketStatus.OPEN:
+            return render(
+                request,
+                "epl_betting/futures/partials/_bet_form.html",
+                {
+                    "outcome": outcome,
+                    "form": PlaceFuturesBetForm(),
+                    "error": "This market is no longer accepting bets.",
+                },
+            )
+
+        form = PlaceFuturesBetForm(request.POST)
+        if not form.is_valid():
+            return render(
+                request,
+                "epl_betting/futures/partials/_bet_form.html",
+                {"outcome": outcome, "form": form, "error": "Invalid stake."},
+            )
+
+        stake = form.cleaned_data["stake"]
+
+        try:
+            with transaction.atomic():
+                balance = UserBalance.objects.select_for_update().get(user=request.user)
+                if balance.balance < stake:
+                    return render(
+                        request,
+                        "epl_betting/futures/partials/_bet_form.html",
+                        {
+                            "outcome": outcome,
+                            "form": form,
+                            "error": "Insufficient balance.",
+                        },
+                    )
+
+                log_transaction(
+                    balance,
+                    -stake,
+                    BalanceTransaction.Type.FUTURES_PLACEMENT,
+                    f"Futures bet: {outcome.team.name} to win {outcome.market.name}",
+                )
+
+                bet = FuturesBet.objects.create(
+                    user=request.user,
+                    outcome=outcome,
+                    stake=stake,
+                    odds_at_placement=outcome.odds,
+                )
+
+        except Exception:
+            logger.exception("PlaceFuturesBetView: error placing bet")
+            return render(
+                request,
+                "epl_betting/futures/partials/_bet_form.html",
+                {
+                    "outcome": outcome,
+                    "form": form,
+                    "error": "Something went wrong. Please try again.",
+                },
+            )
+
+        potential_payout = (stake * outcome.odds).quantize(Decimal("0.01"))
+
+        return render(
+            request,
+            "epl_betting/futures/partials/_bet_confirmation.html",
+            {
+                "bet": bet,
+                "outcome": outcome,
+                "potential_payout": potential_payout,
+                "balance": UserBalance.objects.get(user=request.user).balance,
             },
         )

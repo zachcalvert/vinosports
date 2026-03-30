@@ -1,0 +1,27 @@
+<div class="bg-surface rounded-xl border border-outline-variant p-4">
+    <h3 class="text-xs uppercase tracking-wider text-primary font-bold mb-4">Title Odds</h3>
+
+    {% if futures_winner_outcomes %}
+        <div class="space-y-3">
+            {% for outcome in futures_winner_outcomes %}
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    {% if outcome.team.crest %}
+                        <img src="{{ outcome.team.crest }}" alt="" class="w-4 h-4 object-contain">
+                    {% endif %}
+                    <span class="text-sm font-medium">{{ outcome.team.name }}</span>
+                </div>
+                <span class="text-sm font-mono font-bold text-primary">{{ outcome.odds }}</span>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="mt-4 pt-3 border-t border-outline-variant">
+            <a href="{% url 'epl_betting:futures' %}" class="text-xs text-primary font-semibold uppercase tracking-wider hover:underline">
+                View All Futures
+            </a>
+        </div>
+    {% else %}
+        <p class="text-xs text-muted">No futures odds available yet.</p>
+    {% endif %}
+</div>

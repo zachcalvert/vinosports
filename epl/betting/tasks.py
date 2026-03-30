@@ -4,6 +4,7 @@ from decimal import Decimal
 from celery import shared_task
 from django.db import transaction
 
+from epl.betting.futures_odds_engine import generate_futures_odds
 from epl.betting.models import BetSlip, Parlay, ParlayLeg
 from epl.betting.odds_engine import generate_all_upcoming_odds
 from epl.betting.stats import record_bet_result
@@ -360,3 +361,47 @@ def settle_match_bets(self, match_id):
             url=match.get_absolute_url(),
             icon="check-circle",
         )
+
+
+@shared_task(bind=True, max_retries=3)
+def update_futures_odds(self):
+    """Regenerate futures odds for all open EPL markets from current standings."""
+    logger.info("update_futures_odds: starting")
+    try:
+        from django.conf import settings as django_settings
+
+        from epl.betting.models import FuturesMarket, FuturesOutcome
+        from vinosports.betting.models import FuturesMarketStatus
+
+        season = django_settings.EPL_CURRENT_SEASON
+        markets = FuturesMarket.objects.filter(
+            season=season, status=FuturesMarketStatus.OPEN
+        )
+
+        total_updated = 0
+        for market in markets:
+            results = generate_futures_odds(season, market.market_type)
+            if not results:
+                continue
+
+            odds_map = {r["team_id"]: r["odds"] for r in results}
+            outcomes = list(
+                FuturesOutcome.objects.filter(market=market, is_active=True)
+            )
+            to_update = []
+            for outcome in outcomes:
+                new_odds = odds_map.get(outcome.team_id)
+                if new_odds is not None and new_odds != outcome.odds:
+                    outcome.odds = new_odds
+                    to_update.append(outcome)
+
+            if to_update:
+                FuturesOutcome.objects.bulk_update(
+                    to_update, ["odds", "odds_updated_at"]
+                )
+                total_updated += len(to_update)
+
+        logger.info("update_futures_odds: updated %d outcomes", total_updated)
+    except Exception as exc:
+        logger.exception("update_futures_odds failed")
+        raise self.retry(exc=exc, countdown=120 * (2**self.request.retries))
