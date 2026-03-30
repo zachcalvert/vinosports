@@ -188,6 +188,46 @@ class TestLeaderboard:
         entries = get_leaderboard_entries(limit=3, board_type="balance")
         assert len(entries) == 3
 
+    def test_excludes_inactive_users(self):
+        UserBalanceFactory(
+            user=UserFactory(is_active=False),
+            balance=Decimal("99999.00"),
+        )
+        UserBalanceFactory(balance=Decimal("100.00"))
+
+        entries = get_leaderboard_entries(board_type="balance")
+        assert len(entries) == 1
+
+    def test_excludes_inactive_users_profit(self):
+        inactive = UserFactory(is_active=False)
+        UserStatsFactory(user=inactive, total_bets=5, net_profit=Decimal("9999.00"))
+        active = UserFactory()
+        UserStatsFactory(user=active, total_bets=5, net_profit=Decimal("100.00"))
+
+        entries = get_leaderboard_entries(board_type="profit")
+        assert len(entries) == 1
+        assert entries[0].user_id == active.id
+
+    def test_excludes_inactive_users_win_rate(self):
+        inactive = UserFactory(is_active=False)
+        UserStatsFactory(user=inactive, total_bets=10, total_wins=10)
+        active = UserFactory()
+        UserStatsFactory(user=active, total_bets=10, total_wins=7)
+
+        entries = get_leaderboard_entries(board_type="win_rate")
+        assert len(entries) == 1
+        assert entries[0].user_id == active.id
+
+    def test_excludes_inactive_users_streak(self):
+        inactive = UserFactory(is_active=False)
+        UserStatsFactory(user=inactive, total_bets=5, best_streak=99, current_streak=0)
+        active = UserFactory()
+        UserStatsFactory(user=active, total_bets=5, best_streak=3, current_streak=2)
+
+        entries = get_leaderboard_entries(board_type="streak")
+        assert len(entries) == 1
+        assert entries[0].user_id == active.id
+
 
 class TestGetUserRank:
     def test_returns_none_for_anonymous(self):
@@ -215,3 +255,14 @@ class TestGetUserRank:
 
         rank = get_user_rank(u, leaderboard=[ub], board_type="balance")
         assert rank is None
+
+    def test_rank_excludes_inactive_users(self):
+        # Inactive user with a higher balance should not affect the rank count.
+        inactive = UserFactory(is_active=False)
+        UserBalanceFactory(user=inactive, balance=Decimal("9999.00"))
+        u = UserFactory()
+        UserBalanceFactory(user=u, balance=Decimal("500.00"))
+
+        rank = get_user_rank(u, leaderboard=[], board_type="balance")
+        assert rank is not None
+        assert rank.rank == 1
