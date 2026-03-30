@@ -1,0 +1,54 @@
+{% load currency_tags %}
+<div class="bg-primary-fixed/20 border-b-4 border-secondary rounded-xl p-4"
+     id="futures-outcome-{{ outcome.id_hash }}">
+    <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center gap-2">
+            {% if outcome.team.crest %}
+                <img src="{{ outcome.team.crest }}" alt="" class="w-5 h-5 object-contain">
+            {% endif %}
+            <span class="text-sm font-medium">{{ outcome.team.name }}</span>
+        </div>
+        <span class="text-sm font-mono font-bold text-primary">{{ outcome.odds }}</span>
+    </div>
+
+    {% if error %}
+        <div class="bg-danger/10 text-danger text-xs font-medium px-3 py-2 rounded-sm mb-3">
+            {{ error }}
+        </div>
+    {% endif %}
+
+    <form hx-post="{% url 'epl_betting:place_futures_bet' outcome.id_hash %}"
+          hx-target="#futures-outcome-{{ outcome.id_hash }}"
+          hx-swap="outerHTML"
+          hx-disabled-elt="find button[type='submit']"
+          class="flex items-center gap-2">
+        {% csrf_token %}
+        <div class="flex-1">
+            {{ form.stake }}
+        </div>
+        <div class="text-xs text-muted whitespace-nowrap" id="futures-payout-{{ outcome.id_hash }}"></div>
+        <button type="submit"
+                class="jukebox-btn bg-primary text-on-primary text-xs font-bold uppercase tracking-wider px-4 py-2 rounded-sm disabled:opacity-50">
+            Bet
+        </button>
+        <button type="button"
+                hx-get="{% url 'epl_betting:futures_detail' outcome.market.id_hash %}"
+                hx-target="#futures-outcome-{{ outcome.id_hash }}"
+                hx-swap="outerHTML"
+                class="text-muted hover:text-primary text-sm px-1">&times;</button>
+    </form>
+
+    <script>
+    (function() {
+        const form = document.querySelector('#futures-outcome-{{ outcome.id_hash }} form');
+        const input = form.querySelector('input[name="stake"]');
+        const display = document.querySelector('#futures-payout-{{ outcome.id_hash }}');
+        const odds = {{ outcome.odds }};
+        input.addEventListener('input', function() {
+            const stake = parseFloat(this.value) || 0;
+            const payout = (stake * odds).toFixed(2);
+            display.textContent = stake > 0 ? 'Payout: $' + payout : '';
+        });
+    })();
+    </script>
+</div>

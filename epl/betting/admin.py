@@ -1,6 +1,13 @@
 from django.contrib import admin
 
-from epl.betting.models import BetSlip, Parlay, ParlayLeg
+from epl.betting.models import (
+    BetSlip,
+    FuturesBet,
+    FuturesMarket,
+    FuturesOutcome,
+    Parlay,
+    ParlayLeg,
+)
 from epl.matches.models import Odds
 from vinosports.betting.featured import FeaturedParlay, FeaturedParlayLeg
 from vinosports.betting.models import Badge, UserBadge, UserBalance
@@ -76,6 +83,41 @@ class UserBadgeAdmin(admin.ModelAdmin):
     list_filter = ["badge__rarity", "badge"]
     search_fields = ["user__email", "badge__name"]
     raw_id_fields = ["user"]
+
+
+# --- Futures ---
+
+
+class FuturesOutcomeInline(admin.TabularInline):
+    model = FuturesOutcome
+    extra = 0
+    fields = ["team", "odds", "is_active", "is_winner"]
+    readonly_fields = ["odds"]
+
+
+@admin.register(FuturesMarket)
+class FuturesMarketAdmin(admin.ModelAdmin):
+    list_display = ["name", "market_type", "season", "status", "settled_at"]
+    list_filter = ["status", "market_type", "season"]
+    search_fields = ["name"]
+    inlines = [FuturesOutcomeInline]
+    readonly_fields = ["id_hash", "settled_at"]
+
+
+@admin.register(FuturesOutcome)
+class FuturesOutcomeAdmin(admin.ModelAdmin):
+    list_display = ["team", "market", "odds", "is_active", "is_winner"]
+    list_filter = ["market", "is_active", "is_winner"]
+    search_fields = ["team__name"]
+    raw_id_fields = ["team"]
+
+
+@admin.register(FuturesBet)
+class FuturesBetAdmin(admin.ModelAdmin):
+    list_display = ["user", "outcome", "odds_at_placement", "stake", "status", "payout"]
+    list_filter = ["status"]
+    search_fields = ["user__email", "outcome__team__name"]
+    raw_id_fields = ["user", "outcome"]
 
 
 # --- Featured Parlays (shared core model, registered here to avoid duplication) ---

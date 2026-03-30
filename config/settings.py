@@ -101,12 +101,14 @@ TEMPLATES = [
                 "epl.website.context_processors.theme",
                 "epl.betting.context_processors.bankruptcy",
                 "epl.betting.context_processors.parlay_slip",
+                "epl.betting.context_processors.futures_sidebar",
                 "epl.rewards.context_processors.unseen_rewards",
                 "epl.activity.context_processors.activity_toasts",
                 # NBA (guarded by request.league)
                 "nba.website.context_processors.theme",
                 "nba.betting.context_processors.bankruptcy",
                 "nba.betting.context_processors.parlay_slip",
+                "nba.betting.context_processors.futures_sidebar",
                 "nba.rewards.context_processors.unseen_rewards",
                 "nba.activity.context_processors.activity_toasts",
             ],
@@ -274,6 +276,11 @@ CELERY_BEAT_SCHEDULE = {
         "task": "epl.betting.tasks.generate_odds",
         "schedule": timedelta(minutes=10),
     },
+    # --- EPL Futures ---
+    "epl-update-futures-odds-hourly": {
+        "task": "epl.betting.tasks.update_futures_odds",
+        "schedule": crontab(minute=30),
+    },
     # --- EPL Challenges ---
     "epl-rotate-daily-challenges": {
         "task": "epl.website.challenge_tasks.rotate_daily_challenges",
@@ -339,6 +346,11 @@ CELERY_BEAT_SCHEDULE = {
     "nba-generate-odds-10m": {
         "task": "nba.betting.tasks.generate_odds",
         "schedule": timedelta(minutes=10),
+    },
+    # --- NBA Futures ---
+    "nba-update-futures-odds-hourly": {
+        "task": "nba.betting.tasks.update_futures_odds",
+        "schedule": crontab(minute=45),
     },
     # --- NBA Settlement ---
     "nba-settle-pending-bets-5m": {

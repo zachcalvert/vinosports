@@ -1,5 +1,6 @@
 from decimal import Decimal
 
+from django.conf import settings
 from django.db.models import Min
 
 from epl.betting.forms import PlaceParlayForm
@@ -124,3 +125,28 @@ def parlay_slip(request):
         "parlay_max_payout": PARLAY_MAX_PAYOUT,
         "parlay_form": PlaceParlayForm(),
     }
+
+
+def futures_sidebar(request):
+    """Inject top-5 WINNER futures outcomes for the sidebar widget."""
+    if getattr(request, "league", None) != "epl":
+        return {}
+
+    from epl.betting.models import FuturesMarket, FuturesOutcome
+    from vinosports.betting.models import FuturesMarketStatus
+
+    try:
+        market = FuturesMarket.objects.get(
+            season=settings.EPL_CURRENT_SEASON,
+            market_type="WINNER",
+            status=FuturesMarketStatus.OPEN,
+        )
+    except FuturesMarket.DoesNotExist:
+        return {}
+
+    outcomes = (
+        FuturesOutcome.objects.filter(market=market, is_active=True)
+        .select_related("team")
+        .order_by("odds")[:5]
+    )
+    return {"futures_winner_outcomes": outcomes}

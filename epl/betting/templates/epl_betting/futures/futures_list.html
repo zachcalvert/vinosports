@@ -1,0 +1,23 @@
+{% extends "epl_website/base.html" %}
+
+{% block title %}Futures — EPL{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <div class="w-12 h-1 bg-accent rounded-full mb-3"></div>
+    <h1 class="text-2xl font-headline font-black uppercase tracking-wider">Futures</h1>
+    <p class="text-sm text-muted mt-1">Season-long markets. Bet on who wins the league, finishes top 4, or gets relegated.</p>
+</div>
+
+{% if markets %}
+    <div class="space-y-8">
+        {% for item in markets %}
+            {% include "epl_betting/futures/partials/_market_card.html" with market=item.market outcomes=item.outcomes %}
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="bg-surface rounded-xl border border-outline-variant p-8 text-center">
+        <p class="text-muted">No futures markets are open right now. Check back soon.</p>
+    </div>
+{% endif %}
+{% endblock %}

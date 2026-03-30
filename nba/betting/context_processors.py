@@ -1,5 +1,7 @@
 from decimal import Decimal
 
+from django.utils import timezone
+
 from nba.betting.forms import PlaceParlayForm
 from nba.betting.models import BetSlip
 from nba.betting.settlement import american_to_decimal
@@ -118,3 +120,31 @@ def parlay_slip(request):
         "parlay_max_payout": PARLAY_MAX_PAYOUT,
         "parlay_form": PlaceParlayForm(),
     }
+
+
+def futures_sidebar(request):
+    """Inject top-5 CHAMPION futures outcomes for the sidebar widget."""
+    if getattr(request, "league", None) != "nba":
+        return {}
+
+    from nba.betting.models import FuturesMarket, FuturesOutcome
+    from vinosports.betting.models import FuturesMarketStatus
+
+    today = timezone.now().date()
+    season = str(today.year if today.month >= 10 else today.year - 1)
+
+    try:
+        market = FuturesMarket.objects.get(
+            season=season,
+            market_type="CHAMPION",
+            status=FuturesMarketStatus.OPEN,
+        )
+    except FuturesMarket.DoesNotExist:
+        return {}
+
+    outcomes = (
+        FuturesOutcome.objects.filter(market=market, is_active=True)
+        .select_related("team")
+        .order_by("odds")[:5]
+    )
+    return {"futures_champion_outcomes": outcomes}

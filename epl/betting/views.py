@@ -7,7 +7,7 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import IntegrityError, transaction
-from django.db.models import Count, Max, Min, Sum
+from django.db.models import Count, Max, Min
 from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, render
 from django.utils import timezone
@@ -15,8 +15,15 @@ from django.views import View
 from django.views.generic import TemplateView
 
 from epl.betting.context_processors import parlay_slip as _parlay_slip_ctx
-from epl.betting.forms import PlaceBetForm, PlaceParlayForm
-from epl.betting.models import BetSlip, Parlay, ParlayLeg
+from epl.betting.forms import PlaceBetForm, PlaceFuturesBetForm, PlaceParlayForm
+from epl.betting.models import (
+    BetSlip,
+    FuturesBet,
+    FuturesMarket,
+    FuturesOutcome,
+    Parlay,
+    ParlayLeg,
+)
 from epl.discussions.models import Comment
 from epl.matches.models import Match, Odds
 from epl.website.challenge_engine import update_challenge_progress
@@ -39,7 +46,6 @@ from vinosports.betting.models import (
     UserBalance,
     UserStats,
 )
-from vinosports.rewards.models import RewardDistribution
 
 logger = logging.getLogger(__name__)
 
@@ -334,68 +340,6 @@ class PlaceBetView(LoginRequiredMixin, View):
                 "sentiment": _get_match_sentiment(match),
             },
         )
-
-
-class MyBetsView(LoginRequiredMixin, TemplateView):
-    template_name = "epl_betting/my_bets.html"
-
-    def get_context_data(self, **kwargs):
-        ctx = super().get_context_data(**kwargs)
-        user = self.request.user
-
-        bets = BetSlip.objects.filter(user=user).select_related(
-            "match__home_team", "match__away_team"
-        )
-
-        parlays = Parlay.objects.filter(user=user).prefetch_related(
-            "legs__match__home_team", "legs__match__away_team"
-        )
-
-        bet_totals = bets.aggregate(
-            total_staked=Sum("stake"),
-            total_payout=Sum("payout"),
-        )
-        parlay_totals = parlays.aggregate(
-            parlay_staked=Sum("stake"),
-            parlay_payout=Sum("payout"),
-        )
-        total_staked = (bet_totals["total_staked"] or Decimal("0")) + (
-            parlay_totals["parlay_staked"] or Decimal("0")
-        )
-        total_payout = (bet_totals["total_payout"] or Decimal("0")) + (
-            parlay_totals["parlay_payout"] or Decimal("0")
-        )
-
-        balance = getattr(user, "balance", None)
-        current_balance = balance.balance if balance else Decimal("1000.00")
-
-        reward_distributions = RewardDistribution.objects.filter(
-            user=user
-        ).select_related("reward")
-        total_rewards = reward_distributions.aggregate(total=Sum("reward__amount"))[
-            "total"
-        ] or Decimal("0")
-
-        # Build unified activity feed sorted by date descending
-        activity = []
-        for bet in bets:
-            activity.append({"type": "bet", "date": bet.created_at, "item": bet})
-        for parlay in parlays:
-            activity.append(
-                {"type": "parlay", "date": parlay.created_at, "item": parlay}
-            )
-        for dist in reward_distributions:
-            activity.append({"type": "reward", "date": dist.created_at, "item": dist})
-        activity.sort(key=lambda a: a["date"], reverse=True)
-
-        ctx["bets"] = bets
-        ctx["total_staked"] = total_staked
-        ctx["total_payout"] = total_payout
-        ctx["net_pnl"] = total_payout - total_staked
-        ctx["current_balance"] = current_balance
-        ctx["total_rewards"] = total_rewards
-        ctx["activity"] = activity
-        return ctx
 
 
 class ProfileView(TemplateView):
@@ -1066,6 +1010,158 @@ class PlaceFeaturedParlayView(LoginRequiredMixin, View):
                 "potential_payout": potential_payout,
                 "stake": stake,
                 "balance": balance.balance,
-                "my_bets_url": "epl_betting:my_bets",
+                "my_bets_url": "hub:my_bets",
+            },
+        )
+
+
+# ---------------------------------------------------------------------------
+# Futures views
+# ---------------------------------------------------------------------------
+
+
+class FuturesListView(TemplateView):
+    """List all open futures markets for the current season."""
+
+    template_name = "epl_betting/futures/futures_list.html"
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        from vinosports.betting.models import FuturesMarketStatus
+
+        markets = FuturesMarket.objects.filter(
+            season=settings.EPL_CURRENT_SEASON,
+            status=FuturesMarketStatus.OPEN,
+        ).order_by("market_type")
+
+        markets_with_outcomes = []
+        for market in markets:
+            outcomes = (
+                FuturesOutcome.objects.filter(market=market, is_active=True)
+                .select_related("team")
+                .order_by("odds")[:10]
+            )
+            markets_with_outcomes.append({"market": market, "outcomes": outcomes})
+
+        ctx["markets"] = markets_with_outcomes
+        return ctx
+
+
+class FuturesMarketDetailView(TemplateView):
+    """Show all outcomes for a single futures market."""
+
+    template_name = "epl_betting/futures/futures_detail.html"
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        market = get_object_or_404(FuturesMarket, id_hash=kwargs["id_hash"])
+        outcomes = (
+            FuturesOutcome.objects.filter(market=market, is_active=True)
+            .select_related("team")
+            .order_by("odds")
+        )
+        ctx["market"] = market
+        ctx["outcomes"] = outcomes
+        return ctx
+
+
+class FuturesBetFormView(LoginRequiredMixin, View):
+    """HTMX GET — return inline bet form for a futures outcome."""
+
+    def get(self, request, id_hash):
+        outcome = get_object_or_404(
+            FuturesOutcome.objects.select_related("market", "team"),
+            id_hash=id_hash,
+        )
+        form = PlaceFuturesBetForm()
+        return render(
+            request,
+            "epl_betting/futures/partials/_bet_form.html",
+            {"outcome": outcome, "form": form},
+        )
+
+
+class PlaceFuturesBetView(LoginRequiredMixin, View):
+    """Handle futures bet placement via HTMX POST."""
+
+    def post(self, request, id_hash):
+        outcome = get_object_or_404(
+            FuturesOutcome.objects.select_related("market", "team"),
+            id_hash=id_hash,
+        )
+
+        from vinosports.betting.models import FuturesMarketStatus
+
+        if outcome.market.status != FuturesMarketStatus.OPEN:
+            return render(
+                request,
+                "epl_betting/futures/partials/_bet_form.html",
+                {
+                    "outcome": outcome,
+                    "form": PlaceFuturesBetForm(),
+                    "error": "This market is no longer accepting bets.",
+                },
+            )
+
+        form = PlaceFuturesBetForm(request.POST)
+        if not form.is_valid():
+            return render(
+                request,
+                "epl_betting/futures/partials/_bet_form.html",
+                {"outcome": outcome, "form": form, "error": "Invalid stake."},
+            )
+
+        stake = form.cleaned_data["stake"]
+
+        try:
+            with transaction.atomic():
+                balance = UserBalance.objects.select_for_update().get(user=request.user)
+                if balance.balance < stake:
+                    return render(
+                        request,
+                        "epl_betting/futures/partials/_bet_form.html",
+                        {
+                            "outcome": outcome,
+                            "form": form,
+                            "error": "Insufficient balance.",
+                        },
+                    )
+
+                log_transaction(
+                    balance,
+                    -stake,
+                    BalanceTransaction.Type.FUTURES_PLACEMENT,
+                    f"Futures bet: {outcome.team.name} to win {outcome.market.name}",
+                )
+
+                bet = FuturesBet.objects.create(
+                    user=request.user,
+                    outcome=outcome,
+                    stake=stake,
+                    odds_at_placement=outcome.odds,
+                )
+
+        except Exception:
+            logger.exception("PlaceFuturesBetView: error placing bet")
+            return render(
+                request,
+                "epl_betting/futures/partials/_bet_form.html",
+                {
+                    "outcome": outcome,
+                    "form": form,
+                    "error": "Something went wrong. Please try again.",
+                },
+            )
+
+        potential_payout = (stake * bet.odds_at_placement).quantize(Decimal("0.01"))
+
+        return render(
+            request,
+            "epl_betting/futures/partials/_bet_confirmation.html",
+            {
+                "bet": bet,
+                "outcome": outcome,
+                "potential_payout": potential_payout,
+                "balance": UserBalance.objects.get(user=request.user).balance,
             },
         )

@@ -487,8 +487,10 @@ class MyBetsView(LoginRequiredMixin, TemplateView):
         user = self.request.user
 
         from epl.betting.models import BetSlip as EplBetSlip
+        from epl.betting.models import FuturesBet as EplFuturesBet
         from epl.betting.models import Parlay as EplParlay
         from nba.betting.models import BetSlip as NbaBetSlip
+        from nba.betting.models import FuturesBet as NbaFuturesBet
         from nba.betting.models import Parlay as NbaParlay
 
         epl_bets = EplBetSlip.objects.filter(user=user).select_related(
@@ -503,39 +505,28 @@ class MyBetsView(LoginRequiredMixin, TemplateView):
         nba_parlays = NbaParlay.objects.filter(user=user).prefetch_related(
             "legs__game__home_team", "legs__game__away_team"
         )
+        epl_futures = EplFuturesBet.objects.filter(user=user).select_related(
+            "outcome__market", "outcome__team"
+        )
+        nba_futures = NbaFuturesBet.objects.filter(user=user).select_related(
+            "outcome__market", "outcome__team"
+        )
 
         # Aggregate totals
-        epl_bet_totals = epl_bets.aggregate(
-            total_staked=Sum("stake"), total_payout=Sum("payout")
-        )
-        nba_bet_totals = nba_bets.aggregate(
-            total_staked=Sum("stake"), total_payout=Sum("payout")
-        )
-        epl_parlay_totals = epl_parlays.aggregate(
-            total_staked=Sum("stake"), total_payout=Sum("payout")
-        )
-        nba_parlay_totals = nba_parlays.aggregate(
-            total_staked=Sum("stake"), total_payout=Sum("payout")
-        )
-
-        total_staked = sum(
-            t["total_staked"] or Decimal("0")
-            for t in [
-                epl_bet_totals,
-                nba_bet_totals,
-                epl_parlay_totals,
-                nba_parlay_totals,
-            ]
-        )
-        total_payout = sum(
-            t["total_payout"] or Decimal("0")
-            for t in [
-                epl_bet_totals,
-                nba_bet_totals,
-                epl_parlay_totals,
-                nba_parlay_totals,
-            ]
-        )
+        all_querysets = [
+            epl_bets,
+            nba_bets,
+            epl_parlays,
+            nba_parlays,
+            epl_futures,
+            nba_futures,
+        ]
+        total_staked = Decimal("0")
+        total_payout = Decimal("0")
+        for qs in all_querysets:
+            totals = qs.aggregate(total_staked=Sum("stake"), total_payout=Sum("payout"))
+            total_staked += totals["total_staked"] or Decimal("0")
+            total_payout += totals["total_payout"] or Decimal("0")
 
         balance = getattr(user, "balance", None)
         current_balance = balance.balance if balance else Decimal("1000.00")
@@ -566,6 +557,24 @@ class MyBetsView(LoginRequiredMixin, TemplateView):
                     "league": "nba",
                     "date": parlay.created_at,
                     "item": parlay,
+                }
+            )
+        for fb in epl_futures:
+            activity.append(
+                {
+                    "type": "futures",
+                    "league": "epl",
+                    "date": fb.created_at,
+                    "item": fb,
+                }
+            )
+        for fb in nba_futures:
+            activity.append(
+                {
+                    "type": "futures",
+                    "league": "nba",
+                    "date": fb.created_at,
+                    "item": fb,
                 }
             )
         # Pending first, then most recent

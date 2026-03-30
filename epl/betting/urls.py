@@ -4,12 +4,15 @@ from epl.betting.views import (
     AddToParlayView,
     BailoutView,
     ClearParlayView,
-    MyBetsView,
+    FuturesBetFormView,
+    FuturesListView,
+    FuturesMarketDetailView,
     OddsBoardPartialView,
     OddsBoardView,
     ParlaySlipPartialView,
     PlaceBetView,
     PlaceFeaturedParlayView,
+    PlaceFuturesBetView,
     PlaceParlayView,
     QuickBetFormView,
     RemoveFromParlayView,
@@ -21,7 +24,6 @@ urlpatterns = [
     path("", OddsBoardView.as_view(), name="odds"),
     path("partial/", OddsBoardPartialView.as_view(), name="odds_partial"),
     path("place/<slug:match_slug>/", PlaceBetView.as_view(), name="place_bet"),
-    path("my-bets/", MyBetsView.as_view(), name="my_bets"),
     path(
         "quick-bet/<slug:match_slug>/",
         QuickBetFormView.as_view(),
@@ -38,5 +40,22 @@ urlpatterns = [
         "parlay/featured/<int:pk>/place/",
         PlaceFeaturedParlayView.as_view(),
         name="place_featured_parlay",
+    ),
+    # Futures
+    path("futures/", FuturesListView.as_view(), name="futures"),
+    path(
+        "futures/<str:id_hash>/",
+        FuturesMarketDetailView.as_view(),
+        name="futures_detail",
+    ),
+    path(
+        "futures/bet/<str:id_hash>/",
+        FuturesBetFormView.as_view(),
+        name="futures_bet_form",
+    ),
+    path(
+        "futures/place/<str:id_hash>/",
+        PlaceFuturesBetView.as_view(),
+        name="place_futures_bet",
     ),
 ]
