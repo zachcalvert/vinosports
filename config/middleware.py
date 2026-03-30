@@ -14,6 +14,8 @@ class LeagueMiddleware:
             request.league = "epl"
         elif path.startswith("/nba/"):
             request.league = "nba"
+        elif path.startswith("/nfl/"):
+            request.league = "nfl"
         else:
             request.league = None
         return self.get_response(request)

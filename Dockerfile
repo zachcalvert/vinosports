@@ -16,6 +16,7 @@ RUN pip install psycopg2-binary whitenoise
 COPY config/ config/
 COPY epl/ epl/
 COPY nba/ nba/
+COPY nfl/ nfl/
 COPY hub/ hub/
 COPY manage.py .
 

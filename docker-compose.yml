@@ -60,6 +60,7 @@ services:
       - ./config:/app/config
       - ./epl:/app/epl
       - ./nba:/app/nba
+      - ./nfl:/app/nfl
       - ./hub:/app/hub
       - ./manage.py:/app/manage.py
       - ./pyproject.toml:/app/pyproject.toml
@@ -69,11 +70,12 @@ services:
   # --- Celery Worker (all queues) ---
   worker:
     <<: *app-build
-    command: celery -A config worker -l info -Q epl,nba
+    command: celery -A config worker -l info -Q epl,nba,nfl
     volumes:
       - ./config:/app/config
       - ./epl:/app/epl
       - ./nba:/app/nba
+      - ./nfl:/app/nfl
       - ./hub:/app/hub
       - ./manage.py:/app/manage.py
       - ./packages/vinosports-core/src:/packages/vinosports-core/src
@@ -87,6 +89,7 @@ services:
       - ./config:/app/config
       - ./epl:/app/epl
       - ./nba:/app/nba
+      - ./nfl:/app/nfl
       - ./hub:/app/hub
       - ./manage.py:/app/manage.py
       - ./packages/vinosports-core/src:/packages/vinosports-core/src
