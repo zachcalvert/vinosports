@@ -1,14 +1,12 @@
 # Vinosports
 
 [![CI](https://github.com/zachcalvert/vinosports/actions/workflows/ci.yml/badge.svg)](https://github.com/zachcalvert/vinosports/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/zachcalvert/vinosports/branch/main/graph/badge.svg)](https://codecov.io/gh/zachcalvert/vinosports)
+[![codecov](https://codecov.io/gh/zachcalvert/vinosports/graph/badge.svg?token=IU60RM0RZQ)](https://codecov.io/gh/zachcalvert/vinosports)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 Sports betting simulation platform across multiple leagues, powered by Django and HTMX. One user account, one play-money balance, all leagues.
 
 **Live at [vinosports.com](https://vinosports.com)**
-
-<img width="1213" height="972" alt="vinosports_home" src="https://github.com/user-attachments/assets/5df80df5-9868-421c-9d22-a519c397a52d" />
 
 ## Architecture
 
