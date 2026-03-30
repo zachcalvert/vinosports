@@ -17,6 +17,11 @@
             <i class="ph-duotone ph-chart-line-up text-lg"></i>
             <span>Odds</span>
         </a>
+        <a href="{% url 'epl_betting:futures' %}"
+           class="sidebar-link {% if url_name == 'futures' %}sidebar-link--active{% endif %}">
+            <i class="ph-duotone ph-trophy text-lg"></i>
+            <span>Futures</span>
+        </a>
         {% if user.is_superuser %}
         <div class="sidebar-divider"></div>
         <a href="{% url 'hub:admin_dashboard' %}"
