@@ -1,20 +1,22 @@
 # Vinosports
 
-A monorepo for sports betting simulations across multiple leagues, powered by a shared Django package.
+[![CI](https://github.com/zachcalvert/vinosports/actions/workflows/ci.yml/badge.svg)](https://github.com/zachcalvert/vinosports/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/zachcalvert/vinosports/branch/main/graph/badge.svg)](https://codecov.io/gh/zachcalvert/vinosports)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-Each league (EPL, NBA, and eventually NFL, World Cup, March Madness) lives as a Python package within a single unified Django project. `vinosports-core` is a shared package providing user accounts, play-money balances, betting infrastructure, AI bot commentary, challenges, and rewards. One user account and one balance works across all leagues.
+Sports betting simulation platform across multiple leagues, powered by Django and HTMX. One user account, one play-money balance, all leagues.
+
+**Live at [vinosports.com](https://vinosports.com)**
 
 <img width="1213" height="972" alt="vinosports_home" src="https://github.com/user-attachments/assets/5df80df5-9868-421c-9d22-a519c397a52d" />
 
-
-**Live:** [eplbets.net](https://eplbets.net) (the original EPL Bets, being migrated here)
-**Domain:** [vinosports.com](https://vinosports.com) (future unified frontend)
-
 ## Architecture
+
+A single unified Django project serving all leagues. `vinosports-core` is a shared pip-installable package providing user accounts, play-money balances, betting infrastructure, AI bot commentary, challenges, and rewards.
 
 ```
 vinosports/
-├── config/                        # Unified Django config (settings, urls, asgi, celery)
+├── config/                        # Django config (settings, urls, asgi, celery)
 ├── packages/vinosports-core/      # Shared Django apps (pip-installable)
 ├── hub/                           # Central homepage, auth, global account settings
 ├── epl/                           # EPL betting simulation (fully featured)
@@ -95,8 +97,6 @@ A `Makefile` wraps the most-used workflows:
 
 Docker Compose mounts your local source code into all containers. The web service runs Django's `runserver` in dev mode, so Python file changes trigger an automatic restart — no rebuild needed. Worker and beat services also mount source code but need a manual container restart to pick up changes.
 
-The Dockerfile retains Daphne as the production server; the `runserver` override is only in `docker-compose.yml`.
-
 ### Populating Data
 
 See [docs/0002-DATA_POPULATION.md](docs/0002-DATA_POPULATION.md) for the full guide. The short version is `make seed`.
@@ -116,23 +116,9 @@ See [docs/0003-BOT_SETUP.md](docs/0003-BOT_SETUP.md) for the full guide.
 | `worker` | — | Celery worker (EPL + NBA queues) |
 | `beat` | — | Celery beat scheduler |
 
-### Running Without Docker
-
-```bash
-# Create a venv and install dependencies
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -e packages/vinosports-core
-pip install psycopg2-binary whitenoise django-htmx
-
-# Run the project (requires local Postgres and Redis)
-python manage.py migrate
-python manage.py runserver
-```
-
 ## Testing
 
-The test suite covers ~90% of source code across 1,392 tests. Tests run in parallel via pytest-xdist.
+The test suite covers ~90% of source code across ~1,450 tests. Tests run in parallel via pytest-xdist.
 
 ```bash
 make test       # Fast: parallel, reuses DB (~30s after first run)
@@ -172,3 +158,7 @@ A pre-commit hook runs ruff automatically on every commit.
 - **HTMX** for interactive UI (no JS framework)
 - **Claude API** for AI bot commentary
 - **Docker Compose** for local development
+
+## License
+
+This project is licensed under the MIT License — see [LICENSE](LICENSE) for details.
