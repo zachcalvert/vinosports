@@ -23,5 +23,11 @@ app.autodiscover_tasks(
         "nba.activity",
         "nba.rewards",
         "nba.website",
+        "nfl.games",
+        "nfl.betting",
+        "nfl.bots",
+        "nfl.discussions",
+        "nfl.activity",
+        "nfl.website",
     ]
 )

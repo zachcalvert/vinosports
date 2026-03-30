@@ -9,6 +9,7 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("epl/", include("epl.urls")),
     path("nba/", include("nba.urls")),
+    path("nfl/", include("nfl.urls")),
     path("", include("hub.urls")),
 ]
 

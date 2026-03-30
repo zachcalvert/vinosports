@@ -54,6 +54,13 @@ INSTALLED_APPS = [
     "nba.activity",
     "nba.rewards",
     "nba.website",
+    # NFL
+    "nfl.games",
+    "nfl.betting",
+    "nfl.bots",
+    "nfl.discussions",
+    "nfl.activity",
+    "nfl.website",
 ]
 
 AUTH_USER_MODEL = "users.User"
