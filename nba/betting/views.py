@@ -72,7 +72,11 @@ class OddsBoardView(TemplateView):
         # Attach odds and build grouped structure
         games_by_date = OrderedDict()
         for game in game_list:
-            game.latest_odds = latest_odds.get(game.pk)
+            odds = latest_odds.get(game.pk)
+            if odds and odds.spread_line is not None:
+                odds.away_spread_line = -odds.spread_line
+                odds.home_spread_line = odds.spread_line
+            game.latest_odds = odds
             games_by_date.setdefault(game.game_date, []).append(game)
 
         # Last odds refresh timestamp
