@@ -41,8 +41,8 @@ RUN tailwindcss -i /packages/vinosports-core/src/vinosports/static/vinosports/cs
     -o /packages/vinosports-core/src/vinosports/static/vinosports/css/tailwind-out.css \
     --minify
 
-# Collect static files at build time
-RUN SECRET_KEY=build-only python manage.py collectstatic --noinput
+# Collect static files at build time (WhiteNoise manifest for hashed filenames)
+RUN SECRET_KEY=build-only WHITENOISE_MANIFEST=1 python manage.py collectstatic --noinput
 
 EXPOSE 8000
 

@@ -176,10 +176,12 @@ MEDIA_ROOT = BASE_DIR / "media"
 
 # Media storage: Tigris (S3-compatible) in production, local filesystem in dev
 _S3_ENDPOINT = os.environ.get("AWS_ENDPOINT_URL_S3", "")
-if _S3_ENDPOINT:
+if _S3_ENDPOINT or os.environ.get("WHITENOISE_MANIFEST"):
     STORAGES = {
         "default": {
-            "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
+            "BACKEND": "storages.backends.s3boto3.S3Boto3Storage"
+            if _S3_ENDPOINT
+            else "django.core.files.storage.FileSystemStorage",
         },
         "staticfiles": {
             "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
