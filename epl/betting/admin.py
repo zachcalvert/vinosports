@@ -1,4 +1,5 @@
-from django.contrib import admin
+from django.contrib import admin, messages
+from django.utils import timezone
 
 from epl.betting.models import (
     BetSlip,
@@ -12,6 +13,7 @@ from epl.matches.models import Odds
 from vinosports.betting.featured import FeaturedParlay, FeaturedParlayLeg
 from vinosports.betting.models import Badge, UserBadge, UserBalance
 from vinosports.challenges.models import Challenge, ChallengeTemplate, UserChallenge
+from vinosports.users.models import User
 
 
 @admin.register(Odds)
@@ -62,12 +64,35 @@ class UserBalanceAdmin(admin.ModelAdmin):
     raw_id_fields = ["user"]
 
 
+@admin.action(description="Grant selected badges to all users")
+def grant_badges_to_all_users(modeladmin, request, queryset):
+    users = User.objects.all()
+    now = timezone.now()
+    created_count = 0
+    for badge in queryset:
+        existing_user_ids = set(
+            UserBadge.objects.filter(badge=badge).values_list("user_id", flat=True)
+        )
+        new_badges = [
+            UserBadge(user=user, badge=badge, earned_at=now)
+            for user in users
+            if user.pk not in existing_user_ids
+        ]
+        UserBadge.objects.bulk_create(new_badges)
+        created_count += len(new_badges)
+    messages.success(
+        request,
+        f"Granted {created_count} badge(s) across {queryset.count()} badge type(s).",
+    )
+
+
 @admin.register(Badge)
 class BadgeAdmin(admin.ModelAdmin):
     list_display = ["icon", "name", "slug", "rarity"]
     list_filter = ["rarity"]
     search_fields = ["name", "slug"]
     prepopulated_fields = {"slug": ("name",)}
+    actions = [grant_badges_to_all_users]
 
 
 class UserBadgeInline(admin.TabularInline):
