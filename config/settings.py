@@ -360,7 +360,7 @@ CELERY_BEAT_SCHEDULE = {
     },
     "nba-fetch-live-scores-2m": {
         "task": "nba.games.tasks.fetch_live_scores",
-        "schedule": crontab(minute="*/2", hour="17-23,0-5"),
+        "schedule": crontab(minute="*/2", hour="17-23,0-6"),
     },
     # --- NBA Odds ---
     "nba-generate-odds-10m": {
@@ -375,7 +375,7 @@ CELERY_BEAT_SCHEDULE = {
     # --- NBA Settlement ---
     "nba-settle-pending-bets-5m": {
         "task": "nba.betting.tasks.settle_pending_bets",
-        "schedule": crontab(minute="*/5", hour="19-23,0-2"),
+        "schedule": crontab(minute="*/5", hour="17-23,0-6"),
     },
     # --- NBA Bots ---
     "nba-run-bot-strategies-hourly": {

@@ -8,7 +8,7 @@ Status strings from the API are normalized to GameStatus choices here.
 import logging
 import time
 import zoneinfo
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from typing import Any
 
 import httpx
@@ -176,15 +176,31 @@ class NBADataClient:
         return [self._normalize_player_stat(s) for s in raw]
 
     def get_live_scores(self) -> list[dict]:
-        """Return in-progress and recently-finished games for today.
+        """Return in-progress and recently-finished games for today (and yesterday if games are still live).
 
-        Checks if we have locally-live games to avoid unnecessary API calls.
+        Late west-coast games can run past midnight ET, so we also check
+        yesterday's date when we still have locally-live games from that day.
         """
         et_today = today_et()
-        local_live = Game.objects.filter(
-            game_date=et_today,
+        et_yesterday = et_today - timedelta(days=1)
+
+        # Dates to query: always today, plus yesterday if it still has live games
+        dates_to_check = [et_today]
+
+        yesterday_live = Game.objects.filter(
+            game_date=et_yesterday,
             status__in=(GameStatus.IN_PROGRESS, GameStatus.HALFTIME),
         ).exists()
+        if yesterday_live:
+            dates_to_check.append(et_yesterday)
+
+        local_live = (
+            yesterday_live
+            or Game.objects.filter(
+                game_date=et_today,
+                status__in=(GameStatus.IN_PROGRESS, GameStatus.HALFTIME),
+            ).exists()
+        )
         if not local_live:
             # No games we think are live — skip unless there are scheduled
             # games today (they might have started since our last check).
@@ -195,13 +211,16 @@ class NBADataClient:
             if not has_scheduled:
                 return []
 
-        raw = self._get_all("/games", params={"dates[]": et_today.isoformat()})
-        return [
-            self._normalize_game(g)
-            for g in raw
-            if _normalize_status(g.get("status", ""))
-            in (GameStatus.IN_PROGRESS, GameStatus.HALFTIME, GameStatus.FINAL)
-        ]
+        results = []
+        for check_date in dates_to_check:
+            raw = self._get_all("/games", params={"dates[]": check_date.isoformat()})
+            results.extend(
+                self._normalize_game(g)
+                for g in raw
+                if _normalize_status(g.get("status", ""))
+                in (GameStatus.IN_PROGRESS, GameStatus.HALFTIME, GameStatus.FINAL)
+            )
+        return results
 
     # --- Normalizers ---
 
