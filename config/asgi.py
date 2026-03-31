@@ -14,6 +14,8 @@ from epl.matches.routing import websocket_urlpatterns as epl_matches_ws  # noqa:
 from epl.rewards.routing import websocket_urlpatterns as epl_rewards_ws  # noqa: E402
 from nba.activity.routing import websocket_urlpatterns as nba_activity_ws  # noqa: E402
 from nba.games.routing import websocket_urlpatterns as nba_games_ws  # noqa: E402
+from nfl.activity.routing import websocket_urlpatterns as nfl_activity_ws  # noqa: E402
+from nfl.games.routing import websocket_urlpatterns as nfl_games_ws  # noqa: E402
 
 application = ProtocolTypeRouter(
     {
@@ -26,6 +28,7 @@ application = ProtocolTypeRouter(
                         URLRouter(epl_matches_ws + epl_activity_ws + epl_rewards_ws),
                     ),
                     path("nba/", URLRouter(nba_games_ws + nba_activity_ws)),
+                    path("nfl/", URLRouter(nfl_games_ws + nfl_activity_ws)),
                 ]
             )
         ),

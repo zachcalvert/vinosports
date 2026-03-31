@@ -1,0 +1,39 @@
+{% comment %}
+OOB swap partial for live WebSocket score updates.
+Sent by LiveUpdatesConsumer when sync_live_scores detects a change.
+Swaps the score display and status badge without replacing the entire scoreboard.
+
+Context expected:
+  game — Game instance (with home_team, away_team selected)
+{% endcomment %}
+
+<div id="score-display" hx-swap-oob="true" class="text-center">
+    {% if game.is_live or game.is_final %}
+        <div class="flex items-center gap-2 sm:gap-3">
+            <span class="text-3xl sm:text-4xl font-bold font-mono {% if game.is_final and game.away_score >= game.home_score %}text-primary{% endif %}">{{ game.away_score }}</span>
+            <span class="text-base sm:text-lg text-muted">&ndash;</span>
+            <span class="text-3xl sm:text-4xl font-bold font-mono {% if game.is_final and game.home_score >= game.away_score %}text-primary{% endif %}">{{ game.home_score }}</span>
+        </div>
+    {% else %}
+        <span class="text-xl sm:text-3xl font-bold text-muted">vs</span>
+    {% endif %}
+</div>
+
+<div id="game-status" hx-swap-oob="true">
+    {% if game.status == "FINAL" or game.status == "FINAL_OT" %}
+        <span class="inline-flex items-center rounded-full bg-border/40 px-2.5 py-1 text-xs font-medium text-muted">
+            {% if game.status == "FINAL_OT" %}Final/OT{% else %}Final{% endif %}
+        </span>
+    {% elif game.is_live %}
+        <span class="inline-flex items-center gap-1 rounded-full bg-danger/10 px-2.5 py-1 text-xs font-bold text-danger">
+            <span class="h-1.5 w-1.5 rounded-full bg-danger animate-pulse"></span>
+            {{ game.get_status_display }}
+        </span>
+    {% elif game.status == "POSTPONED" %}
+        <span class="inline-flex items-center rounded-full bg-warning/10 px-2.5 py-1 text-xs font-medium text-warning">Postponed</span>
+    {% else %}
+        <span class="inline-flex items-center rounded-full bg-accent-light px-2.5 py-1 text-xs font-medium text-muted">Scheduled</span>
+    {% endif %}
+</div>
+
+<span id="last-updated" hx-swap-oob="true" class="text-xs">Score updated just now</span>
