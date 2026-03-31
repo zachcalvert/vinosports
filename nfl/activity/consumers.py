@@ -1,3 +1,4 @@
+import json
 import logging
 
 from asgiref.sync import async_to_sync
@@ -60,6 +61,9 @@ class NotificationsConsumer(WebsocketConsumer):
 
     def notification(self, event):
         self.send(text_data=event.get("html", ""))
+
+    def badge_notification(self, event):
+        self.send(text_data=json.dumps({"type": "badge", "data": event}))
 
     def balance_update(self, event):
         """Send balance update OOB swap."""

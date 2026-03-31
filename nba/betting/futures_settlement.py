@@ -11,6 +11,7 @@ from decimal import Decimal
 from django.db import transaction
 from django.utils import timezone
 
+from nba.betting.badges import american_to_decimal
 from nba.betting.balance import log_transaction
 from nba.betting.models import FuturesBet, FuturesMarket, FuturesOutcome
 from nba.betting.stats import record_bet_result
@@ -89,7 +90,7 @@ def settle_futures_market(market_pk: int, winner_team_pk: int) -> dict:
             won=(bet.status == BetStatus.WON),
             stake=bet.stake,
             payout=bet.payout or Decimal("0"),
-            odds=bet.odds_at_placement,
+            odds=american_to_decimal(bet.odds_at_placement),
         )
 
     logger.info(

@@ -144,10 +144,22 @@ def settle_game_bets(game_pk: int) -> dict:
                 BalanceTransaction.Type.BET_WIN,
                 f"Won: {bet.market} {bet.selection} on {game}",
             )
-            record_bet_result(bet.user, won=True, stake=bet.stake, payout=bet.payout)
+            record_bet_result(
+                bet.user,
+                won=True,
+                stake=bet.stake,
+                payout=bet.payout,
+                odds=american_to_decimal(bet.odds_at_placement),
+            )
             counts["won"] += 1
         elif outcome == BetStatus.LOST:
-            record_bet_result(bet.user, won=False, stake=bet.stake, payout=Decimal("0"))
+            record_bet_result(
+                bet.user,
+                won=False,
+                stake=bet.stake,
+                payout=Decimal("0"),
+                odds=american_to_decimal(bet.odds_at_placement),
+            )
             counts["lost"] += 1
         elif outcome == BetStatus.VOID:
             log_transaction(
@@ -222,7 +234,13 @@ def _evaluate_parlay(parlay_id: int, now=None) -> None:
         parlay.settled_at = now
         parlay.save()
         record_bet_result(
-            parlay.user, won=False, stake=parlay.stake, payout=Decimal("0")
+            parlay.user,
+            won=False,
+            stake=parlay.stake,
+            payout=Decimal("0"),
+            odds=american_to_decimal(parlay.combined_odds),
+            is_parlay=True,
+            leg_count=legs.count(),
         )
         return
 
@@ -259,7 +277,15 @@ def _evaluate_parlay(parlay_id: int, now=None) -> None:
             BalanceTransaction.Type.PARLAY_WIN,
             "Parlay won",
         )
-        record_bet_result(parlay.user, won=True, stake=parlay.stake, payout=payout)
+        record_bet_result(
+            parlay.user,
+            won=True,
+            stake=parlay.stake,
+            payout=payout,
+            odds=american_to_decimal(parlay.combined_odds),
+            is_parlay=True,
+            leg_count=legs.count(),
+        )
     else:
         # Mix of WON + VOID -> recalculate with reduced odds
         reduced_odds = recalculate_parlay_odds(won_legs)
@@ -276,7 +302,15 @@ def _evaluate_parlay(parlay_id: int, now=None) -> None:
             BalanceTransaction.Type.PARLAY_WIN,
             f"Parlay won (reduced: {void_legs.count()} void leg(s))",
         )
-        record_bet_result(parlay.user, won=True, stake=parlay.stake, payout=payout)
+        record_bet_result(
+            parlay.user,
+            won=True,
+            stake=parlay.stake,
+            payout=payout,
+            odds=american_to_decimal(reduced_odds),
+            is_parlay=True,
+            leg_count=legs.count(),
+        )
 
 
 def _check_bankruptcy(user) -> bool:
