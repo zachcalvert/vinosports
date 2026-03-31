@@ -539,6 +539,7 @@ class Command(BaseCommand):
                     "is_active": True,
                     "active_in_epl": True,
                     "active_in_nba": True,
+                    "active_in_nfl": True,
                     "nba_team_abbr": persona.get("nba_team_abbr", ""),
                     "epl_team_tla": persona.get("epl_team_tla", ""),
                     "nfl_team_abbr": persona.get("nfl_team_abbr", ""),

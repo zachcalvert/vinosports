@@ -7,7 +7,7 @@ Sports betting simulation monorepo. One shared Django package (`vinosports-core`
 ```
 config/                                    # Unified Django config
   settings.py                              #   merged settings for all leagues
-  urls.py                                  #   hub at /, epl at /epl/, nba at /nba/
+  urls.py                                  #   hub at /, epl at /epl/, nba at /nba/, nfl at /nfl/
   asgi.py                                  #   unified WS routing (no middleware hack)
   celery.py                                #   single app "vinosports"
   middleware.py                            #   LeagueMiddleware (sets request.league)
@@ -25,24 +25,25 @@ packages/vinosports-core/src/vinosports/   # Shared pip-installable package
 hub/             # Central homepage, auth (signup/login/logout), SiteSettings, global account management
 epl/             # EPL — fully featured (matches, betting, bots, discussions, website, etc.)
 nba/             # NBA — fully featured (games, betting, bots, discussions, website, etc.)
+nfl/             # NFL — fully featured (games, betting, bots, discussions, website, etc.)
 ```
 
 ## Key Architecture Decisions
 
-- **Single Django project**: Hub, EPL, and NBA all run in one Django process. No `FORCE_SCRIPT_NAME`, no nginx prefix stripping. URLs are natively correct via `path("epl/", include("epl.urls"))` in `config/urls.py`
-- **LeagueMiddleware**: Sets `request.league` (`"epl"`, `"nba"`, or `None`) from URL path. Context processors guard on this to avoid cross-league queries
+- **Single Django project**: Hub, EPL, NBA, and NFL all run in one Django process. No `FORCE_SCRIPT_NAME`, no nginx prefix stripping. URLs are natively correct via `path("epl/", include("epl.urls"))` in `config/urls.py`
+- **LeagueMiddleware**: Sets `request.league` (`"epl"`, `"nba"`, `"nfl"`, or `None`) from URL path. Context processors guard on this to avoid cross-league queries
 - **Concrete models** in core: User, UserBalance, Badge, Challenge, Reward (identical across sports)
 - **Abstract models** in core: BetSlip, Parlay, Comment, BotProfile (sport-specific fields added in league apps)
-- **App labels**: Core apps use simple labels (`users`, `betting`). League apps use prefixed labels (`epl_betting`, `nba_betting`, `epl_matches`, `nba_games`) to avoid collisions
-- **URL namespaces**: All league URL `app_name` values are prefixed (`epl_website`, `nba_betting`, etc.). Use `{% url 'epl_matches:dashboard' %}` not `{% url 'dashboard' %}`
-- **Template namespaces**: League template directories are prefixed (`epl_betting/`, `nba_website/`) to avoid collisions under `APP_DIRS`
-- **Static namespaces**: League static directories are prefixed (`epl_website/css/`, `nba_website/js/`)
-- **Model FK strings**: Use prefixed app labels (`"epl_matches.Match"`, `"nba_games.Game"`)
+- **App labels**: Core apps use simple labels (`users`, `betting`). League apps use prefixed labels (`epl_betting`, `nba_betting`, `nfl_betting`, `epl_matches`, `nba_games`, `nfl_games`) to avoid collisions
+- **URL namespaces**: All league URL `app_name` values are prefixed (`epl_website`, `nba_betting`, `nfl_games`, etc.). Use `{% url 'epl_matches:dashboard' %}` not `{% url 'dashboard' %}`
+- **Template namespaces**: League template directories are prefixed (`epl_betting/`, `nba_website/`, `nfl_games/`) to avoid collisions under `APP_DIRS`
+- **Static namespaces**: League static directories are prefixed (`epl_website/css/`, `nba_website/js/`, `nfl_website/css/`)
+- **Model FK strings**: Use prefixed app labels (`"epl_matches.Match"`, `"nba_games.Game"`, `"nfl_games.Game"`)
 - **Single shared DB**: All apps share one PostgreSQL instance. One user account + balance works across all leagues
 - **Hub owns auth**: Signup, login, logout live in hub at the root path. League apps redirect `/login/` and `/signup/` to hub
 - **Admin deduplication**: Shared core models (UserBalance, Badge, UserBadge) are registered in EPL's admin only, not duplicated across leagues
 - **HTMX frontend**: Server-rendered templates with HTMX for interactivity. No JS framework
-- **WebSocket routing**: Defined in `config/asgi.py` with nested `URLRouter` — `path("epl/", URLRouter(...))`, `path("nba/", URLRouter(...))`
+- **WebSocket routing**: Defined in `config/asgi.py` with nested `URLRouter` — `path("epl/", URLRouter(...))`, `path("nba/", URLRouter(...))`, `path("nfl/", URLRouter(...))`
 
 ## Production
 
@@ -81,6 +82,7 @@ All apps served through nginx on port 80:
 - Hub: http://vinosports.local
 - EPL: http://vinosports.local/epl/
 - NBA: http://vinosports.local/nba/
+- NFL: http://vinosports.local/nfl/
 
 Nginx is a simple passthrough proxy (port 80 → web:8000) with WebSocket upgrade headers. No prefix stripping, no multiple upstreams.
 
@@ -101,7 +103,7 @@ Copy `.env.example` to `.env` and fill in API keys:
 | `redis` | Redis (Celery broker + Channels layer) |
 | `nginx` | Reverse proxy (port 80, WebSocket support) |
 | `web` | Django dev server (all leagues) |
-| `worker` | Celery worker (`-Q epl,nba`) |
+| `worker` | Celery worker (`-Q epl,nba,nfl`) |
 | `beat` | Celery beat scheduler |
 
 ## Common Commands
@@ -112,7 +114,7 @@ make down              # docker compose down
 make logs              # docker compose logs -f
 make shell             # exec into web container
 make migrate           # run migrations
-make seed              # populate EPL + NBA data
+make seed              # populate EPL + NBA + NFL data
 make lint              # ruff check + format
 make test              # run tests (parallel + reuse-db, ~30s)
 make test-ci           # run tests with coverage report (parallel, no reuse-db)
@@ -140,7 +142,7 @@ make test-ci           # run tests with coverage report (parallel, no reuse-db)
 
 ## Testing
 
-~1,453 tests at ~90% source coverage. Tests run in parallel via pytest-xdist (`-n auto`).
+~1,632 tests at ~90% source coverage. Tests run in parallel via pytest-xdist (`-n auto`).
 
 ```bash
 make test              # fast local dev: parallel + --reuse-db (~30s)

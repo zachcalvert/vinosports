@@ -198,7 +198,11 @@ else:
 STATICFILES_DIRS = []
 
 # EPL and NBA project-level static (team logos, etc.)
-for _static_dir in [BASE_DIR / "epl" / "static", BASE_DIR / "nba" / "static"]:
+for _static_dir in [
+    BASE_DIR / "epl" / "static",
+    BASE_DIR / "nba" / "static",
+    BASE_DIR / "nfl" / "static",
+]:
     if _static_dir.is_dir():
         STATICFILES_DIRS.append(_static_dir)
 
@@ -234,8 +238,8 @@ LEAGUE_URLS = {
     "nfl": {
         "name": "NFL",
         "short": "NFL",
-        "url": None,
-        "status": "coming_soon",
+        "url": "/nfl/",
+        "status": "active",
         "description": "NFL weekly picks, spreads, and survivor pools.",
         "icon": "ph-duotone ph-football",
     },
