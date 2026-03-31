@@ -1,0 +1,460 @@
+{# Hidden CSRF token for HTMX parlay add buttons (hx-include targets this) #}
+{% if user.is_authenticated %}<div hidden>{% csrf_token %}</div>{% endif %}
+{% if games_by_date %}
+<!-- Desktop table -->
+<div class="hidden lg:block">
+    <div class="mb-3 flex items-center justify-between gap-3 rounded-xl border border-outline-variant/70 bg-accent-light px-4 py-3">
+        <div>
+            <p class="text-xs font-semibold uppercase tracking-[0.22em] text-accent/80">Market freshness</p>
+            <p class="mt-1 text-sm">
+                {% if last_odds_refresh %}
+                    Odds updated {{ last_odds_refresh|timesince }} ago
+                {% else %}
+                    Waiting for odds data
+                {% endif %}
+            </p>
+        </div>
+        <p class="text-xs text-muted">Board rendered {{ rendered_at|timesince }} ago</p>
+    </div>
+    {% for game_date, games in games_by_date.items %}
+    <div class="{% if not forloop.first %}mt-6{% endif %}">
+        <h2 class="text-xs font-semibold uppercase tracking-[0.22em] text-muted mb-3">
+            {% if game_date == today %}Today{% elif game_date == tomorrow %}Tomorrow{% else %}{{ game_date|date:"l, M j" }}{% endif %}
+        </h2>
+        <table class="w-full">
+            <thead>
+                <tr class="border-b border-outline-variant text-[0.65rem] text-muted uppercase tracking-wider">
+                    <th class="px-3 py-3 text-left">Tip-off</th>
+                    <th class="px-3 py-3 text-left">Away</th>
+                    <th class="px-3 py-3 text-left">Home</th>
+                    <th class="px-2 py-3 text-center" colspan="2">Moneyline</th>
+                    <th class="px-2 py-3 text-center" colspan="2">Spread</th>
+                    <th class="px-2 py-3 text-center" colspan="2">Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for game in games %}
+                <tr class="border-b border-outline-variant/50 hover:bg-surface-container-low">
+                    <td class="px-3 py-3 text-sm text-muted whitespace-nowrap">
+                        {% if game.tip_off %}
+                            <time class="local-time" datetime="{{ game.tip_off|date:'c' }}">{{ game.tip_off|date:"g:i A" }}</time>
+                        {% else %}
+                            TBD
+                        {% endif %}
+                    </td>
+                    <td class="px-3 py-3">
+                        <a href="{% url 'nba_games:game_detail' game.id_hash %}" class="flex items-center gap-2 hover:text-primary transition-colors">
+                            {% if game.away_team.logo_url %}
+                                <img src="{{ game.away_team.logo_url }}" alt="" class="w-5 h-5 object-contain">
+                            {% endif %}
+                            <span class="text-sm font-medium">{{ game.away_team.abbreviation }}</span>
+                        </a>
+                    </td>
+                    <td class="px-3 py-3">
+                        <a href="{% url 'nba_games:game_detail' game.id_hash %}" class="flex items-center gap-2 hover:text-primary transition-colors">
+                            {% if game.home_team.logo_url %}
+                                <img src="{{ game.home_team.logo_url }}" alt="" class="w-5 h-5 object-contain">
+                            {% endif %}
+                            <span class="text-sm font-medium">{{ game.home_team.abbreviation }}</span>
+                        </a>
+                    </td>
+                    {# Moneyline Away #}
+                    <td class="px-1 py-3 text-center">
+                        {% if game.latest_odds and game.latest_odds.away_moneyline %}
+                        <div class="flex flex-col items-center gap-0.5">
+                            <button class="font-mono text-sm text-primary font-bold px-2 py-1 rounded hover:bg-accent/10 transition-colors"
+                                    hx-get="{% url 'nba_betting:quick_bet_form' game.id_hash %}?market=MONEYLINE&selection=AWAY&container=quick-bet-{{ game.pk }}"
+                                    hx-target="#quick-bet-{{ game.pk }}"
+                                    hx-swap="innerHTML">
+                                {% if game.latest_odds.away_moneyline > 0 %}+{% endif %}{{ game.latest_odds.away_moneyline }}
+                            </button>
+                            {% if user.is_authenticated %}
+                            <button class="text-[0.6rem] text-muted hover:text-primary transition-colors leading-none px-1"
+                                    title="Add to parlay"
+                                    hx-post="{% url 'nba_betting:parlay_add' %}"
+                                    hx-target="#parlay-slip-panel"
+                                    hx-swap="outerHTML"
+                                    hx-vals='{"game_id": "{{ game.pk }}", "market": "MONEYLINE", "selection": "AWAY", "odds": "{{ game.latest_odds.away_moneyline }}", "line": ""}'
+                                    hx-include="[name='csrfmiddlewaretoken']">
+                                + parlay
+                            </button>
+                            {% endif %}
+                        </div>
+                        {% else %}
+                        <span class="text-sm font-mono text-muted">&mdash;</span>
+                        {% endif %}
+                    </td>
+                    {# Moneyline Home #}
+                    <td class="px-1 py-3 text-center">
+                        {% if game.latest_odds and game.latest_odds.home_moneyline %}
+                        <div class="flex flex-col items-center gap-0.5">
+                            <button class="font-mono text-sm text-primary font-bold px-2 py-1 rounded hover:bg-accent/10 transition-colors"
+                                    hx-get="{% url 'nba_betting:quick_bet_form' game.id_hash %}?market=MONEYLINE&selection=HOME&container=quick-bet-{{ game.pk }}"
+                                    hx-target="#quick-bet-{{ game.pk }}"
+                                    hx-swap="innerHTML">
+                                {% if game.latest_odds.home_moneyline > 0 %}+{% endif %}{{ game.latest_odds.home_moneyline }}
+                            </button>
+                            {% if user.is_authenticated %}
+                            <button class="text-[0.6rem] text-muted hover:text-primary transition-colors leading-none px-1"
+                                    title="Add to parlay"
+                                    hx-post="{% url 'nba_betting:parlay_add' %}"
+                                    hx-target="#parlay-slip-panel"
+                                    hx-swap="outerHTML"
+                                    hx-vals='{"game_id": "{{ game.pk }}", "market": "MONEYLINE", "selection": "HOME", "odds": "{{ game.latest_odds.home_moneyline }}", "line": ""}'
+                                    hx-include="[name='csrfmiddlewaretoken']">
+                                + parlay
+                            </button>
+                            {% endif %}
+                        </div>
+                        {% else %}
+                        <span class="text-sm font-mono text-muted">&mdash;</span>
+                        {% endif %}
+                    </td>
+                    {# Spread Away #}
+                    <td class="px-1 py-3 text-center">
+                        {% if game.latest_odds and game.latest_odds.spread_away and game.latest_odds.spread_line is not None %}
+                        {% with away_line=game.latest_odds.spread_line|floatformat:1 %}
+                        <div class="flex flex-col items-center gap-0.5">
+                            <button class="font-mono text-xs text-primary font-bold px-1.5 py-1 rounded hover:bg-accent/10 transition-colors"
+                                    hx-get="{% url 'nba_betting:quick_bet_form' game.id_hash %}?market=SPREAD&selection=AWAY&container=quick-bet-{{ game.pk }}"
+                                    hx-target="#quick-bet-{{ game.pk }}"
+                                    hx-swap="innerHTML">
+                                +{{ away_line }} ({% if game.latest_odds.spread_away > 0 %}+{% endif %}{{ game.latest_odds.spread_away }})
+                            </button>
+                            {% if user.is_authenticated %}
+                            <button class="text-[0.6rem] text-muted hover:text-primary transition-colors leading-none px-1"
+                                    title="Add to parlay"
+                                    hx-post="{% url 'nba_betting:parlay_add' %}"
+                                    hx-target="#parlay-slip-panel"
+                                    hx-swap="outerHTML"
+                                    hx-vals='{"game_id": "{{ game.pk }}", "market": "SPREAD", "selection": "AWAY", "odds": "{{ game.latest_odds.spread_away }}", "line": "{{ game.latest_odds.spread_line }}"}'
+                                    hx-include="[name='csrfmiddlewaretoken']">
+                                + parlay
+                            </button>
+                            {% endif %}
+                        </div>
+                        {% endwith %}
+                        {% else %}
+                        <span class="text-sm font-mono text-muted">&mdash;</span>
+                        {% endif %}
+                    </td>
+                    {# Spread Home #}
+                    <td class="px-1 py-3 text-center">
+                        {% if game.latest_odds and game.latest_odds.spread_home and game.latest_odds.spread_line is not None %}
+                        <div class="flex flex-col items-center gap-0.5">
+                            <button class="font-mono text-xs text-primary font-bold px-1.5 py-1 rounded hover:bg-accent/10 transition-colors"
+                                    hx-get="{% url 'nba_betting:quick_bet_form' game.id_hash %}?market=SPREAD&selection=HOME&container=quick-bet-{{ game.pk }}"
+                                    hx-target="#quick-bet-{{ game.pk }}"
+                                    hx-swap="innerHTML">
+                                -{{ game.latest_odds.spread_line|floatformat:1 }} ({% if game.latest_odds.spread_home > 0 %}+{% endif %}{{ game.latest_odds.spread_home }})
+                            </button>
+                            {% if user.is_authenticated %}
+                            <button class="text-[0.6rem] text-muted hover:text-primary transition-colors leading-none px-1"
+                                    title="Add to parlay"
+                                    hx-post="{% url 'nba_betting:parlay_add' %}"
+                                    hx-target="#parlay-slip-panel"
+                                    hx-swap="outerHTML"
+                                    hx-vals='{"game_id": "{{ game.pk }}", "market": "SPREAD", "selection": "HOME", "odds": "{{ game.latest_odds.spread_home }}", "line": "{{ game.latest_odds.spread_line }}"}'
+                                    hx-include="[name='csrfmiddlewaretoken']">
+                                + parlay
+                            </button>
+                            {% endif %}
+                        </div>
+                        {% else %}
+                        <span class="text-sm font-mono text-muted">&mdash;</span>
+                        {% endif %}
+                    </td>
+                    {# Total Over #}
+                    <td class="px-1 py-3 text-center">
+                        {% if game.latest_odds and game.latest_odds.over_odds and game.latest_odds.total_line %}
+                        <div class="flex flex-col items-center gap-0.5">
+                            <button class="font-mono text-xs text-primary font-bold px-1.5 py-1 rounded hover:bg-accent/10 transition-colors"
+                                    hx-get="{% url 'nba_betting:quick_bet_form' game.id_hash %}?market=TOTAL&selection=OVER&container=quick-bet-{{ game.pk }}"
+                                    hx-target="#quick-bet-{{ game.pk }}"
+                                    hx-swap="innerHTML">
+                                O {{ game.latest_odds.total_line|floatformat:1 }} ({% if game.latest_odds.over_odds > 0 %}+{% endif %}{{ game.latest_odds.over_odds }})
+                            </button>
+                            {% if user.is_authenticated %}
+                            <button class="text-[0.6rem] text-muted hover:text-primary transition-colors leading-none px-1"
+                                    title="Add to parlay"
+                                    hx-post="{% url 'nba_betting:parlay_add' %}"
+                                    hx-target="#parlay-slip-panel"
+                                    hx-swap="outerHTML"
+                                    hx-vals='{"game_id": "{{ game.pk }}", "market": "TOTAL", "selection": "OVER", "odds": "{{ game.latest_odds.over_odds }}", "line": "{{ game.latest_odds.total_line }}"}'
+                                    hx-include="[name='csrfmiddlewaretoken']">
+                                + parlay
+                            </button>
+                            {% endif %}
+                        </div>
+                        {% else %}
+                        <span class="text-sm font-mono text-muted">&mdash;</span>
+                        {% endif %}
+                    </td>
+                    {# Total Under #}
+                    <td class="px-1 py-3 text-center">
+                        {% if game.latest_odds and game.latest_odds.under_odds and game.latest_odds.total_line %}
+                        <div class="flex flex-col items-center gap-0.5">
+                            <button class="font-mono text-xs text-primary font-bold px-1.5 py-1 rounded hover:bg-accent/10 transition-colors"
+                                    hx-get="{% url 'nba_betting:quick_bet_form' game.id_hash %}?market=TOTAL&selection=UNDER&container=quick-bet-{{ game.pk }}"
+                                    hx-target="#quick-bet-{{ game.pk }}"
+                                    hx-swap="innerHTML">
+                                U {{ game.latest_odds.total_line|floatformat:1 }} ({% if game.latest_odds.under_odds > 0 %}+{% endif %}{{ game.latest_odds.under_odds }})
+                            </button>
+                            {% if user.is_authenticated %}
+                            <button class="text-[0.6rem] text-muted hover:text-primary transition-colors leading-none px-1"
+                                    title="Add to parlay"
+                                    hx-post="{% url 'nba_betting:parlay_add' %}"
+                                    hx-target="#parlay-slip-panel"
+                                    hx-swap="outerHTML"
+                                    hx-vals='{"game_id": "{{ game.pk }}", "market": "TOTAL", "selection": "UNDER", "odds": "{{ game.latest_odds.under_odds }}", "line": "{{ game.latest_odds.total_line }}"}'
+                                    hx-include="[name='csrfmiddlewaretoken']">
+                                + parlay
+                            </button>
+                            {% endif %}
+                        </div>
+                        {% else %}
+                        <span class="text-sm font-mono text-muted">&mdash;</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {# Quick bet row (hidden until user clicks an odds button) #}
+                <tr>
+                    <td colspan="9" id="quick-bet-{{ game.pk }}"></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Mobile card list -->
+<div class="lg:hidden space-y-3">
+    <div class="rounded-2xl border border-accent/20 bg-surface px-4 py-4 shadow-[0_18px_45px_rgba(0,0,0,0.22)]">
+        <p class="text-[0.68rem] font-semibold uppercase tracking-[0.24em] text-accent/80">Odds board</p>
+        <p class="mt-1 text-sm font-semibold">
+            {% if last_odds_refresh %}
+                Odds updated {{ last_odds_refresh|timesince }} ago
+            {% else %}
+                Waiting for odds data
+            {% endif %}
+        </p>
+    </div>
+    {% for game_date, games in games_by_date.items %}
+    <h2 class="text-xs font-semibold uppercase tracking-[0.22em] text-muted {% if not forloop.first %}mt-4{% endif %} mb-1 px-1">
+        {% if game_date == today %}Today{% elif game_date == tomorrow %}Tomorrow{% else %}{{ game_date|date:"l, M j" }}{% endif %}
+    </h2>
+    {% for game in games %}
+    <div class="overflow-hidden rounded-2xl border border-outline-variant/60 bg-surface shadow-[0_16px_40px_rgba(0,0,0,0.2)]">
+        <div class="flex items-center justify-between border-b border-outline-variant/60 px-4 py-3">
+            <div class="text-xs font-medium text-muted">
+                {% if game.tip_off %}
+                    <time class="local-time" datetime="{{ game.tip_off|date:'c' }}">{{ game.tip_off|date:"g:i A" }}</time>
+                {% else %}
+                    TBD
+                {% endif %}
+            </div>
+        </div>
+        <a href="{% url 'nba_games:game_detail' game.id_hash %}" class="block px-4 py-4 hover:text-primary transition-colors">
+            <div class="space-y-3">
+                <div class="flex items-center justify-between gap-3">
+                    <div class="flex min-w-0 items-center gap-2">
+                        {% if game.away_team.logo_url %}
+                            <img src="{{ game.away_team.logo_url }}" alt="" class="w-5 h-5 object-contain">
+                        {% endif %}
+                        <span class="truncate text-sm font-medium">{{ game.away_team.abbreviation }}</span>
+                    </div>
+                    <span class="text-[0.68rem] uppercase tracking-[0.18em] text-muted">Away</span>
+                </div>
+                <div class="flex items-center justify-between gap-3">
+                    <div class="flex min-w-0 items-center gap-2">
+                        {% if game.home_team.logo_url %}
+                            <img src="{{ game.home_team.logo_url }}" alt="" class="w-5 h-5 object-contain">
+                        {% endif %}
+                        <span class="truncate text-sm font-medium">{{ game.home_team.abbreviation }}</span>
+                    </div>
+                    <span class="text-[0.68rem] uppercase tracking-[0.18em] text-muted">Home</span>
+                </div>
+            </div>
+        </a>
+        {% if game.latest_odds %}
+        <div class="px-4 pb-4 space-y-3">
+            {# Moneyline #}
+            <div>
+                <p class="text-[0.6rem] font-semibold uppercase tracking-[0.22em] text-muted mb-1.5">Moneyline</p>
+                <div class="grid grid-cols-2 gap-2">
+                    <div class="text-center">
+                        {% if game.latest_odds.away_moneyline %}
+                        <button class="w-full font-mono text-sm text-primary font-bold py-2 rounded border border-outline-variant hover:bg-primary/10 transition-colors"
+                                hx-get="{% url 'nba_betting:quick_bet_form' game.id_hash %}?market=MONEYLINE&selection=AWAY&container=quick-bet-mobile-{{ game.pk }}"
+                                hx-target="#quick-bet-mobile-{{ game.pk }}"
+                                hx-swap="innerHTML">
+                            {% if game.latest_odds.away_moneyline > 0 %}+{% endif %}{{ game.latest_odds.away_moneyline }}
+                        </button>
+                        <div class="text-[0.6rem] text-muted mt-1">{{ game.away_team.abbreviation }}</div>
+                        {% if user.is_authenticated %}
+                        <button class="text-[0.6rem] text-muted hover:text-primary transition-colors mt-1"
+                                hx-post="{% url 'nba_betting:parlay_add' %}"
+                                hx-target="#parlay-slip-panel"
+                                hx-swap="outerHTML"
+                                hx-vals='{"game_id": "{{ game.pk }}", "market": "MONEYLINE", "selection": "AWAY", "odds": "{{ game.latest_odds.away_moneyline }}", "line": ""}'
+                                hx-include="[name='csrfmiddlewaretoken']">
+                            + parlay
+                        </button>
+                        {% endif %}
+                        {% else %}
+                        <span class="text-sm font-mono text-muted">&mdash;</span>
+                        {% endif %}
+                    </div>
+                    <div class="text-center">
+                        {% if game.latest_odds.home_moneyline %}
+                        <button class="w-full font-mono text-sm text-primary font-bold py-2 rounded border border-outline-variant hover:bg-primary/10 transition-colors"
+                                hx-get="{% url 'nba_betting:quick_bet_form' game.id_hash %}?market=MONEYLINE&selection=HOME&container=quick-bet-mobile-{{ game.pk }}"
+                                hx-target="#quick-bet-mobile-{{ game.pk }}"
+                                hx-swap="innerHTML">
+                            {% if game.latest_odds.home_moneyline > 0 %}+{% endif %}{{ game.latest_odds.home_moneyline }}
+                        </button>
+                        <div class="text-[0.6rem] text-muted mt-1">{{ game.home_team.abbreviation }}</div>
+                        {% if user.is_authenticated %}
+                        <button class="text-[0.6rem] text-muted hover:text-primary transition-colors mt-1"
+                                hx-post="{% url 'nba_betting:parlay_add' %}"
+                                hx-target="#parlay-slip-panel"
+                                hx-swap="outerHTML"
+                                hx-vals='{"game_id": "{{ game.pk }}", "market": "MONEYLINE", "selection": "HOME", "odds": "{{ game.latest_odds.home_moneyline }}", "line": ""}'
+                                hx-include="[name='csrfmiddlewaretoken']">
+                            + parlay
+                        </button>
+                        {% endif %}
+                        {% else %}
+                        <span class="text-sm font-mono text-muted">&mdash;</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {# Spread #}
+            {% if game.latest_odds.spread_line is not None %}
+            <div>
+                <p class="text-[0.6rem] font-semibold uppercase tracking-[0.22em] text-muted mb-1.5">Spread</p>
+                <div class="grid grid-cols-2 gap-2">
+                    <div class="text-center">
+                        {% if game.latest_odds.spread_away %}
+                        <button class="w-full font-mono text-xs text-primary font-bold py-2 rounded border border-outline-variant hover:bg-primary/10 transition-colors"
+                                hx-get="{% url 'nba_betting:quick_bet_form' game.id_hash %}?market=SPREAD&selection=AWAY&container=quick-bet-mobile-{{ game.pk }}"
+                                hx-target="#quick-bet-mobile-{{ game.pk }}"
+                                hx-swap="innerHTML">
+                            +{{ game.latest_odds.spread_line|floatformat:1 }} ({% if game.latest_odds.spread_away > 0 %}+{% endif %}{{ game.latest_odds.spread_away }})
+                        </button>
+                        <div class="text-[0.6rem] text-muted mt-1">{{ game.away_team.abbreviation }}</div>
+                        {% if user.is_authenticated %}
+                        <button class="text-[0.6rem] text-muted hover:text-primary transition-colors mt-1"
+                                hx-post="{% url 'nba_betting:parlay_add' %}"
+                                hx-target="#parlay-slip-panel"
+                                hx-swap="outerHTML"
+                                hx-vals='{"game_id": "{{ game.pk }}", "market": "SPREAD", "selection": "AWAY", "odds": "{{ game.latest_odds.spread_away }}", "line": "{{ game.latest_odds.spread_line }}"}'
+                                hx-include="[name='csrfmiddlewaretoken']">
+                            + parlay
+                        </button>
+                        {% endif %}
+                        {% else %}
+                        <span class="text-sm font-mono text-muted">&mdash;</span>
+                        {% endif %}
+                    </div>
+                    <div class="text-center">
+                        {% if game.latest_odds.spread_home %}
+                        <button class="w-full font-mono text-xs text-primary font-bold py-2 rounded border border-outline-variant hover:bg-primary/10 transition-colors"
+                                hx-get="{% url 'nba_betting:quick_bet_form' game.id_hash %}?market=SPREAD&selection=HOME&container=quick-bet-mobile-{{ game.pk }}"
+                                hx-target="#quick-bet-mobile-{{ game.pk }}"
+                                hx-swap="innerHTML">
+                            -{{ game.latest_odds.spread_line|floatformat:1 }} ({% if game.latest_odds.spread_home > 0 %}+{% endif %}{{ game.latest_odds.spread_home }})
+                        </button>
+                        <div class="text-[0.6rem] text-muted mt-1">{{ game.home_team.abbreviation }}</div>
+                        {% if user.is_authenticated %}
+                        <button class="text-[0.6rem] text-muted hover:text-primary transition-colors mt-1"
+                                hx-post="{% url 'nba_betting:parlay_add' %}"
+                                hx-target="#parlay-slip-panel"
+                                hx-swap="outerHTML"
+                                hx-vals='{"game_id": "{{ game.pk }}", "market": "SPREAD", "selection": "HOME", "odds": "{{ game.latest_odds.spread_home }}", "line": "{{ game.latest_odds.spread_line }}"}'
+                                hx-include="[name='csrfmiddlewaretoken']">
+                            + parlay
+                        </button>
+                        {% endif %}
+                        {% else %}
+                        <span class="text-sm font-mono text-muted">&mdash;</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            {# Total #}
+            {% if game.latest_odds.total_line %}
+            <div>
+                <p class="text-[0.6rem] font-semibold uppercase tracking-[0.22em] text-muted mb-1.5">Total</p>
+                <div class="grid grid-cols-2 gap-2">
+                    <div class="text-center">
+                        {% if game.latest_odds.over_odds %}
+                        <button class="w-full font-mono text-xs text-primary font-bold py-2 rounded border border-outline-variant hover:bg-primary/10 transition-colors"
+                                hx-get="{% url 'nba_betting:quick_bet_form' game.id_hash %}?market=TOTAL&selection=OVER&container=quick-bet-mobile-{{ game.pk }}"
+                                hx-target="#quick-bet-mobile-{{ game.pk }}"
+                                hx-swap="innerHTML">
+                            O {{ game.latest_odds.total_line|floatformat:1 }} ({% if game.latest_odds.over_odds > 0 %}+{% endif %}{{ game.latest_odds.over_odds }})
+                        </button>
+                        <div class="text-[0.6rem] text-muted mt-1">Over</div>
+                        {% if user.is_authenticated %}
+                        <button class="text-[0.6rem] text-muted hover:text-primary transition-colors mt-1"
+                                hx-post="{% url 'nba_betting:parlay_add' %}"
+                                hx-target="#parlay-slip-panel"
+                                hx-swap="outerHTML"
+                                hx-vals='{"game_id": "{{ game.pk }}", "market": "TOTAL", "selection": "OVER", "odds": "{{ game.latest_odds.over_odds }}", "line": "{{ game.latest_odds.total_line }}"}'
+                                hx-include="[name='csrfmiddlewaretoken']">
+                            + parlay
+                        </button>
+                        {% endif %}
+                        {% else %}
+                        <span class="text-sm font-mono text-muted">&mdash;</span>
+                        {% endif %}
+                    </div>
+                    <div class="text-center">
+                        {% if game.latest_odds.under_odds %}
+                        <button class="w-full font-mono text-xs text-primary font-bold py-2 rounded border border-outline-variant hover:bg-primary/10 transition-colors"
+                                hx-get="{% url 'nba_betting:quick_bet_form' game.id_hash %}?market=TOTAL&selection=UNDER&container=quick-bet-mobile-{{ game.pk }}"
+                                hx-target="#quick-bet-mobile-{{ game.pk }}"
+                                hx-swap="innerHTML">
+                            U {{ game.latest_odds.total_line|floatformat:1 }} ({% if game.latest_odds.under_odds > 0 %}+{% endif %}{{ game.latest_odds.under_odds }})
+                        </button>
+                        <div class="text-[0.6rem] text-muted mt-1">Under</div>
+                        {% if user.is_authenticated %}
+                        <button class="text-[0.6rem] text-muted hover:text-primary transition-colors mt-1"
+                                hx-post="{% url 'nba_betting:parlay_add' %}"
+                                hx-target="#parlay-slip-panel"
+                                hx-swap="outerHTML"
+                                hx-vals='{"game_id": "{{ game.pk }}", "market": "TOTAL", "selection": "UNDER", "odds": "{{ game.latest_odds.under_odds }}", "line": "{{ game.latest_odds.total_line }}"}'
+                                hx-include="[name='csrfmiddlewaretoken']">
+                            + parlay
+                        </button>
+                        {% endif %}
+                        {% else %}
+                        <span class="text-sm font-mono text-muted">&mdash;</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        {% else %}
+        <div class="px-4 pb-4">
+            <p class="text-xs text-muted">No odds available yet</p>
+        </div>
+        {% endif %}
+        <div id="quick-bet-mobile-{{ game.pk }}" class="px-4 pb-4"></div>
+    </div>
+    {% endfor %}
+    {% endfor %}
+</div>
+{% else %}
+<div class="rounded-2xl border border-outline-variant/60 bg-surface px-6 py-12 text-center">
+    <i class="ph-duotone ph-chart-line-up text-4xl text-muted mb-3"></i>
+    <h3 class="text-lg font-headline font-bold">No upcoming games with odds</h3>
+    <p class="text-sm text-muted mt-1">Check back later for new odds.</p>
+    <a href="{% url 'nba_dashboard' %}" class="inline-block mt-4 text-sm text-primary hover:underline">View Dashboard</a>
+</div>
+{% endif %}

@@ -8,6 +8,8 @@ from nba.betting.views import (
     FuturesBetFormView,
     FuturesListView,
     FuturesMarketDetailView,
+    OddsBoardPartialView,
+    OddsBoardView,
     PlaceBetView,
     PlaceFeaturedParlayView,
     PlaceFuturesBetView,
@@ -19,6 +21,8 @@ from nba.betting.views import (
 app_name = "nba_betting"
 
 urlpatterns = [
+    path("", OddsBoardView.as_view(), name="odds"),
+    path("partial/", OddsBoardPartialView.as_view(), name="odds_partial"),
     path("form/<str:id_hash>/", BetFormView.as_view(), name="bet_form"),
     path("quick-bet/<str:id_hash>/", QuickBetFormView.as_view(), name="quick_bet_form"),
     path("place/<str:id_hash>/", PlaceBetView.as_view(), name="place_bet"),

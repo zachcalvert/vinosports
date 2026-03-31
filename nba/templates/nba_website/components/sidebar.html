@@ -17,6 +17,11 @@
             <i class="ph-duotone ph-ranking text-lg"></i>
             <span>Standings</span>
         </a>
+        <a href="{% url 'nba_betting:odds' %}"
+           class="sidebar-link {% if url_name == 'odds' %}sidebar-link--active{% endif %}">
+            <i class="ph-duotone ph-chart-line-up text-lg"></i>
+            <span>Odds</span>
+        </a>
         <a href="{% url 'nba_betting:futures' %}"
            class="sidebar-link {% if url_name == 'futures' %}sidebar-link--active{% endif %}">
             <i class="ph-duotone ph-trophy text-lg"></i>

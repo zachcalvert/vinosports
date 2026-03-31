@@ -1,0 +1,26 @@
+{% extends "nba_website/base.html" %}
+{% block title %}Game Odds{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <h1 class="font-headline italic font-black text-4xl sm:text-5xl uppercase tracking-tight leading-none">
+        Game Odds
+    </h1>
+    <div class="flex items-center gap-2 mt-3">
+        <span class="w-1 h-5 rounded-full bg-primary"></span>
+        <p class="text-muted text-sm uppercase tracking-wider font-medium">Next two days of NBA action</p>
+    </div>
+</div>
+
+<div id="odds-board"
+     hx-get="{% url 'nba_betting:odds_partial' %}"
+     hx-trigger="every 30s"
+     hx-swap="innerHTML"
+     hx-indicator="#odds-loading">
+    {% include "nba_betting/partials/odds_board_body.html" %}
+</div>
+<div id="odds-loading" class="htmx-indicator text-center py-2">
+    <span class="spinner spinner-sm text-accent"></span>
+    <span class="text-xs text-muted ml-2">Refreshing odds&hellip;</span>
+</div>
+{% endblock %}

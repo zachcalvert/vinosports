@@ -1,4 +1,6 @@
 import logging
+from collections import OrderedDict
+from datetime import timedelta
 from decimal import Decimal
 
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -26,13 +28,70 @@ from nba.betting.settlement import (
     decimal_to_american,
     grant_bailout,
 )
-from nba.games.models import Game, GameStatus
+from nba.games.models import Game, GameStatus, Odds
+from nba.games.services import today_et
 from vinosports.betting.constants import PARLAY_MAX_LEGS, PARLAY_MIN_LEGS
 from vinosports.betting.featured import FeaturedParlay
 from vinosports.betting.models import BalanceTransaction, UserBalance
 from vinosports.challenges.engine import update_challenge_progress
 
 logger = logging.getLogger(__name__)
+
+
+class OddsBoardView(TemplateView):
+    """Odds board showing next two days of NBA games with current odds."""
+
+    template_name = "nba_betting/odds_board.html"
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        today = today_et()
+        tomorrow = today + timedelta(days=1)
+
+        games = (
+            Game.objects.filter(
+                game_date__range=[today, tomorrow],
+                status=GameStatus.SCHEDULED,
+            )
+            .select_related("home_team", "away_team")
+            .order_by("game_date", "tip_off")
+        )
+
+        game_list = list(games)
+        game_ids = [g.pk for g in game_list]
+
+        # Fetch latest odds per game (one row per game, most recent fetch)
+        latest_odds = {}
+        if game_ids:
+            for odds in Odds.objects.filter(game_id__in=game_ids).order_by(
+                "-fetched_at"
+            ):
+                if odds.game_id not in latest_odds:
+                    latest_odds[odds.game_id] = odds
+
+        # Attach odds and build grouped structure
+        games_by_date = OrderedDict()
+        for game in game_list:
+            game.latest_odds = latest_odds.get(game.pk)
+            games_by_date.setdefault(game.game_date, []).append(game)
+
+        # Last odds refresh timestamp
+        last_odds_refresh = None
+        if latest_odds:
+            last_odds_refresh = max(o.fetched_at for o in latest_odds.values())
+
+        ctx["games_by_date"] = games_by_date
+        ctx["today"] = today
+        ctx["tomorrow"] = tomorrow
+        ctx["last_odds_refresh"] = last_odds_refresh
+        ctx["rendered_at"] = timezone.now()
+        return ctx
+
+
+class OddsBoardPartialView(OddsBoardView):
+    """Returns just the odds board body for HTMX polling."""
+
+    template_name = "nba_betting/partials/odds_board_body.html"
 
 
 class BetFormView(LoginRequiredMixin, View):
