@@ -1,0 +1,19 @@
+<form id="comment-form"
+      hx-post="{% url 'nfl_discussions:create_comment' game.id_hash %}"
+      hx-target="#comment-list"
+      hx-swap="afterbegin"
+      hx-on::after-request="if(event.detail.successful){this.reset();var empty=document.getElementById('no-comments');if(empty)empty.remove()}"
+      hx-disabled-elt="find button[type='submit']">
+    {% csrf_token %}
+    {{ form.body }}
+    {% if form.body.errors %}
+    <p class="text-danger text-xs mt-1">{{ form.body.errors.0 }}</p>
+    {% endif %}
+    <div class="flex justify-between items-center mt-2">
+        <span class="text-xs text-muted">Max 1000 characters</span>
+        <button type="submit"
+                class="bg-primary text-on-primary font-bold py-1.5 px-4 rounded-md text-sm hover:bg-primary/90 transition-colors">
+            <span>Comment</span>
+        </button>
+    </div>
+</form>

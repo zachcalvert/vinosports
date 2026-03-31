@@ -1,0 +1,12 @@
+{% extends "nfl_website/base.html" %}
+{% block title %}Schedule — Week {{ target_week }}{% endblock %}
+
+{% block content %}
+<div class="space-y-2 mb-8">
+    <span class="font-label uppercase text-[10px] tracking-widest text-primary font-bold">National Football League</span>
+    <h1 class="text-5xl md:text-6xl font-headline font-black italic text-on-surface leading-[0.9]">THE WEEKLY<br>TICKET</h1>
+</div>
+<div id="schedule-content">
+    {% include "nfl_games/partials/schedule_content.html" %}
+</div>
+{% endblock %}

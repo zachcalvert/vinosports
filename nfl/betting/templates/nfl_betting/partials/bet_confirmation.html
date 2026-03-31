@@ -1,0 +1,43 @@
+<div id="bet-form-container" class="bg-surface-container-lowest rounded-xl border border-primary/30 p-6">
+    <div class="text-center">
+        <div class="text-primary text-3xl mb-2">&#10003;</div>
+        <h3 class="text-lg font-bold mb-1">Bet Placed!</h3>
+        <p class="text-sm text-muted mb-4">
+            {{ bet.get_market_display }} &middot; {{ bet.get_selection_display }}
+            {% if bet.line %}({{ bet.line }}){% endif %}
+            on {{ bet.game.away_team.abbreviation }} @ {{ bet.game.home_team.abbreviation }}
+        </p>
+
+        <div class="grid grid-cols-3 gap-4 text-center mb-4">
+            <div>
+                <div class="text-xs text-muted uppercase">Stake</div>
+                <div class="font-mono font-semibold">${{ bet.stake }}</div>
+            </div>
+            <div>
+                <div class="text-xs text-muted uppercase">Odds</div>
+                <div class="font-mono font-semibold">
+                    {% if bet.odds_at_placement > 0 %}+{% endif %}{{ bet.odds_at_placement }}
+                </div>
+            </div>
+            <div>
+                <div class="text-xs text-muted uppercase">Potential Payout</div>
+                <div class="text-primary font-mono font-semibold">${{ bet.calculate_payout|floatformat:2 }}</div>
+            </div>
+        </div>
+
+        <div class="flex items-center justify-center gap-4">
+            <button type="button"
+                    class="text-sm text-primary hover:underline cursor-pointer"
+                    hx-get="{% url 'nfl_betting:bet_form' game.id_hash %}"
+                    hx-target="#bet-form-container"
+                    hx-swap="outerHTML">Place Another Bet</button>
+            <span class="text-muted">&middot;</span>
+            <a href="{% url 'hub:my_bets' %}"
+               class="text-sm text-primary hover:underline">View My Bets &rarr;</a>
+        </div>
+    </div>
+</div>
+
+{% include "nfl_games/partials/community_sentiment.html" with oob=True %}
+{% include "nfl_games/partials/spread_sentiment.html" with oob=True %}
+{% include "nfl_games/partials/total_sentiment.html" with oob=True %}

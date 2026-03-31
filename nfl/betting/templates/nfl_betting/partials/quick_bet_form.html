@@ -1,0 +1,92 @@
+{% load currency_tags %}
+<div class="bg-primary-fixed/20 rounded-xl border-b-4 border-secondary p-3 my-1">
+    {% if error %}
+    <div class="bg-danger/10 border border-danger/30 rounded-md p-2 mb-2">
+        <p class="text-danger text-xs">{{ error }}</p>
+    </div>
+    {% endif %}
+    <form hx-post="{% url 'nfl_betting:place_bet' game.id_hash %}"
+          hx-target="#{{ container_id }}"
+          hx-swap="innerHTML"
+          hx-disabled-elt="find button[type='submit']"
+          class="space-y-2">
+        {% csrf_token %}
+        <input type="hidden" name="market" value="{{ market }}">
+        <input type="hidden" name="selection" value="{{ selection }}">
+        <input type="hidden" name="odds" value="{{ selected_odds }}">
+        <input type="hidden" name="line" value="{{ line|default_if_none:'' }}">
+        <input type="hidden" name="container_id" value="{{ container_id }}">
+
+        <div class="flex items-center justify-between">
+            <span class="text-sm text-muted">
+                <span class="text-accent font-semibold">
+                    {% if market == "MONEYLINE" %}
+                        {% if selection == "HOME" %}{{ game.home_team.abbreviation }} ML{% else %}{{ game.away_team.abbreviation }} ML{% endif %}
+                    {% elif market == "SPREAD" %}
+                        {% if selection == "HOME" %}{{ game.home_team.abbreviation }} {{ line|floatformat:1 }}{% else %}{{ game.away_team.abbreviation }} {{ line|floatformat:1 }}{% endif %}
+                    {% elif market == "TOTAL" %}
+                        {% if selection == "OVER" %}Over {{ line|floatformat:1 }}{% else %}Under {{ line|floatformat:1 }}{% endif %}
+                    {% endif %}
+                </span>
+                <span class="text-muted font-mono text-xs">@ {% if selected_odds > 0 %}+{% endif %}{{ selected_odds }}</span>
+            </span>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <div class="flex items-center gap-2 flex-1">
+                <label class="text-xs text-muted">Stake:</label>
+                <input type="number" name="stake"
+                       class="w-full bg-surface-container-lowest border-2 border-outline-variant rounded-sm px-2 py-1 font-mono text-base sm:text-sm text-right focus:outline-none focus:border-primary"
+                       placeholder="0.00" step="0.50" min="0.50" max="10000.00" required>
+            </div>
+
+            <div class="hidden text-xs text-accent font-mono font-semibold whitespace-nowrap" data-payout-display>
+                $<span data-payout-value>0.00</span>
+            </div>
+
+            <button type="submit"
+                    class="jukebox-btn bg-primary text-on-primary font-headline font-black uppercase tracking-widest text-xs py-1.5 px-4 rounded-full disabled:opacity-50">
+                <span class="htmx-indicator"><span class="spinner spinner-sm mr-1"></span></span>Bet
+            </button>
+
+            <button type="button"
+                    class="text-muted hover:text-primary text-sm px-2 transition-colors"
+                    onclick="document.getElementById('{{ container_id }}').innerHTML = ''">
+                &times;
+            </button>
+        </div>
+    </form>
+</div>
+<script>
+(function() {
+    var container = document.getElementById('{{ container_id }}');
+    if (!container) return;
+    var form = container.querySelector('form');
+    var stakeInput = form ? form.querySelector('input[name="stake"]') : null;
+    var payoutDisplay = container.querySelector('[data-payout-display]');
+    var payoutValue = container.querySelector('[data-payout-value]');
+    var odds = {{ selected_odds|default:"0" }};
+
+    function calculatePayout(stake, odds) {
+        if (odds > 0) {
+            return (stake * odds / 100 + stake).toFixed(2);
+        } else {
+            return (stake * 100 / Math.abs(odds) + stake).toFixed(2);
+        }
+    }
+
+    function updatePayout() {
+        var stake = parseFloat(stakeInput.value) || 0;
+        if (stake > 0 && odds !== 0 && payoutDisplay && payoutValue) {
+            payoutValue.textContent = calculatePayout(stake, odds);
+            payoutDisplay.classList.remove('hidden');
+        } else if (payoutDisplay) {
+            payoutDisplay.classList.add('hidden');
+        }
+    }
+
+    if (stakeInput) {
+        stakeInput.addEventListener('input', updatePayout);
+    }
+})();
+</script>

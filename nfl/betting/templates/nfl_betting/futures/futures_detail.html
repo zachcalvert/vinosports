@@ -1,0 +1,84 @@
+{% extends "nfl_website/base.html" %}
+{% load currency_tags %}
+
+{% block title %}{{ market.name }} — Futures{% endblock %}
+
+{% block content %}
+{# ── Breadcrumb ── #}
+<div class="mb-8">
+    <a href="{% url 'nfl_betting:futures' %}"
+       class="inline-flex items-center gap-2 text-secondary font-bold text-xs uppercase tracking-widest hover:text-primary transition-colors">
+        <i class="ph-bold ph-arrow-left text-sm"></i>
+        All Futures
+    </a>
+</div>
+
+{# ── Page Header ── #}
+<header class="mb-10">
+    <span class="text-xs font-bold uppercase tracking-widest text-secondary mb-2 block">
+        NFL Football &bull; {{ market.season }} Season
+    </span>
+    <h1 class="font-headline text-4xl sm:text-5xl font-black italic uppercase tracking-tight leading-tight">
+        {{ market.name }}
+    </h1>
+    {% if market.description %}
+        <p class="text-secondary text-sm mt-2 max-w-xl">{{ market.description }}</p>
+    {% endif %}
+</header>
+
+{# ── Market Table ── #}
+<div class="bg-surface rounded-xl overflow-hidden shadow-sm">
+    {# Column headers #}
+    <div class="hidden sm:grid grid-cols-12 bg-surface-container-highest px-6 py-4 border-b border-outline-variant">
+        <div class="col-span-6 text-xs font-bold uppercase tracking-widest text-secondary">Participant / Team</div>
+        <div class="col-span-3 text-xs font-bold uppercase tracking-widest text-secondary text-center">Current Odds</div>
+        <div class="col-span-3 text-xs font-bold uppercase tracking-widest text-secondary text-right">Action</div>
+    </div>
+
+    {# Outcome rows #}
+    <div class="divide-y divide-outline-variant/30">
+        {% for outcome in outcomes %}
+        <div class="grid grid-cols-12 px-4 sm:px-6 py-4 sm:py-5 items-center hover:bg-surface-container-low transition-colors"
+             id="futures-outcome-{{ outcome.id_hash }}">
+            {# Team cell #}
+            <div class="col-span-6 flex items-center gap-3 sm:gap-4">
+                {% if outcome.team.logo %}
+                    <img src="{{ outcome.team.logo }}" alt=""
+                         class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg object-contain bg-surface-container-highest p-0.5">
+                {% else %}
+                    <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-surface-container-highest flex items-center justify-center">
+                        <i class="ph-duotone ph-shield text-secondary opacity-40"></i>
+                    </div>
+                {% endif %}
+                <span class="font-headline font-bold italic text-base sm:text-lg leading-none">{{ outcome.team.name }}</span>
+            </div>
+
+            {# Odds cell #}
+            <div class="col-span-3 text-center">
+                <span class="font-headline font-bold text-lg sm:text-xl {% if outcome.odds > 0 %}text-positive{% else %}text-primary{% endif %}">
+                    {% if outcome.odds > 0 %}+{% endif %}{{ outcome.odds }}
+                </span>
+            </div>
+
+            {# Action cell #}
+            <div class="col-span-3 text-right">
+                {% if user.is_authenticated %}
+                    <button
+                        hx-get="{% url 'nfl_betting:futures_bet_form' outcome.id_hash %}"
+                        hx-target="#futures-outcome-{{ outcome.id_hash }}"
+                        hx-swap="outerHTML"
+                        class="futures-bet-btn">
+                        Bet
+                    </button>
+                {% else %}
+                    <a href="{% url 'hub:login' %}?next={{ request.path }}"
+                       class="futures-bet-btn inline-block text-center no-underline">
+                        Bet
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

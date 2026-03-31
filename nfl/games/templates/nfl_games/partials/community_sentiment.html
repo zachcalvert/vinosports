@@ -1,0 +1,43 @@
+{% comment %}
+Community Sentiment partial — standalone fragment, safe for HTMX OOB swaps.
+NFL version: Home vs Away only (no draw).
+
+Context expected:
+  game       — Game instance
+  sentiment  — dict with total/home_pct/away_pct/most_popular, or None
+  oob        — if True, adds hx-swap-oob="true" to the root element
+{% endcomment %}
+
+<div id="community-sentiment"{% if oob %} hx-swap-oob="true"{% endif %}>
+    {% if sentiment %}
+    <div class="px-5 py-4">
+        <div class="flex items-center justify-between mb-3">
+            <p class="text-xs font-semibold uppercase tracking-widest text-muted">Moneyline Sentiment</p>
+            <span class="text-xs text-muted">{{ sentiment.total }} bet{{ sentiment.total|pluralize }} placed</span>
+        </div>
+        <!-- Bar -->
+        <div class="flex rounded overflow-hidden h-6 mb-2 text-xs font-semibold">
+            {% if sentiment.home_pct %}
+            <div class="flex items-center justify-center bg-primary text-on-primary"
+                 style="width: {{ sentiment.home_pct }}%">
+                {% if sentiment.home_pct >= 15 %}{{ sentiment.home_pct }}%{% endif %}
+            </div>
+            {% endif %}
+            {% if sentiment.away_pct %}
+            <div class="flex items-center justify-center bg-indigo-500 text-white"
+                 style="width: {{ sentiment.away_pct }}%">
+                {% if sentiment.away_pct >= 15 %}{{ sentiment.away_pct }}%{% endif %}
+            </div>
+            {% endif %}
+        </div>
+        <!-- Legend -->
+        <div class="flex justify-between text-xs text-muted">
+            <span><span class="inline-block w-2 h-2 rounded-sm bg-primary mr-1"></span>{{ game.home_team.abbreviation }} {{ sentiment.home_pct }}%</span>
+            <span><span class="inline-block w-2 h-2 rounded-sm bg-indigo-500 mr-1"></span>{{ game.away_team.abbreviation }} {{ sentiment.away_pct }}%</span>
+        </div>
+        <p class="mt-2 text-xs text-muted">
+            Most popular: <span class="font-semibold">{{ sentiment.most_popular }}</span>
+        </p>
+    </div>
+    {% endif %}
+</div>

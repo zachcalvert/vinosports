@@ -1,0 +1,35 @@
+{# NFL league sidebar — page navigation links #}
+{% with url_name=request.resolver_match.url_name %}
+<nav class="sidebar-nav" aria-label="NFL navigation">
+    <div class="sidebar-links">
+        <a href="{% url 'nfl_dashboard' %}"
+           class="sidebar-link {% if url_name == 'dashboard' %}sidebar-link--active{% endif %}">
+            <i class="ph-duotone ph-house text-lg"></i>
+            <span>Dashboard</span>
+        </a>
+        <a href="{% url 'nfl_games:schedule' %}"
+           class="sidebar-link {% if url_name == 'schedule' %}sidebar-link--active{% endif %}">
+            <i class="ph-duotone ph-calendar text-lg"></i>
+            <span>Schedule</span>
+        </a>
+        <a href="{% url 'nfl_games:standings' %}"
+           class="sidebar-link {% if url_name == 'standings' %}sidebar-link--active{% endif %}">
+            <i class="ph-duotone ph-ranking text-lg"></i>
+            <span>Standings</span>
+        </a>
+        <a href="{% url 'nfl_betting:futures' %}"
+           class="sidebar-link {% if url_name == 'futures' %}sidebar-link--active{% endif %}">
+            <i class="ph-duotone ph-trophy text-lg"></i>
+            <span>Futures</span>
+        </a>
+        {% if user.is_superuser %}
+        <div class="sidebar-divider"></div>
+        <a href="{% url 'hub:admin_dashboard' %}"
+           class="sidebar-link">
+            <i class="ph-duotone ph-gauge text-lg"></i>
+            <span>Admin</span>
+        </a>
+        {% endif %}
+    </div>
+</nav>
+{% endwith %}

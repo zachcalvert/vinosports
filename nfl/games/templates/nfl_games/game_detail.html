@@ -1,0 +1,97 @@
+{% extends "nfl_website/base.html" %}
+{% block title %}{{ game }}{% endblock %}
+
+{% block content %}
+<!-- Scoreboard (WebSocket for live score updates) -->
+{% if not game.is_final and game.status != "POSTPONED" and game.status != "CANCELLED" %}
+<div id="ws-container" hx-ext="ws" ws-connect="/nfl/ws/live/{{ game.id_hash }}/">
+{% include "nfl_games/partials/scoreboard.html" %}
+</div>
+{% if game.is_live %}
+<script>
+(function() {
+    var container = document.getElementById('ws-container');
+    var dot = document.getElementById('ws-dot');
+    var label = document.getElementById('ws-label');
+    if (!container || !dot) return;
+
+    container.addEventListener('htmx:wsOpen', function() {
+        dot.classList.remove('connecting');
+        dot.classList.add('connected');
+        if (label) label.textContent = 'Live';
+    });
+    container.addEventListener('htmx:wsClose', function() {
+        dot.classList.remove('connected');
+        dot.classList.add('connecting');
+        if (label) label.textContent = 'Reconnecting';
+    });
+})();
+</script>
+{% endif %}
+{% else %}
+{% include "nfl_games/partials/scoreboard.html" %}
+{% endif %}
+
+<!-- Two-column layout: bet form | status card + discussion -->
+<div class="grid grid-cols-1 lg:grid-cols-[26rem_minmax(0,1fr)] gap-6 mb-6">
+
+    <!-- Bet form sidebar -->
+    <div class="lg:sticky lg:top-6 lg:self-start space-y-4">
+        {% if user_bets %}
+            {% include "nfl_betting/partials/your_bets.html" %}
+        {% endif %}
+        {% if user.is_authenticated %}
+            {% if game.status == "SCHEDULED" %}
+                {% include "nfl_betting/partials/bet_form.html" %}
+            {% else %}
+                <div class="bg-surface-container-lowest rounded-xl border-b-4 border-outline-variant p-6 text-center text-muted">
+                    <p class="text-sm">Betting is closed for this game.</p>
+                </div>
+            {% endif %}
+        {% else %}
+            <div class="bg-surface-container-lowest rounded-xl border-b-4 border-outline-variant border-dashed p-6 text-center">
+                <p class="text-muted text-sm mb-3">Log in to place a bet on this game.</p>
+                <a href="{% url 'nfl_website:login' %}?next={{ request.path }}"
+                   class="inline-block bg-primary text-dark font-bold py-2 px-6 rounded-md hover:bg-primary/90 transition-colors text-sm">
+                    Log In
+                </a>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Main column — status card + discussion -->
+    <div class="space-y-4">
+        <!-- State-specific content -->
+        {% if game.is_final %}
+            {% include "nfl_games/partials/recap_card.html" %}
+        {% elif sentiment or spread_sentiment or total_sentiment %}
+            {% include "nfl_games/partials/hype_card.html" %}
+        {% endif %}
+
+        <!-- Comments -->
+        <div class="bg-surface-container-lowest rounded-xl border-b-4 border-outline-variant">
+            <div class="px-5 py-4 border-b border-outline-variant flex items-center gap-3">
+                <span class="w-1 h-6 rounded-full bg-nfl"></span>
+                <h3 class="text-lg font-bold">Discussion</h3>
+            </div>
+            <div class="px-5 py-4">
+                {% if user.is_authenticated %}
+                {% with form=comment_form %}
+                    {% include "nfl_discussions/partials/comment_form.html" %}
+                {% endwith %}
+                {% endif %}
+
+                <div id="comment-list" class="space-y-4 mt-4">
+                {% if comments %}
+                    {% for comment in comments %}
+                        {% include "nfl_discussions/partials/comment.html" with comment=comment game=game is_reply=False %}
+                    {% endfor %}
+                {% else %}
+                    <p id="no-comments" class="text-sm text-muted text-center py-6">No comments yet. Be the first to weigh in.</p>
+                {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
