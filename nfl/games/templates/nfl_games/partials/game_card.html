@@ -1,0 +1,93 @@
+{% load game_tags %}
+{# Regular game card — expects `game`, `standings_by_team`, `odds_by_game` in context. #}
+{# `game` should be annotated with `bet_count` and `comment_count`.                     #}
+<div id="game-{{ game.id_hash }}"
+     class="bg-surface-container-high rounded-xl p-5 relative overflow-hidden transition-all duration-300
+            {% if game.is_live %}live-game-card{% elif game.is_final %}opacity-75 hover:opacity-100{% else %}hover:shadow-md{% endif %}">
+    {# Left accent bar #}
+    <div class="absolute top-0 left-0 w-1 h-full {% if game.is_live %}bg-primary{% elif game.is_final %}bg-secondary{% else %}bg-secondary{% endif %}"></div>
+
+    <a href="{% url 'nfl_games:game_detail' game.id_hash %}" class="block">
+        {# ── Header: week + time ── #}
+        <div class="flex justify-between items-center mb-4">
+            <span class="font-label text-[10px] uppercase opacity-60 truncate mr-2">
+                Week {{ game.week }}
+            </span>
+            {% if game.is_live %}
+            <span class="inline-flex items-center gap-1.5 text-[10px] font-bold text-danger uppercase tracking-wider">
+                <span class="h-1.5 w-1.5 rounded-full bg-danger animate-pulse"></span>
+                {{ game.get_status_display }}
+            </span>
+            {% elif game.is_final %}
+            <span class="font-label text-[10px] font-bold uppercase tracking-widest text-secondary">
+                {% if game.status == "FINAL_OT" %}Final/OT{% else %}Final{% endif %}
+            </span>
+            {% elif game.status == "POSTPONED" %}
+            <span class="font-label text-[10px] font-bold uppercase tracking-widest text-warning">Postponed</span>
+            {% else %}
+            <span class="text-[10px] font-label uppercase font-bold text-primary">
+                {% if game.kickoff %}
+                <time class="local-time" datetime="{{ game.kickoff|date:'c' }}">{{ game.kickoff|date:"g:i A" }}</time>
+                {% else %}TBD{% endif %}
+            </span>
+            {% endif %}
+        </div>
+
+        {# ── Matchup: teams side-by-side ── #}
+        <div class="flex items-center justify-between mb-5">
+            <div class="flex flex-col items-center gap-1.5 flex-1">
+                {% if game.away_team.logo_url %}<img src="{{ game.away_team.logo_url }}" alt="" class="w-10 h-10 object-contain">{% endif %}
+                <span class="font-headline font-bold italic text-sm">{{ game.away_team.abbreviation|upper }}</span>
+                {% with standing=standings_by_team|get_item:game.away_team_id %}
+                {% if standing %}<span class="text-[10px] font-label opacity-50">{{ standing.wins }}-{{ standing.losses }}</span>{% endif %}
+                {% endwith %}
+                {% if game.is_live or game.is_final %}
+                <span class="font-headline font-black italic text-xl {% if game.is_final and game.away_score > game.home_score %}text-primary{% else %}text-secondary{% endif %}">{{ game.away_score }}</span>
+                {% endif %}
+            </div>
+
+            <span class="font-headline font-bold italic opacity-20 text-2xl">@</span>
+
+            <div class="flex flex-col items-center gap-1.5 flex-1">
+                {% if game.home_team.logo_url %}<img src="{{ game.home_team.logo_url }}" alt="" class="w-10 h-10 object-contain">{% endif %}
+                <span class="font-headline font-bold italic text-sm">{{ game.home_team.abbreviation|upper }}</span>
+                {% with standing=standings_by_team|get_item:game.home_team_id %}
+                {% if standing %}<span class="text-[10px] font-label opacity-50">{{ standing.wins }}-{{ standing.losses }}</span>{% endif %}
+                {% endwith %}
+                {% if game.is_live or game.is_final %}
+                <span class="font-headline font-black italic text-xl {% if game.is_final and game.home_score > game.away_score %}text-primary{% else %}text-secondary{% endif %}">{{ game.home_score }}</span>
+                {% endif %}
+            </div>
+        </div>
+    </a>
+
+    {# ── Footer: odds + inline betting ── #}
+    {% with odds=odds_by_game|get_item:game.id %}
+    {% if odds and odds.home_moneyline is not None and odds.away_moneyline is not None and not game.is_final and not game.is_live %}
+    <div class="varsity-stripe my-3"></div>
+    <div class="flex gap-2 text-xs">
+        <button class="flex-1 text-center py-1.5 rounded-sm bg-surface font-mono text-primary font-bold hover:bg-primary hover:text-on-primary transition-all duration-300"
+                hx-get="{% url 'nfl_betting:quick_bet_form' game.id_hash %}?market=MONEYLINE&selection=AWAY&container=quick-bet-{{ game.id_hash }}"
+                hx-target="#quick-bet-{{ game.id_hash }}"
+                hx-swap="innerHTML">
+            <span class="text-[8px] font-label uppercase opacity-60 block">{{ game.away_team.abbreviation }}</span>
+            {% if odds.away_moneyline > 0 %}+{% endif %}{{ odds.away_moneyline }}
+        </button>
+        <button class="flex-1 text-center py-1.5 rounded-sm bg-surface font-mono text-primary font-bold hover:bg-primary hover:text-on-primary transition-all duration-300"
+                hx-get="{% url 'nfl_betting:quick_bet_form' game.id_hash %}?market=MONEYLINE&selection=HOME&container=quick-bet-{{ game.id_hash }}"
+                hx-target="#quick-bet-{{ game.id_hash }}"
+                hx-swap="innerHTML">
+            <span class="text-[8px] font-label uppercase opacity-60 block">{{ game.home_team.abbreviation }}</span>
+            {% if odds.home_moneyline > 0 %}+{% endif %}{{ odds.home_moneyline }}
+        </button>
+    </div>
+    <div id="quick-bet-{{ game.id_hash }}"></div>
+    {% endif %}
+    {% endwith %}
+
+    {# ── Activity counts ── #}
+    <div class="mt-3 flex-1 bg-surface-container-low rounded-lg px-3 py-2 flex items-center gap-4">
+        <span class="flex items-center gap-1"><i class="ph-duotone ph-ticket text-sm text-primary"></i> <span class="text-[10px] font-bold uppercase tracking-widest text-secondary">{{ game.bet_count|default:"0" }}</span></span>
+        <span class="flex items-center gap-1"><i class="ph-duotone ph-chat-circle-text text-sm text-secondary"></i> <span class="text-[10px] font-bold uppercase tracking-widest text-secondary">{{ game.comment_count|default:"0" }}</span></span>
+    </div>
+</div>

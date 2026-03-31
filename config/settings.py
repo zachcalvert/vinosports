@@ -87,6 +87,8 @@ TEMPLATES = [
         "DIRS": [
             # NBA project-level templates (base, dashboard, components)
             BASE_DIR / "nba" / "templates",
+            # NFL project-level templates
+            BASE_DIR / "nfl" / "templates",
             # Shared templates from vinosports-core (volume mount in dev, site-packages in prod)
             *(
                 [Path("/packages/vinosports-core/src/vinosports/templates")]
@@ -118,6 +120,12 @@ TEMPLATES = [
                 "nba.betting.context_processors.futures_sidebar",
                 "nba.rewards.context_processors.unseen_rewards",
                 "nba.activity.context_processors.activity_toasts",
+                # NFL (guarded by request.league)
+                "nfl.website.context_processors.theme",
+                "nfl.betting.context_processors.bankruptcy",
+                "nfl.betting.context_processors.parlay_slip",
+                "nfl.betting.context_processors.futures_sidebar",
+                "nfl.activity.context_processors.activity_toasts",
             ],
         },
     },

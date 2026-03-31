@@ -1,0 +1,50 @@
+{% extends "nfl_website/base.html" %}
+{% block title %}Standings{% endblock %}
+
+{% block content %}
+<!-- Editorial header -->
+<div class="mb-6">
+    <h1 class="font-headline italic font-black text-4xl sm:text-5xl uppercase tracking-tight leading-none">
+        NFL Division<br>Standings
+    </h1>
+    <div class="flex items-center gap-2 mt-3">
+        <span class="w-1 h-5 rounded-full bg-primary"></span>
+        <p class="text-muted text-sm uppercase tracking-wider font-medium">{{ season }} Regular Season</p>
+    </div>
+</div>
+
+<!-- Conference tabs -->
+<div class="flex items-center gap-3 mb-6 text-sm">
+    <a href="?tab=AFC"
+       class="px-5 py-2 rounded-full border transition-colors font-semibold
+              {% if tab == 'AFC' %}bg-primary text-on-primary border-primary{% else %}border-outline-variant bg-surface hover:bg-surface-container-low text-muted{% endif %}"
+       hx-get="{% url 'nfl_games:standings' %}?tab=AFC"
+       hx-target="#standings-panel"
+       hx-swap="innerHTML"
+       hx-push-url="?tab=AFC"
+       hx-indicator="#standings-loading">
+        AFC
+    </a>
+    <a href="?tab=NFC"
+       class="px-5 py-2 rounded-full border transition-colors font-semibold
+              {% if tab == 'NFC' %}bg-primary text-on-primary border-primary{% else %}border-outline-variant bg-surface hover:bg-surface-container-low text-muted{% endif %}"
+       hx-get="{% url 'nfl_games:standings' %}?tab=NFC"
+       hx-target="#standings-panel"
+       hx-swap="innerHTML"
+       hx-push-url="?tab=NFC"
+       hx-indicator="#standings-loading">
+        NFC
+    </a>
+</div>
+
+<!-- Main content -->
+<div class="relative">
+    <div id="standings-loading" class="htmx-indicator pointer-events-none absolute inset-x-0 top-3 z-10 text-center">
+        <span class="spinner text-primary"></span>
+    </div>
+
+    <div id="standings-panel">
+        {% include "nfl_games/partials/standings_panel.html" %}
+    </div>
+</div>
+{% endblock %}

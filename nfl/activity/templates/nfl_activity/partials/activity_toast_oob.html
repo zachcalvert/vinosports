@@ -1,0 +1,13 @@
+<div id="activity-toasts" hx-swap-oob="beforeend">
+    {% if url %}
+    <a href="{{ url }}" class="activity-toast animate-slide-in-left" role="status">
+        <i class="ph-duotone ph-{{ icon }} activity-toast-icon"></i>
+        <p class="activity-toast-message">{{ message }}</p>
+    </a>
+    {% else %}
+    <div class="activity-toast animate-slide-in-left" role="status" tabindex="-1" aria-disabled="true">
+        <i class="ph-duotone ph-{{ icon }} activity-toast-icon"></i>
+        <p class="activity-toast-message">{{ message }}</p>
+    </div>
+    {% endif %}
+</div>

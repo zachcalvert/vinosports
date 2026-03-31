@@ -1,0 +1,11 @@
+<div class="bg-primary-fixed/20 rounded-xl border-b-4 border-primary p-3 my-1 text-center">
+    <div class="flex items-center justify-center gap-2 mb-1">
+        <span class="text-primary text-lg">&#10003;</span>
+        <span class="font-headline font-bold text-sm">Bet Placed!</span>
+    </div>
+    <p class="text-xs text-muted">
+        {{ bet.get_market_display }} &middot; {{ bet.get_selection_display }}
+        {% if bet.line %}({{ bet.line }}){% endif %}
+        &mdash; ${{ bet.stake }} @ {% if bet.odds_at_placement > 0 %}+{% endif %}{{ bet.odds_at_placement }}
+    </p>
+</div>

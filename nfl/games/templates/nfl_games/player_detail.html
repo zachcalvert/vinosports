@@ -1,0 +1,56 @@
+{% extends "nfl_website/base.html" %}
+{% block title %}{{ player.full_name }}{% endblock %}
+
+{% block content %}
+<!-- Hero header -->
+<div class="rounded-xl border border-outline-variant bg-surface-container-lowest overflow-hidden mb-6">
+    <div class="p-5 sm:p-6 flex flex-col sm:flex-row items-start gap-5">
+        <div class="w-32 h-24 sm:w-40 sm:h-[120px] rounded-xl bg-surface-alt flex items-center justify-center text-3xl font-bold text-muted">
+            {{ player.first_name.0 }}{{ player.last_name.0 }}
+        </div>
+
+        <div class="flex-1">
+            <h1 class="font-headline italic font-black text-3xl sm:text-4xl uppercase tracking-tight leading-none">
+                {{ player.full_name }}
+            </h1>
+            <div class="flex flex-wrap items-center gap-3 mt-2 text-sm">
+                {% if player.position %}
+                    <span class="px-2 py-0.5 rounded bg-surface-alt font-semibold">{{ player.position }}</span>
+                {% endif %}
+                {% if player.jersey_number %}
+                    <span class="font-semibold">#{{ player.jersey_number }}</span>
+                {% endif %}
+                {% if player.team %}
+                    <a href="{{ player.team.get_absolute_url }}" class="text-muted hover:underline">{{ player.team.short_name }}</a>
+                {% endif %}
+            </div>
+            <!-- Bio row -->
+            <div class="flex flex-wrap gap-x-5 gap-y-1 mt-3 text-xs text-muted">
+                {% if player.height %}
+                    <span>{{ player.height }}</span>
+                {% endif %}
+                {% if player.weight %}
+                    <span>{{ player.weight }} lbs</span>
+                {% endif %}
+                {% if player.college and player.college != "None" %}
+                    <span>{{ player.college }}</span>
+                {% endif %}
+                {% if player.draft_year %}
+                    <span>{{ player.draft_year }} Draft: Rd {{ player.draft_round }}, Pick {{ player.draft_number }}</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Season info (NFL has no individual box scores like NBA) -->
+<div class="rounded-xl border-b-4 border-outline-variant bg-surface-container-lowest overflow-hidden mb-6">
+    <div class="px-5 py-3 border-b border-outline-variant flex items-center gap-3">
+        <span class="w-1 h-6 rounded-full bg-nfl"></span>
+        <h3 class="text-xs font-semibold uppercase tracking-widest">{{ season }} Season</h3>
+    </div>
+    <div class="p-6 text-center text-muted text-sm">
+        Detailed player stats coming soon.
+    </div>
+</div>
+{% endblock %}

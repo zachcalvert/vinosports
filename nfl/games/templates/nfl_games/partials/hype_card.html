@@ -1,0 +1,22 @@
+{% comment %}
+Game Preview Card — rendered on game_detail.html for SCHEDULED games.
+NFL version: community sentiment (moneyline, spread, total).
+
+Context expected:
+  game              — Game instance
+  sentiment         — dict with total/home_pct/away_pct/most_popular, or None
+  spread_sentiment  — dict or None
+  total_sentiment   — dict or None
+{% endcomment %}
+
+<div class="rounded-xl border-b-4 border-outline-variant bg-surface-container-lowest overflow-hidden">
+    <div class="px-5 py-3 border-b border-outline-variant flex items-center justify-between">
+        <h3 class="font-headline font-black text-xs uppercase tracking-widest text-secondary">Game Preview</h3>
+    </div>
+
+    <div class="divide-y divide-outline-variant">
+        {% include "nfl_games/partials/community_sentiment.html" %}
+        {% include "nfl_games/partials/spread_sentiment.html" %}
+        {% include "nfl_games/partials/total_sentiment.html" %}
+    </div>
+</div>

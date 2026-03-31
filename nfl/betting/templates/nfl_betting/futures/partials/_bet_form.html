@@ -1,0 +1,75 @@
+{% load currency_tags %}
+<div class="futures-row--active px-4 sm:px-6 py-4 sm:py-5"
+     id="futures-outcome-{{ outcome.id_hash }}">
+    {# Row header: team + odds #}
+    <div class="grid grid-cols-12 items-center mb-4">
+        <div class="col-span-6 flex items-center gap-3 sm:gap-4">
+            {% if outcome.team.logo %}
+                <img src="{{ outcome.team.logo }}" alt=""
+                     class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg object-contain bg-surface-container-highest p-0.5">
+            {% else %}
+                <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-surface-container-highest flex items-center justify-center">
+                    <i class="ph-duotone ph-shield text-secondary opacity-40"></i>
+                </div>
+            {% endif %}
+            <span class="font-headline font-bold italic text-base sm:text-lg text-primary leading-none">{{ outcome.team.name }}</span>
+        </div>
+        <div class="col-span-3 text-center">
+            <span class="font-headline font-bold text-lg sm:text-xl text-primary">
+                {% if outcome.odds > 0 %}+{% endif %}{{ outcome.odds }}
+            </span>
+        </div>
+        <div class="col-span-3 text-right">
+            <button type="button"
+                    hx-get="{% url 'nfl_betting:futures_detail' outcome.market.id_hash %}"
+                    hx-target="#futures-outcome-{{ outcome.id_hash }}"
+                    hx-swap="outerHTML"
+                    class="text-secondary hover:text-primary text-lg px-2 transition-colors"
+                    title="Cancel">&times;</button>
+        </div>
+    </div>
+
+    {% if error %}
+        <div class="bg-danger/10 text-danger text-xs font-medium px-3 py-2 rounded-lg mb-3">
+            {{ error }}
+        </div>
+    {% endif %}
+
+    {# Bet form #}
+    <form hx-post="{% url 'nfl_betting:place_futures_bet' outcome.id_hash %}"
+          hx-target="#futures-outcome-{{ outcome.id_hash }}"
+          hx-swap="outerHTML"
+          hx-disabled-elt="find button[type='submit']"
+          class="flex items-center gap-3 flex-wrap sm:flex-nowrap">
+        {% csrf_token %}
+        <div class="flex-1 min-w-[8rem]">
+            {{ form.stake }}
+        </div>
+        <div class="text-sm text-secondary font-mono font-bold whitespace-nowrap"
+             id="futures-payout-{{ outcome.id_hash }}"></div>
+        <button type="submit"
+                class="jukebox-btn bg-primary text-white text-xs font-headline font-bold italic uppercase tracking-wider px-6 py-2.5 rounded-lg disabled:opacity-50">
+            Place Bet
+        </button>
+    </form>
+
+    <script>
+    (function() {
+        const form = document.querySelector('#futures-outcome-{{ outcome.id_hash }} form');
+        const input = form.querySelector('input[name="stake"]');
+        const display = document.querySelector('#futures-payout-{{ outcome.id_hash }}');
+        const odds = {{ outcome.odds }};
+        input.addEventListener('input', function() {
+            const stake = parseFloat(this.value) || 0;
+            let payout;
+            if (odds > 0) {
+                payout = (stake * odds / 100 + stake).toFixed(2);
+            } else {
+                payout = (stake * 100 / Math.abs(odds) + stake).toFixed(2);
+            }
+            display.textContent = stake > 0 ? 'Payout: $' + payout : '';
+        });
+        input.focus();
+    })();
+    </script>
+</div>

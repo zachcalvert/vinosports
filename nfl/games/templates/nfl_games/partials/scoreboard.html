@@ -1,0 +1,194 @@
+{% comment %}
+Scoreboard partial — the centerpiece of game_detail.html.
+Renders differently based on game state: SCHEDULED, live (IN_PROGRESS/HALFTIME), FINAL/FINAL_OT.
+This partial is the OOB swap target for live WebSocket updates.
+
+Context expected:
+  game            — Game instance (with home_team, away_team)
+  home_standing   — Standing instance or None
+  away_standing   — Standing instance or None
+  quarter_scores  — dict with home/away quarter arrays, has_ot flag, or None
+{% endcomment %}
+
+<div id="scoreboard" class="bg-surface-container-lowest rounded-xl border-b-4 border-outline-variant border-t-4 border-t-nfl p-4 sm:p-6 mb-6">
+    <!-- Status row -->
+    <div class="mb-3 sm:mb-4 flex flex-col gap-2 sm:gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div class="flex items-center gap-3">
+            <div id="game-status">
+            {% if game.status == "FINAL" or game.status == "FINAL_OT" %}
+                <span class="inline-flex items-center rounded-full bg-border/40 px-2.5 py-1 text-xs font-medium text-muted">
+                    {% if game.status == "FINAL_OT" %}Final/OT{% else %}Final{% endif %}
+                </span>
+            {% elif game.is_live %}
+                <span class="inline-flex items-center gap-1 rounded-full bg-danger/10 px-2.5 py-1 text-xs font-bold text-danger">
+                    <span class="h-1.5 w-1.5 rounded-full bg-danger animate-pulse"></span>
+                    {{ game.get_status_display }}
+                </span>
+            {% elif game.status == "POSTPONED" %}
+                <span class="inline-flex items-center rounded-full bg-warning/10 px-2.5 py-1 text-xs font-medium text-warning">Postponed</span>
+            {% else %}
+                <span class="inline-flex items-center rounded-full bg-accent-light px-2.5 py-1 text-xs font-medium text-muted">Scheduled</span>
+            {% endif %}
+            </div>
+            <span class="text-xs text-muted">Week {{ game.week }}</span>
+        </div>
+        <span class="text-xs text-muted">{{ game.season }} Season</span>
+    </div>
+
+    <!-- Teams + Score -->
+    <div class="flex flex-row items-center justify-center gap-2 sm:gap-8 md:gap-16">
+        <!-- Away team -->
+        <a href="{% url 'nfl_games:team_detail' game.away_team.abbreviation %}" class="text-center flex-1 min-w-0 hover:opacity-80 transition-opacity">
+            {% if game.away_team.logo_url %}
+                <img src="{{ game.away_team.logo_url }}" alt="" class="w-10 h-10 sm:w-16 sm:h-16 mx-auto mb-1 sm:mb-2 object-contain">
+            {% endif %}
+            <h2 class="font-bold leading-tight {% if game.is_final and game.away_score < game.home_score and not game.is_tie %}text-muted{% endif %}">
+                <span class="text-sm sm:hidden">{{ game.away_team.abbreviation }}</span>
+                <span class="hidden sm:inline text-lg">{{ game.away_team.short_name }}</span>
+            </h2>
+            {% if game.is_final %}
+                {% if game.is_tie %}
+                    <span class="inline-block mt-0.5 sm:mt-1 text-xs font-semibold text-muted">T</span>
+                {% elif game.away_score > game.home_score %}
+                    <span class="inline-block mt-0.5 sm:mt-1 text-xs font-semibold text-positive">W</span>
+                {% else %}
+                    <span class="inline-block mt-0.5 sm:mt-1 text-xs font-semibold text-danger">L</span>
+                {% endif %}
+            {% elif away_standing %}
+                <p class="text-[10px] sm:text-xs text-muted mt-0.5 sm:mt-1">{{ away_standing.wins }}-{{ away_standing.losses }}{% if away_standing.ties %}-{{ away_standing.ties }}{% endif %}</p>
+            {% endif %}
+        </a>
+
+        <!-- Score / vs -->
+        <div id="score-display" class="text-center shrink-0">
+            {% if game.is_live or game.is_final %}
+                <div class="flex items-center gap-2 sm:gap-3">
+                    <span class="text-3xl sm:text-4xl font-bold font-mono {% if game.is_final and game.away_score >= game.home_score %}text-primary{% endif %}">{{ game.away_score }}</span>
+                    <span class="text-base sm:text-lg text-muted">&ndash;</span>
+                    <span class="text-3xl sm:text-4xl font-bold font-mono {% if game.is_final and game.home_score >= game.away_score %}text-primary{% endif %}">{{ game.home_score }}</span>
+                </div>
+            {% else %}
+                <span class="text-xl sm:text-3xl font-bold text-muted">vs</span>
+                {% if best_odds %}
+                <div class="mt-1 sm:mt-2 flex flex-col items-center gap-0.5 sm:gap-1 text-[10px] sm:text-xs text-muted">
+                    {% if best_odds.spread_line is not None %}
+                        <span class="font-mono">{{ game.home_team.abbreviation }} {% if best_odds.spread_line > 0 %}+{% endif %}{{ best_odds.spread_line|floatformat:1 }}</span>
+                    {% endif %}
+                    {% if best_odds.total_line is not None %}
+                        <span class="font-mono">O/U {{ best_odds.total_line|floatformat:1 }}</span>
+                    {% endif %}
+                </div>
+                {% endif %}
+            {% endif %}
+        </div>
+
+        <!-- Home team -->
+        <a href="{% url 'nfl_games:team_detail' game.home_team.abbreviation %}" class="text-center flex-1 min-w-0 hover:opacity-80 transition-opacity">
+            {% if game.home_team.logo_url %}
+                <img src="{{ game.home_team.logo_url }}" alt="" class="w-10 h-10 sm:w-16 sm:h-16 mx-auto mb-1 sm:mb-2 object-contain">
+            {% endif %}
+            <h2 class="font-bold leading-tight {% if game.is_final and game.home_score < game.away_score and not game.is_tie %}text-muted{% endif %}">
+                <span class="text-sm sm:hidden">{{ game.home_team.abbreviation }}</span>
+                <span class="hidden sm:inline text-lg">{{ game.home_team.short_name }}</span>
+            </h2>
+            {% if game.is_final %}
+                {% if game.is_tie %}
+                    <span class="inline-block mt-0.5 sm:mt-1 text-xs font-semibold text-muted">T</span>
+                {% elif game.home_score > game.away_score %}
+                    <span class="inline-block mt-0.5 sm:mt-1 text-xs font-semibold text-positive">W</span>
+                {% else %}
+                    <span class="inline-block mt-0.5 sm:mt-1 text-xs font-semibold text-danger">L</span>
+                {% endif %}
+            {% elif home_standing %}
+                <p class="text-[10px] sm:text-xs text-muted mt-0.5 sm:mt-1">{{ home_standing.wins }}-{{ home_standing.losses }}{% if home_standing.ties %}-{{ home_standing.ties }}{% endif %}</p>
+            {% endif %}
+        </a>
+    </div>
+
+    <!-- Quarter-by-quarter scoring -->
+    {% if quarter_scores %}
+    <div class="mt-4 overflow-x-auto">
+        <table class="w-full text-xs text-center">
+            <thead>
+                <tr class="text-muted border-b border-outline-variant">
+                    <th class="px-2 py-1 text-left w-24"></th>
+                    <th class="px-2 py-1">Q1</th>
+                    <th class="px-2 py-1">Q2</th>
+                    <th class="px-2 py-1">Q3</th>
+                    <th class="px-2 py-1">Q4</th>
+                    {% if quarter_scores.has_ot %}<th class="px-2 py-1">OT</th>{% endif %}
+                    <th class="px-2 py-1 font-bold">Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr class="border-b border-outline-variant/50">
+                    <td class="px-2 py-1 text-left font-medium">{{ game.away_team.abbreviation }}</td>
+                    {% for q in quarter_scores.away %}
+                    <td class="px-2 py-1 font-mono">{{ q|default:"—" }}</td>
+                    {% endfor %}
+                    {% if quarter_scores.has_ot %}<td class="px-2 py-1 font-mono">{{ quarter_scores.away_ot|default:"—" }}</td>{% endif %}
+                    <td class="px-2 py-1 font-mono font-bold">{{ game.away_score }}</td>
+                </tr>
+                <tr>
+                    <td class="px-2 py-1 text-left font-medium">{{ game.home_team.abbreviation }}</td>
+                    {% for q in quarter_scores.home %}
+                    <td class="px-2 py-1 font-mono">{{ q|default:"—" }}</td>
+                    {% endfor %}
+                    {% if quarter_scores.has_ot %}<td class="px-2 py-1 font-mono">{{ quarter_scores.home_ot|default:"—" }}</td>{% endif %}
+                    <td class="px-2 py-1 font-mono font-bold">{{ game.home_score }}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    <!-- Footer info -->
+    <div class="text-center mt-3 sm:mt-4 text-xs sm:text-sm text-muted">
+        {% if game.is_live %}
+            <span id="last-updated" class="text-xs">Score updated just now</span>
+            <span class="ws-status mt-1">
+                <span id="ws-dot" class="ws-status-dot connecting"></span>
+                <span id="ws-label">Connecting</span>
+            </span>
+        {% elif game.status == "SCHEDULED" and game.kickoff %}
+            <time datetime="{{ game.kickoff|date:'c' }}">{{ game.kickoff|date:"l, F j, Y — g:i A" }}</time>
+            <div id="countdown" class="mt-2 text-xs font-mono text-primary" data-kickoff="{{ game.kickoff|date:'c' }}"></div>
+        {% elif game.kickoff %}
+            <time datetime="{{ game.kickoff|date:'c' }}">{{ game.kickoff|date:"l, F j, Y — g:i A" }}</time>
+        {% else %}
+            {{ game.game_date|date:"l, F j, Y" }}
+        {% endif %}
+    </div>
+</div>
+
+{% if game.status == "SCHEDULED" and game.kickoff %}
+<script>
+(function() {
+    var el = document.getElementById('countdown');
+    if (!el) return;
+    var kickoff = new Date(el.dataset.kickoff).getTime();
+
+    function pad(n) { return n < 10 ? '0' + n : n; }
+
+    function tick() {
+        var diff = kickoff - Date.now();
+        if (diff <= 0) {
+            el.textContent = 'Kickoff!';
+            return;
+        }
+        var d = Math.floor(diff / 86400000);
+        var h = Math.floor((diff % 86400000) / 3600000);
+        var m = Math.floor((diff % 3600000) / 60000);
+        var s = Math.floor((diff % 60000) / 1000);
+
+        if (d > 0) {
+            el.textContent = d + 'd ' + pad(h) + 'h ' + pad(m) + 'm';
+        } else {
+            el.textContent = pad(h) + ':' + pad(m) + ':' + pad(s);
+        }
+        requestAnimationFrame(tick);
+    }
+    tick();
+})();
+</script>
+{% endif %}

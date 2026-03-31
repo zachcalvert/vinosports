@@ -1,0 +1,148 @@
+{% if user.is_authenticated %}
+<div id="parlay-slip-panel"
+     class="fixed bottom-4 right-4 z-40 flex flex-col items-end gap-2 max-w-xs w-full sm:w-80">
+
+    {% if parlay_leg_count > 0 or parlay_error %}
+    <!-- Slip body -->
+    <div id="parlay-slip-body"
+         class="w-full bg-surface-container-lowest border border-primary/30 rounded-xl shadow-2xl overflow-hidden">
+
+        {% if parlay_leg_count > 0 %}
+        <!-- Header -->
+        <div class="flex items-center justify-between px-4 py-3 border-b border-outline-variant/60 bg-accent-light">
+            <div class="flex items-center gap-2">
+                <span class="font-headline font-black text-xs uppercase tracking-widest text-secondary">Parlay Slip</span>
+                <span class="bg-primary text-dark text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">{{ parlay_leg_count }}</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <form hx-post="{% url 'nfl_betting:parlay_clear' %}"
+                      hx-target="#parlay-slip-panel"
+                      hx-swap="outerHTML"
+                      class="inline">
+                    {% csrf_token %}
+                    <button type="submit"
+                            class="text-xs text-muted hover:text-danger transition-colors">
+                        Clear
+                    </button>
+                </form>
+                <button onclick="document.getElementById('parlay-slip-body').classList.toggle('hidden');document.getElementById('parlay-slip-toggle').classList.toggle('hidden')"
+                        class="text-muted hover:text-primary transition-colors ml-1 text-lg leading-none">&times;</button>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if parlay_error %}
+        <div class="bg-danger/10 border-b border-danger/30 px-4 py-2 flex items-center justify-between gap-2">
+            <p class="text-danger text-xs">{{ parlay_error }}</p>
+            <button onclick="this.closest('div.bg-danger\\/10').classList.add('hidden')" class="text-muted hover:text-primary text-sm shrink-0">&times;</button>
+        </div>
+        {% endif %}
+
+        {% if parlay_leg_count > 0 %}
+        <!-- Legs -->
+        <ul class="divide-y divide-outline-variant/40 max-h-48 overflow-y-auto">
+            {% for leg in parlay_legs %}
+            <li class="flex items-center justify-between px-4 py-2 gap-2">
+                <div class="min-w-0 flex-1">
+                    <p class="text-xs font-medium truncate">
+                        {{ leg.game.away_team.abbreviation }}
+                        <span class="text-muted">@</span>
+                        {{ leg.game.home_team.abbreviation }}
+                    </p>
+                    <div class="flex items-center gap-2 mt-0.5">
+                        <span class="text-xs text-primary/80">
+                            {{ leg.market_display }} &middot; {{ leg.selection_display }}
+                            {% if leg.line %}({{ leg.line }}){% endif %}
+                        </span>
+                        {% if leg.odds %}
+                        <span class="text-xs text-muted font-mono">
+                            {% if leg.odds > 0 %}+{% endif %}{{ leg.odds }}
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+                <form hx-post="{% url 'nfl_betting:parlay_remove' %}"
+                      hx-target="#parlay-slip-panel"
+                      hx-swap="outerHTML"
+                      class="inline shrink-0">
+                    {% csrf_token %}
+                    <input type="hidden" name="game_id" value="{{ leg.game.pk }}">
+                    <button type="submit"
+                            class="text-muted hover:text-danger transition-colors text-sm leading-none p-1">&times;</button>
+                </form>
+            </li>
+            {% endfor %}
+        </ul>
+
+        <!-- Combined odds -->
+        {% if parlay_combined_odds %}
+        <div class="flex items-center justify-between px-4 py-2 bg-accent-light border-t border-outline-variant/40">
+            <span class="text-xs text-muted">Combined odds</span>
+            <span class="text-sm font-mono font-bold" id="parlay-combined-odds-display">{{ parlay_combined_odds|floatformat:2 }}x</span>
+        </div>
+        {% endif %}
+
+        <!-- Stake form -->
+        {% if parlay_leg_count >= parlay_min_legs %}
+        <form hx-post="{% url 'nfl_betting:parlay_place' %}"
+              hx-target="#parlay-slip-panel"
+              hx-swap="outerHTML"
+              hx-disabled-elt="find button[type='submit']"
+              data-combined-odds="{{ parlay_combined_odds|floatformat:4 }}"
+              data-max-payout="{{ parlay_max_payout }}"
+              class="px-4 py-3 space-y-2 border-t border-outline-variant/40"
+              id="parlay-stake-form">
+            {% csrf_token %}
+            <div class="flex items-center gap-2">
+                <label class="text-xs text-muted shrink-0">Stake $</label>
+                {{ parlay_form.stake }}
+            </div>
+            <div class="flex items-center justify-between">
+                <span class="text-xs text-muted">Potential payout:</span>
+                <span class="text-sm font-mono font-bold text-primary" id="parlay-payout-display">&mdash;</span>
+            </div>
+            <button type="submit"
+                    class="w-full bg-primary text-dark font-bold text-sm py-2 px-4 rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50">
+                <span class="htmx-indicator"><span class="spinner spinner-sm mr-1"></span></span>
+                Place Parlay
+            </button>
+        </form>
+        {% else %}
+        <div class="px-4 py-3 border-t border-outline-variant/40">
+            <p class="text-xs text-muted text-center">
+                Add {{ parlay_legs_needed }} more leg{{ parlay_legs_needed|pluralize }} to place
+            </p>
+        </div>
+        {% endif %}
+        {% endif %}{# end if parlay_leg_count > 0 #}
+
+    </div>
+
+    {% endif %}
+</div>
+
+<script>
+(function() {
+    var form = document.getElementById('parlay-stake-form');
+    if (!form) return;
+    var stakeInput = document.getElementById('parlay-stake-input');
+    var payoutDisplay = document.getElementById('parlay-payout-display');
+    if (!stakeInput || !payoutDisplay) return;
+
+    var combinedOdds = parseFloat(form.dataset.combinedOdds) || 0;
+    var maxPayout = parseFloat(form.dataset.maxPayout) || 10000;
+
+    function updatePayout() {
+        var stake = parseFloat(stakeInput.value) || 0;
+        if (stake > 0 && combinedOdds > 0) {
+            var payout = Math.min(stake * combinedOdds, maxPayout);
+            payoutDisplay.textContent = '$' + payout.toFixed(2);
+        } else {
+            payoutDisplay.textContent = '\u2014';
+        }
+    }
+
+    stakeInput.addEventListener('input', updatePayout);
+})();
+</script>
+{% endif %}
