@@ -254,6 +254,7 @@ CELERY_TASK_DEFAULT_QUEUE = "default"
 CELERY_TASK_ROUTES = {
     "epl.*": {"queue": "epl"},
     "nba.*": {"queue": "nba"},
+    "nfl.*": {"queue": "nfl"},
 }
 
 # Beat Schedule — EPL and NBA tasks merged, prefixed to avoid key collisions
@@ -410,6 +411,69 @@ CELERY_BEAT_SCHEDULE = {
     "nba-expire-challenges-30m": {
         "task": "nba.website.challenge_tasks.expire_challenges",
         "schedule": timedelta(minutes=30),
+    },
+    # ===== NFL =====
+    # --- Data ingestion ---
+    "nfl-fetch-teams-monthly": {
+        "task": "nfl.games.tasks.fetch_teams",
+        "schedule": crontab(hour=3, minute=30, day_of_month=1),
+    },
+    "nfl-fetch-schedule-daily": {
+        "task": "nfl.games.tasks.fetch_schedule",
+        "schedule": crontab(hour=6, minute=30),
+    },
+    "nfl-fetch-standings-morning": {
+        "task": "nfl.games.tasks.fetch_standings",
+        "schedule": crontab(hour=8, minute=30),
+    },
+    "nfl-fetch-standings-postgame": {
+        "task": "nfl.games.tasks.fetch_standings",
+        "schedule": crontab(hour=2, minute=30),
+    },
+    "nfl-fetch-live-scores-2m": {
+        "task": "nfl.games.tasks.fetch_live_scores",
+        "schedule": crontab(minute="*/2", hour="13-23,0-2", day_of_week="thu,sun,mon"),
+    },
+    # --- NFL Odds ---
+    "nfl-generate-odds-10m": {
+        "task": "nfl.betting.tasks.generate_odds",
+        "schedule": timedelta(minutes=10),
+    },
+    # --- NFL Futures ---
+    "nfl-update-futures-odds-hourly": {
+        "task": "nfl.betting.tasks.update_futures_odds",
+        "schedule": crontab(minute=50),
+    },
+    # --- NFL Settlement ---
+    "nfl-settle-pending-bets-5m": {
+        "task": "nfl.betting.tasks.settle_pending_bets",
+        "schedule": crontab(minute="*/5", hour="13-23,0-2", day_of_week="thu,sun,mon"),
+    },
+    # --- NFL Bots ---
+    "nfl-run-bot-strategies-hourly": {
+        "task": "nfl.bots.tasks.run_bot_strategies",
+        "schedule": crontab(minute=10),
+    },
+    "nfl-generate-featured-parlays-daily": {
+        "task": "nfl.bots.tasks.generate_featured_parlays",
+        "schedule": crontab(hour=10, minute=30),
+    },
+    "nfl-generate-pregame-comments-hourly": {
+        "task": "nfl.discussions.tasks.generate_pregame_comments",
+        "schedule": crontab(minute=20),
+    },
+    "nfl-generate-postgame-comments-hourly": {
+        "task": "nfl.discussions.tasks.generate_postgame_comments",
+        "schedule": crontab(minute=35),
+    },
+    # --- NFL Activity ---
+    "nfl-broadcast-activity-event-20s": {
+        "task": "nfl.activity.tasks.broadcast_next_activity_event",
+        "schedule": timedelta(seconds=20),
+    },
+    "nfl-cleanup-old-activity-events-daily": {
+        "task": "nfl.activity.tasks.cleanup_old_activity_events",
+        "schedule": crontab(hour=5, minute=30),
     },
     # ===== Cross-league =====
     "expire-featured-parlays-30m": {

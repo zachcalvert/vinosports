@@ -14,7 +14,7 @@ primary_region = "iad"
 
 [processes]
   web = "daphne -b 0.0.0.0 -p 8000 --application-close-timeout 10 -t 60 config.asgi:application"
-  worker = "celery -A config worker -l info -Q epl,nba,default"
+  worker = "celery -A config worker -l info -Q epl,nba,nfl,default"
   beat = "celery -A config beat -l info"
 
 [[services]]
