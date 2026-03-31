@@ -13,11 +13,11 @@ from decimal import Decimal
 from celery import shared_task
 from django.utils import timezone
 
-from nfl.betting.models import BetSlip
+from nfl.betting.models import BetSlip, Odds
 from nfl.betting.settlement import BANKRUPTCY_THRESHOLD, grant_bailout
 from nfl.bots.services import place_bot_bets
 from nfl.bots.strategies import STRATEGY_MAP
-from nfl.games.models import Game, GameStatus, Odds
+from nfl.games.models import Game, GameStatus
 from nfl.games.services import today_et
 from vinosports.betting.models import UserBalance
 from vinosports.bots.models import BotProfile
