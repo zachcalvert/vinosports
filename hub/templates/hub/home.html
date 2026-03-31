@@ -137,58 +137,12 @@
 </section>
 {% endif %}
 
-<!-- League Cards -->
-<section class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 {% if featured_parlays %}pb-16{% else %}py-16{% endif %}">
-    <div class="mb-10 text-center">
-        <h2 class="text-3xl sm:text-4xl font-headline font-black uppercase italic text-secondary tracking-tighter">Pick Your League</h2>
-        <p class="font-label text-tertiary font-bold tracking-[0.2em] uppercase text-xs mt-2">Live Odds &bull; Real-Time Data &bull; Leaderboards</p>
-    </div>
-
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {% for key, league in leagues.items %}
-        {% if league.status == "active" %}
-        <a href="{{ league.url }}"
-           class="league-card league-card--active group">
-            <div class="league-card-icon">
-                <i class="{{ league.icon }} text-4xl"></i>
-            </div>
-            <h2 class="text-2xl font-headline font-black uppercase tracking-tight mt-4">
-                {{ league.short }}
-            </h2>
-            <p class="text-sm text-muted mt-2">{{ league.description }}</p>
-            <div class="mt-4 inline-flex items-center gap-1.5 text-sm font-headline font-bold uppercase tracking-widest text-primary group-hover:gap-2.5 transition-all">
-                Enter
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
-                </svg>
-            </div>
-        </a>
-        {% else %}
-        <div class="league-card league-card--soon">
-            <div class="league-card-icon league-card-icon--muted">
-                <i class="{{ league.icon }} text-4xl"></i>
-            </div>
-            <h2 class="text-2xl font-headline font-black uppercase tracking-tight mt-4 text-muted/60">
-                {{ league.short }}
-            </h2>
-            <p class="text-sm text-muted/50 mt-2">{{ league.description }}</p>
-            <div class="mt-4">
-                <span class="inline-block px-3 py-1 rounded-full text-[10px] font-headline font-black uppercase tracking-widest bg-surface-container-high text-muted">
-                    Coming Soon
-                </span>
-            </div>
-        </div>
-        {% endif %}
-        {% endfor %}
-    </div>
-</section>
-
 <!-- The Strategy Room (expanded bot profiles) -->
 <section class="bg-surface-container py-16 px-4 sm:px-8 lg:px-16">
     <div class="max-w-6xl mx-auto">
         <div class="mb-10 border-l-8 border-primary pl-6">
-            <h2 class="text-3xl sm:text-4xl font-headline font-black uppercase italic text-secondary leading-none">The Strategy Room</h2>
-            <p class="font-label text-tertiary font-bold tracking-[0.2em] uppercase text-xs mt-2">Every Bot Has a Strategy &bull; Who's Yours?</p>
+            <h2 class="text-3xl sm:text-4xl font-headline font-black uppercase italic text-secondary leading-none">A note about the bots</h2>
+            <p class="font-label text-tertiary font-bold tracking-[0.2em] uppercase text-xs mt-2">vinosports has been infiltrated by a small number of bots. Defeat them by overtaking them in the leaderboard.</p>
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
