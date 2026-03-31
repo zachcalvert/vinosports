@@ -230,6 +230,12 @@ class BotProfile(AbstractBotProfile):
         blank=True,
         help_text=_("Abbreviation of favourite NBA team (e.g. GSW, OKC)."),
     )
+    nfl_team_abbr = models.CharField(
+        _("NFL team abbreviation"),
+        max_length=5,
+        blank=True,
+        help_text=_("Abbreviation of favourite NFL team (e.g. KC, BUF)."),
+    )
 
     # --- Public profile fields ---
     tagline = models.CharField(

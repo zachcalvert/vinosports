@@ -120,12 +120,14 @@ _Child doc: [0031-NFL_BETTING_ENGINE.md](0031-NFL_BETTING_ENGINE.md)_
 - Props, teasers, game props deferred to post-launch
 
 ### Phase 3: Bot System
-_Child doc: TBD_
+_Child doc: [0032-NFL_BOT_SYSTEM.md](0032-NFL_BOT_SYSTEM.md)_
 
-- Bot personas (team homer bots for 32 teams, archetype bots)
-- Betting strategies adapted for NFL's weekly cadence
-- Commentary generation (pregame, live, postgame)
-- NFL-specific personality traits (the analytics nerd, the "my team's year" guy, the contrarian)
+- Bot personas (~20 at launch: 8 archetype + 12 team homer bots)
+- Betting strategies calibrated for NFL (spread-dominant, key number awareness, weekly cadence)
+- Commentary generation (pregame, postgame) with NFL-specific context (spreads, totals, weekly rhythm)
+- NFL-specific personality traits (the spread whisperer, the lock-of-the-week guy, the analytics nerd)
+- Comment/Discussion/ActivityEvent models for NFL
+- Schedule templates tuned to NFL's weekly game windows (Sunday slate, TNF, SNF, MNF)
 
 ### Phase 4: Website & Views
 _Child doc: TBD_
@@ -176,7 +178,7 @@ _Child doc: TBD_
 |-------|-----|--------|
 | Phase 1: Foundation | [0030-NFL_FOUNDATION.md](0030-NFL_FOUNDATION.md) | Complete |
 | Phase 2: Betting Engine | [0031-NFL_BETTING_ENGINE.md](0031-NFL_BETTING_ENGINE.md) | Complete |
-| Phase 3: Bot System | TBD | Not started |
+| Phase 3: Bot System | [0032-NFL_BOT_SYSTEM.md](0032-NFL_BOT_SYSTEM.md) | Planning |
 | Phase 4: Website & Views | TBD | Not started |
 | Phase 5: Celery Tasks | TBD | Not started |
 | Phase 6: WebSocket | TBD | Not started |
