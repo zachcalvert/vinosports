@@ -19,6 +19,9 @@ db.sqlite3
 media/
 staticfiles/
 
+# Tailwind compiled output
+packages/vinosports-core/src/vinosports/static/vinosports/css/tailwind-out.css
+
 # IDE
 .idea/
 .vscode/

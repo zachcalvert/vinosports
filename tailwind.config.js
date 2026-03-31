@@ -1,0 +1,59 @@
+/** @type {import('tailwindcss').Config} */
+module.exports = {
+  content: [
+    "./packages/vinosports-core/src/vinosports/templates/**/*.html",
+    "./epl/**/templates/**/*.html",
+    "./nba/**/templates/**/*.html",
+    "./nfl/**/templates/**/*.html",
+    "./hub/**/templates/**/*.html",
+  ],
+  theme: {
+    extend: {
+      colors: {
+        /* Legacy token names — backward compat via CSS vars */
+        surface: "rgb(var(--color-surface) / <alpha-value>)",
+        dark: "rgb(var(--color-dark) / <alpha-value>)",
+        accent: "rgb(var(--color-accent) / <alpha-value>)",
+        "accent-light": "rgb(var(--color-accent-light) / <alpha-value>)",
+        muted: "rgb(var(--color-muted) / <alpha-value>)",
+        gold: "rgb(var(--color-gold) / <alpha-value>)",
+        border: "rgb(var(--color-border) / <alpha-value>)",
+        /* Semantic status */
+        danger: "#DC2626",
+        warning: "#D97706",
+        positive: "#16A34A",
+        /* Material Design 3 tokens */
+        primary: "#b3262f",
+        "primary-container": "#d64045",
+        "primary-fixed": "#ffdad8",
+        "primary-fixed-dim": "#ffb3b0",
+        secondary: "#485f84",
+        "secondary-container": "#bbd3fd",
+        tertiary: "#765a05",
+        "tertiary-container": "#917321",
+        "on-primary": "#ffffff",
+        "on-secondary": "#ffffff",
+        "on-tertiary": "#ffffff",
+        "on-surface": "#161d16",
+        "on-surface-variant": "#5a403f",
+        "surface-dim": "#ddd8c8",
+        "surface-container": "#ebe6d6",
+        "surface-container-low": "#f0ebdb",
+        "surface-container-high": "#e5e0d0",
+        "surface-container-highest": "#dfdaca",
+        "surface-container-lowest": "#ffffff",
+        "inverse-surface": "#2a322b",
+        "inverse-on-surface": "#eaf3e7",
+        outline: "#8d706e",
+        "outline-variant": "#e2bebc",
+      },
+      fontFamily: {
+        headline: ["Epilogue", "sans-serif"],
+        body: ["Public Sans", "sans-serif"],
+        label: ["Public Sans", "sans-serif"],
+        mono: ["Roboto Mono", "monospace"],
+      },
+    },
+  },
+  plugins: [],
+};

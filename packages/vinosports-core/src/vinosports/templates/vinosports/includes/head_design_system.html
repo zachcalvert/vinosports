@@ -1,61 +1,9 @@
 {% load static %}
-{# Shared head fragment: Tailwind config, Google Fonts, design-system CSS. #}
+{# Shared head fragment: Tailwind (compiled), Google Fonts, design-system CSS. #}
 {# Include this once in every app's base.html, inside head, BEFORE the app stylesheet. #}
 
-<!-- Tailwind CSS CDN -->
-<script src="https://cdn.tailwindcss.com"></script>
-<script>
-    tailwind.config = {
-        theme: {
-            extend: {
-                colors: {
-                    /* Legacy token names — backward compat via CSS vars */
-                    surface: 'rgb(var(--color-surface) / <alpha-value>)',
-                    dark: 'rgb(var(--color-dark) / <alpha-value>)',
-                    accent: 'rgb(var(--color-accent) / <alpha-value>)',
-                    'accent-light': 'rgb(var(--color-accent-light) / <alpha-value>)',
-                    muted: 'rgb(var(--color-muted) / <alpha-value>)',
-                    gold: 'rgb(var(--color-gold) / <alpha-value>)',
-                    border: 'rgb(var(--color-border) / <alpha-value>)',
-                    /* Semantic status */
-                    danger: '#DC2626',
-                    warning: '#D97706',
-                    positive: '#16A34A',
-                    /* Material Design 3 tokens */
-                    primary: '#b3262f',
-                    'primary-container': '#d64045',
-                    'primary-fixed': '#ffdad8',
-                    'primary-fixed-dim': '#ffb3b0',
-                    secondary: '#485f84',
-                    'secondary-container': '#bbd3fd',
-                    tertiary: '#765a05',
-                    'tertiary-container': '#917321',
-                    'on-primary': '#ffffff',
-                    'on-secondary': '#ffffff',
-                    'on-tertiary': '#ffffff',
-                    'on-surface': '#161d16',
-                    'on-surface-variant': '#5a403f',
-                    'surface-dim': '#ddd8c8',
-                    'surface-container': '#ebe6d6',
-                    'surface-container-low': '#f0ebdb',
-                    'surface-container-high': '#e5e0d0',
-                    'surface-container-highest': '#dfdaca',
-                    'surface-container-lowest': '#ffffff',
-                    'inverse-surface': '#2a322b',
-                    'inverse-on-surface': '#eaf3e7',
-                    outline: '#8d706e',
-                    'outline-variant': '#e2bebc',
-                },
-                fontFamily: {
-                    headline: ['Epilogue', 'sans-serif'],
-                    body: ['Public Sans', 'sans-serif'],
-                    label: ['Public Sans', 'sans-serif'],
-                    mono: ['Roboto Mono', 'monospace'],
-                },
-            }
-        }
-    }
-</script>
+<!-- Tailwind CSS (compiled at build time) -->
+<link rel="stylesheet" href="{% static 'vinosports/css/tailwind-out.css' %}">
 
 <!-- Google Fonts -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -68,9 +16,5 @@
 <!-- Shared design-system CSS (palette, utilities, shared components) -->
 <link rel="stylesheet" href="{% static 'vinosports/css/design-system.css' %}">
 
-<!-- Font families -->
-<style>
-    body { font-family: 'Public Sans', sans-serif; }
-    h1, h2, h3, h4, h5, h6 { font-family: 'Epilogue', sans-serif; }
-    .font-mono { font-family: 'Roboto Mono', 'Courier New', monospace; }
-</style>
+<!-- Alpine.js -->
+<script defer src="https://unpkg.com/alpinejs@3.14.8/dist/cdn.min.js"></script>

@@ -67,6 +67,20 @@ services:
       - ./packages/vinosports-core/src:/packages/vinosports-core/src
       - media:/app/media
 
+  # --- Tailwind CSS watcher (dev only) ---
+  tailwind:
+    <<: *app-build
+    command: ["tailwindcss", "-i", "/packages/vinosports-core/src/vinosports/static/vinosports/css/tailwind.css", "-o", "/packages/vinosports-core/src/vinosports/static/vinosports/css/tailwind-out.css", "--watch", "--poll"]
+    stdin_open: true
+    volumes:
+      - ./tailwind.config.js:/app/tailwind.config.js
+      - ./packages/vinosports-core/src:/packages/vinosports-core/src
+      - ./epl:/app/epl
+      - ./nba:/app/nba
+      - ./nfl:/app/nfl
+      - ./hub:/app/hub
+    depends_on: []
+
   # --- Celery Worker (all queues) ---
   worker:
     <<: *app-build

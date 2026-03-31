@@ -13,13 +13,14 @@
     <!-- HTMX -->
     <script src="https://unpkg.com/htmx.org@2.0.4"></script>
     <script src="https://unpkg.com/htmx-ext-ws@2.0.2/ws.js"></script>
+    <script src="https://unpkg.com/htmx-ext-head-support@2.0.2/head-support.js"></script>
 
     <!-- EPL-specific styles (league-only overrides) -->
     <link rel="stylesheet" href="{% static 'epl_website/css/styles.css' %}">
 
     {% block extra_css %}{% endblock %}
 </head>
-<body class="h-full theme-page">
+<body class="h-full theme-page" hx-boost="true" hx-ext="head-support">
     <div class="grain-overlay"></div>
     <div class="min-h-full flex flex-col">
         {% include "vinosports/components/global_navbar.html" %}
@@ -42,19 +43,25 @@
     </div>
 
     <!-- Mobile sidebar overlay -->
-    <div id="sidebar-overlay" class="sidebar-overlay hidden" aria-hidden="true">
-        <div class="sidebar-backdrop"></div>
-        <aside class="sidebar-drawer">
-            <div class="sidebar-drawer-header">
-                <span class="text-sm font-semibold uppercase tracking-wider text-muted">EPL</span>
-                <button id="sidebar-close" type="button" class="sidebar-close-btn" aria-label="Close sidebar">
-                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
-                    </svg>
-                </button>
-            </div>
-            {% include "epl_website/components/sidebar.html" %}
-        </aside>
+    <div x-data="{ open: false }"
+         @toggle-sidebar.window="open = !open"
+         @keydown.escape.window="open = false">
+        <div x-show="open"
+             class="sidebar-overlay"
+             x-cloak>
+            <div class="sidebar-backdrop" @click="open = false"></div>
+            <aside class="sidebar-drawer">
+                <div class="sidebar-drawer-header">
+                    <span class="text-sm font-semibold uppercase tracking-wider text-muted">EPL</span>
+                    <button type="button" class="sidebar-close-btn" aria-label="Close sidebar" @click="open = false">
+                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+                {% include "epl_website/components/sidebar.html" %}
+            </aside>
+        </div>
     </div>
 
     {% if is_bankrupt %}
@@ -86,26 +93,6 @@
          hx-ext="ws" ws-connect="/epl/ws/activity/">
     </div>
     {% endif %}
-
-    <!-- Reload on bfcache restore — Tailwind CDN doesn't re-run after back/forward navigation -->
-    <script>
-        window.addEventListener('pageshow', function(e) {
-            if (e.persisted) { window.location.reload(); }
-        });
-    </script>
-
-    <!-- Mobile sidebar close handlers -->
-    <script>
-    (function() {
-        var overlay = document.getElementById('sidebar-overlay');
-        if (!overlay) return;
-        var backdrop = overlay.querySelector('.sidebar-backdrop');
-        var closeBtn = document.getElementById('sidebar-close');
-        function closeSidebar() { overlay.classList.add('hidden'); overlay.setAttribute('aria-hidden', 'true'); }
-        if (backdrop) backdrop.addEventListener('click', closeSidebar);
-        if (closeBtn) closeBtn.addEventListener('click', closeSidebar);
-    })();
-    </script>
 
     <!-- Global HTMX CSRF + error handler -->
     <script>

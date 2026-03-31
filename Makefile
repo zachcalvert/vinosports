@@ -1,7 +1,11 @@
-.PHONY: up down restart logs shell migrate seed lint format test test-ci
+.PHONY: up down restart logs shell migrate seed lint format test test-ci tw tw-watch
 
 up:
 	docker compose up --build -d
+	docker compose run --rm tailwind tailwindcss \
+		-i /packages/vinosports-core/src/vinosports/static/vinosports/css/tailwind.css \
+		-o /packages/vinosports-core/src/vinosports/static/vinosports/css/tailwind-out.css \
+		--minify
 
 down:
 	docker compose down
@@ -27,6 +31,15 @@ seed:
 	docker compose exec web python manage.py seed_epl_futures
 	docker compose exec web python manage.py seed_nba_futures
 	docker compose exec web python manage.py seed_nfl_futures
+
+tw:
+	docker compose exec tailwind tailwindcss \
+		-i /packages/vinosports-core/src/vinosports/static/vinosports/css/tailwind.css \
+		-o /packages/vinosports-core/src/vinosports/static/vinosports/css/tailwind-out.css \
+		--minify
+
+tw-watch:
+	docker compose up tailwind
 
 lint:
 	ruff check . --fix

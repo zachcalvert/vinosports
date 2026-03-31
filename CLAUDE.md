@@ -42,7 +42,7 @@ nfl/             # NFL — fully featured (games, betting, bots, discussions, we
 - **Single shared DB**: All apps share one PostgreSQL instance. One user account + balance works across all leagues
 - **Hub owns auth**: Signup, login, logout live in hub at the root path. League apps redirect `/login/` and `/signup/` to hub
 - **Admin deduplication**: Shared core models (UserBalance, Badge, UserBadge) are registered in EPL's admin only, not duplicated across leagues
-- **HTMX frontend**: Server-rendered templates with HTMX for interactivity. No JS framework
+- **DHA frontend stack**: Django + HTMX + Alpine.js. Server-rendered templates, HTMX for server communication and `hx-boost` SPA-like navigation, Alpine.js for client-side UI state (dropdowns, sidebars, toggles). Tailwind CSS compiled at build time via standalone CLI (no Node.js). See `docs/0034-FRONTEND_PERFORMANCE.md`
 - **WebSocket routing**: Defined in `config/asgi.py` with nested `URLRouter` — `path("epl/", URLRouter(...))`, `path("nba/", URLRouter(...))`, `path("nfl/", URLRouter(...))`
 
 ## Production
@@ -95,26 +95,28 @@ Copy `.env.example` to `.env` and fill in API keys:
 - `BDL_API_KEY` — BallDontLie (NBA + EPL data, All-Star tier)
 - `ANTHROPIC_API_KEY` — Claude API (bot commentary)
 
-## Docker Services (6 total)
+## Docker Services (7 total)
 
 | Service | Description |
 |---------|-------------|
 | `db` | PostgreSQL |
 | `redis` | Redis (Celery broker + Channels layer) |
-| `nginx` | Reverse proxy (port 80, WebSocket support) |
 | `web` | Django dev server (all leagues) |
+| `tailwind` | Tailwind CSS watcher (rebuilds on template changes) |
 | `worker` | Celery worker (`-Q epl,nba,nfl`) |
 | `beat` | Celery beat scheduler |
 
 ## Common Commands
 
 ```bash
-make up                # docker compose up --build -d
+make up                # docker compose up --build -d + initial Tailwind build
 make down              # docker compose down
 make logs              # docker compose logs -f
 make shell             # exec into web container
 make migrate           # run migrations
 make seed              # populate EPL + NBA + NFL data
+make tw                # one-shot Tailwind build (minified)
+make tw-watch          # start Tailwind watcher in foreground
 make lint              # ruff check + format
 make test              # run tests (parallel + reuse-db, ~30s)
 make test-ci           # run tests with coverage report (parallel, no reuse-db)
@@ -124,6 +126,7 @@ make test-ci           # run tests with coverage report (parallel, no reuse-db)
 
 - Docker volume mounts provide **hot reload** — edit Python files and the dev server auto-restarts
 - Web service uses `runserver` in dev (auto-reload). Production uses Daphne (see `fly.toml`)
+- Tailwind watcher auto-rebuilds CSS when templates change (~1s rebuild)
 - Worker/beat services mount code too but need manual container restart for changes
 - Pre-commit hooks run ruff on every commit
 - **Host dependency**: `ruff` must be installed locally for `make lint` / `make format` (`pip install ruff` or `brew install ruff`)
@@ -175,4 +178,5 @@ See `docs/` for architecture decisions and setup guides:
 - `0019-UNIFIED_DJANGO_PROJECT.md` — Merge from three projects into one (this refactor)
 - `0027-TEST_INFRASTRUCTURE.md` — Test infrastructure and baseline coverage
 - `0028-TEST_COVERAGE_AND_PERFORMANCE.md` — Coverage push to 90% and parallelization
+- `0034-FRONTEND_PERFORMANCE.md` — Tailwind build-time CLI, Alpine.js, hx-boost, WhiteNoise optimization
 - `9999-PRE_LAUNCH_PLAN.md` — Pre-launch checklist (all phases complete)
