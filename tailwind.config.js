@@ -2,6 +2,7 @@
 module.exports = {
   content: [
     "./packages/vinosports-core/src/vinosports/templates/**/*.html",
+    "/packages/vinosports-core/src/vinosports/templates/**/*.html",
     "./epl/**/templates/**/*.html",
     "./nba/**/templates/**/*.html",
     "./nfl/**/templates/**/*.html",

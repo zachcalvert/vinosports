@@ -1,7 +1,7 @@
 {% load i18n %}
-<div id="featured-parlay-{{ parlay.pk }}" class="bg-surface-container-lowest rounded-xl border border-outline-variant overflow-hidden flex flex-col h-full">
+<div id="featured-parlay-{{ parlay.pk }}" class="bg-surface-container-lowest rounded-xl border border-outline-variant overflow-hidden flex flex-col h-full shadow-sm hover:shadow-md transition-shadow">
     {% if featured_error %}
-    <div class="px-5 pt-3">
+    <div class="px-5 pt-4">
         <div class="rounded-lg bg-error/10 border border-error/20 px-3 py-2">
             <p class="text-xs font-label text-error">{{ featured_error }}</p>
         </div>
@@ -12,9 +12,9 @@
     <div class="flex items-center justify-between px-5 pt-5 pb-3">
         <div class="flex items-center gap-3">
             {% if parlay.sponsor.profile_image %}
-            <img src="{{ parlay.sponsor.profile_image.url }}" class="w-10 h-10 rounded-full object-cover flex-shrink-0" alt="">
+            <img src="{{ parlay.sponsor.profile_image.url }}" class="w-10 h-10 rounded-full object-cover flex-shrink-0 ring-2 ring-outline-variant" alt="">
             {% elif parlay.sponsor.bot_profile %}
-            <div class="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
+            <div class="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ring-2 ring-white/20"
                  style="background-color: {{ parlay.sponsor.bot_profile.avatar_bg }};">
                 <i class="ph-duotone ph-{{ parlay.sponsor.bot_profile.avatar_icon }} text-lg text-white"></i>
             </div>
@@ -27,7 +27,9 @@
             </div>
         </div>
         <span class="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-headline font-bold uppercase tracking-widest
-                      {% if parlay.league == 'epl' %}bg-primary/10 text-primary{% else %}bg-primary/10 text-primary{% endif %}">
+                      {% if parlay.league == 'epl' %}bg-tertiary-container/20 text-tertiary
+                      {% elif parlay.league == 'nba' %}bg-secondary-container/30 text-secondary
+                      {% else %}bg-primary/10 text-primary{% endif %}">
             {{ parlay.league|upper }}
         </span>
     </div>
@@ -38,40 +40,40 @@
             {{ parlay.title }}
         </h3>
         {% if parlay.description %}
-        <p class="text-xs text-muted mt-1 font-body leading-relaxed">{{ parlay.description }}</p>
+        <p class="text-xs text-muted mt-1.5 font-body leading-relaxed">{{ parlay.description }}</p>
         {% endif %}
     </div>
 
     {# Legs #}
-    <div class="px-5 pb-3 space-y-1.5">
+    <div class="mx-5 mb-3 rounded-lg bg-surface-container-low border border-outline-variant/50 divide-y divide-outline-variant/50">
         {% for leg in parlay.legs.all %}
-        <div class="flex items-center justify-between text-sm">
+        <div class="flex items-center justify-between px-3 py-2.5 text-sm">
             <div class="flex items-center gap-2 min-w-0">
                 <span class="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0"></span>
                 <span class="font-body text-secondary truncate">{{ leg.event_label }}</span>
             </div>
-            <div class="flex items-center gap-2 flex-shrink-0 ml-3">
+            <div class="flex items-center gap-2.5 flex-shrink-0 ml-3">
                 <span class="font-label font-bold text-xs text-primary uppercase tracking-wide">{{ leg.selection_label }}</span>
-                <span class="font-mono text-xs text-muted">{{ leg.odds_snapshot }}x</span>
+                <span class="font-mono text-xs text-muted tabular-nums">{{ leg.odds_snapshot }}x</span>
             </div>
         </div>
         {% endfor %}
     </div>
 
     {# Footer: combined odds + payout #}
-    <div class="flex items-center justify-between px-5 py-3 bg-surface-container border-t border-outline-variant mt-auto">
-        <div>
-            <span class="text-[10px] font-label text-muted uppercase tracking-widest">Combined Odds</span>
-            <p class="font-mono font-bold text-primary text-lg leading-tight">{{ parlay.combined_odds }}x</p>
+    <div class="flex items-center justify-between px-5 py-3.5 border-t border-outline-variant mt-auto bg-surface-container-low">
+        <div class="p-2">
+            <span class="text-[10px] font-label text-muted uppercase tracking-widest block">Combined Odds</span>
+            <p class="font-mono font-bold text-primary text-2xl leading-tight tabular-nums">{{ parlay.combined_odds }}x</p>
         </div>
         <div class="text-right">
-            <span class="text-[10px] font-label text-muted uppercase tracking-widest">${{ parlay.reference_stake }} returns</span>
-            <p class="font-mono font-bold text-positive text-lg leading-tight">${{ parlay.potential_payout }}</p>
+            <span class="text-[10px] font-label text-muted uppercase tracking-widest block">${{ parlay.reference_stake }} returns</span>
+            <p class="font-mono font-bold text-positive text-2xl leading-tight tabular-nums">${{ parlay.potential_payout }}</p>
         </div>
     </div>
 
     {# Opt-in button #}
-    <div class="px-5 pb-4 pt-2">
+    <div class="px-5 pb-5 pt-3 bg-surface-container-low">
         {% if user.is_authenticated %}
         <form {% if parlay.league == 'epl' %}hx-post="{% url 'epl_betting:place_featured_parlay' parlay.pk %}"{% else %}hx-post="{% url 'nba_betting:place_featured_parlay' parlay.pk %}"{% endif %}
               hx-target="#featured-parlay-{{ parlay.pk }}"
@@ -82,19 +84,20 @@
                     <span class="absolute left-3 top-1/2 -translate-y-1/2 text-muted font-mono text-sm">$</span>
                     <input type="number" name="stake" value="{{ parlay.reference_stake }}"
                            min="0.50" max="10000" step="0.50"
-                           class="w-full pl-7 pr-3 py-2.5 rounded-lg bg-surface-container border border-outline-variant
-                                  font-mono text-sm text-secondary focus:border-primary focus:outline-none"
+                           class="w-full pl-7 pr-3 py-2.5 rounded-lg bg-surface-container-lowest border border-outline-variant
+                                  font-mono text-sm text-secondary tabular-nums
+                                  focus:border-primary focus:ring-2 focus:ring-primary/15 focus:outline-none transition-all"
                            aria-label="Wager amount">
                 </div>
                 <button type="submit"
-                        class="flex-shrink-0 px-5 py-2.5 rounded-lg bg-primary text-on-primary font-headline font-bold text-sm uppercase tracking-widest hover:bg-primary/90 transition-colors">
+                        class="jukebox-btn flex-shrink-0 px-5 py-2.5 rounded-lg bg-primary text-on-primary font-headline font-bold text-sm uppercase tracking-widest">
                     Place Bet
                 </button>
             </div>
         </form>
         {% else %}
         <a href="{% url 'hub:signup' %}"
-           class="block w-full py-2.5 rounded-lg bg-primary text-on-primary font-headline font-bold text-sm uppercase tracking-widest text-center hover:bg-primary/90 transition-colors">
+           class="jukebox-btn block w-full py-2.5 rounded-lg bg-primary text-on-primary font-headline font-bold text-sm uppercase tracking-widest text-center">
             Sign Up to Bet
         </a>
         {% endif %}
