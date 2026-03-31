@@ -1,7 +1,7 @@
 # 0031: NFL Betting Engine
 
 **Date:** 2026-03-30
-**Status:** Planning
+**Status:** Complete
 **Parent:** [0029-NFL_LEAGUE.md](0029-NFL_LEAGUE.md)
 **Depends on:** [0030-NFL_FOUNDATION.md](0030-NFL_FOUNDATION.md) (Complete)
 **API Tier:** Free tier for initial build; All-Star ($9.99/mo) needed for standings-driven odds engine if we want data-informed odds closer to season start
@@ -374,3 +374,31 @@ Follow NBA patterns. These will be fully wired up in Phase 4 (website).
 1. **Spread key numbers**: Favor key numbers (3, 7, 10). The odds engine should snap to these when the raw spread is close (e.g., raw 2.8 → snap to 3.0, raw 6.7 → snap to 7.0). Makes the simulation feel authentic.
 2. **Overtime scoring for totals**: Include OT in the total. Settlement uses `game.home_score` + `game.away_score` which is the final score including any overtime. This matches real sportsbook behavior.
 3. **Division futures timing**: Generate from day one using preseason/previous-season data. Same approach as core odds engine — blend previous season heavily early, fade to current season by mid-season.
+
+## Implementation Notes
+
+### Files Created
+
+- `nfl/betting/models.py` — BetSlip, Parlay, ParlayLeg, Odds, FuturesMarket (with DIVISION market type), FuturesOutcome, FuturesBet
+- `nfl/betting/settlement.py` — `_evaluate_bet_outcome`, `settle_game_bets`, `_evaluate_parlay`, odds conversion helpers, bankruptcy/bailout
+- `nfl/betting/balance.py` — `log_transaction` wrapper with auto-locking
+- `nfl/betting/stats.py` — `record_bet_result` for UserStats tracking
+- `nfl/betting/odds_engine.py` — House odds generation with key number snapping (`_snap_to_key_number`), NFL-calibrated constants (BASE_TOTAL=44, SPREAD_FACTOR=28)
+- `nfl/betting/futures_odds_engine.py` — Softmax-based odds for Super Bowl, Conference, Division markets with NFL-specific margins
+- `nfl/betting/futures_settlement.py` — `settle_futures_market`, `void_futures_market`
+- `nfl/betting/parlay_adapter.py` — `NFLParlayAdapter` implementing `LeagueAdapter`
+- `nfl/betting/admin.py` — Admin registrations for all 7 betting models including Odds
+- `nfl/betting/forms.py` — PlaceBetForm, PlaceParlayForm, PlaceFuturesBetForm
+- `nfl/betting/signals.py` — Reward rule evaluation on BetSlip/Parlay creation
+- `nfl/betting/apps.py` — Updated with `ready()` to register signals, parlay adapter, and challenge league models
+- `nfl/betting/management/commands/seed_nfl_futures.py` — Seeds all 11 markets (1 Super Bowl + 2 Conference + 8 Division)
+
+### Key Design Decisions
+
+- **Odds model in nfl_betting**: Unlike NBA where Odds lives in `nba_games`, NFL Odds is in `nfl_betting` since it's purely a betting construct
+- **Signals follow reward rules pattern**: NBA uses `RewardRule` evaluation (not `check_challenge_progress`), so NFL mirrors that
+- **Apps.py ready()**: Registers NFLParlayAdapter with ParlayBuilder and NFL models with challenge engine, matching NBA pattern
+
+### Test Results
+
+128 NFL tests passing. Full suite (1,579 tests) passes with no regressions.

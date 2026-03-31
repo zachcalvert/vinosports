@@ -175,7 +175,7 @@ _Child doc: TBD_
 | Phase | Doc | Status |
 |-------|-----|--------|
 | Phase 1: Foundation | [0030-NFL_FOUNDATION.md](0030-NFL_FOUNDATION.md) | Complete |
-| Phase 2: Betting Engine | [0031-NFL_BETTING_ENGINE.md](0031-NFL_BETTING_ENGINE.md) | Planning |
+| Phase 2: Betting Engine | [0031-NFL_BETTING_ENGINE.md](0031-NFL_BETTING_ENGINE.md) | Complete |
 | Phase 3: Bot System | TBD | Not started |
 | Phase 4: Website & Views | TBD | Not started |
 | Phase 5: Celery Tasks | TBD | Not started |
