@@ -82,7 +82,7 @@ class DashboardView(TemplateView):
     template_name = "matches/dashboard.html"
 
     def get_template_names(self):
-        if self.request.htmx:
+        if self.request.htmx and not self.request.htmx.boosted:
             return ["matches/partials/fixture_list_htmx.html"]
         return [self.template_name]
 
@@ -105,7 +105,7 @@ class DashboardView(TemplateView):
         ctx["current_matchday"] = matchday
 
         # HTMX partial requests only need match data
-        if self.request.htmx:
+        if self.request.htmx and not self.request.htmx.boosted:
             return ctx
 
         ctx["leaderboard"] = get_leaderboard_entries()
@@ -151,7 +151,7 @@ class LeaderboardView(TemplateView):
         return board_type if board_type in BOARD_TYPES else "balance"
 
     def get_template_names(self):
-        if self.request.htmx:
+        if self.request.htmx and not self.request.htmx.boosted:
             return ["matches/partials/leaderboard_table.html"]
         return [self.template_name]
 
