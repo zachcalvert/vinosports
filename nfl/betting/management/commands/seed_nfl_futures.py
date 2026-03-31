@@ -36,9 +36,14 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         today = timezone.now().date()
-        season = options["season"] or (
-            today.year if today.month >= 9 else today.year - 1
-        )
+        # NFL season runs Sep–Feb.  During the offseason (Mar–Aug) default
+        # to the *upcoming* season so futures target next year.
+        if options["season"]:
+            season = options["season"]
+        elif today.month >= 3 and today.month < 9:
+            season = today.year
+        else:
+            season = today.year if today.month >= 9 else today.year - 1
         season_str = str(season)
 
         teams = list(Team.objects.all())

@@ -565,7 +565,13 @@ class FuturesListView(TemplateView):
         from vinosports.betting.models import FuturesMarketStatus
 
         today = timezone.now().date()
-        season = str(today.year if today.month >= 9 else today.year - 1)
+        # NFL season runs Sep–Feb.  During the offseason (Mar–Aug) show
+        # futures for the *upcoming* season (same calendar year).
+        if today.month >= 3 and today.month < 9:
+            season = str(today.year)
+        else:
+            # Sep–Feb: current season started in Sep of this/last year
+            season = str(today.year if today.month >= 9 else today.year - 1)
 
         markets = FuturesMarket.objects.filter(
             season=season,
@@ -603,6 +609,7 @@ class FuturesListView(TemplateView):
             key=lambda m: m["market"].get_market_type_display() or ""
         )
 
+        ctx["season"] = season
         ctx["super_bowl"] = super_bowl
         ctx["conference_markets"] = conference_markets
         ctx["division_markets"] = division_markets

@@ -144,9 +144,9 @@ class NFLDataClient:
             page_delay: Seconds to sleep between paginated requests.
                         Use 1-2s for bulk backfills to avoid 429s.
         """
-        params: dict[str, Any] = {"season": season}
+        params: dict[str, Any] = {"seasons[]": season}
         if week is not None:
-            params["week"] = week
+            params["weeks[]"] = week
         if game_date:
             params["dates[]"] = game_date.isoformat()
         raw = self._get_all("/games", params=params, page_delay=page_delay)
