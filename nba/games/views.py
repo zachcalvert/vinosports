@@ -108,7 +108,8 @@ class ScheduleView(LoginRequiredMixin, View):
             "odds_by_game": odds_by_game,
         }
 
-        if getattr(request, "htmx", False):
+        htmx = getattr(request, "htmx", False)
+        if htmx and not htmx.boosted:
             return render(request, "games/partials/schedule_content.html", ctx)
         return render(request, "games/schedule.html", ctx)
 
@@ -162,7 +163,8 @@ class StandingsView(LoginRequiredMixin, View):
             "division_name": division_name,
         }
 
-        if getattr(request, "htmx", False):
+        htmx = getattr(request, "htmx", False)
+        if htmx and not htmx.boosted:
             return render(request, "games/partials/standings_panel.html", ctx)
         return render(request, "games/standings.html", ctx)
 

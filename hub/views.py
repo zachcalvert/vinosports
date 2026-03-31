@@ -510,7 +510,8 @@ class StandingsView(TemplateView):
         return board_type if board_type in BOARD_TYPES else "balance"
 
     def get_template_names(self):
-        if getattr(self.request, "htmx", False):
+        htmx = getattr(self.request, "htmx", False)
+        if htmx and not htmx.boosted:
             return ["hub/partials/standings_table.html"]
         return [self.template_name]
 

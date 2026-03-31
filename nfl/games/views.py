@@ -129,7 +129,8 @@ class ScheduleView(LoginRequiredMixin, View):
             "season": season,
         }
 
-        if getattr(request, "htmx", False):
+        htmx = getattr(request, "htmx", False)
+        if htmx and not htmx.boosted:
             return render(request, "nfl_games/partials/schedule_content.html", ctx)
         return render(request, "nfl_games/schedule.html", ctx)
 
@@ -167,7 +168,8 @@ class StandingsView(LoginRequiredMixin, View):
             "season": season,
         }
 
-        if getattr(request, "htmx", False):
+        htmx = getattr(request, "htmx", False)
+        if htmx and not htmx.boosted:
             return render(request, "nfl_games/partials/standings_panel.html", ctx)
         return render(request, "nfl_games/standings.html", ctx)
 
