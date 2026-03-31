@@ -166,6 +166,7 @@ BOT_PERSONAS = [
         "schedule_template_slug": "night-owl",
         "nba_team_abbr": "GSW",
         "epl_team_tla": "CHE",
+        "nfl_team_abbr": "SF",
         "tagline": "Disrupting the betting space, one high-leverage play at a time.",
         "persona_prompt": (
             "Started watching sports in 2015. Talks about everything in startup "
@@ -189,6 +190,7 @@ BOT_PERSONAS = [
         "schedule_template_slug": "weekend-warrior",
         "nba_team_abbr": "OKC",
         "epl_team_tla": "MCI",
+        "nfl_team_abbr": "KC",
         "tagline": "Just happy to be here. Go team!",
         "persona_prompt": (
             "Just got into sports because his kid loves it. Asks genuine questions "
@@ -213,6 +215,7 @@ BOT_PERSONAS = [
         "schedule_template_slug": "nine-to-five-grinder",
         "nba_team_abbr": "OKC",
         "epl_team_tla": "MUN",
+        "nfl_team_abbr": "KC",
         "tagline": "Man cave certified. Let's go.",
         "persona_prompt": (
             "Dan's buddy from the neighbourhood. Got into sports through his kids "
@@ -237,6 +240,7 @@ BOT_PERSONAS = [
         "schedule_template_slug": "heavy-bettor-lurker",
         "nba_team_abbr": "WAS",
         "epl_team_tla": "FUL",
+        "nfl_team_abbr": "JAX",
         "tagline": "Still watching.",
         "persona_prompt": (
             "Says absolutely nothing for weeks. Then a massive upset happens and "
@@ -258,6 +262,7 @@ BOT_PERSONAS = [
         "schedule_template_slug": "nine-to-five-grinder",
         "nba_team_abbr": "CHI",
         "epl_team_tla": "NEW",
+        "nfl_team_abbr": "DAL",
         "tagline": "They just don't make 'em like they used to.",
         "persona_prompt": (
             "Thinks sports peaked sometime between 1988 and 1998. Today's players "
@@ -282,6 +287,7 @@ BOT_PERSONAS = [
         "schedule_template_slug": "night-owl",
         "nba_team_abbr": "PHX",
         "epl_team_tla": "WHU",
+        "nfl_team_abbr": "LV",
         "tagline": "The lines don't move by accident.",
         "persona_prompt": (
             "Everything is rigged and she has the receipts. Refs have earpieces. "
@@ -310,6 +316,7 @@ BOT_PERSONAS = [
         "schedule_template_slug": "night-owl",
         "nba_team_abbr": "CHA",
         "epl_team_tla": "CRY",
+        "nfl_team_abbr": "CLE",
         "tagline": "Follow the money. Every time.",
         "persona_prompt": (
             "The league is rigged and he has the receipts — in a binder, "
@@ -334,6 +341,7 @@ BOT_PERSONAS = [
         "schedule_template_slug": "heavy-commenter-light-bettor",
         "nba_team_abbr": "",
         "epl_team_tla": "",
+        "nfl_team_abbr": "",
         "tagline": "Your hot take is a statistical outlier.",
         "persona_prompt": (
             "Responds to every take with a stats reference. Speaks exclusively in "
@@ -359,6 +367,7 @@ BOT_PERSONAS = [
         "schedule_template_slug": "weekend-warrior",
         "nba_team_abbr": "MIL",
         "epl_team_tla": "LIV",
+        "nfl_team_abbr": "",
         "tagline": "One day the acca lands. Today might be that day.",
         "persona_prompt": (
             "Lives for the accumulator. Never places a single-match bet when he "
@@ -384,6 +393,7 @@ BOT_PERSONAS = [
         "schedule_template_slug": "night-owl",
         "nba_team_abbr": "OKC",
         "epl_team_tla": "ARS",
+        "nfl_team_abbr": "BUF",
         "tagline": "Ethical hacker. White hat. Certified threat to the algo.",
         "persona_prompt": (
             "Teenager who is very into 'ethical hacking'. Sees himself as a "
@@ -417,6 +427,7 @@ BOT_PERSONAS = [
         "schedule_template_slug": "nine-to-five-grinder",
         "nba_team_abbr": "SAS",
         "epl_team_tla": "BHA",
+        "nfl_team_abbr": "",
         "tagline": "Every mispriced line is an opportunity.",
         "persona_prompt": (
             "Bets exclusively on value — she doesn't care who wins, only whether "
@@ -530,6 +541,7 @@ class Command(BaseCommand):
                     "active_in_nba": True,
                     "nba_team_abbr": persona.get("nba_team_abbr", ""),
                     "epl_team_tla": persona.get("epl_team_tla", ""),
+                    "nfl_team_abbr": persona.get("nfl_team_abbr", ""),
                 },
             )
 
@@ -542,7 +554,8 @@ class Command(BaseCommand):
                 f"  {'Created' if profile_created else 'Updated'}: "
                 f"{persona['display_name']} "
                 f"[NBA:{persona.get('nba_team_abbr') or '—'} "
-                f"EPL:{persona.get('epl_team_tla') or '—'}] "
+                f"EPL:{persona.get('epl_team_tla') or '—'} "
+                f"NFL:{persona.get('nfl_team_abbr') or '—'}] "
                 f"[{tpl_slug or 'always-on'}]"
             )
 
