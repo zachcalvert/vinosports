@@ -79,10 +79,16 @@ class NFLDataClient:
         response.raise_for_status()
         return response.json()
 
-    def _get_all(self, path: str, params: dict | None = None) -> list[dict]:
+    def _get_all(
+        self, path: str, params: dict | None = None, page_delay: float = 0
+    ) -> list[dict]:
         """Paginate through all results for a list endpoint.
 
         Retries with exponential backoff on 429 Too Many Requests.
+
+        Args:
+            page_delay: Seconds to sleep between paginated requests.
+                        Use 1-2s for bulk backfills to avoid 429s.
         """
         params = dict(params or {})
         params["per_page"] = 100
@@ -94,6 +100,8 @@ class NFLDataClient:
             if not cursor:
                 break
             params["cursor"] = cursor
+            if page_delay:
+                time.sleep(page_delay)
         return results
 
     def _get_with_retry(
@@ -124,15 +132,24 @@ class NFLDataClient:
         return [self._normalize_team(t) for t in raw]
 
     def get_games(
-        self, season: int, week: int | None = None, game_date: date | None = None
+        self,
+        season: int,
+        week: int | None = None,
+        game_date: date | None = None,
+        page_delay: float = 0,
     ) -> list[dict]:
-        """Return games for a season, optionally filtered by week or date."""
+        """Return games for a season, optionally filtered by week or date.
+
+        Args:
+            page_delay: Seconds to sleep between paginated requests.
+                        Use 1-2s for bulk backfills to avoid 429s.
+        """
         params: dict[str, Any] = {"season": season}
         if week is not None:
             params["week"] = week
         if game_date:
             params["dates[]"] = game_date.isoformat()
-        raw = self._get_all("/games", params=params)
+        raw = self._get_all("/games", params=params, page_delay=page_delay)
         return [self._normalize_game(g) for g in raw]
 
     def get_players(
@@ -277,10 +294,11 @@ def sync_games(
     season: int,
     week: int | None = None,
     client: NFLDataClient | None = None,
+    page_delay: float = 0,
 ) -> int:
     """Upsert games for a season (or single week). Returns count synced."""
     with client or NFLDataClient() as c:
-        games = c.get_games(season, week=week)
+        games = c.get_games(season, week=week, page_delay=page_delay)
 
     count = 0
     for g in games:

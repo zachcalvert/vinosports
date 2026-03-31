@@ -157,7 +157,7 @@ class Command(BaseCommand):
             return
 
         self.stdout.write("  Syncing schedule...")
-        count = sync_games(season)
+        count = sync_games(season, page_delay=1)
         self.stdout.write(
             self.style.SUCCESS(f"  Games: {count} synced (season={season})")
         )
