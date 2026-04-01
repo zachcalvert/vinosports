@@ -373,10 +373,13 @@ def select_reply_bot(match, target_comment):
             elif _homer_team_mentioned(profile, target_comment.body):
                 candidates.append(bot)
     else:
-        # Human comment: ~30% chance of ANY bot reply (single coin flip),
+        # Human comment: configurable probability gate (single coin flip),
         # then pick from relevant bots.  Without the gate the probability
         # compounds across all eligible bots and approaches 100%.
-        if random.random() >= 0.3:
+        from hub.models import SiteSettings
+
+        prob = SiteSettings.load().bot_reply_probability
+        if random.random() >= prob:
             return None
 
         odds_map = get_best_odds_map([match.pk])

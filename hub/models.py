@@ -11,6 +11,10 @@ class SiteSettings(models.Model):
         default="We've hit our user cap for now. Check back later or follow us for updates on when spots open up.",
         help_text="Message shown on the signup page when registration is closed.",
     )
+    bot_reply_probability = models.FloatField(
+        default=0.7,
+        help_text="Probability a bot replies to a human comment (0.0-1.0).",
+    )
 
     class Meta:
         verbose_name = "Site Settings"

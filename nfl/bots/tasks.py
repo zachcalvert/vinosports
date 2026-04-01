@@ -15,6 +15,7 @@ from django.utils import timezone
 
 from nfl.betting.models import BetSlip, Odds
 from nfl.betting.settlement import BANKRUPTCY_THRESHOLD, grant_bailout
+from nfl.bots.models import BotComment
 from nfl.bots.services import place_bot_bets
 from nfl.bots.strategies import STRATEGY_MAP
 from nfl.games.models import Game, GameStatus
@@ -144,6 +145,84 @@ def execute_bot_strategy(self, bot_user_id: int, window_max_bets: int | None = N
         "Bot %s placed %d bets (skipped %d)", user, result["placed"], result["skipped"]
     )
     return result
+
+
+# ---------------------------------------------------------------------------
+# Bot comment tasks
+# ---------------------------------------------------------------------------
+
+
+@shared_task
+def generate_bot_reply_task(bot_user_id, game_id, parent_comment_id):
+    """Generate and post a bot reply to an existing comment."""
+    from django.contrib.auth import get_user_model
+
+    from nfl.bots.comment_service import generate_bot_comment
+    from nfl.discussions.models import Comment as DiscussionComment
+
+    User = get_user_model()
+
+    try:
+        bot_user = User.objects.get(pk=bot_user_id, is_bot=True, is_active=True)
+    except User.DoesNotExist:
+        return "bot not found"
+
+    try:
+        game = Game.objects.select_related("home_team", "away_team").get(pk=game_id)
+    except Game.DoesNotExist:
+        return "game not found"
+
+    try:
+        parent = DiscussionComment.objects.select_related("user").get(
+            pk=parent_comment_id,
+            game=game,
+        )
+    except DiscussionComment.DoesNotExist:
+        return "parent comment not found"
+
+    comment = generate_bot_comment(
+        bot_user,
+        game,
+        BotComment.TriggerType.REPLY,
+        parent_comment=parent,
+    )
+    if comment:
+        return f"replied: {comment.body[:60]}"
+    return "skipped (dedup or filter)"
+
+
+@shared_task
+def maybe_reply_to_human_comment(comment_id):
+    """Maybe dispatch a bot reply to a human-authored comment."""
+    from nfl.bots.comment_service import select_reply_bot
+    from nfl.discussions.models import Comment as DiscussionComment
+
+    try:
+        comment = DiscussionComment.objects.select_related(
+            "user",
+            "game",
+            "game__home_team",
+            "game__away_team",
+        ).get(pk=comment_id)
+    except DiscussionComment.DoesNotExist:
+        return "comment not found"
+
+    if comment.user.is_bot:
+        return "skipped (bot author)"
+
+    if not comment.game:
+        return "skipped (no game)"
+
+    bot = select_reply_bot(comment.game, comment)
+    if not bot:
+        return "skipped (no candidate)"
+
+    delay = random.randint(60, 300)  # 1-5 min stagger
+    generate_bot_reply_task.apply_async(
+        args=[bot.pk, comment.game.pk, comment.pk],
+        countdown=delay,
+    )
+    return f"dispatched reply from {bot.display_name}"
 
 
 # ---------------------------------------------------------------------------

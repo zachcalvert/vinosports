@@ -409,9 +409,9 @@ class TestSelectReplyBot:
                 break
         assert found, "Frontrunner should reply to underdog via affinity"
 
-    @patch("epl.bots.comment_service.random.random", return_value=0.5)
+    @patch("epl.bots.comment_service.random.random", return_value=0.8)
     def test_human_comment_gate_rejects(self, mock_random):
-        """30% gate for human comments — random >= 0.3 means no reply."""
+        """Configurable gate for human comments — random >= probability means no reply."""
         match = MatchFactory()
         OddsFactory(match=match)
         BotProfileFactory(strategy_type=StrategyType.CHAOS_AGENT)
@@ -421,9 +421,9 @@ class TestSelectReplyBot:
         result = select_reply_bot(match, comment)
         assert result is None
 
-    @patch("epl.bots.comment_service.random.random", return_value=0.1)
+    @patch("epl.bots.comment_service.random.random", return_value=0.5)
     def test_human_comment_gate_passes(self, mock_random):
-        """30% gate for human comments — random < 0.3 means try to reply."""
+        """Configurable gate for human comments — random < probability means try to reply."""
         match = MatchFactory()
         OddsFactory(match=match)
         BotProfileFactory(strategy_type=StrategyType.CHAOS_AGENT)

@@ -1,3 +1,5 @@
+import logging
+
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpResponse, HttpResponseForbidden
 from django.shortcuts import get_object_or_404
@@ -8,6 +10,8 @@ from nba.betting.models import BetSlip
 from nba.discussions.forms import CommentForm
 from nba.discussions.models import Comment
 from nba.games.models import Game
+
+logger = logging.getLogger(__name__)
 
 
 def _build_bet_map(game_pk, user_ids):
@@ -54,6 +58,14 @@ class CreateCommentView(LoginRequiredMixin, View):
             game=game,
             body=form.cleaned_data["body"],
         )
+
+        if not request.user.is_bot:
+            try:
+                from nba.bots.tasks import maybe_reply_to_human_comment
+
+                maybe_reply_to_human_comment.delay(comment.pk)
+            except Exception:
+                logger.warning("Failed to dispatch bot reply task", exc_info=True)
 
         bet_map = _build_bet_map(game.pk, {request.user.pk})
         comment.prefetched_replies = []
@@ -107,11 +119,15 @@ class CreateReplyView(LoginRequiredMixin, View):
                 league="nba",
             )
         except Exception:
-            import logging
+            logger.warning("Failed to create reply notification", exc_info=True)
 
-            logging.getLogger(__name__).warning(
-                "Failed to create reply notification", exc_info=True
-            )
+        if not request.user.is_bot:
+            try:
+                from nba.bots.tasks import maybe_reply_to_human_comment
+
+                maybe_reply_to_human_comment.delay(parent.pk)
+            except Exception:
+                logger.warning("Failed to dispatch bot reply task", exc_info=True)
 
         bet_map = _build_bet_map(game.pk, {request.user.pk})
         reply.prefetched_replies = []
