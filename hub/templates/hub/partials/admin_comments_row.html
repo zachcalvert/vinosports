@@ -1,0 +1,23 @@
+<div class="flex items-center gap-3 py-2.5 text-sm">
+    <div class="min-w-0 flex-1">
+        <div class="flex items-center gap-1.5 flex-wrap">
+            {% if item.league == "epl" %}
+                <span class="inline-flex items-center px-1 py-0.5 rounded text-[10px] font-bold bg-green-500/15 text-green-400">EPL</span>
+            {% elif item.league == "nba" %}
+                <span class="inline-flex items-center px-1 py-0.5 rounded text-[10px] font-bold bg-blue-500/15 text-blue-400">NBA</span>
+            {% elif item.league == "nfl" %}
+                <span class="inline-flex items-center px-1 py-0.5 rounded text-[10px] font-bold bg-red-500/15 text-red-400">NFL</span>
+            {% endif %}
+            <a href="{% url 'hub:profile' slug=item.user.slug %}" class="text-muted truncate hover:text-primary transition">{{ item.user.display_name|default:item.user.email }}</a>
+            {% if item.match %}
+                <span class="text-xs text-muted">&mdash;</span>
+                <a href="{{ item.match.get_absolute_url }}" class="text-xs hover:text-primary hover:underline">{{ item.match.home_team.short_name }} v {{ item.match.away_team.short_name }}</a>
+            {% elif item.game %}
+                <span class="text-xs text-muted">&mdash;</span>
+                <a href="{{ item.game.get_absolute_url }}" class="text-xs hover:text-primary hover:underline">{{ item.game.home_team.abbreviation }} v {{ item.game.away_team.abbreviation }}</a>
+            {% endif %}
+        </div>
+        <p class="text-xs text-muted mt-0.5 truncate">{{ item.body|truncatechars:80 }}</p>
+    </div>
+    <div class="text-xs text-muted whitespace-nowrap">{{ item.created_at|timesince }} ago</div>
+</div>

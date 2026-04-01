@@ -84,4 +84,14 @@ urlpatterns = [
         views.AdminUsersPartialView.as_view(),
         name="admin_dashboard_users",
     ),
+    path(
+        "admin-dashboard/bets/all/",
+        views.AdminBetsFullView.as_view(),
+        name="admin_bets_full",
+    ),
+    path(
+        "admin-dashboard/comments/all/",
+        views.AdminCommentsFullView.as_view(),
+        name="admin_comments_full",
+    ),
 ]

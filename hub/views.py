@@ -880,6 +880,7 @@ class SuperuserRequiredMixin(UserPassesTestMixin):
 
 
 ADMIN_PAGE_SIZE = 5
+ADMIN_FULL_PAGE_SIZE = 25
 ADMIN_MAX_OFFSET = 500
 
 
@@ -1137,6 +1138,119 @@ class AdminUsersPartialView(SuperuserRequiredMixin, View):
             "hub/partials/admin_users_list.html",
             "hub/partials/admin_users_page.html",
         )
+
+
+class AdminBetsFullView(SuperuserRequiredMixin, TemplateView):
+    """Full page: all bets & parlays across leagues, paginated."""
+
+    template_name = "hub/admin_bets_full.html"
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+
+        from epl.betting.models import BetSlip as EplBetSlip
+        from epl.betting.models import Parlay as EplParlay
+        from nba.betting.models import BetSlip as NbaBetSlip
+        from nba.betting.models import Parlay as NbaParlay
+        from nfl.betting.models import BetSlip as NflBetSlip
+        from nfl.betting.models import Parlay as NflParlay
+
+        page = max(1, int(self.request.GET.get("page", 1)))
+        offset = (page - 1) * ADMIN_FULL_PAGE_SIZE
+        prefetch_limit = offset + ADMIN_FULL_PAGE_SIZE * 2
+
+        epl_bets = EplBetSlip.objects.select_related(
+            "user", "match__home_team", "match__away_team"
+        ).order_by("-created_at")
+        nba_bets = NbaBetSlip.objects.select_related(
+            "user", "game__home_team", "game__away_team"
+        ).order_by("-created_at")
+        nfl_bets = NflBetSlip.objects.select_related(
+            "user", "game__home_team", "game__away_team"
+        ).order_by("-created_at")
+        all_bets = _admin_merged_querysets(
+            epl_bets, nba_bets, nfl_bets, offset=0, page_size=prefetch_limit
+        )
+
+        epl_parlays = (
+            EplParlay.objects.select_related("user")
+            .prefetch_related("legs__match__home_team", "legs__match__away_team")
+            .order_by("-created_at")
+        )
+        nba_parlays = (
+            NbaParlay.objects.select_related("user")
+            .prefetch_related("legs__game__home_team", "legs__game__away_team")
+            .order_by("-created_at")
+        )
+        nfl_parlays = (
+            NflParlay.objects.select_related("user")
+            .prefetch_related("legs__game__home_team", "legs__game__away_team")
+            .order_by("-created_at")
+        )
+        all_parlays = _admin_merged_querysets(
+            epl_parlays, nba_parlays, nfl_parlays, offset=0, page_size=prefetch_limit
+        )
+
+        from heapq import merge
+        from operator import attrgetter
+
+        merged = list(
+            merge(all_bets, all_parlays, key=attrgetter("created_at"), reverse=True)
+        )
+        items = merged[offset : offset + ADMIN_FULL_PAGE_SIZE]
+        for item in items:
+            item.league = _APP_LABEL_TO_LEAGUE.get(item._meta.app_label, "")
+
+        ctx["items"] = items
+        ctx["page"] = page
+        ctx["has_next"] = len(items) == ADMIN_FULL_PAGE_SIZE
+        ctx["has_prev"] = page > 1
+        return ctx
+
+
+class AdminCommentsFullView(SuperuserRequiredMixin, TemplateView):
+    """Full page: all comments across leagues, paginated."""
+
+    template_name = "hub/admin_comments_full.html"
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+
+        from epl.discussions.models import Comment as EplComment
+        from nba.discussions.models import Comment as NbaComment
+        from nfl.discussions.models import Comment as NflComment
+
+        page = max(1, int(self.request.GET.get("page", 1)))
+        offset = (page - 1) * ADMIN_FULL_PAGE_SIZE
+
+        epl_comments = (
+            EplComment.objects.filter(is_deleted=False)
+            .select_related("user", "match__home_team", "match__away_team")
+            .order_by("-created_at")
+        )
+        nba_comments = (
+            NbaComment.objects.filter(is_deleted=False)
+            .select_related("user", "game__home_team", "game__away_team")
+            .order_by("-created_at")
+        )
+        nfl_comments = (
+            NflComment.objects.filter(is_deleted=False)
+            .select_related("user", "game__home_team", "game__away_team")
+            .order_by("-created_at")
+        )
+        items = _admin_merged_querysets(
+            epl_comments,
+            nba_comments,
+            nfl_comments,
+            offset=offset,
+            page_size=ADMIN_FULL_PAGE_SIZE,
+        )
+
+        ctx["items"] = items
+        ctx["page"] = page
+        ctx["has_next"] = len(items) == ADMIN_FULL_PAGE_SIZE
+        ctx["has_prev"] = page > 1
+        return ctx
 
 
 # ---------------------------------------------------------------------------

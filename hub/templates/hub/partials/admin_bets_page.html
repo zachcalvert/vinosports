@@ -1,56 +1,6 @@
-{% load currency_tags %}
-
 {% for item in items %}
-<div class="flex items-center gap-3 py-2.5 text-sm border-t border-outline-variant/50">
-    <div class="min-w-0 flex-1">
-        <div class="flex items-center gap-1.5 flex-wrap">
-            {% if item.legs.all %}
-                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-purple-500/20 text-purple-300">Parlay</span>
-            {% else %}
-                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-500/20 text-blue-300">Bet</span>
-            {% endif %}
-            {% if item.league == "epl" %}
-                <span class="inline-flex items-center px-1 py-0.5 rounded text-[10px] font-bold bg-green-500/15 text-green-400">EPL</span>
-            {% elif item.league == "nba" %}
-                <span class="inline-flex items-center px-1 py-0.5 rounded text-[10px] font-bold bg-blue-500/15 text-blue-400">NBA</span>
-            {% elif item.league == "nfl" %}
-                <span class="inline-flex items-center px-1 py-0.5 rounded text-[10px] font-bold bg-red-500/15 text-red-400">NFL</span>
-            {% endif %}
-            <a href="{% url 'hub:profile' slug=item.user.slug %}" class="text-muted truncate hover:text-primary transition">{{ item.user.display_name|default:item.user.email }}</a>
-            {% if item.match %}
-                {% if not item.legs.all %}
-                    <span class="text-xs text-muted">&mdash;</span>
-                    <a href="{{ item.match.get_absolute_url }}" class="text-xs hover:text-primary hover:underline">{{ item.match.home_team.short_name }} v {{ item.match.away_team.short_name }}</a>
-                {% else %}
-                    <span class="text-xs text-muted">&mdash;</span>
-                    {% for leg in item.legs.all %}
-                        <a href="{{ leg.match.get_absolute_url }}" class="text-xs hover:text-primary hover:underline">{{ leg.match.home_team.short_name }} v {{ leg.match.away_team.short_name }}</a>{% if not forloop.last %}<span class="text-xs text-muted">,</span>{% endif %}
-                    {% endfor %}
-                {% endif %}
-            {% elif item.game %}
-                {% if not item.legs.all %}
-                    <span class="text-xs text-muted">&mdash;</span>
-                    <a href="{{ item.game.get_absolute_url }}" class="text-xs hover:text-primary hover:underline">{{ item.game.home_team.abbreviation }} v {{ item.game.away_team.abbreviation }}</a>
-                {% else %}
-                    <span class="text-xs text-muted">&mdash;</span>
-                    {% for leg in item.legs.all %}
-                        <a href="{{ leg.game.get_absolute_url }}" class="text-xs hover:text-primary hover:underline">{{ leg.game.home_team.abbreviation }} v {{ leg.game.away_team.abbreviation }}</a>{% if not forloop.last %}<span class="text-xs text-muted">,</span>{% endif %}
-                    {% endfor %}
-                {% endif %}
-            {% endif %}
-        </div>
-        <div class="flex items-center gap-2 mt-0.5">
-            <span class="text-xs font-mono">{{ item.stake|currency:item.user }}</span>
-            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium
-                {% if item.status == 'WON' %}bg-green-500/20 text-green-300
-                {% elif item.status == 'LOST' %}bg-red-500/20 text-red-300
-                {% elif item.status == 'VOID' %}bg-gray-500/20 text-muted
-                {% else %}bg-yellow-500/20 text-yellow-300{% endif %}">
-                {{ item.status }}
-            </span>
-        </div>
-    </div>
-    <div class="text-xs text-muted whitespace-nowrap">{{ item.created_at|timesince }} ago</div>
+<div class="border-t border-outline-variant/50">
+    {% include "hub/partials/admin_bets_row.html" with item=item %}
 </div>
 {% endfor %}
 
@@ -61,7 +11,7 @@
             hx-swap="beforeend"
             hx-indicator="#bets-loading"
             class="text-primary text-sm hover:underline">
-        View all
+        Load more
     </button>
     <span id="bets-loading" class="htmx-indicator">
         <span class="spinner spinner-sm text-primary"></span>
