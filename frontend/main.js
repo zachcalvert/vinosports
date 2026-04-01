@@ -1,5 +1,6 @@
-// HTMX — auto-registers on window
-import "htmx.org";
+// HTMX — must explicitly set on window for vendored extensions
+import htmx from "htmx.org";
+window.htmx = htmx;
 
 // HTMX extensions (vendored)
 import "./vendor/htmx-ext-ws.js";
