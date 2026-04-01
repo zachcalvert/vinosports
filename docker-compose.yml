@@ -81,6 +81,18 @@ services:
       - ./hub:/app/hub
     depends_on: []
 
+  # --- JS bundle watcher (dev only) ---
+  jsbuild:
+    <<: *app-build
+    command: ["npx", "esbuild", "frontend/main.js", "--bundle", "--sourcemap", "--outfile=/packages/vinosports-core/src/vinosports/static/vinosports/js/app.js", "--format=iife", "--target=es2020", "--watch"]
+    stdin_open: true
+    volumes:
+      - ./frontend:/app/frontend
+      - ./package.json:/app/package.json
+      - ./node_modules:/app/node_modules
+      - ./packages/vinosports-core/src:/packages/vinosports-core/src
+    depends_on: []
+
   # --- Celery Worker (all queues) ---
   worker:
     <<: *app-build
