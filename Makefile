@@ -1,4 +1,4 @@
-.PHONY: up down restart logs shell migrate seed lint format test test-ci tw tw-watch
+.PHONY: up down restart logs shell migrate seed lint format test test-ci tw tw-watch js js-watch
 
 up:
 	docker compose up --build -d
@@ -40,6 +40,19 @@ tw:
 
 tw-watch:
 	docker compose up tailwind
+
+js:
+	npx esbuild frontend/main.js \
+		--bundle --minify --sourcemap \
+		--outfile=packages/vinosports-core/src/vinosports/static/vinosports/js/app.js \
+		--format=iife --target=es2020
+
+js-watch:
+	npx esbuild frontend/main.js \
+		--bundle --sourcemap \
+		--outfile=packages/vinosports-core/src/vinosports/static/vinosports/js/app.js \
+		--format=iife --target=es2020 \
+		--watch
 
 lint:
 	ruff check . --fix

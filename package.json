@@ -1,0 +1,15 @@
+{
+  "private": true,
+  "name": "vinosports",
+  "scripts": {
+    "js:build": "esbuild frontend/main.js --bundle --minify --sourcemap --outfile=packages/vinosports-core/src/vinosports/static/vinosports/js/app.js --format=iife --target=es2020",
+    "js:watch": "esbuild frontend/main.js --bundle --sourcemap --outfile=packages/vinosports-core/src/vinosports/static/vinosports/js/app.js --format=iife --target=es2020 --watch"
+  },
+  "dependencies": {
+    "htmx.org": "^2.0.4",
+    "lightweight-charts": "^4.2.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.24.0"
+  }
+}
