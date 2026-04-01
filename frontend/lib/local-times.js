@@ -1,4 +1,4 @@
-(function () {
+export function initLocalTimes() {
   function convertLocalTimes() {
     document.querySelectorAll("time.local-time").forEach(function (el) {
       var iso = el.getAttribute("datetime");
@@ -12,6 +12,5 @@
     });
   }
   convertLocalTimes();
-  // Re-run after HTMX swaps (live updates)
   document.body.addEventListener("htmx:afterSwap", convertLocalTimes);
-})();
+}
