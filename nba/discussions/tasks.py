@@ -50,10 +50,13 @@ def _trim_to_last_sentence(text):
 
 
 @shared_task
-def generate_pregame_comments():
+def generate_pregame_comments(bot_user_ids=None):
     """
     For today's scheduled games, generate bot comments with predictions.
     Checks each bot's schedule window and rolls comment_probability.
+
+    When bot_user_ids is provided (admin-triggered), skips schedule and
+    probability checks so comments are generated immediately.
     """
     now = timezone.localtime()
     today = today_et()
@@ -64,11 +67,10 @@ def generate_pregame_comments():
     if not games.exists():
         return {"commented": 0, "reason": "no_games"}
 
-    profiles = list(
-        BotProfile.objects.filter(is_active=True, active_in_nba=True).select_related(
-            "user", "schedule_template"
-        )
-    )
+    qs = BotProfile.objects.filter(is_active=True, active_in_nba=True)
+    if bot_user_ids:
+        qs = qs.filter(user_id__in=bot_user_ids)
+    profiles = list(qs.select_related("user", "schedule_template"))
     if not profiles:
         return {"commented": 0, "reason": "no_bots"}
 
@@ -86,22 +88,23 @@ def generate_pregame_comments():
             if Comment.objects.filter(user=profile.user, game=game).exists():
                 continue
 
-            # Check schedule window
-            window = get_active_window(profile, now)
-            if window is None:
-                continue
+            if not bot_user_ids:
+                # Check schedule window
+                window = get_active_window(profile, now)
+                if window is None:
+                    continue
 
-            # Roll comment probability
-            if not roll_action(window.get("comment_probability", 0.5)):
-                continue
+                # Roll comment probability
+                if not roll_action(window.get("comment_probability", 0.5)):
+                    continue
 
-            # Check window comment cap
-            max_comments = window.get("max_comments", 3)
-            today_comments = Comment.objects.filter(
-                user=profile.user, game__game_date=today
-            ).count()
-            if today_comments >= max_comments:
-                continue
+                # Check window comment cap
+                max_comments = window.get("max_comments", 3)
+                today_comments = Comment.objects.filter(
+                    user=profile.user, game__game_date=today
+                ).count()
+                if today_comments >= max_comments:
+                    continue
 
             try:
                 body = _generate_comment_body(profile.persona_prompt, context)
@@ -122,10 +125,13 @@ def generate_pregame_comments():
 
 
 @shared_task
-def generate_postgame_comments():
+def generate_postgame_comments(bot_user_ids=None):
     """
     For today's final games, generate bot reaction comments.
     Checks each bot's schedule window and rolls comment_probability.
+
+    When bot_user_ids is provided (admin-triggered), skips schedule and
+    probability checks so comments are generated immediately.
     """
     now = timezone.localtime()
     today = today_et()
@@ -136,11 +142,10 @@ def generate_postgame_comments():
     if not games.exists():
         return {"commented": 0, "reason": "no_games"}
 
-    profiles = list(
-        BotProfile.objects.filter(is_active=True, active_in_nba=True).select_related(
-            "user", "schedule_template"
-        )
-    )
+    qs = BotProfile.objects.filter(is_active=True, active_in_nba=True)
+    if bot_user_ids:
+        qs = qs.filter(user_id__in=bot_user_ids)
+    profiles = list(qs.select_related("user", "schedule_template"))
     if not profiles:
         return {"commented": 0, "reason": "no_bots"}
 
@@ -162,22 +167,23 @@ def generate_postgame_comments():
             if Comment.objects.filter(user=profile.user, game=game).exists():
                 continue
 
-            # Check schedule window
-            window = get_active_window(profile, now)
-            if window is None:
-                continue
+            if not bot_user_ids:
+                # Check schedule window
+                window = get_active_window(profile, now)
+                if window is None:
+                    continue
 
-            # Roll comment probability
-            if not roll_action(window.get("comment_probability", 0.5)):
-                continue
+                # Roll comment probability
+                if not roll_action(window.get("comment_probability", 0.5)):
+                    continue
 
-            # Check window comment cap
-            max_comments = window.get("max_comments", 3)
-            today_comments = Comment.objects.filter(
-                user=profile.user, game__game_date=today
-            ).count()
-            if today_comments >= max_comments:
-                continue
+                # Check window comment cap
+                max_comments = window.get("max_comments", 3)
+                today_comments = Comment.objects.filter(
+                    user=profile.user, game__game_date=today
+                ).count()
+                if today_comments >= max_comments:
+                    continue
 
             try:
                 body = _generate_comment_body(profile.persona_prompt, context)

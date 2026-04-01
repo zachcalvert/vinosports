@@ -292,13 +292,17 @@ MAX_POSTMATCH_DISPATCHES = 30
 
 
 @shared_task
-def generate_prematch_comments():
+def generate_prematch_comments(bot_user_ids=None):
     """Find upcoming matches and dispatch pre-match hype comments for 1-2 bots each.
 
     Checks each bot's schedule window and rolls comment_probability before dispatching.
+
+    When bot_user_ids is provided (admin-triggered), dispatches for those bots on all
+    upcoming matches, skipping relevance selection and schedule/probability checks.
     """
-    from epl.bots.comment_service import select_bots_for_match
+    from epl.betting.models import BetSlip
     from epl.matches.models import Match
+    from vinosports.betting.models import BetStatus
 
     now = timezone.localtime()
     upcoming = Match.objects.filter(
@@ -307,8 +311,30 @@ def generate_prematch_comments():
         kickoff__lte=now + timezone.timedelta(hours=24),
     ).select_related("home_team", "away_team")
 
-    from epl.betting.models import BetSlip
-    from vinosports.betting.models import BetStatus
+    if bot_user_ids:
+        profiles = BotProfile.objects.filter(
+            user_id__in=bot_user_ids, is_active=True, active_in_epl=True
+        ).select_related("user")
+        dispatched = 0
+        for match in upcoming:
+            for profile in profiles:
+                existing_bet = BetSlip.objects.filter(
+                    user=profile.user, match=match, status=BetStatus.PENDING
+                ).first()
+                bet_slip_id = existing_bet.pk if existing_bet else None
+                generate_bot_comment_task.apply_async(
+                    args=[
+                        profile.user_id,
+                        match.pk,
+                        BotComment.TriggerType.PRE_MATCH,
+                        bet_slip_id,
+                    ],
+                )
+                dispatched += 1
+        logger.info("Admin dispatched %d pre-match comment tasks", dispatched)
+        return f"dispatched {dispatched} admin pre-match comments"
+
+    from epl.bots.comment_service import select_bots_for_match
 
     dispatched = 0
     for match in upcoming:
@@ -350,13 +376,15 @@ def generate_prematch_comments():
 
 
 @shared_task
-def generate_postmatch_comments():
+def generate_postmatch_comments(bot_user_ids=None):
     """Find recently finished matches and dispatch post-match reaction comments.
 
     Checks each bot's schedule window and rolls comment_probability before dispatching.
+
+    When bot_user_ids is provided (admin-triggered), dispatches for those bots on all
+    recently finished matches, skipping schedule/probability checks.
     """
     from epl.betting.models import BetSlip
-    from epl.bots.comment_service import select_bots_for_match
     from epl.matches.models import Match
 
     now = timezone.localtime()
@@ -365,6 +393,39 @@ def generate_postmatch_comments():
         updated_at__gte=now - timezone.timedelta(hours=2),
         kickoff__gte=now - timezone.timedelta(weeks=1),
     ).select_related("home_team", "away_team")
+
+    if bot_user_ids:
+        profiles = BotProfile.objects.filter(
+            user_id__in=bot_user_ids, is_active=True, active_in_epl=True
+        ).select_related("user")
+        dispatched = 0
+        for match in recently_finished:
+            for profile in profiles:
+                if BotComment.objects.filter(
+                    user=profile.user,
+                    match=match,
+                    trigger_type=BotComment.TriggerType.POST_MATCH,
+                ).exists():
+                    continue
+                bet = (
+                    BetSlip.objects.filter(user=profile.user, match=match)
+                    .order_by("-created_at")
+                    .first()
+                )
+                bet_slip_id = bet.pk if bet else None
+                generate_bot_comment_task.apply_async(
+                    args=[
+                        profile.user_id,
+                        match.pk,
+                        BotComment.TriggerType.POST_MATCH,
+                        bet_slip_id,
+                    ],
+                )
+                dispatched += 1
+        logger.info("Admin dispatched %d post-match comment tasks", dispatched)
+        return f"dispatched {dispatched} admin post-match comments"
+
+    from epl.bots.comment_service import select_bots_for_match
 
     dispatched = 0
     for match in recently_finished:
