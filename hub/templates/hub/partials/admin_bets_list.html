@@ -10,9 +10,15 @@
                 {% else %}
                     <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-500/20 text-blue-300">Bet</span>
                 {% endif %}
-                {% if item.match %}
+                {% if item.league == "epl" %}
                     <span class="inline-flex items-center px-1 py-0.5 rounded text-[10px] font-bold bg-green-500/15 text-green-400">EPL</span>
-                    <span class="text-muted truncate">{{ item.user.display_name|default:item.user.email }}</span>
+                {% elif item.league == "nba" %}
+                    <span class="inline-flex items-center px-1 py-0.5 rounded text-[10px] font-bold bg-blue-500/15 text-blue-400">NBA</span>
+                {% elif item.league == "nfl" %}
+                    <span class="inline-flex items-center px-1 py-0.5 rounded text-[10px] font-bold bg-red-500/15 text-red-400">NFL</span>
+                {% endif %}
+                <span class="text-muted truncate">{{ item.user.display_name|default:item.user.email }}</span>
+                {% if item.match %}
                     {% if not item.legs.all %}
                         <span class="text-xs text-muted">&mdash;</span>
                         <a href="{{ item.match.get_absolute_url }}" class="text-xs hover:text-primary hover:underline">{{ item.match.home_team.short_name }} v {{ item.match.away_team.short_name }}</a>
@@ -23,8 +29,6 @@
                         {% endfor %}
                     {% endif %}
                 {% elif item.game %}
-                    <span class="inline-flex items-center px-1 py-0.5 rounded text-[10px] font-bold bg-blue-500/15 text-blue-400">NBA</span>
-                    <span class="text-muted truncate">{{ item.user.display_name|default:item.user.email }}</span>
                     {% if not item.legs.all %}
                         <span class="text-xs text-muted">&mdash;</span>
                         <a href="{{ item.game.get_absolute_url }}" class="text-xs hover:text-primary hover:underline">{{ item.game.home_team.abbreviation }} v {{ item.game.away_team.abbreviation }}</a>
@@ -34,8 +38,6 @@
                             <a href="{{ leg.game.get_absolute_url }}" class="text-xs hover:text-primary hover:underline">{{ leg.game.home_team.abbreviation }} v {{ leg.game.away_team.abbreviation }}</a>{% if not forloop.last %}<span class="text-xs text-muted">,</span>{% endif %}
                         {% endfor %}
                     {% endif %}
-                {% else %}
-                    <span class="text-muted truncate">{{ item.user.display_name|default:item.user.email }}</span>
                 {% endif %}
             </div>
             <div class="flex items-center gap-2 mt-0.5">

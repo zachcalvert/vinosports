@@ -896,25 +896,33 @@ class AdminDashboardView(SuperuserRequiredMixin, TemplateView):
         from nba.betting.models import BetSlip as NbaBetSlip
         from nba.betting.models import Parlay as NbaParlay
         from nba.discussions.models import Comment as NbaComment
+        from nfl.betting.models import BetSlip as NflBetSlip
+        from nfl.betting.models import Parlay as NflParlay
+        from nfl.discussions.models import Comment as NflComment
 
         ctx["total_users"] = User.objects.count()
         ctx["active_bets"] = (
             EplBetSlip.objects.filter(status="PENDING").count()
             + NbaBetSlip.objects.filter(status="PENDING").count()
+            + NflBetSlip.objects.filter(status="PENDING").count()
         )
         ctx["active_parlays"] = (
             EplParlay.objects.filter(status="PENDING").count()
             + NbaParlay.objects.filter(status="PENDING").count()
+            + NflParlay.objects.filter(status="PENDING").count()
         )
         ctx["total_comments"] = (
             EplComment.objects.filter(is_deleted=False).count()
             + NbaComment.objects.filter(is_deleted=False).count()
+            + NflComment.objects.filter(is_deleted=False).count()
         )
         ctx["total_bets_all_time"] = (
             EplBetSlip.objects.count()
             + NbaBetSlip.objects.count()
+            + NflBetSlip.objects.count()
             + EplParlay.objects.count()
             + NbaParlay.objects.count()
+            + NflParlay.objects.count()
         )
         epl_in_play = (
             EplBetSlip.objects.filter(status="PENDING").aggregate(total=Sum("stake"))[
@@ -928,11 +936,21 @@ class AdminDashboardView(SuperuserRequiredMixin, TemplateView):
             ]
             or 0
         )
-        ctx["total_in_play"] = epl_in_play + nba_in_play
+        nfl_in_play = (
+            NflBetSlip.objects.filter(status="PENDING").aggregate(total=Sum("stake"))[
+                "total"
+            ]
+            or 0
+        )
+        ctx["total_in_play"] = epl_in_play + nba_in_play + nfl_in_play
 
         # Per-league breakdowns
         ctx["epl_bets"] = EplBetSlip.objects.count() + EplParlay.objects.count()
         ctx["nba_bets"] = NbaBetSlip.objects.count() + NbaParlay.objects.count()
+        ctx["nfl_bets"] = NflBetSlip.objects.count() + NflParlay.objects.count()
+        ctx["epl_comments"] = EplComment.objects.filter(is_deleted=False).count()
+        ctx["nba_comments"] = NbaComment.objects.filter(is_deleted=False).count()
+        ctx["nfl_comments"] = NflComment.objects.filter(is_deleted=False).count()
         return ctx
 
 
@@ -962,15 +980,27 @@ def _admin_paginated_response(request, items, total, offset, list_tpl, page_tpl)
     return HttpResponse(html)
 
 
-def _admin_merged_querysets(qs_a, qs_b, offset, page_size):
+_APP_LABEL_TO_LEAGUE = {
+    "epl_betting": "epl",
+    "epl_discussions": "epl",
+    "nba_betting": "nba",
+    "nba_discussions": "nba",
+    "nfl_betting": "nfl",
+    "nfl_discussions": "nfl",
+}
+
+
+def _admin_merged_querysets(*querysets, offset, page_size):
     from heapq import merge
     from operator import attrgetter
 
     limit = offset + page_size
-    a_items = list(qs_a[:limit])
-    b_items = list(qs_b[:limit])
-    merged = list(merge(a_items, b_items, key=attrgetter("created_at"), reverse=True))
-    return merged[offset : offset + page_size]
+    item_lists = [list(qs[:limit]) for qs in querysets]
+    merged = list(merge(*item_lists, key=attrgetter("created_at"), reverse=True))
+    results = merged[offset : offset + page_size]
+    for item in results:
+        item.league = _APP_LABEL_TO_LEAGUE.get(item._meta.app_label, "")
+    return results
 
 
 class AdminBetsPartialView(SuperuserRequiredMixin, View):
@@ -979,21 +1009,27 @@ class AdminBetsPartialView(SuperuserRequiredMixin, View):
         from epl.betting.models import Parlay as EplParlay
         from nba.betting.models import BetSlip as NbaBetSlip
         from nba.betting.models import Parlay as NbaParlay
+        from nfl.betting.models import BetSlip as NflBetSlip
+        from nfl.betting.models import Parlay as NflParlay
 
         offset = _admin_parse_offset(request)
+        prefetch_limit = offset + ADMIN_PAGE_SIZE * 2
 
-        # Merge all bets from both leagues
+        # Merge all bets from all leagues
         epl_bets = EplBetSlip.objects.select_related(
             "user", "match__home_team", "match__away_team"
         ).order_by("-created_at")
         nba_bets = NbaBetSlip.objects.select_related(
             "user", "game__home_team", "game__away_team"
         ).order_by("-created_at")
+        nfl_bets = NflBetSlip.objects.select_related(
+            "user", "game__home_team", "game__away_team"
+        ).order_by("-created_at")
         all_bets = _admin_merged_querysets(
-            epl_bets, nba_bets, 0, offset + ADMIN_PAGE_SIZE * 2
+            epl_bets, nba_bets, nfl_bets, offset=0, page_size=prefetch_limit
         )
 
-        # Merge all parlays from both leagues
+        # Merge all parlays from all leagues
         epl_parlays = (
             EplParlay.objects.select_related("user")
             .prefetch_related("legs__match__home_team", "legs__match__away_team")
@@ -1004,8 +1040,13 @@ class AdminBetsPartialView(SuperuserRequiredMixin, View):
             .prefetch_related("legs__game__home_team", "legs__game__away_team")
             .order_by("-created_at")
         )
+        nfl_parlays = (
+            NflParlay.objects.select_related("user")
+            .prefetch_related("legs__game__home_team", "legs__game__away_team")
+            .order_by("-created_at")
+        )
         all_parlays = _admin_merged_querysets(
-            epl_parlays, nba_parlays, 0, offset + ADMIN_PAGE_SIZE * 2
+            epl_parlays, nba_parlays, nfl_parlays, offset=0, page_size=prefetch_limit
         )
 
         # Final merge of bets + parlays
@@ -1019,8 +1060,10 @@ class AdminBetsPartialView(SuperuserRequiredMixin, View):
         total = (
             EplBetSlip.objects.count()
             + NbaBetSlip.objects.count()
+            + NflBetSlip.objects.count()
             + EplParlay.objects.count()
             + NbaParlay.objects.count()
+            + NflParlay.objects.count()
         )
 
         return _admin_paginated_response(
@@ -1037,6 +1080,7 @@ class AdminCommentsPartialView(SuperuserRequiredMixin, View):
     def get(self, request):
         from epl.discussions.models import Comment as EplComment
         from nba.discussions.models import Comment as NbaComment
+        from nfl.discussions.models import Comment as NflComment
 
         offset = _admin_parse_offset(request)
         epl_comments = (
@@ -1049,12 +1093,22 @@ class AdminCommentsPartialView(SuperuserRequiredMixin, View):
             .select_related("user", "game__home_team", "game__away_team")
             .order_by("-created_at")
         )
+        nfl_comments = (
+            NflComment.objects.filter(is_deleted=False)
+            .select_related("user", "game__home_team", "game__away_team")
+            .order_by("-created_at")
+        )
         items = _admin_merged_querysets(
-            epl_comments, nba_comments, offset, ADMIN_PAGE_SIZE
+            epl_comments,
+            nba_comments,
+            nfl_comments,
+            offset=offset,
+            page_size=ADMIN_PAGE_SIZE,
         )
         total = (
             EplComment.objects.filter(is_deleted=False).count()
             + NbaComment.objects.filter(is_deleted=False).count()
+            + NflComment.objects.filter(is_deleted=False).count()
         )
 
         return _admin_paginated_response(
