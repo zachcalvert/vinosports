@@ -36,6 +36,7 @@ INSTALLED_APPS = [
     "vinosports.challenges",
     "vinosports.rewards",
     "vinosports.bots",
+    "vinosports.activity",
     # Hub
     "hub",
     # EPL
@@ -104,6 +105,7 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "vinosports.context_processors.global_nav",
+                "vinosports.activity.context_processors.unread_notification_count",
                 # Hub
                 "hub.context_processors.league_urls",
                 # EPL (guarded by request.league)

@@ -12,6 +12,7 @@ from django.utils import timezone
 from django.views import View
 from django.views.generic import TemplateView
 
+from vinosports.activity.models import Notification
 from vinosports.betting.balance import log_transaction
 from vinosports.betting.leaderboard import (
     BOARD_TYPES,
@@ -983,3 +984,73 @@ class AdminUsersPartialView(SuperuserRequiredMixin, View):
             "hub/partials/admin_users_list.html",
             "hub/partials/admin_users_page.html",
         )
+
+
+# ---------------------------------------------------------------------------
+# Inbox (notifications)
+# ---------------------------------------------------------------------------
+
+
+class InboxView(LoginRequiredMixin, TemplateView):
+    """User's notification inbox."""
+
+    template_name = "hub/inbox.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        now = timezone.now()
+
+        notifications = (
+            Notification.objects.filter(
+                recipient=self.request.user,
+                expires_at__gt=now,
+            )
+            .select_related("actor")
+            .order_by("-created_at")[:100]
+        )
+
+        context["notifications"] = notifications
+        context["unread_count"] = sum(1 for n in notifications if not n.is_read)
+        return context
+
+
+class MarkNotificationReadView(LoginRequiredMixin, View):
+    """Mark a single notification as read and redirect to its URL."""
+
+    def post(self, request, id_hash):
+        notification = get_object_or_404(
+            Notification,
+            id_hash=id_hash,
+            recipient=request.user,
+        )
+        if not notification.is_read:
+            notification.is_read = True
+            notification.read_at = timezone.now()
+            notification.save(update_fields=["is_read", "read_at"])
+
+        if request.headers.get("HX-Request"):
+            return render(
+                request,
+                "hub/partials/inbox_notification.html",
+                {
+                    "notification": notification,
+                },
+            )
+
+        return redirect(notification.url or "hub:inbox")
+
+
+class MarkAllReadView(LoginRequiredMixin, View):
+    """Mark all unread notifications as read."""
+
+    def post(self, request):
+        Notification.objects.filter(
+            recipient=request.user,
+            is_read=False,
+        ).update(is_read=True, read_at=timezone.now())
+
+        if request.headers.get("HX-Request"):
+            from django.http import HttpResponse as HttpResp
+
+            return HttpResp(headers={"HX-Refresh": "true"})
+        return redirect("hub:inbox")

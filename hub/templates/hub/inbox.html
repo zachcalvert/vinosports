@@ -1,0 +1,40 @@
+{% extends "hub/base.html" %}
+{% block title %}Inbox — Vino Sports{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto px-4 py-8">
+    {# Header #}
+    <div class="flex items-center justify-between mb-6">
+        <h1 class="text-xl font-bold text-white">
+            Inbox
+            {% if unread_count %}
+            <span class="text-sm font-normal text-gray-400">({{ unread_count }} unread)</span>
+            {% endif %}
+        </h1>
+        {% if unread_count %}
+        <form method="post" action="{% url 'hub:inbox_mark_all_read' %}">
+            {% csrf_token %}
+            <button type="submit"
+                    class="text-sm text-gray-400 hover:text-white transition"
+                    hx-post="{% url 'hub:inbox_mark_all_read' %}"
+                    hx-swap="none">
+                Mark all as read
+            </button>
+        </form>
+        {% endif %}
+    </div>
+
+    {# Notification list #}
+    <div class="space-y-1">
+        {% for notification in notifications %}
+            {% include "hub/partials/inbox_notification.html" with notification=notification %}
+        {% empty %}
+            <div class="text-center py-16">
+                <i class="ph-duotone ph-envelope-simple text-4xl text-gray-600 mb-3"></i>
+                <p class="text-gray-500">No notifications yet.</p>
+                <p class="text-sm text-gray-600 mt-1">You'll be notified when someone replies to your comments.</p>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

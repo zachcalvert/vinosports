@@ -6,8 +6,16 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
 
 app = Celery("vinosports")
 app.config_from_object("django.conf:settings", namespace="CELERY")
+app.conf.beat_schedule = {
+    "dismiss-expired-notifications": {
+        "task": "vinosports.activity.tasks.dismiss_expired_notifications",
+        "schedule": 3600.0,  # Every hour
+    },
+}
+
 app.autodiscover_tasks(
     [
+        "vinosports.activity",
         "vinosports.betting",
         "epl.matches",
         "epl.betting",

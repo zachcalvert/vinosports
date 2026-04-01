@@ -62,6 +62,18 @@
         <!-- Right: auth -->
         <div class="flex items-center gap-2 sm:gap-3">
             {% if user.is_authenticated %}
+            {# Inbox icon with badge #}
+            <a href="{% url 'hub:inbox' %}"
+               class="global-nav-inbox"
+               id="inbox-icon"
+               aria-label="Inbox{% if unread_notification_count %} ({{ unread_notification_count }} unread){% endif %}">
+                <i class="ph-duotone ph-envelope-simple text-xl"></i>
+                {% if unread_notification_count %}
+                <span class="inbox-badge" id="inbox-badge">{{ unread_notification_count }}</span>
+                {% else %}
+                <span class="inbox-badge hidden" id="inbox-badge"></span>
+                {% endif %}
+            </a>
             <div class="global-nav-user relative" x-data="{ open: false }">
                 <button type="button"
                         class="global-nav-user-btn"
@@ -295,6 +307,47 @@
     background-color: rgba(179, 38, 47, 0.06);
 }
 
+.global-nav-inbox {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.375rem;
+    border-radius: 0.375rem;
+    color: #485f84;
+    text-decoration: none;
+    transition: color 0.15s, background-color 0.15s;
+}
+.global-nav-inbox:hover {
+    color: #b3262f;
+    background-color: rgba(179, 38, 47, 0.06);
+}
+
+.inbox-badge {
+    position: absolute;
+    top: 0;
+    right: -0.125rem;
+    min-width: 1rem;
+    height: 1rem;
+    padding: 0 0.25rem;
+    border-radius: 9999px;
+    background-color: #b3262f;
+    color: #ffffff;
+    font-size: 0.625rem;
+    font-weight: 700;
+    line-height: 1rem;
+    text-align: center;
+    pointer-events: none;
+}
+.inbox-badge.hidden {
+    display: none;
+}
+
+@media (max-width: 639px) {
+    .global-nav-inbox { padding: 0.25rem; }
+    .global-nav-inbox i { font-size: 1.125rem; }
+}
+
 .global-nav-user-btn {
     display: flex;
     align-items: center;
@@ -375,3 +428,29 @@
 /* Alpine x-cloak: hide elements until Alpine initializes */
 [x-cloak] { display: none !important; }
 </style>
+
+<script>
+(function() {
+    var badge = document.getElementById("inbox-badge");
+    if (!badge) return;
+    document.body.addEventListener("htmx:wsAfterMessage", function(e) {
+        try {
+            var data = JSON.parse(e.detail.message);
+            if (data.type === "inbox_update") {
+                var count = data.unread_count;
+                if (count > 0) {
+                    badge.textContent = count > 99 ? "99+" : count;
+                    badge.classList.remove("hidden");
+                } else {
+                    badge.classList.add("hidden");
+                }
+                var icon = document.getElementById("inbox-icon");
+                if (icon) {
+                    icon.setAttribute("aria-label",
+                        count > 0 ? "Inbox (" + count + " unread)" : "Inbox");
+                }
+            }
+        } catch (err) {}
+    });
+})();
+</script>

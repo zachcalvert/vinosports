@@ -51,6 +51,18 @@ urlpatterns = [
         views.UpcomingChallengesHubPartial.as_view(),
         name="challenges_upcoming_partial",
     ),
+    # Inbox (notifications)
+    path("inbox/", views.InboxView.as_view(), name="inbox"),
+    path(
+        "inbox/read/<str:id_hash>/",
+        views.MarkNotificationReadView.as_view(),
+        name="inbox_mark_read",
+    ),
+    path(
+        "inbox/read-all/",
+        views.MarkAllReadView.as_view(),
+        name="inbox_mark_all_read",
+    ),
     # Admin Dashboard (cross-league)
     path(
         "admin-dashboard/",

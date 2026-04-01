@@ -62,6 +62,17 @@ class NotificationsConsumer(WebsocketConsumer):
     def notification(self, event):
         self.send(text_data=event.get("html", ""))
 
+    def inbox_notification(self, event):
+        """Update the unread badge count in the navbar."""
+        self.send(
+            text_data=json.dumps(
+                {
+                    "type": "inbox_update",
+                    "unread_count": event["count"],
+                }
+            )
+        )
+
     def badge_notification(self, event):
         self.send(text_data=json.dumps({"type": "badge", "data": event}))
 

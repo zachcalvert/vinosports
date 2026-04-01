@@ -96,6 +96,23 @@ class CreateReplyView(LoginRequiredMixin, View):
             body=form.cleaned_data["body"],
         )
 
+        # Notify parent comment author
+        try:
+            from vinosports.activity.notifications import notify_comment_reply
+
+            notify_comment_reply(
+                parent_comment=parent,
+                reply_comment=reply,
+                match_or_game=game,
+                league="nba",
+            )
+        except Exception:
+            import logging
+
+            logging.getLogger(__name__).warning(
+                "Failed to create reply notification", exc_info=True
+            )
+
         bet_map = _build_bet_map(game.pk, {request.user.pk})
         reply.prefetched_replies = []
         _annotate_bet_positions([reply], bet_map, game)

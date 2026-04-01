@@ -1,0 +1,41 @@
+<div class="flex items-start gap-3 p-3 rounded-lg transition
+    {% if not notification.is_read %}bg-gray-800/60 border border-gray-700{% else %}bg-transparent{% endif %}"
+    id="notification-{{ notification.id_hash }}">
+
+    {# Actor avatar #}
+    <div class="flex-shrink-0 mt-0.5">
+        {% if notification.actor and notification.actor.profile_image %}
+        <img src="{{ notification.actor.profile_image.url }}" alt=""
+             class="w-8 h-8 rounded-full object-cover">
+        {% else %}
+        <div class="w-8 h-8 rounded-full flex items-center justify-center"
+             style="background-color: {{ notification.actor.avatar_bg|default:'#374151' }}">
+            <i class="ph-duotone ph-{{ notification.actor.avatar_icon|default:'user-circle' }} text-sm text-white"></i>
+        </div>
+        {% endif %}
+    </div>
+
+    {# Content #}
+    <div class="flex-1 min-w-0">
+        <a href="{{ notification.url }}"
+           class="block group"
+           hx-post="{% url 'hub:inbox_mark_read' id_hash=notification.id_hash %}"
+           hx-target="#notification-{{ notification.id_hash }}"
+           hx-swap="outerHTML">
+            <p class="text-sm {% if not notification.is_read %}text-white font-medium{% else %}text-gray-400{% endif %} group-hover:text-blue-400 transition">
+                {{ notification.title }}
+            </p>
+            {% if notification.body %}
+            <p class="text-xs text-gray-500 mt-0.5 truncate">{{ notification.body }}</p>
+            {% endif %}
+        </a>
+        <p class="text-xs text-gray-600 mt-1">{{ notification.created_at|timesince }} ago</p>
+    </div>
+
+    {# Unread indicator #}
+    {% if not notification.is_read %}
+    <div class="flex-shrink-0 mt-2">
+        <span class="w-2 h-2 rounded-full bg-blue-500 inline-block"></span>
+    </div>
+    {% endif %}
+</div>

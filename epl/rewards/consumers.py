@@ -1,3 +1,4 @@
+import json
 import logging
 
 from asgiref.sync import async_to_sync
@@ -41,6 +42,17 @@ class NotificationConsumer(WebsocketConsumer):
     def _join_group(self, group_name):
         channel_layer = get_channel_layer()
         async_to_sync(channel_layer.group_add)(group_name, self.channel_name)
+
+    def inbox_notification(self, event):
+        """Update the unread badge count in the navbar."""
+        self.send(
+            text_data=json.dumps(
+                {
+                    "type": "inbox_update",
+                    "unread_count": event["count"],
+                }
+            )
+        )
 
     def badge_notification(self, event):
         close_old_connections()

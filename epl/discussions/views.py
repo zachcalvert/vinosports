@@ -193,6 +193,19 @@ class CreateReplyView(LoginRequiredMixin, View):
             body=form.cleaned_data["body"],
         )
 
+        # Notify parent comment author
+        try:
+            from vinosports.activity.notifications import notify_comment_reply
+
+            notify_comment_reply(
+                parent_comment=parent,
+                reply_comment=reply,
+                match_or_game=match,
+                league="epl",
+            )
+        except Exception:
+            logger.warning("Failed to create reply notification", exc_info=True)
+
         # Maybe trigger a bot reply to the parent thread (not the reply itself,
         # since the UI only renders one level of nesting).
         # Wrapped in try/except so broker failures don't break the user's post.
