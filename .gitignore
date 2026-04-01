@@ -54,3 +54,5 @@ celerybeat.pid
 .env
 
 .claude
+
+CLAUDE.md
