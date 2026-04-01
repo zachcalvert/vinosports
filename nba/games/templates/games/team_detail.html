@@ -6,8 +6,8 @@
 <!-- Hero header -->
 <div class="rounded-xl border border-outline-variant bg-surface-container-lowest overflow-hidden mb-6">
     <div class="p-5 sm:p-6 flex flex-col sm:flex-row items-start gap-5">
-        {% if team.logo_url %}
-            <img src="{{ team.logo_url }}"
+        {% if team.logo %}
+            <img src="{{ team.logo }}"
                  alt="{{ team.name }}"
                  class="w-20 h-20 object-contain">
         {% else %}
@@ -87,7 +87,7 @@
             {% if last_game.home_team == team %}
                 {% with opp=last_game.away_team %}
                 <div class="flex items-center gap-4">
-                    {% if opp.logo_url %}<img src="{{ opp.logo_url }}" alt="" class="w-12 h-12 object-contain">{% endif %}
+                    {% if opp.logo %}<img src="{{ opp.logo }}" alt="" class="w-12 h-12 object-contain">{% endif %}
                     <div class="flex-1">
                         <div class="text-sm text-muted">vs</div>
                         <div class="font-headline font-bold italic text-lg">{{ opp.short_name }}</div>
@@ -108,7 +108,7 @@
             {% else %}
                 {% with opp=last_game.home_team %}
                 <div class="flex items-center gap-4">
-                    {% if opp.logo_url %}<img src="{{ opp.logo_url }}" alt="" class="w-12 h-12 object-contain">{% endif %}
+                    {% if opp.logo %}<img src="{{ opp.logo }}" alt="" class="w-12 h-12 object-contain">{% endif %}
                     <div class="flex-1">
                         <div class="text-sm text-muted">@</div>
                         <div class="font-headline font-bold italic text-lg">{{ opp.short_name }}</div>
@@ -148,7 +148,7 @@
             {% if next_game.home_team == team %}
                 {% with opp=next_game.away_team %}
                 <div class="flex items-center gap-4">
-                    {% if opp.logo_url %}<img src="{{ opp.logo_url }}" alt="" class="w-12 h-12 object-contain">{% endif %}
+                    {% if opp.logo %}<img src="{{ opp.logo }}" alt="" class="w-12 h-12 object-contain">{% endif %}
                     <div class="flex-1">
                         <div class="text-sm text-muted">vs</div>
                         <div class="font-headline font-bold italic text-lg">{{ opp.short_name }}</div>
@@ -165,7 +165,7 @@
             {% else %}
                 {% with opp=next_game.home_team %}
                 <div class="flex items-center gap-4">
-                    {% if opp.logo_url %}<img src="{{ opp.logo_url }}" alt="" class="w-12 h-12 object-contain">{% endif %}
+                    {% if opp.logo %}<img src="{{ opp.logo }}" alt="" class="w-12 h-12 object-contain">{% endif %}
                     <div class="flex-1">
                         <div class="text-sm text-muted">@</div>
                         <div class="font-headline font-bold italic text-lg">{{ opp.short_name }}</div>

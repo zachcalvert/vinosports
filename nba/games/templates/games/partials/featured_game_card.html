@@ -13,8 +13,8 @@
             {# Away team #}
             <div class="text-center space-y-2">
                 <div class="w-16 h-16 md:w-20 md:h-20 bg-surface flex items-center justify-center rounded-full mx-auto shadow-sm">
-                    {% if game.away_team.logo_url %}
-                    <img src="{{ game.away_team.logo_url }}" alt="{{ game.away_team }}" class="w-10 h-10 md:w-12 md:h-12 object-contain">
+                    {% if game.away_team.logo %}
+                    <img src="{{ game.away_team.logo }}" alt="{{ game.away_team }}" class="w-10 h-10 md:w-12 md:h-12 object-contain">
                     {% endif %}
                 </div>
                 <div class="font-headline font-black italic text-sm md:text-lg">{{ game.away_team.short_name|default:game.away_team.abbreviation|upper }}</div>
@@ -56,8 +56,8 @@
             {# Home team #}
             <div class="text-center space-y-2">
                 <div class="w-16 h-16 md:w-20 md:h-20 bg-surface flex items-center justify-center rounded-full mx-auto shadow-sm">
-                    {% if game.home_team.logo_url %}
-                    <img src="{{ game.home_team.logo_url }}" alt="{{ game.home_team }}" class="w-10 h-10 md:w-12 md:h-12 object-contain">
+                    {% if game.home_team.logo %}
+                    <img src="{{ game.home_team.logo }}" alt="{{ game.home_team }}" class="w-10 h-10 md:w-12 md:h-12 object-contain">
                     {% endif %}
                 </div>
                 <div class="font-headline font-black italic text-sm md:text-lg">{{ game.home_team.short_name|default:game.home_team.abbreviation|upper }}</div>

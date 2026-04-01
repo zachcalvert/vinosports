@@ -337,6 +337,7 @@ CELERY_BEAT_SCHEDULE = {
     "epl-broadcast-activity-event-20s": {
         "task": "epl.activity.tasks.broadcast_next_activity_event",
         "schedule": timedelta(seconds=20),
+        "options": {"expires": 20},
     },
     "epl-cleanup-old-activity-events-daily": {
         "task": "epl.activity.tasks.cleanup_old_activity_events",
@@ -400,6 +401,7 @@ CELERY_BEAT_SCHEDULE = {
     "nba-broadcast-activity-event-20s": {
         "task": "nba.activity.tasks.broadcast_next_activity_event",
         "schedule": timedelta(seconds=20),
+        "options": {"expires": 20},
     },
     "nba-cleanup-old-activity-events-daily": {
         "task": "nba.activity.tasks.cleanup_old_activity_events",
@@ -476,6 +478,7 @@ CELERY_BEAT_SCHEDULE = {
     "nfl-broadcast-activity-event-20s": {
         "task": "nfl.activity.tasks.broadcast_next_activity_event",
         "schedule": timedelta(seconds=20),
+        "options": {"expires": 20},
     },
     "nfl-cleanup-old-activity-events-daily": {
         "task": "nfl.activity.tasks.cleanup_old_activity_events",

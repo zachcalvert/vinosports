@@ -35,7 +35,7 @@
         {# -- Matchup: teams side-by-side -- #}
         <div class="flex items-center justify-between mb-5">
             <div class="flex flex-col items-center gap-1.5 flex-1">
-                {% if game.away_team.logo_url %}<img src="{{ game.away_team.logo_url }}" alt="" class="w-10 h-10 object-contain">{% endif %}
+                {% if game.away_team.logo %}<img src="{{ game.away_team.logo }}" alt="" class="w-10 h-10 object-contain">{% endif %}
                 <span class="font-headline font-bold italic text-sm">{{ game.away_team.abbreviation|upper }}</span>
                 {% with standing=standings_by_team|get_item:game.away_team_id %}
                 {% if standing %}<span class="text-[10px] font-label opacity-50">{{ standing.wins }}-{{ standing.losses }}</span>{% endif %}
@@ -48,7 +48,7 @@
             <span class="font-headline font-bold italic opacity-20 text-2xl">@</span>
 
             <div class="flex flex-col items-center gap-1.5 flex-1">
-                {% if game.home_team.logo_url %}<img src="{{ game.home_team.logo_url }}" alt="" class="w-10 h-10 object-contain">{% endif %}
+                {% if game.home_team.logo %}<img src="{{ game.home_team.logo }}" alt="" class="w-10 h-10 object-contain">{% endif %}
                 <span class="font-headline font-bold italic text-sm">{{ game.home_team.abbreviation|upper }}</span>
                 {% with standing=standings_by_team|get_item:game.home_team_id %}
                 {% if standing %}<span class="text-[10px] font-label opacity-50">{{ standing.wins }}-{{ standing.losses }}</span>{% endif %}

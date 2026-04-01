@@ -25,8 +25,8 @@
                 </td>
                 <td class="px-2 sm:px-3 py-2">
                     <div class="flex items-center gap-2">
-                        {% if standing.team.logo_url %}
-                            <img src="{{ standing.team.logo_url }}" alt="" class="w-6 h-6 object-contain">
+                        {% if standing.team.logo %}
+                            <img src="{{ standing.team.logo }}" alt="" class="w-6 h-6 object-contain">
                         {% endif %}
                         <a href="{{ standing.team.get_absolute_url }}" class="text-sm font-medium hover:underline">{{ standing.team.short_name }}</a>
                         <span class="text-xs text-muted hidden lg:inline">{{ standing.team.abbreviation }}</span>

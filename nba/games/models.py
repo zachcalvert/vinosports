@@ -26,6 +26,7 @@ class Team(BaseModel):
     short_name = models.CharField(max_length=100)
     abbreviation = models.CharField(max_length=5)
     logo_url = models.URLField(blank=True)
+    team_logo = models.ImageField(upload_to="nba/logos/", blank=True)
     conference = models.CharField(max_length=4, choices=Conference.choices)
     division = models.CharField(max_length=50)
 
@@ -34,6 +35,13 @@ class Team(BaseModel):
 
     def __str__(self):
         return self.short_name
+
+    @property
+    def logo(self):
+        """Return the best available logo: uploaded image first, then URL."""
+        if self.team_logo:
+            return self.team_logo.url
+        return self.logo_url
 
     def get_absolute_url(self):
         return reverse(

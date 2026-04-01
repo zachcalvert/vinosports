@@ -7,8 +7,8 @@
         <div class="flex items-center justify-between">
             <div class="flex items-center gap-2">
                 <span class="text-xs text-muted w-4">{{ forloop.counter }}.</span>
-                {% if standing.team.logo_url %}
-                    <img src="{{ standing.team.logo_url }}" alt="" class="w-5 h-5 object-contain">
+                {% if standing.team.logo %}
+                    <img src="{{ standing.team.logo }}" alt="" class="w-5 h-5 object-contain">
                 {% endif %}
                 <span class="text-sm font-medium">{{ standing.team.short_name }}</span>
             </div>

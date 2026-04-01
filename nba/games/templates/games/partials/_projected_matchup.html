@@ -6,8 +6,8 @@
         <!-- Seed 1 -->
         <div class="text-center">
             <div class="flex items-center justify-center gap-2 mb-1">
-                {% if projected_matchup.seed_1.team.logo_url %}
-                    <img src="{{ projected_matchup.seed_1.team.logo_url }}" alt="" class="w-8 h-8 object-contain">
+                {% if projected_matchup.seed_1.team.logo %}
+                    <img src="{{ projected_matchup.seed_1.team.logo }}" alt="" class="w-8 h-8 object-contain">
                 {% endif %}
             </div>
             <span class="text-sm font-bold">{{ projected_matchup.seed_1.team.abbreviation }}</span>
@@ -20,8 +20,8 @@
         <!-- Seed 8 -->
         <div class="text-center">
             <div class="flex items-center justify-center gap-2 mb-1">
-                {% if projected_matchup.seed_8.team.logo_url %}
-                    <img src="{{ projected_matchup.seed_8.team.logo_url }}" alt="" class="w-8 h-8 object-contain">
+                {% if projected_matchup.seed_8.team.logo %}
+                    <img src="{{ projected_matchup.seed_8.team.logo }}" alt="" class="w-8 h-8 object-contain">
                 {% endif %}
             </div>
             <span class="text-sm font-bold">{{ projected_matchup.seed_8.team.abbreviation }}</span>

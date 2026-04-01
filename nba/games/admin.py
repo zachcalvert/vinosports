@@ -16,6 +16,16 @@ class TeamAdmin(admin.ModelAdmin):
     list_display = ["short_name", "abbreviation", "conference", "division"]
     list_filter = ["conference", "division"]
     search_fields = ["name", "short_name", "abbreviation"]
+    fields = [
+        "name",
+        "short_name",
+        "abbreviation",
+        "external_id",
+        "team_logo",
+        "logo_url",
+        "conference",
+        "division",
+    ]
 
 
 @admin.register(Player)

@@ -38,8 +38,8 @@ Context expected:
     <div class="flex flex-row items-center justify-center gap-2 sm:gap-8 md:gap-16">
         <!-- Away team -->
         <a href="{% url 'nba_games:team_detail' game.away_team.abbreviation %}" class="text-center flex-1 min-w-0 hover:opacity-80 transition-opacity">
-            {% if game.away_team.logo_url %}
-                <img src="{{ game.away_team.logo_url }}" alt="" class="w-10 h-10 sm:w-16 sm:h-16 mx-auto mb-1 sm:mb-2 object-contain">
+            {% if game.away_team.logo %}
+                <img src="{{ game.away_team.logo }}" alt="" class="w-10 h-10 sm:w-16 sm:h-16 mx-auto mb-1 sm:mb-2 object-contain">
             {% endif %}
             <h2 class="font-bold leading-tight {% if game.is_final and game.winner != game.away_team %}text-muted{% endif %}">
                 <span class="text-sm sm:hidden">{{ game.away_team.abbreviation }}</span>
@@ -81,8 +81,8 @@ Context expected:
 
         <!-- Home team -->
         <a href="{% url 'nba_games:team_detail' game.home_team.abbreviation %}" class="text-center flex-1 min-w-0 hover:opacity-80 transition-opacity">
-            {% if game.home_team.logo_url %}
-                <img src="{{ game.home_team.logo_url }}" alt="" class="w-10 h-10 sm:w-16 sm:h-16 mx-auto mb-1 sm:mb-2 object-contain">
+            {% if game.home_team.logo %}
+                <img src="{{ game.home_team.logo }}" alt="" class="w-10 h-10 sm:w-16 sm:h-16 mx-auto mb-1 sm:mb-2 object-contain">
             {% endif %}
             <h2 class="font-bold leading-tight {% if game.is_final and game.winner != game.home_team %}text-muted{% endif %}">
                 <span class="text-sm sm:hidden">{{ game.home_team.abbreviation }}</span>
