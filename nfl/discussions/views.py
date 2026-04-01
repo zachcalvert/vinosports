@@ -36,6 +36,7 @@ class CreateCommentView(LoginRequiredMixin, View):
                 logger.warning("Failed to dispatch bot reply task", exc_info=True)
 
         comment.prefetched_replies = []
+        comment.reply_count = 0
 
         html = render_to_string(
             "nfl_discussions/partials/comment.html",

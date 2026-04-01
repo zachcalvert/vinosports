@@ -1,7 +1,7 @@
 import logging
 
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models import Exists, OuterRef, Prefetch, Q
+from django.db.models import Count, Exists, OuterRef, Prefetch, Q
 from django.http import HttpResponse, HttpResponseForbidden
 from django.shortcuts import get_object_or_404
 from django.template.loader import render_to_string
@@ -79,6 +79,7 @@ class CommentListView(View):
         visible_qs = _visible_top_level_qs(match)
         comments = list(
             visible_qs.select_related("user")
+            .annotate(reply_count=Count("replies", filter=Q(replies__is_deleted=False)))
             .prefetch_related(
                 Prefetch("replies", queryset=replies_qs, to_attr="prefetched_replies")
             )
@@ -149,6 +150,7 @@ class CreateCommentView(LoginRequiredMixin, View):
 
         bet_map = _build_bet_map(match.pk, {request.user.pk})
         comment.prefetched_replies = []
+        comment.reply_count = 0
         _annotate_bet_positions([comment], bet_map, match)
 
         new_count = _visible_top_level_qs(match).count()

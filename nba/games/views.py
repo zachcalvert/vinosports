@@ -553,6 +553,7 @@ class GameDetailView(LoginRequiredMixin, View):
         comments = list(
             Comment.objects.filter(game=game, parent__isnull=True)
             .select_related("user")
+            .annotate(reply_count=Count("replies", filter=Q(replies__is_deleted=False)))
             .prefetch_related(
                 Prefetch("replies", queryset=replies_qs, to_attr="prefetched_replies")
             )

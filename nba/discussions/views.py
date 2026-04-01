@@ -69,6 +69,7 @@ class CreateCommentView(LoginRequiredMixin, View):
 
         bet_map = _build_bet_map(game.pk, {request.user.pk})
         comment.prefetched_replies = []
+        comment.reply_count = 0
         _annotate_bet_positions([comment], bet_map, game)
 
         html = render_to_string(

@@ -30,6 +30,11 @@
         <!-- Actions -->
         <div class="flex items-center gap-3 mt-2">
             {% if not is_reply %}
+            {% if comment.reply_count > 0 %}
+            <span class="text-xs text-muted">
+                {{ comment.reply_count }} repl{{ comment.reply_count|pluralize:"y,ies" }}
+            </span>
+            {% endif %}
             <button onclick="this.nextElementSibling.classList.toggle('hidden')"
                     class="text-xs text-muted hover:text-primary transition-colors">
                 Reply
@@ -56,6 +61,12 @@
             </form>
             {% endif %}
         </div>
+        {% if not is_reply and comment.reply_count == 0 and user.is_authenticated %}
+        <button onclick="this.previousElementSibling.querySelector('form').classList.remove('hidden');this.previousElementSibling.querySelector('textarea').focus();this.remove()"
+                class="text-xs text-muted/60 hover:text-muted transition-colors mt-1">
+            Be the first to reply
+        </button>
+        {% endif %}
         {% endif %}
     </div>
 
