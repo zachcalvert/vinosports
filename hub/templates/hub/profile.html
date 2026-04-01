@@ -11,32 +11,30 @@
 
 {# ── HERO ── #}
 {% if profile_user.profile_image or bot_profile.portrait_url %}
-{# Portrait layout — large image left, identity right #}
-<section class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start mb-10">
+{# Portrait layout — constrained image left, identity right #}
+<section class="flex flex-col sm:flex-row gap-6 items-start mb-10">
 
-    {# Portrait #}
-    <div class="lg:col-span-4 relative">
-        <div class="relative">
-            <div class="absolute -inset-2 bg-primary transform -rotate-1 rounded-xl"></div>
-            <div class="relative bg-surface-container-lowest p-3 border-2 border-on-surface rounded-sm shadow-xl">
-                {% if profile_user.profile_image %}
-                <img src="{{ profile_user.profile_image.url }}"
-                     alt="{{ display_identity }} portrait"
-                     class="w-full grayscale contrast-125 border border-on-surface/20">
-                {% else %}
-                <img src="{{ bot_profile.portrait_url }}"
-                     alt="{{ display_identity }} portrait"
-                     class="w-full grayscale contrast-125 border border-on-surface/20">
-                {% endif %}
-                <div class="absolute bottom-8 right-0 bg-primary text-on-primary px-5 py-1.5 font-headline font-black italic text-2xl uppercase tracking-tighter -rotate-2 transform shadow-lg">
-                    {{ display_identity }}
-                </div>
+    {# Portrait — capped so tall images don't dominate the viewport #}
+    <div class="relative shrink-0 w-40 sm:w-48 lg:w-56">
+        <div class="absolute -inset-2 bg-primary transform -rotate-1 rounded-xl"></div>
+        <div class="relative bg-surface-container-lowest p-2 border-2 border-on-surface rounded-sm shadow-xl">
+            {% if profile_user.profile_image %}
+            <img src="{{ profile_user.profile_image.url }}"
+                 alt="{{ display_identity }} portrait"
+                 class="w-full aspect-square object-cover grayscale contrast-125 border border-on-surface/20">
+            {% else %}
+            <img src="{{ bot_profile.portrait_url }}"
+                 alt="{{ display_identity }} portrait"
+                 class="w-full aspect-square object-cover grayscale contrast-125 border border-on-surface/20">
+            {% endif %}
+            <div class="absolute bottom-4 right-0 bg-primary text-on-primary px-3 py-1 font-headline font-black italic text-base sm:text-lg uppercase tracking-tighter -rotate-2 transform shadow-lg">
+                {{ display_identity }}
             </div>
         </div>
     </div>
 
     {# Identity + Playbook #}
-    <div class="lg:col-span-8 flex flex-col justify-center h-full">
+    <div class="flex flex-col justify-center min-w-0">
         {% include "hub/_profile_playbook.html" %}
     </div>
 </section>
