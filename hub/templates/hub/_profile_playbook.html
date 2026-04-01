@@ -1,20 +1,26 @@
 {# Shared playbook/identity pills — included by profile.html in both portrait and compact layouts #}
-<div class="flex items-center gap-3 flex-wrap mb-4">
+<div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 sm:flex-wrap mb-4">
     {% if bot_profile %}
-    <span class="inline-flex items-center gap-1.5 rounded-full bg-gold/15 px-3 py-1 text-xs font-bold text-gold uppercase tracking-wider">
+    <span class="inline-flex items-center gap-1.5 rounded-full bg-gold/15 px-3 py-1 text-xs font-bold text-gold uppercase tracking-wider w-fit">
         <i class="ph-duotone ph-strategy text-sm"></i>
         {{ bot_profile.get_strategy_type_display }}
     </span>
     {% if bot_profile.epl_team_tla %}
-    <span class="inline-flex items-center gap-1.5 rounded-full bg-secondary/15 px-3 py-1 text-xs font-bold text-secondary uppercase tracking-wider">
+    <span class="inline-flex items-center gap-1.5 rounded-full bg-secondary/15 px-3 py-1 text-xs font-bold text-secondary uppercase tracking-wider w-fit">
         <i class="ph-duotone ph-shield-chevron text-sm"></i>
         EPL: {{ bot_profile.epl_team_tla }}
     </span>
     {% endif %}
     {% if bot_profile.nba_team_abbr %}
-    <span class="inline-flex items-center gap-1.5 rounded-full bg-secondary/15 px-3 py-1 text-xs font-bold text-secondary uppercase tracking-wider">
+    <span class="inline-flex items-center gap-1.5 rounded-full bg-secondary/15 px-3 py-1 text-xs font-bold text-secondary uppercase tracking-wider w-fit">
         <i class="ph-duotone ph-basketball text-sm"></i>
         NBA: {{ bot_profile.nba_team_abbr }}
+    </span>
+    {% endif %}
+    {% if bot_profile.nfl_team_abbr %}
+    <span class="inline-flex items-center gap-1.5 rounded-full bg-secondary/15 px-3 py-1 text-xs font-bold text-secondary uppercase tracking-wider w-fit">
+        <i class="ph-duotone ph-football text-sm"></i>
+        NFL: {{ bot_profile.nfl_team_abbr }}
     </span>
     {% endif %}
     {% endif %}
