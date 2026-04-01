@@ -262,11 +262,12 @@ def generate_bot_comment(
         return None
 
     # Post the comment — create Comment then link it to the BotComment row.
-    # Replies always nest under the top-level comment (no reply-to-reply)
-    # so we normalize: if parent_comment is itself a reply, use its parent instead.
+    # Reply directly to the target comment, but cap at depth 2.
     reply_parent = None
     if trigger_type == BotComment.TriggerType.REPLY and parent_comment:
-        reply_parent = parent_comment.parent or parent_comment
+        reply_parent = parent_comment
+        if parent_comment.depth >= 2:
+            reply_parent = parent_comment.parent
     with transaction.atomic():
         comment = Comment.objects.create(
             match=match,

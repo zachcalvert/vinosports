@@ -545,9 +545,19 @@ class GameDetailView(LoginRequiredMixin, View):
 
         from nba.discussions.models import Comment
 
+        grandchild_qs = (
+            Comment.objects.filter(is_deleted=False)
+            .select_related("user")
+            .order_by("created_at")
+        )
         replies_qs = (
             Comment.objects.filter(is_deleted=False)
             .select_related("user")
+            .prefetch_related(
+                Prefetch(
+                    "replies", queryset=grandchild_qs, to_attr="prefetched_replies"
+                )
+            )
             .order_by("created_at")
         )
         comments = list(
@@ -566,6 +576,8 @@ class GameDetailView(LoginRequiredMixin, View):
         user_ids = {c.user_id for c in comments}
         for c in comments:
             user_ids.update(r.user_id for r in c.prefetched_replies)
+            for r in c.prefetched_replies:
+                user_ids.update(gc.user_id for gc in r.prefetched_replies)
         bet_map = _build_bet_map(game.pk, user_ids) if user_ids else {}
         _annotate_bet_positions(comments, bet_map, game)
 

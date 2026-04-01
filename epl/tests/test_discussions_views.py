@@ -175,7 +175,8 @@ class TestCreateReplyView:
         assert reply.match == match
         assert reply.user == user
 
-    def test_cannot_reply_to_a_reply(self, auth_client):
+    def test_can_reply_to_a_reply(self, auth_client):
+        """Depth-1 replies can now receive replies (grandchildren at depth 2)."""
         c, user = auth_client
         match = MatchFactory()
         parent = CommentFactory(match=match)
@@ -183,6 +184,19 @@ class TestCreateReplyView:
         resp = c.post(
             f"/epl/match/{match.slug}/comments/{reply.pk}/reply/",
             {"body": "Nested reply."},
+        )
+        assert resp.status_code == 200
+
+    def test_cannot_reply_beyond_max_depth(self, auth_client):
+        """Depth-2 grandchildren cannot receive further replies."""
+        c, user = auth_client
+        match = MatchFactory()
+        parent = CommentFactory(match=match)
+        reply = CommentFactory(match=match, parent=parent)
+        grandchild = CommentFactory(match=match, parent=reply)
+        resp = c.post(
+            f"/epl/match/{match.slug}/comments/{grandchild.pk}/reply/",
+            {"body": "Too deep."},
         )
         assert resp.status_code == 400
 

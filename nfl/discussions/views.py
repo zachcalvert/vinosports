@@ -40,7 +40,7 @@ class CreateCommentView(LoginRequiredMixin, View):
 
         html = render_to_string(
             "nfl_discussions/partials/comment.html",
-            {"comment": comment, "game": game, "is_reply": False},
+            {"comment": comment, "game": game, "depth": 0},
             request=request,
         )
         return HttpResponse(html)
@@ -49,10 +49,12 @@ class CreateCommentView(LoginRequiredMixin, View):
 class CreateReplyView(LoginRequiredMixin, View):
     def post(self, request, id_hash, comment_id):
         game = get_object_or_404(Game, id_hash=id_hash)
-        parent = get_object_or_404(Comment, pk=comment_id, game=game)
+        parent = get_object_or_404(
+            Comment.objects.select_related("parent"), pk=comment_id, game=game
+        )
 
-        if parent.parent_id is not None:
-            return HttpResponse("Cannot reply to a reply.", status=400)
+        if parent.depth >= Comment.MAX_DEPTH:
+            return HttpResponse("Maximum reply depth reached.", status=400)
 
         form = CommentForm(request.POST)
         if not form.is_valid():
@@ -89,15 +91,16 @@ class CreateReplyView(LoginRequiredMixin, View):
             try:
                 from nfl.bots.tasks import maybe_reply_to_human_comment
 
-                maybe_reply_to_human_comment.delay(parent.pk)
+                maybe_reply_to_human_comment.delay(reply.pk)
             except Exception:
                 logger.warning("Failed to dispatch bot reply task", exc_info=True)
 
+        reply_depth = parent.depth + 1
         reply.prefetched_replies = []
 
         html = render_to_string(
             "nfl_discussions/partials/comment.html",
-            {"comment": reply, "game": game, "is_reply": True},
+            {"comment": reply, "game": game, "depth": reply_depth},
             request=request,
         )
         return HttpResponse(html)
@@ -121,15 +124,24 @@ class DeleteCommentView(LoginRequiredMixin, View):
         has_replies = comment.replies.filter(is_deleted=False).exists()
 
         if has_replies:
-            comment.prefetched_replies = list(
-                comment.replies.filter(is_deleted=False)
+            from django.db.models import Prefetch
+
+            gc_qs = (
+                Comment.objects.filter(is_deleted=False)
                 .select_related("user")
                 .order_by("created_at")
             )
-            is_reply = comment.parent_id is not None
+            comment.prefetched_replies = list(
+                comment.replies.filter(is_deleted=False)
+                .select_related("user")
+                .prefetch_related(
+                    Prefetch("replies", queryset=gc_qs, to_attr="prefetched_replies")
+                )
+                .order_by("created_at")
+            )
             html = render_to_string(
                 "nfl_discussions/partials/comment.html",
-                {"comment": comment, "game": game, "is_reply": is_reply},
+                {"comment": comment, "game": game, "depth": comment.depth},
                 request=request,
             )
         else:

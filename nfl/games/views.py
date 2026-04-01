@@ -434,9 +434,19 @@ class GameDetailView(LoginRequiredMixin, View):
 
         from nfl.discussions.models import Comment
 
+        grandchild_qs = (
+            Comment.objects.filter(is_deleted=False)
+            .select_related("user")
+            .order_by("created_at")
+        )
         replies_qs = (
             Comment.objects.filter(is_deleted=False)
             .select_related("user")
+            .prefetch_related(
+                Prefetch(
+                    "replies", queryset=grandchild_qs, to_attr="prefetched_replies"
+                )
+            )
             .order_by("created_at")
         )
         comments = list(

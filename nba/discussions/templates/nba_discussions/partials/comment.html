@@ -1,4 +1,4 @@
-<div id="comment-{{ comment.id_hash }}" class="{% if is_reply %}ml-8 pl-4 border-l border-outline-variant/50{% endif %}">
+<div id="comment-{{ comment.id_hash }}" class="{% if depth == 1 %}ml-8 pl-4 border-l border-outline-variant/50{% elif depth == 2 %}ml-16 pl-4 border-l border-outline-variant/50{% endif %}">
     <div class="bg-surface-container-lowest rounded-xl border-b-4 border-outline-variant p-4">
         <!-- Header: user info + timestamp -->
         <div class="flex items-center justify-between mb-2">
@@ -28,8 +28,8 @@
 
         <!-- Actions -->
         <div class="flex items-center gap-3 mt-2">
-            {% if not is_reply %}
-            {% if comment.reply_count > 0 %}
+            {% if depth < 2 %}
+            {% if depth == 0 and comment.reply_count > 0 %}
             <span class="text-xs text-muted">
                 {{ comment.reply_count }} repl{{ comment.reply_count|pluralize:"y,ies" }}
             </span>
@@ -59,7 +59,7 @@
             </form>
             {% endif %}
         </div>
-        {% if not is_reply and comment.reply_count == 0 and user.is_authenticated %}
+        {% if depth == 0 and comment.reply_count == 0 and user.is_authenticated %}
         <button onclick="this.previousElementSibling.querySelector('form').classList.remove('hidden');this.previousElementSibling.querySelector('textarea').focus();this.remove()"
                 class="text-xs text-muted/60 hover:text-muted transition-colors mt-1">
             Be the first to reply
@@ -69,11 +69,13 @@
     </div>
 
     <!-- Replies -->
-    {% if not is_reply %}
+    {% if depth < 2 %}
+    {% with next_depth=depth|add:1 %}
     <div id="replies-{{ comment.id_hash }}" class="space-y-2 mt-2">
         {% for reply in comment.prefetched_replies %}
-            {% include "nba_discussions/partials/comment.html" with comment=reply is_reply=True %}
+            {% include "nba_discussions/partials/comment.html" with comment=reply depth=next_depth %}
         {% endfor %}
     </div>
+    {% endwith %}
     {% endif %}
 </div>

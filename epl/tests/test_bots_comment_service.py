@@ -580,8 +580,8 @@ class TestGenerateBotComment:
         assert comment.body.endswith(".")
 
     @patch("epl.bots.comment_service.anthropic.Anthropic")
-    def test_reply_normalizes_parent(self, MockAnthropic, settings):
-        """Replies to replies should nest under the top-level comment."""
+    def test_reply_to_depth1_nests_directly(self, MockAnthropic, settings):
+        """Replies to depth-1 comments nest directly under them (depth 2)."""
         settings.ANTHROPIC_API_KEY = "test-key"
         match = MatchFactory()
         OddsFactory(match=match)
@@ -604,7 +604,35 @@ class TestGenerateBotComment:
             parent_comment=child_comment,
         )
         assert comment is not None
-        assert comment.parent == top_comment
+        assert comment.parent == child_comment
+
+    @patch("epl.bots.comment_service.anthropic.Anthropic")
+    def test_reply_to_depth2_normalizes_to_parent(self, MockAnthropic, settings):
+        """Replies to depth-2 comments get normalized up to the depth-1 parent."""
+        settings.ANTHROPIC_API_KEY = "test-key"
+        match = MatchFactory()
+        OddsFactory(match=match)
+        profile = BotProfileFactory()
+
+        top_comment = CommentFactory(match=match)
+        child_comment = CommentFactory(match=match, parent=top_comment)
+        grandchild = CommentFactory(match=match, parent=child_comment)
+
+        mock_response = MagicMock()
+        mock_response.content = [
+            MagicMock(text="Nice take on the match, totally agree")
+        ]
+        mock_response.stop_reason = "end_turn"
+        MockAnthropic.return_value.messages.create.return_value = mock_response
+
+        comment = generate_bot_comment(
+            profile.user,
+            match,
+            BotComment.TriggerType.REPLY,
+            parent_comment=grandchild,
+        )
+        assert comment is not None
+        assert comment.parent == child_comment
 
 
 # ---------------------------------------------------------------------------

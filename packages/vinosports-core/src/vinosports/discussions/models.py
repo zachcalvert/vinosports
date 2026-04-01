@@ -28,6 +28,26 @@ class AbstractComment(BaseModel):
     body = models.TextField(_("body"), max_length=1000)
     is_deleted = models.BooleanField(_("deleted"), default=False)
 
+    MAX_DEPTH = 2  # 0 = top-level, 1 = reply, 2 = grandchild
+
     class Meta:
         abstract = True
         ordering = ["created_at"]
+
+    @property
+    def depth(self):
+        """Return nesting depth (0 = top-level, 1 = reply, 2 = grandchild)."""
+        d = 0
+        comment = self
+        while comment.parent_id is not None:
+            d += 1
+            comment = comment.parent
+        return d
+
+    @property
+    def root_comment(self):
+        """Walk up to the top-level comment."""
+        comment = self
+        while comment.parent_id is not None:
+            comment = comment.parent
+        return comment

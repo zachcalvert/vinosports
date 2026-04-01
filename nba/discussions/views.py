@@ -40,6 +40,9 @@ def _annotate_bet_positions(comments, bet_map, game):
             for reply in comment.prefetched_replies:
                 sel = bet_map.get(reply.user_id)
                 reply.bet_position = selection_labels.get(sel)
+                if hasattr(reply, "prefetched_replies"):
+                    for gc in reply.prefetched_replies:
+                        gc.bet_position = selection_labels.get(bet_map.get(gc.user_id))
 
 
 class CreateCommentView(LoginRequiredMixin, View):
@@ -74,7 +77,7 @@ class CreateCommentView(LoginRequiredMixin, View):
 
         html = render_to_string(
             "nba_discussions/partials/comment.html",
-            {"comment": comment, "game": game, "is_reply": False},
+            {"comment": comment, "game": game, "depth": 0},
             request=request,
         )
         return HttpResponse(html)
@@ -86,10 +89,12 @@ class CreateReplyView(LoginRequiredMixin, View):
             Game.objects.select_related("home_team", "away_team"),
             id_hash=id_hash,
         )
-        parent = get_object_or_404(Comment, pk=comment_id, game=game)
+        parent = get_object_or_404(
+            Comment.objects.select_related("parent"), pk=comment_id, game=game
+        )
 
-        if parent.parent_id is not None:
-            return HttpResponse("Cannot reply to a reply.", status=400)
+        if parent.depth >= Comment.MAX_DEPTH:
+            return HttpResponse("Maximum reply depth reached.", status=400)
 
         form = CommentForm(request.POST)
         if not form.is_valid():
@@ -126,17 +131,18 @@ class CreateReplyView(LoginRequiredMixin, View):
             try:
                 from nba.bots.tasks import maybe_reply_to_human_comment
 
-                maybe_reply_to_human_comment.delay(parent.pk)
+                maybe_reply_to_human_comment.delay(reply.pk)
             except Exception:
                 logger.warning("Failed to dispatch bot reply task", exc_info=True)
 
+        reply_depth = parent.depth + 1
         bet_map = _build_bet_map(game.pk, {request.user.pk})
         reply.prefetched_replies = []
         _annotate_bet_positions([reply], bet_map, game)
 
         html = render_to_string(
             "nba_discussions/partials/comment.html",
-            {"comment": reply, "game": game, "is_reply": True},
+            {"comment": reply, "game": game, "depth": reply_depth},
             request=request,
         )
         return HttpResponse(html)
@@ -160,20 +166,31 @@ class DeleteCommentView(LoginRequiredMixin, View):
         has_replies = comment.replies.filter(is_deleted=False).exists()
 
         if has_replies:
+            from django.db.models import Prefetch
+
+            gc_qs = (
+                Comment.objects.filter(is_deleted=False)
+                .select_related("user")
+                .order_by("created_at")
+            )
             comment.prefetched_replies = list(
                 comment.replies.filter(is_deleted=False)
                 .select_related("user")
+                .prefetch_related(
+                    Prefetch("replies", queryset=gc_qs, to_attr="prefetched_replies")
+                )
                 .order_by("created_at")
             )
             user_ids = {comment.user_id} | {
                 r.user_id for r in comment.prefetched_replies
             }
+            for r in comment.prefetched_replies:
+                user_ids.update(gc.user_id for gc in r.prefetched_replies)
             bet_map = _build_bet_map(game.pk, user_ids) if user_ids else {}
             _annotate_bet_positions([comment], bet_map, game)
-            is_reply = comment.parent_id is not None
             html = render_to_string(
                 "nba_discussions/partials/comment.html",
-                {"comment": comment, "game": game, "is_reply": is_reply},
+                {"comment": comment, "game": game, "depth": comment.depth},
                 request=request,
             )
         else:

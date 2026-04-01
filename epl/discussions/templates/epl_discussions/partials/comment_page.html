@@ -1,7 +1,7 @@
 {% load match_tags %}
 
 {% for comment in comments %}
-    {% include "epl_discussions/partials/comment_single.html" with is_reply=False %}
+    {% include "epl_discussions/partials/comment_single.html" with depth=0 %}
 {% endfor %}
 
 {% if has_more %}

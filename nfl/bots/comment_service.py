@@ -198,7 +198,9 @@ def generate_bot_comment(
 
     reply_parent = None
     if trigger_type == BotComment.TriggerType.REPLY and parent_comment:
-        reply_parent = parent_comment.parent or parent_comment
+        reply_parent = parent_comment
+        if parent_comment.depth >= 2:
+            reply_parent = parent_comment.parent
     with transaction.atomic():
         comment = Comment.objects.create(
             game=game,

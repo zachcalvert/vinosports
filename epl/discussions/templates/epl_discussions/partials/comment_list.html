@@ -15,7 +15,7 @@
 
         <div id="comment-list" class="space-y-4">
             {% for comment in comments %}
-                {% include "epl_discussions/partials/comment_single.html" with is_reply=False %}
+                {% include "epl_discussions/partials/comment_single.html" with depth=0 %}
             {% empty %}
                 <div id="no-comments">{% include "epl_website/components/empty_state.html" with icon="chat" title="No comments yet" message="Be the first to share your thoughts on this match." %}</div>
             {% endfor %}

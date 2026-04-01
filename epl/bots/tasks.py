@@ -234,7 +234,7 @@ def generate_bot_reply_task(bot_user_id, match_id, parent_comment_id):
         return "match not found"
 
     try:
-        parent = DiscussionComment.objects.select_related("user").get(
+        parent = DiscussionComment.objects.select_related("user", "parent").get(
             pk=parent_comment_id,
             match=match,
         )

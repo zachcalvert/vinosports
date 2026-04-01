@@ -84,7 +84,7 @@
                 <div id="comment-list" class="space-y-4 mt-4">
                 {% if comments %}
                     {% for comment in comments %}
-                        {% include "nfl_discussions/partials/comment.html" with comment=comment game=game is_reply=False %}
+                        {% include "nfl_discussions/partials/comment.html" with comment=comment game=game depth=0 %}
                     {% endfor %}
                 {% else %}
                     <p id="no-comments" class="text-sm text-muted text-center py-6">No comments yet. Be the first to weigh in.</p>

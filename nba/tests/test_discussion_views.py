@@ -170,7 +170,8 @@ class TestCreateReplyView:
         )
         assert response.status_code == 404
 
-    def test_cannot_reply_to_a_reply(self, auth_client):
+    def test_can_reply_to_a_reply(self, auth_client):
+        """Depth-1 replies can now receive replies (grandchildren at depth 2)."""
         c, user = auth_client
         game = GameFactory()
         parent = CommentFactory(game=game)
@@ -178,6 +179,19 @@ class TestCreateReplyView:
         response = c.post(
             f"/nba/game/{game.id_hash}/comments/{reply.pk}/reply/",
             {"body": "Nested reply attempt"},
+        )
+        assert response.status_code == 200
+
+    def test_cannot_reply_beyond_max_depth(self, auth_client):
+        """Depth-2 grandchildren cannot receive further replies."""
+        c, user = auth_client
+        game = GameFactory()
+        parent = CommentFactory(game=game)
+        reply = CommentFactory(game=game, parent=parent)
+        grandchild = CommentFactory(game=game, parent=reply)
+        response = c.post(
+            f"/nba/game/{game.id_hash}/comments/{grandchild.pk}/reply/",
+            {"body": "Too deep"},
         )
         assert response.status_code == 400
 
