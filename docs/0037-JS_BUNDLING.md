@@ -98,12 +98,13 @@ This directory is **source only** — not served by Django, not in `static/`. es
 ```javascript
 // frontend/main.js
 
-// HTMX — auto-registers on window
-import "htmx.org";
+// HTMX — separate module ensures window.htmx is set before vendor extensions run.
+// IMPORTANT: ES imports are hoisted, so `import htmx ...; window.htmx = htmx;`
+// in THIS file would execute AFTER the vendor imports. The htmx-init module
+// guarantees the global is set before any extension calls htmx.defineExtension().
+import "./lib/htmx-init.js";
 
-// HTMX extensions — import after htmx
-// Note: ws and head-support extensions are small enough to vendor
-// or import if published as npm packages
+// HTMX extensions (vendored, reference global htmx)
 import "./vendor/htmx-ext-ws.js";
 import "./vendor/htmx-ext-head-support.js";
 

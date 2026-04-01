@@ -10,110 +10,52 @@
 </div>
 
 {# ── HERO ── #}
+{% if profile_user.profile_image or bot_profile.portrait_url %}
+{# Portrait layout — large image left, identity right #}
 <section class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start mb-10">
 
-    {# Portrait / Avatar #}
+    {# Portrait #}
     <div class="lg:col-span-4 relative">
-        {% if profile_user.profile_image %}
         <div class="relative">
             <div class="absolute -inset-2 bg-primary transform -rotate-1 rounded-xl"></div>
             <div class="relative bg-surface-container-lowest p-3 border-2 border-on-surface rounded-sm shadow-xl">
+                {% if profile_user.profile_image %}
                 <img src="{{ profile_user.profile_image.url }}"
                      alt="{{ display_identity }} portrait"
                      class="w-full grayscale contrast-125 border border-on-surface/20">
-                <div class="absolute bottom-8 right-0 bg-primary text-on-primary px-5 py-1.5 font-headline font-black italic text-2xl uppercase tracking-tighter -rotate-2 transform shadow-lg">
-                    {{ display_identity }}
-                </div>
-            </div>
-        </div>
-        {% elif bot_profile.portrait_url %}
-        <div class="relative">
-            <div class="absolute -inset-2 bg-primary transform -rotate-1 rounded-xl"></div>
-            <div class="relative bg-surface-container-lowest p-3 border-2 border-on-surface rounded-sm shadow-xl">
+                {% else %}
                 <img src="{{ bot_profile.portrait_url }}"
                      alt="{{ display_identity }} portrait"
                      class="w-full grayscale contrast-125 border border-on-surface/20">
+                {% endif %}
                 <div class="absolute bottom-8 right-0 bg-primary text-on-primary px-5 py-1.5 font-headline font-black italic text-2xl uppercase tracking-tighter -rotate-2 transform shadow-lg">
                     {{ display_identity }}
                 </div>
             </div>
         </div>
-        {% else %}
-        <div class="flex flex-col items-center lg:items-start gap-4">
-            <div class="relative">
-                <div class="absolute -inset-2 bg-primary/20 rounded-full blur-lg"></div>
-                <div class="avatar avatar--xl" style="--avatar-bg: {{ profile_user.avatar_bg|default:'#374151' }};">
-                    <div class="avatar-inner">
-                        {% if profile_user.avatar_crest_url %}
-                        <img src="{{ profile_user.avatar_crest_url }}" class="avatar-crest-img" alt="">
-                        {% else %}
-                        <i class="ph-duotone ph-{{ profile_user.avatar_icon|default:'user-circle' }} avatar-icon"></i>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-        </div>
-        {% endif %}
     </div>
 
     {# Identity + Playbook #}
     <div class="lg:col-span-8 flex flex-col justify-center h-full">
-        <div class="flex items-center gap-3 mb-3 flex-wrap">
-            {% if not profile_user.profile_image and not bot_profile.portrait_url %}
+        {% include "hub/_profile_playbook.html" %}
+    </div>
+</section>
+
+{% else %}
+{# Compact layout — md avatar inline with name #}
+<section class="mb-10">
+    <div class="flex items-center gap-5 mb-5">
+        {% include "hub/components/profile_avatar.html" with avatar_user=profile_user avatar_size="md" %}
+        <div>
             <h1 class="font-headline font-black text-4xl md:text-5xl text-primary uppercase tracking-tighter leading-none">
                 {{ display_identity }}
             </h1>
-            {% endif %}
-        </div>
-
-        <div class="flex items-center gap-3 flex-wrap mb-4">
-            {% if bot_profile %}
-            <span class="inline-flex items-center gap-1.5 rounded-full bg-gold/15 px-3 py-1 text-xs font-bold text-gold uppercase tracking-wider">
-                <i class="ph-duotone ph-strategy text-sm"></i>
-                {{ bot_profile.get_strategy_type_display }}
-            </span>
-            {% if bot_profile.epl_team_tla %}
-            <span class="inline-flex items-center gap-1.5 rounded-full bg-secondary/15 px-3 py-1 text-xs font-bold text-secondary uppercase tracking-wider">
-                <i class="ph-duotone ph-shield-chevron text-sm"></i>
-                EPL: {{ bot_profile.epl_team_tla }}
-            </span>
-            {% endif %}
-            {% if bot_profile.nba_team_abbr %}
-            <span class="inline-flex items-center gap-1.5 rounded-full bg-secondary/15 px-3 py-1 text-xs font-bold text-secondary uppercase tracking-wider">
-                <i class="ph-duotone ph-basketball text-sm"></i>
-                NBA: {{ bot_profile.nba_team_abbr }}
-            </span>
-            {% endif %}
-            {% endif %}
             <span class="text-xs text-muted">Joined {{ profile_user.date_joined|date:"F Y" }}</span>
         </div>
-
-        {% if bot_profile.tagline %}
-        <div class="bg-surface-container p-6 rounded-xl border-l-4 border-gold relative overflow-hidden">
-            <div class="absolute top-0 right-0 p-3 opacity-10">
-                <i class="ph-duotone ph-quotes text-6xl"></i>
-            </div>
-            <p class="font-label font-bold uppercase tracking-widest text-gold text-xs mb-2">The Playbook</p>
-            <p class="text-lg md:text-xl font-medium leading-relaxed text-on-surface-variant italic">
-                "{{ bot_profile.tagline }}"
-            </p>
-        </div>
-        {% endif %}
-
-        {% if bot_profile.persona_prompt %}
-        <div class="bg-surface-container p-6 rounded-xl border border-outline-variant mt-4 relative overflow-hidden">
-            <div class="absolute top-0 right-0 p-3 opacity-10">
-                <i class="ph-duotone ph-brain text-6xl"></i>
-            </div>
-            <p class="font-label font-bold uppercase tracking-widest text-secondary text-xs mb-2">
-                <i class="ph-duotone ph-cpu inline-block mr-1"></i>
-                Persona Prompt
-            </p>
-            <p class="text-sm leading-relaxed text-on-surface-variant font-mono whitespace-pre-line">{{ bot_profile.persona_prompt }}</p>
-        </div>
-        {% endif %}
     </div>
+    {% include "hub/_profile_playbook.html" %}
 </section>
+{% endif %}
 
 {# ── VARSITY STRIPE ── #}
 <div class="varsity-stripe mb-10"></div>
@@ -158,6 +100,48 @@
         {% endif %}
     </div>
 </section>
+
+{# ── BALANCE HISTORY CHART ── #}
+<section class="mb-10">
+    <h2 class="font-headline font-black text-2xl uppercase tracking-tight mb-4">Balance History</h2>
+    <div id="balanceChartWrap" class="bg-surface-container-lowest rounded-xl border border-outline-variant/50 p-4" style="height: 260px;">
+        <canvas id="balanceChart"></canvas>
+    </div>
+    <p id="balanceChartEmpty" class="hidden text-muted text-sm text-center py-8">No balance history yet</p>
+</section>
+
+{# ── TROPHY CASE ── #}
+{% if biggest_wins %}
+<div class="varsity-stripe mb-10"></div>
+<section class="mb-10">
+    <h2 class="font-headline font-black text-2xl uppercase tracking-tight mb-6">
+        <i class="ph-duotone ph-trophy"></i> Biggest Wins
+    </h2>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {% for win in biggest_wins %}
+        <div class="bg-surface-container-lowest rounded-xl border border-outline-variant/50 p-5 text-center">
+            <div class="text-3xl font-headline font-black text-positive mb-1">
+                +{{ win.profit|currency:profile_user }}
+            </div>
+            <div class="flex items-center justify-center gap-2 mb-2">
+                <span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider
+                    {% if win.league == 'epl' %}bg-green-500/15 text-green-400
+                    {% elif win.league == 'nba' %}bg-blue-500/15 text-blue-400
+                    {% else %}bg-orange-500/15 text-orange-400{% endif %}">
+                    {{ win.league|upper }}
+                </span>
+                <span class="text-sm text-muted">{{ win.description }}</span>
+            </div>
+            <div class="text-xs text-muted">
+                {{ win.date|date:"d M Y" }}
+                &middot; {{ win.type|title }}
+                &middot; Odds: {{ win.odds }}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
 
 {# ── BADGES ── #}
 {% if all_badges %}
@@ -413,4 +397,81 @@
 {% endif %}
 
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+<script>
+(function() {
+    var canvas = document.getElementById('balanceChart');
+    if (!canvas) return;
+    var symbol = '{% currency_symbol profile_user %}';
+
+    fetch('{% url "hub:balance_history_api" profile_user.slug %}?days=30')
+        .then(function(r) { return r.json(); })
+        .then(function(json) {
+            if (!json.data || !json.data.length) {
+                document.getElementById('balanceChartWrap').classList.add('hidden');
+                document.getElementById('balanceChartEmpty').classList.remove('hidden');
+                return;
+            }
+
+            var accentColor = getComputedStyle(document.documentElement)
+                .getPropertyValue('--color-accent').trim().split(' ');
+            var rgb = 'rgb(' + accentColor.join(',') + ')';
+            var rgbA = 'rgba(' + accentColor.join(',') + ', 0.1)';
+
+            new Chart(canvas, {
+                type: 'line',
+                data: {
+                    datasets: [{
+                        data: json.data,
+                        borderColor: rgb,
+                        backgroundColor: rgbA,
+                        fill: true,
+                        tension: 0.1,
+                        pointRadius: 0,
+                        pointHitRadius: 8,
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    parsing: { xAxisKey: 't', yAxisKey: 'y' },
+                    scales: {
+                        x: {
+                            type: 'time',
+                            time: {
+                                unit: 'day',
+                                tooltipFormat: 'EEE MMM d',
+                                displayFormats: { day: 'MMM d' }
+                            },
+                            grid: { color: 'rgba(255,255,255,0.05)' },
+                            ticks: { color: '#9ca3af', maxTicksLimit: 10 }
+                        },
+                        y: {
+                            grid: { color: 'rgba(255,255,255,0.05)' },
+                            ticks: {
+                                color: '#9ca3af',
+                                callback: function(v) { return symbol + v.toLocaleString(); }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(ctx) {
+                                    return symbol + ctx.parsed.y.toLocaleString();
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        });
+})();
+</script>
 {% endblock %}

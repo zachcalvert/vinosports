@@ -1,0 +1,46 @@
+{# Shared playbook/identity pills — included by profile.html in both portrait and compact layouts #}
+<div class="flex items-center gap-3 flex-wrap mb-4">
+    {% if bot_profile %}
+    <span class="inline-flex items-center gap-1.5 rounded-full bg-gold/15 px-3 py-1 text-xs font-bold text-gold uppercase tracking-wider">
+        <i class="ph-duotone ph-strategy text-sm"></i>
+        {{ bot_profile.get_strategy_type_display }}
+    </span>
+    {% if bot_profile.epl_team_tla %}
+    <span class="inline-flex items-center gap-1.5 rounded-full bg-secondary/15 px-3 py-1 text-xs font-bold text-secondary uppercase tracking-wider">
+        <i class="ph-duotone ph-shield-chevron text-sm"></i>
+        EPL: {{ bot_profile.epl_team_tla }}
+    </span>
+    {% endif %}
+    {% if bot_profile.nba_team_abbr %}
+    <span class="inline-flex items-center gap-1.5 rounded-full bg-secondary/15 px-3 py-1 text-xs font-bold text-secondary uppercase tracking-wider">
+        <i class="ph-duotone ph-basketball text-sm"></i>
+        NBA: {{ bot_profile.nba_team_abbr }}
+    </span>
+    {% endif %}
+    {% endif %}
+</div>
+
+{% if bot_profile.tagline %}
+<div class="bg-surface-container p-6 rounded-xl border-l-4 border-gold relative overflow-hidden">
+    <div class="absolute top-0 right-0 p-3 opacity-10">
+        <i class="ph-duotone ph-quotes text-6xl"></i>
+    </div>
+    <p class="font-label font-bold uppercase tracking-widest text-gold text-xs mb-2">The Playbook</p>
+    <p class="text-lg md:text-xl font-medium leading-relaxed text-on-surface-variant italic">
+        "{{ bot_profile.tagline }}"
+    </p>
+</div>
+{% endif %}
+
+{% if bot_profile.persona_prompt %}
+<div class="bg-surface-container p-6 rounded-xl border border-outline-variant mt-4 relative overflow-hidden">
+    <div class="absolute top-0 right-0 p-3 opacity-10">
+        <i class="ph-duotone ph-brain text-6xl"></i>
+    </div>
+    <p class="font-label font-bold uppercase tracking-widest text-secondary text-xs mb-2">
+        <i class="ph-duotone ph-cpu inline-block mr-1"></i>
+        Persona Prompt
+    </p>
+    <p class="text-sm leading-relaxed text-on-surface-variant font-mono whitespace-pre-line">{{ bot_profile.persona_prompt }}</p>
+</div>
+{% endif %}

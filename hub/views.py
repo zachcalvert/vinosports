@@ -5,7 +5,7 @@ from decimal import Decimal
 from django.contrib.auth import authenticate, get_user_model, login, logout
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.db import transaction
-from django.db.models import Count, Sum
+from django.db.models import Count, DecimalField, ExpressionWrapper, F, Sum
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -121,6 +121,95 @@ class HomeView(TemplateView):
         return ctx
 
 
+def _get_biggest_wins(user, limit=3):
+    """Return top N biggest wins across all leagues, sorted by profit descending."""
+    from epl.betting.models import BetSlip as EplBetSlip
+    from epl.betting.models import Parlay as EplParlay
+    from nba.betting.models import BetSlip as NbaBetSlip
+    from nba.betting.models import Parlay as NbaParlay
+    from nfl.betting.models import BetSlip as NflBetSlip
+    from nfl.betting.models import Parlay as NflParlay
+
+    profit_expr = ExpressionWrapper(
+        F("payout") - F("stake"), output_field=DecimalField()
+    )
+    wins = []
+
+    # --- BetSlips ---
+    bet_configs = [
+        (EplBetSlip, "epl", "match__home_team", "match__away_team", "match"),
+        (NbaBetSlip, "nba", "game__home_team", "game__away_team", "game"),
+        (NflBetSlip, "nfl", "game__home_team", "game__away_team", "game"),
+    ]
+    for Model, league, home_rel, away_rel, event_rel in bet_configs:
+        qs = (
+            Model.objects.filter(user=user, status="WON", payout__isnull=False)
+            .annotate(profit=profit_expr)
+            .select_related(home_rel, away_rel)
+            .order_by("-profit")[:limit]
+        )
+        for bet in qs:
+            event = getattr(bet, event_rel)
+            if league == "epl":
+                desc = f"{event.home_team.short_name or event.home_team.tla} vs {event.away_team.short_name or event.away_team.tla}"
+                odds = f"{bet.odds_at_placement:.2f}"
+            else:
+                desc = (
+                    f"{event.home_team.abbreviation} vs {event.away_team.abbreviation}"
+                )
+                odds = (
+                    f"{'+' if bet.odds_at_placement > 0 else ''}{bet.odds_at_placement}"
+                )
+            wins.append(
+                {
+                    "profit": bet.profit,
+                    "payout": bet.payout,
+                    "stake": bet.stake,
+                    "date": bet.updated_at,
+                    "league": league,
+                    "type": "bet",
+                    "description": desc,
+                    "odds": odds,
+                }
+            )
+
+    # --- Parlays ---
+    parlay_configs = [
+        (EplParlay, "epl"),
+        (NbaParlay, "nba"),
+        (NflParlay, "nfl"),
+    ]
+    for Model, league in parlay_configs:
+        qs = (
+            Model.objects.filter(user=user, status="WON", payout__isnull=False)
+            .annotate(profit=profit_expr)
+            .order_by("-profit")[:limit]
+        )
+        for parlay in qs:
+            leg_count = parlay.legs.count()
+            if league == "epl":
+                odds = f"{parlay.combined_odds:.2f}x"
+            else:
+                odds = (
+                    f"{'+' if parlay.combined_odds > 0 else ''}{parlay.combined_odds}"
+                )
+            wins.append(
+                {
+                    "profit": parlay.profit,
+                    "payout": parlay.payout,
+                    "stake": parlay.stake,
+                    "date": parlay.updated_at,
+                    "league": league,
+                    "type": "parlay",
+                    "description": f"Parlay \u2022 {leg_count} legs",
+                    "odds": odds,
+                }
+            )
+
+    wins.sort(key=lambda w: w["profit"], reverse=True)
+    return wins[:limit]
+
+
 class ProfileView(TemplateView):
     """Public profile page for any user — persona, stats, and badges."""
 
@@ -167,6 +256,9 @@ class ProfileView(TemplateView):
             badge.earned = earned_map.get(badge.pk)
             all_badges.append(badge)
         ctx["all_badges"] = all_badges
+
+        # Biggest wins — all users
+        ctx["biggest_wins"] = _get_biggest_wins(profile_user)
 
         # Recent bets & comments — bot profiles only (for now)
         if profile_user.is_bot:
@@ -466,17 +558,24 @@ class ProfileImageUploadView(LoginRequiredMixin, View):
         )
 
 
-class BalanceHistoryAPI(LoginRequiredMixin, View):
-    """Return daily balance history (last 10 days) as JSON for chart rendering."""
+class BalanceHistoryAPI(View):
+    """Return daily balance history as JSON for chart rendering."""
 
-    WINDOW_DAYS = 10
+    DEFAULT_DAYS = 30
+    MAX_DAYS = 90
 
     def get(self, request, slug):
-        if request.user.slug != slug:
-            return JsonResponse({"error": "Forbidden"}, status=403)
+        User = get_user_model()
+        user = get_object_or_404(User, slug=slug)
+
+        try:
+            days = int(request.GET.get("days", self.DEFAULT_DAYS))
+        except (TypeError, ValueError):
+            days = self.DEFAULT_DAYS
+        days = min(max(days, 1), self.MAX_DAYS)
 
         all_txns = list(
-            BalanceTransaction.objects.filter(user=request.user)
+            BalanceTransaction.objects.filter(user=user)
             .order_by("created_at")
             .values_list("created_at", "balance_after")
         )
@@ -486,7 +585,7 @@ class BalanceHistoryAPI(LoginRequiredMixin, View):
 
         today = timezone.now().date()
         data = []
-        for i in range(self.WINDOW_DAYS - 1, -1, -1):
+        for i in range(days - 1, -1, -1):
             day = today - timedelta(days=i)
             day_balance = next(
                 (bal for ts, bal in reversed(all_txns) if ts.date() <= day),

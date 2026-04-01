@@ -504,9 +504,10 @@ class TestProfileImageUploadView:
 
 
 class TestHubBalanceHistoryAPI:
-    def test_requires_login(self, client, user):
+    def test_publicly_accessible(self, client, user):
         resp = client.get(reverse("hub:balance_history_api", args=[user.slug]))
-        assert resp.status_code == 302
+        assert resp.status_code == 200
+        assert "data" in resp.json()
 
     def test_returns_json(self, authed_client, user):
         resp = authed_client.get(reverse("hub:balance_history_api", args=[user.slug]))
@@ -514,14 +515,36 @@ class TestHubBalanceHistoryAPI:
         data = resp.json()
         assert "data" in data
 
-    def test_empty_when_no_transactions(self, authed_client, user):
-        resp = authed_client.get(reverse("hub:balance_history_api", args=[user.slug]))
+    def test_empty_when_no_transactions(self, client, user):
+        resp = client.get(reverse("hub:balance_history_api", args=[user.slug]))
         assert resp.json()["data"] == []
 
-    def test_forbidden_for_other_user_slug(self, authed_client, user):
+    def test_other_user_slug_accessible(self, client, user):
         other = UserFactory()
-        resp = authed_client.get(reverse("hub:balance_history_api", args=[other.slug]))
-        assert resp.status_code == 403
+        resp = client.get(reverse("hub:balance_history_api", args=[other.slug]))
+        assert resp.status_code == 200
+
+    def test_days_param(self, client, user):
+        resp = client.get(
+            reverse("hub:balance_history_api", args=[user.slug]) + "?days=7"
+        )
+        assert resp.status_code == 200
+
+    def test_days_param_clamped(self, client, user):
+        from vinosports.betting.models import BalanceTransaction
+
+        BalanceTransaction.objects.create(
+            user=user,
+            amount=Decimal("1000.00"),
+            balance_after=Decimal("1000.00"),
+            transaction_type=BalanceTransaction.Type.SIGNUP,
+        )
+        resp = client.get(
+            reverse("hub:balance_history_api", args=[user.slug]) + "?days=200"
+        )
+        assert resp.status_code == 200
+        data = resp.json()["data"]
+        assert len(data) <= 90
 
     def test_returns_data_with_transactions(self, authed_client, user):
         from vinosports.betting.models import BalanceTransaction
