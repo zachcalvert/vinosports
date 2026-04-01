@@ -550,7 +550,7 @@ class GameDetailView(LoginRequiredMixin, View):
             .select_related("user")
             .order_by("created_at")
         )
-        comments = (
+        comments = list(
             Comment.objects.filter(game=game, parent__isnull=True)
             .select_related("user")
             .prefetch_related(
@@ -558,6 +558,15 @@ class GameDetailView(LoginRequiredMixin, View):
             )
             .order_by("-created_at")[:50]
         )
+
+        # Annotate comments with bet positions ("Backing Lakers", etc.)
+        from nba.discussions.views import _annotate_bet_positions, _build_bet_map
+
+        user_ids = {c.user_id for c in comments}
+        for c in comments:
+            user_ids.update(r.user_id for r in c.prefetched_replies)
+        bet_map = _build_bet_map(game.pk, user_ids) if user_ids else {}
+        _annotate_bet_positions(comments, bet_map, game)
 
         # Community sentiment per market
         sentiment = _get_game_sentiment(game)
