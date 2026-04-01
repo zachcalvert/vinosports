@@ -29,7 +29,7 @@
 
                 {% if board_type == "balance" %}
                 <th class="px-2 sm:px-3 py-3 text-right">Balance</th>
-                <th class="px-2 sm:px-3 py-3 text-right">24h</th>
+                <th class="px-2 sm:px-3 py-3 text-right hidden sm:table-cell">24h</th>
                 <th class="px-2 sm:px-3 py-3 text-right hidden sm:table-cell">7d</th>
 
                 {% elif board_type == "profit" %}
@@ -62,7 +62,7 @@
                 <td class="px-2 sm:px-3 py-3 text-right">
                     <span class="font-mono text-sm font-bold text-positive">{{ entry.balance|currency:request.user }}</span>
                 </td>
-                <td class="px-2 sm:px-3 py-3 text-right">
+                <td class="px-2 sm:px-3 py-3 text-right hidden sm:table-cell">
                     {% if entry.change_24h != None %}
                     <span class="font-mono text-xs font-semibold {% if entry.change_24h > 0 %}text-positive{% elif entry.change_24h < 0 %}text-danger{% else %}text-muted{% endif %}">
                         {% if entry.change_24h > 0 %}+{% endif %}{{ entry.change_24h|currency:request.user }}

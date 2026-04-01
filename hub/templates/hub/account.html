@@ -13,63 +13,55 @@
 {# ── HERO: Avatar + Profile Image + Identity ── #}
 <section class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start mb-10">
 
-    {# Portrait / Avatar column #}
-    <div class="lg:col-span-4 relative">
-        {% if user.profile_image %}
-        <div class="relative">
-            <div class="absolute -inset-2 bg-primary transform -rotate-1 rounded-xl"></div>
-            <div class="relative bg-surface-container-lowest p-3 border-2 border-on-surface rounded-sm shadow-xl">
-                <img src="{{ user.profile_image.url }}"
-                     alt="{{ user.display_name|default:user.email }} portrait"
-                     class="w-full object-cover border border-on-surface/20">
-                <div class="absolute bottom-8 right-0 bg-primary text-on-primary px-5 py-1.5 font-headline font-black italic text-2xl uppercase tracking-tighter -rotate-2 transform shadow-lg">
-                    {{ user.display_name|default:"You" }}
-                </div>
-            </div>
-        </div>
-        {% else %}
-        <div class="flex flex-col items-center lg:items-start gap-4">
-            <div class="relative">
-                <div class="absolute -inset-2 bg-primary/20 rounded-full blur-lg"></div>
-                <div class="avatar avatar--xl" style="--avatar-bg: {{ user.avatar_bg|default:'#374151' }};">
-                    <div class="avatar-inner">
-                        {% if user.avatar_crest_url %}
-                        <img src="{{ user.avatar_crest_url }}" class="avatar-crest-img" alt="">
-                        {% else %}
-                        <i class="ph-duotone ph-{{ user.avatar_icon|default:'user-circle' }} avatar-icon"></i>
-                        {% endif %}
+    {# Portrait / Avatar + Upload #}
+    <div class="lg:col-span-4">
+        <div class="flex items-start gap-4">
+            {# Image / Avatar #}
+            <div class="shrink-0">
+                {% if user.profile_image %}
+                <div class="relative w-32 sm:w-40 lg:w-48">
+                    <div class="absolute -inset-2 bg-primary transform -rotate-1 rounded-xl"></div>
+                    <div class="relative bg-surface-container-lowest p-2 border-2 border-on-surface rounded-sm shadow-xl">
+                        <img src="{{ user.profile_image.url }}"
+                             alt="{{ user.display_name|default:user.email }} portrait"
+                             class="w-full aspect-square object-cover border border-on-surface/20">
                     </div>
                 </div>
-            </div>
-        </div>
-        {% endif %}
-
-        {# Profile image upload #}
-        <form method="post" action="{% url 'hub:profile_image_upload' %}" enctype="multipart/form-data" class="mt-4">
-            {% csrf_token %}
-            <p class="font-label text-[10px] font-bold uppercase tracking-widest text-secondary mb-2">Profile Photo</p>
-            <label class="profile-upload-zone">
-                <input type="file" name="profile_image" accept="image/*" class="sr-only" onchange="this.closest('form').querySelector('[data-filename]').textContent = this.files[0]?.name || 'No file chosen'">
-                <i class="ph-duotone ph-camera text-2xl text-muted shrink-0"></i>
-                <span class="text-sm font-medium text-on-surface">Choose file</span>
-                <span data-filename class="text-xs text-muted truncate max-w-[180px]">No file chosen</span>
-            </label>
-            <div class="mt-3 flex gap-2">
-                <button type="submit"
-                    class="jukebox-btn rounded-full bg-primary px-4 py-1.5 text-xs font-headline font-black uppercase tracking-widest text-on-primary">
-                    Upload
-                </button>
-                {% if user.profile_image %}
-                <button type="submit" name="profile_image-clear" value="1"
-                    class="jukebox-btn rounded-full bg-surface-container px-4 py-1.5 text-xs font-headline font-black uppercase tracking-widest text-on-surface-variant border border-outline-variant">
-                    Remove
-                </button>
+                {% else %}
+                <div class="relative">
+                    <div class="absolute -inset-2 bg-primary/20 rounded-full blur-lg"></div>
+                    {% include "hub/components/profile_avatar.html" with avatar_user=user avatar_size="lg" %}
+                </div>
                 {% endif %}
             </div>
-            {% if image_save_success %}
-            <p class="text-primary text-xs font-medium mt-1">Profile photo updated.</p>
-            {% endif %}
-        </form>
+
+            {# Upload controls #}
+            <form method="post" action="{% url 'hub:profile_image_upload' %}" enctype="multipart/form-data" class="min-w-0">
+                {% csrf_token %}
+                <p class="font-label text-[10px] font-bold uppercase tracking-widest text-secondary mb-2">Profile Photo</p>
+                <label class="profile-upload-zone">
+                    <input type="file" name="profile_image" accept="image/*" class="sr-only" onchange="this.closest('form').querySelector('[data-filename]').textContent = this.files[0]?.name || 'No file chosen'">
+                    <i class="ph-duotone ph-camera text-xl text-muted shrink-0"></i>
+                    <span class="text-sm font-medium text-on-surface">Choose file</span>
+                    <span data-filename class="text-xs text-muted truncate max-w-[120px]"></span>
+                </label>
+                <div class="mt-3 flex flex-wrap gap-2">
+                    <button type="submit"
+                        class="jukebox-btn rounded-full bg-primary px-4 py-1.5 text-xs font-headline font-black uppercase tracking-widest text-on-primary">
+                        Upload
+                    </button>
+                    {% if user.profile_image %}
+                    <button type="submit" name="profile_image-clear" value="1"
+                        class="jukebox-btn rounded-full bg-surface-container px-4 py-1.5 text-xs font-headline font-black uppercase tracking-widest text-on-surface-variant border border-outline-variant">
+                        Remove
+                    </button>
+                    {% endif %}
+                </div>
+                {% if image_save_success %}
+                <p class="text-primary text-xs font-medium mt-1">Profile photo updated.</p>
+                {% endif %}
+            </form>
+        </div>
     </div>
 
     {# Identity + Settings column #}
@@ -88,7 +80,7 @@
         <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
             <div class="bg-surface-container-lowest rounded-xl border-b-4 border-primary p-4 text-center">
                 <p class="font-label text-[10px] font-bold uppercase tracking-widest text-secondary mb-1">Balance</p>
-                <p class="text-xl font-bold font-mono text-primary">
+                <p class="text-xl font-bold font-mono text-positive">
                     {% if balance is not None %}{{ balance|currency:user }}{% else %}—{% endif %}
                 </p>
             </div>
