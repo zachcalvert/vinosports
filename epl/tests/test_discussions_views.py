@@ -36,8 +36,10 @@ class TestCommentListView:
 
     def test_pagination_with_offset(self):
         match = MatchFactory()
-        for _ in range(25):
-            CommentFactory(match=match)
+        user = UserFactory()
+        Comment.objects.bulk_create(
+            [Comment(user=user, match=match, body=f"Comment {i}") for i in range(25)]
+        )
         c = Client()
         resp = c.get(f"/epl/match/{match.slug}/comments/?offset=20")
         assert resp.status_code == 200
