@@ -16,5 +16,8 @@
 <!-- Shared design-system CSS (palette, utilities, shared components) -->
 <link rel="stylesheet" href="{% static 'vinosports/css/design-system.css' %}">
 
-<!-- Alpine.js -->
+<!-- Alpine.js (stays on CDN — declarative HTML directives, no bundling benefit) -->
 <script defer src="https://unpkg.com/alpinejs@3.14.8/dist/cdn.min.js"></script>
+
+<!-- App JS bundle (HTMX + extensions + shared utilities) -->
+<script src="{% static 'vinosports/js/app.js' %}"></script>
