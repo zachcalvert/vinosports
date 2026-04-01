@@ -1,8 +1,7 @@
-// HTMX — must explicitly set on window for vendored extensions
-import htmx from "htmx.org";
-window.htmx = htmx;
+// HTMX — separate module ensures window.htmx is set before vendor extensions run
+import "./lib/htmx-init.js";
 
-// HTMX extensions (vendored)
+// HTMX extensions (vendored, reference global htmx)
 import "./vendor/htmx-ext-ws.js";
 import "./vendor/htmx-ext-head-support.js";
 
