@@ -76,7 +76,7 @@ jobs:
         run: python manage.py migrate --noinput
 
       - name: Run tests with coverage
-        run: pytest -n auto --cov --cov-report=xml --cov-report=term-missing
+        run: pytest -n auto --dist worksteal --cov --cov-report=xml --cov-report=term-missing
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
