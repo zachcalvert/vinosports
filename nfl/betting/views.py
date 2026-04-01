@@ -198,6 +198,10 @@ class PlaceBetView(LoginRequiredMixin, View):
             stake=stake,
         )
 
+        from hub.consumers import notify_admin_dashboard
+
+        notify_admin_dashboard("new_bet")
+
         from nfl.activity.services import queue_activity_event
 
         queue_activity_event(
@@ -361,6 +365,10 @@ class PlaceParlayView(LoginRequiredMixin, View):
                     line=entry.get("line"),
                     odds_at_placement=entry.get("odds", 0),
                 )
+
+        from hub.consumers import notify_admin_dashboard
+
+        notify_admin_dashboard("new_bet")
 
         request.session[PARLAY_SESSION_KEY] = []
         request.session.modified = True

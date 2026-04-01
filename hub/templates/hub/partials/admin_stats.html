@@ -1,0 +1,64 @@
+<!-- Stats Summary -->
+<div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
+    <div class="bg-surface-container-lowest rounded-xl border-b-4 border-outline-variant p-4 text-center">
+        <div class="text-2xl font-bold text-primary font-mono">{{ total_users }}</div>
+        <div class="text-xs text-muted uppercase tracking-wider mt-1">Users</div>
+    </div>
+    <div class="bg-surface-container-lowest rounded-xl border-b-4 border-outline-variant p-4 text-center">
+        <div class="text-2xl font-bold text-primary font-mono">{{ active_bets }}</div>
+        <div class="text-xs text-muted uppercase tracking-wider mt-1">Active Bets</div>
+    </div>
+    <div class="bg-surface-container-lowest rounded-xl border-b-4 border-outline-variant p-4 text-center">
+        <div class="text-2xl font-bold text-primary font-mono">{{ active_parlays }}</div>
+        <div class="text-xs text-muted uppercase tracking-wider mt-1">Active Parlays</div>
+    </div>
+    <div class="bg-surface-container-lowest rounded-xl border-b-4 border-outline-variant p-4 text-center">
+        <div class="text-2xl font-bold text-primary font-mono">{{ total_comments }}</div>
+        <div class="text-xs text-muted uppercase tracking-wider mt-1">Comments</div>
+    </div>
+    <div class="bg-surface-container-lowest rounded-xl border-b-4 border-outline-variant p-4 text-center">
+        <div class="text-2xl font-bold text-primary font-mono">{{ total_bets_all_time }}</div>
+        <div class="text-xs text-muted uppercase tracking-wider mt-1">Total Bets</div>
+    </div>
+    <div class="bg-surface-container-lowest rounded-xl border-b-4 border-outline-variant p-4 text-center">
+        <div class="text-2xl font-bold text-primary font-mono">{{ total_in_play }}</div>
+        <div class="text-xs text-muted uppercase tracking-wider mt-1">In Play</div>
+    </div>
+</div>
+
+<!-- League breakdown -->
+<div class="grid grid-cols-3 gap-3 mb-6">
+    <div class="bg-surface-container-lowest rounded-xl border-l-4 border-green-500 p-4">
+        <span class="text-sm font-bold uppercase tracking-wider">EPL</span>
+        <div class="flex items-center justify-between mt-2">
+            <span class="font-mono text-lg font-bold text-primary">{{ epl_bets }}</span>
+            <span class="text-xs text-muted">bets + parlays</span>
+        </div>
+        <div class="flex items-center justify-between mt-1">
+            <span class="font-mono text-sm text-primary">{{ epl_comments }}</span>
+            <span class="text-xs text-muted">comments</span>
+        </div>
+    </div>
+    <div class="bg-surface-container-lowest rounded-xl border-l-4 border-blue-500 p-4">
+        <span class="text-sm font-bold uppercase tracking-wider">NBA</span>
+        <div class="flex items-center justify-between mt-2">
+            <span class="font-mono text-lg font-bold text-primary">{{ nba_bets }}</span>
+            <span class="text-xs text-muted">bets + parlays</span>
+        </div>
+        <div class="flex items-center justify-between mt-1">
+            <span class="font-mono text-sm text-primary">{{ nba_comments }}</span>
+            <span class="text-xs text-muted">comments</span>
+        </div>
+    </div>
+    <div class="bg-surface-container-lowest rounded-xl border-l-4 border-red-500 p-4">
+        <span class="text-sm font-bold uppercase tracking-wider">NFL</span>
+        <div class="flex items-center justify-between mt-2">
+            <span class="font-mono text-lg font-bold text-primary">{{ nfl_bets }}</span>
+            <span class="text-xs text-muted">bets + parlays</span>
+        </div>
+        <div class="flex items-center justify-between mt-1">
+            <span class="font-mono text-sm text-primary">{{ nfl_comments }}</span>
+            <span class="text-xs text-muted">comments</span>
+        </div>
+    </div>
+</div>

@@ -287,6 +287,10 @@ class PlaceBetView(LoginRequiredMixin, View):
                     odds_at_placement=best_odds_val,
                     stake=stake,
                 )
+
+                from hub.consumers import notify_admin_dashboard
+
+                notify_admin_dashboard("new_bet")
         except UserBalance.DoesNotExist:
             # Auto-create balance if missing (shouldn't happen with signup flow)
             balance = UserBalance.objects.create(
@@ -798,6 +802,10 @@ class PlaceParlayView(LoginRequiredMixin, View):
                         for ld in leg_data
                     ]
                 )
+
+                from hub.consumers import notify_admin_dashboard
+
+                notify_admin_dashboard("new_bet")
         except UserBalance.DoesNotExist:
             return _error("Balance not found. Please refresh and try again.")
         except IntegrityError:

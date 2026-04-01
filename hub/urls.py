@@ -85,6 +85,11 @@ urlpatterns = [
         name="admin_dashboard_users",
     ),
     path(
+        "admin-dashboard/stats/",
+        views.AdminStatsPartialView.as_view(),
+        name="admin_dashboard_stats",
+    ),
+    path(
         "admin-dashboard/bets/all/",
         views.AdminBetsFullView.as_view(),
         name="admin_bets_full",

@@ -411,6 +411,10 @@ class SignupView(View):
                         f"Promo code bonus: {promo_code}",
                     )
 
+        from hub.consumers import notify_admin_dashboard
+
+        notify_admin_dashboard("new_user")
+
         login(request, user)
         return redirect("hub:home")
 
@@ -884,74 +888,92 @@ ADMIN_FULL_PAGE_SIZE = 25
 ADMIN_MAX_OFFSET = 500
 
 
+def _admin_stats_context():
+    """Build the stats context dict shared by the dashboard and the stats partial."""
+    User = get_user_model()
+
+    from epl.betting.models import BetSlip as EplBetSlip
+    from epl.betting.models import Parlay as EplParlay
+    from epl.discussions.models import Comment as EplComment
+    from nba.betting.models import BetSlip as NbaBetSlip
+    from nba.betting.models import Parlay as NbaParlay
+    from nba.discussions.models import Comment as NbaComment
+    from nfl.betting.models import BetSlip as NflBetSlip
+    from nfl.betting.models import Parlay as NflParlay
+    from nfl.discussions.models import Comment as NflComment
+
+    ctx = {}
+    ctx["total_users"] = User.objects.count()
+    ctx["active_bets"] = (
+        EplBetSlip.objects.filter(status="PENDING").count()
+        + NbaBetSlip.objects.filter(status="PENDING").count()
+        + NflBetSlip.objects.filter(status="PENDING").count()
+    )
+    ctx["active_parlays"] = (
+        EplParlay.objects.filter(status="PENDING").count()
+        + NbaParlay.objects.filter(status="PENDING").count()
+        + NflParlay.objects.filter(status="PENDING").count()
+    )
+    ctx["total_comments"] = (
+        EplComment.objects.filter(is_deleted=False).count()
+        + NbaComment.objects.filter(is_deleted=False).count()
+        + NflComment.objects.filter(is_deleted=False).count()
+    )
+    ctx["total_bets_all_time"] = (
+        EplBetSlip.objects.count()
+        + NbaBetSlip.objects.count()
+        + NflBetSlip.objects.count()
+        + EplParlay.objects.count()
+        + NbaParlay.objects.count()
+        + NflParlay.objects.count()
+    )
+    epl_in_play = (
+        EplBetSlip.objects.filter(status="PENDING").aggregate(total=Sum("stake"))[
+            "total"
+        ]
+        or 0
+    )
+    nba_in_play = (
+        NbaBetSlip.objects.filter(status="PENDING").aggregate(total=Sum("stake"))[
+            "total"
+        ]
+        or 0
+    )
+    nfl_in_play = (
+        NflBetSlip.objects.filter(status="PENDING").aggregate(total=Sum("stake"))[
+            "total"
+        ]
+        or 0
+    )
+    ctx["total_in_play"] = epl_in_play + nba_in_play + nfl_in_play
+
+    # Per-league breakdowns
+    ctx["epl_bets"] = EplBetSlip.objects.count() + EplParlay.objects.count()
+    ctx["nba_bets"] = NbaBetSlip.objects.count() + NbaParlay.objects.count()
+    ctx["nfl_bets"] = NflBetSlip.objects.count() + NflParlay.objects.count()
+    ctx["epl_comments"] = EplComment.objects.filter(is_deleted=False).count()
+    ctx["nba_comments"] = NbaComment.objects.filter(is_deleted=False).count()
+    ctx["nfl_comments"] = NflComment.objects.filter(is_deleted=False).count()
+    return ctx
+
+
 class AdminDashboardView(SuperuserRequiredMixin, TemplateView):
     template_name = "hub/admin_dashboard.html"
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        User = get_user_model()
+        ctx.update(_admin_stats_context())
+        return ctx
 
-        from epl.betting.models import BetSlip as EplBetSlip
-        from epl.betting.models import Parlay as EplParlay
-        from epl.discussions.models import Comment as EplComment
-        from nba.betting.models import BetSlip as NbaBetSlip
-        from nba.betting.models import Parlay as NbaParlay
-        from nba.discussions.models import Comment as NbaComment
-        from nfl.betting.models import BetSlip as NflBetSlip
-        from nfl.betting.models import Parlay as NflParlay
-        from nfl.discussions.models import Comment as NflComment
 
-        ctx["total_users"] = User.objects.count()
-        ctx["active_bets"] = (
-            EplBetSlip.objects.filter(status="PENDING").count()
-            + NbaBetSlip.objects.filter(status="PENDING").count()
-            + NflBetSlip.objects.filter(status="PENDING").count()
-        )
-        ctx["active_parlays"] = (
-            EplParlay.objects.filter(status="PENDING").count()
-            + NbaParlay.objects.filter(status="PENDING").count()
-            + NflParlay.objects.filter(status="PENDING").count()
-        )
-        ctx["total_comments"] = (
-            EplComment.objects.filter(is_deleted=False).count()
-            + NbaComment.objects.filter(is_deleted=False).count()
-            + NflComment.objects.filter(is_deleted=False).count()
-        )
-        ctx["total_bets_all_time"] = (
-            EplBetSlip.objects.count()
-            + NbaBetSlip.objects.count()
-            + NflBetSlip.objects.count()
-            + EplParlay.objects.count()
-            + NbaParlay.objects.count()
-            + NflParlay.objects.count()
-        )
-        epl_in_play = (
-            EplBetSlip.objects.filter(status="PENDING").aggregate(total=Sum("stake"))[
-                "total"
-            ]
-            or 0
-        )
-        nba_in_play = (
-            NbaBetSlip.objects.filter(status="PENDING").aggregate(total=Sum("stake"))[
-                "total"
-            ]
-            or 0
-        )
-        nfl_in_play = (
-            NflBetSlip.objects.filter(status="PENDING").aggregate(total=Sum("stake"))[
-                "total"
-            ]
-            or 0
-        )
-        ctx["total_in_play"] = epl_in_play + nba_in_play + nfl_in_play
+class AdminStatsPartialView(SuperuserRequiredMixin, TemplateView):
+    """Returns just the stats + league breakdown HTML for HTMX refresh."""
 
-        # Per-league breakdowns
-        ctx["epl_bets"] = EplBetSlip.objects.count() + EplParlay.objects.count()
-        ctx["nba_bets"] = NbaBetSlip.objects.count() + NbaParlay.objects.count()
-        ctx["nfl_bets"] = NflBetSlip.objects.count() + NflParlay.objects.count()
-        ctx["epl_comments"] = EplComment.objects.filter(is_deleted=False).count()
-        ctx["nba_comments"] = NbaComment.objects.filter(is_deleted=False).count()
-        ctx["nfl_comments"] = NflComment.objects.filter(is_deleted=False).count()
+    template_name = "hub/partials/admin_stats.html"
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx.update(_admin_stats_context())
         return ctx
 
 

@@ -153,6 +153,10 @@ class CreateCommentView(LoginRequiredMixin, View):
             body=form.cleaned_data["body"],
         )
 
+        from hub.consumers import notify_admin_dashboard
+
+        notify_admin_dashboard("new_comment")
+
         # Maybe trigger a bot reply to this human comment.
         # Wrapped in try/except so broker failures don't break the user's post.
         if not request.user.is_bot:

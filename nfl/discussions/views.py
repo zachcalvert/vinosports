@@ -27,6 +27,10 @@ class CreateCommentView(LoginRequiredMixin, View):
             body=form.cleaned_data["body"],
         )
 
+        from hub.consumers import notify_admin_dashboard
+
+        notify_admin_dashboard("new_comment")
+
         if not request.user.is_bot:
             try:
                 from nfl.bots.tasks import maybe_reply_to_human_comment
