@@ -52,7 +52,7 @@ RUN tailwindcss -i /packages/vinosports-core/src/vinosports/static/vinosports/cs
 # Build JS bundle
 RUN npx esbuild frontend/main.js \
     --bundle --minify --sourcemap \
-    --outfile=packages/vinosports-core/src/vinosports/static/vinosports/js/app.js \
+    --outfile=/packages/vinosports-core/src/vinosports/static/vinosports/js/app.js \
     --format=iife --target=es2020
 
 # Collect static files at build time (WhiteNoise manifest for hashed filenames)
