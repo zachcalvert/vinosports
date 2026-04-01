@@ -17,7 +17,7 @@
                 {% elif item.league == "nfl" %}
                     <span class="inline-flex items-center px-1 py-0.5 rounded text-[10px] font-bold bg-red-500/15 text-red-400">NFL</span>
                 {% endif %}
-                <span class="text-muted truncate">{{ item.user.display_name|default:item.user.email }}</span>
+                <a href="{% url 'hub:profile' slug=item.user.slug %}" class="text-muted truncate hover:text-primary transition">{{ item.user.display_name|default:item.user.email }}</a>
                 {% if item.match %}
                     {% if not item.legs.all %}
                         <span class="text-xs text-muted">&mdash;</span>
