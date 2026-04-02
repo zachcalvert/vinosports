@@ -311,7 +311,7 @@ def generate_featured_parlays():
                     market=leg["market"],
                     line=leg.get("line"),
                 )
-            preview = builder.preview(stake=Decimal("10.00"))
+            preview = builder.preview(stake=Decimal("10000.00"))
         except ParlayValidationError as e:
             logger.info("NFL featured parlay '%s' skipped: %s", theme_name, e)
             continue

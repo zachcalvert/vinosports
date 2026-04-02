@@ -616,7 +616,7 @@ def generate_featured_parlays():
             builder = ParlayBuilder("epl")
             for leg in legs_data:
                 builder.add_leg(leg["match_id"], leg["selection"])
-            preview = builder.preview(stake=Decimal("10.00"))
+            preview = builder.preview(stake=Decimal("10000.00"))
         except ParlayValidationError as e:
             logger.info("EPL featured parlay '%s' skipped: %s", theme_name, e)
             continue

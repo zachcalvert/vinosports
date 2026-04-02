@@ -96,9 +96,11 @@ class TestFrontrunnerStrategy:
             }
         }
         strategy = FrontrunnerStrategy()
-        picks = strategy.pick_bets([match], odds_map, Decimal("1000.00"))
+        balance = Decimal("100000.00")
+        picks = strategy.pick_bets([match], odds_map, balance)
         assert len(picks) == 1
-        assert Decimal("1.00") <= picks[0].stake <= Decimal("100.00")
+        # 5-15% of balance
+        assert Decimal("1.00") <= picks[0].stake <= balance
 
     def test_selects_away_when_away_is_favorite(self):
         match = MatchFactory()
@@ -149,7 +151,7 @@ class TestUnderdogStrategy:
         picks = strategy.pick_bets([match], odds_map, Decimal("1000.00"))
         assert len(picks) == 0
 
-    def test_stake_capped_at_50(self):
+    def test_stake_is_percentage_of_balance(self):
         match = MatchFactory()
         odds_map = {
             match.pk: {
@@ -159,9 +161,11 @@ class TestUnderdogStrategy:
             }
         }
         strategy = UnderdogStrategy()
-        picks = strategy.pick_bets([match], odds_map, Decimal("10000.00"))
+        balance = Decimal("100000.00")
+        picks = strategy.pick_bets([match], odds_map, balance)
         assert len(picks) == 1
-        assert picks[0].stake <= Decimal("50.00")
+        # 2-5% of balance → $2,000-$5,000
+        assert Decimal("1.00") <= picks[0].stake <= balance
 
     def test_picks_draw_as_underdog_when_highest(self):
         match = MatchFactory()
@@ -448,7 +452,7 @@ class TestHomerBotStrategy:
         picks = strategy.pick_bets([match], odds_map, Decimal("1000.00"))
         assert len(picks) == 0
 
-    def test_stake_capped_at_15000(self):
+    def test_stake_is_percentage_of_balance(self):
         team = TeamFactory()
         match = MatchFactory(home_team=team)
         odds_map = {
@@ -459,9 +463,11 @@ class TestHomerBotStrategy:
             }
         }
         strategy = HomerBotStrategy(team_id=team.pk)
-        picks = strategy.pick_bets([match], odds_map, Decimal("10000.00"))
+        balance = Decimal("100000.00")
+        picks = strategy.pick_bets([match], odds_map, balance)
         assert len(picks) == 1
-        assert picks[0].stake <= Decimal("15000.00")
+        # 15-25% of balance for home games
+        assert Decimal("1.00") <= picks[0].stake <= balance
 
 
 # ---------------------------------------------------------------------------
@@ -575,7 +581,7 @@ class TestChaosAgentStrategy:
         picks = strategy.pick_bets([match], {}, Decimal("1000.00"))
         assert len(picks) == 0
 
-    def test_respects_minimum_stake(self):
+    def test_stake_is_percentage_of_balance(self):
         match = MatchFactory()
         odds_map = {
             match.pk: {
@@ -585,9 +591,10 @@ class TestChaosAgentStrategy:
             }
         }
         strategy = ChaosAgentStrategy()
-        # Very low balance — stake < 1.00 should be skipped
-        with patch("epl.bots.strategies.random.random", return_value=0.3):
-            with patch("epl.bots.strategies.random.randint", return_value=5):
-                picks = strategy.pick_bets([match], odds_map, Decimal("0.50"))
-        # Stake min(5, 0.50) = 0.50 < 1.00, so skipped
-        assert len(picks) == 0
+        balance = Decimal("100000.00")
+        # Force coin flip to pass (random() >= 0.5)
+        with patch("epl.bots.strategies.random.random", return_value=0.8):
+            picks = strategy.pick_bets([match], odds_map, balance)
+        assert len(picks) == 1
+        # 2-15% of balance → $2,000-$15,000
+        assert Decimal("1.00") <= picks[0].stake <= balance

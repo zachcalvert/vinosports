@@ -4,12 +4,16 @@ from decimal import Decimal
 from django.db import migrations, models
 
 
-def update_existing_reference_stakes(apps, schema_editor):
-    """Update existing featured parlays that still use old default stakes."""
+def update_existing_featured_parlays(apps, schema_editor):
+    """Update existing featured parlays to use $10,000 stake and recalculate payouts."""
     FeaturedParlay = apps.get_model("betting", "FeaturedParlay")
-    FeaturedParlay.objects.filter(
+    new_stake = Decimal("10000.00")
+    for fp in FeaturedParlay.objects.filter(
         reference_stake__in=[Decimal("10.00"), Decimal("1000.00")]
-    ).update(reference_stake=Decimal("10000.00"))
+    ):
+        fp.reference_stake = new_stake
+        fp.potential_payout = (fp.combined_odds * new_stake).quantize(Decimal("0.01"))
+        fp.save(update_fields=["reference_stake", "potential_payout"])
 
 
 class Migration(migrations.Migration):
@@ -31,7 +35,7 @@ class Migration(migrations.Migration):
             ),
         ),
         migrations.RunPython(
-            update_existing_reference_stakes,
+            update_existing_featured_parlays,
             migrations.RunPython.noop,
         ),
     ]

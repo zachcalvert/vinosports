@@ -50,7 +50,7 @@ class FrontrunnerStrategy(BotStrategy):
     """Always bets on the favorite (lowest odds outcome).
 
     Skips matches where no outcome has odds below 1.80 (no clear favorite).
-    Moderate stakes: 5-15% of balance, max 100.
+    Moderate stakes: 5-15% of balance.
     """
 
     FAVORITE_THRESHOLD = Decimal("1.80")
@@ -74,9 +74,7 @@ class FrontrunnerStrategy(BotStrategy):
                 continue  # No clear favorite
 
             pct = Decimal(str(random.uniform(0.05, 0.15)))
-            stake = _clamp_stake(
-                (balance * pct).quantize(Decimal("0.01")), ceiling=Decimal("100")
-            )
+            stake = _clamp_stake((balance * pct).quantize(Decimal("0.01")))
 
             picks.append(BetPick(match_id=match.pk, selection=favorite, stake=stake))
 
@@ -87,7 +85,7 @@ class UnderdogStrategy(BotStrategy):
     """Always bets on the underdog (highest odds outcome).
 
     Skips matches where no outcome has odds >= 3.00 (no clear underdog).
-    Conservative stakes: 2-5% of balance, max 50.
+    Conservative stakes: 2-5% of balance.
     """
 
     UNDERDOG_THRESHOLD = Decimal("3.00")
@@ -111,9 +109,7 @@ class UnderdogStrategy(BotStrategy):
                 continue
 
             pct = Decimal(str(random.uniform(0.02, 0.05)))
-            stake = _clamp_stake(
-                (balance * pct).quantize(Decimal("0.01")), ceiling=Decimal("50")
-            )
+            stake = _clamp_stake((balance * pct).quantize(Decimal("0.01")))
 
             picks.append(BetPick(match_id=match.pk, selection=underdog, stake=stake))
 
@@ -123,7 +119,7 @@ class UnderdogStrategy(BotStrategy):
 class ParlayStrategy(BotStrategy):
     """Picks one parlay per matchweek with 3-5 legs in the 1.40-2.50 odds range.
 
-    Stake: 3-8% of balance, max 30.
+    Stake: 3-8% of balance.
     """
 
     MIN_ODDS = Decimal("1.40")
@@ -160,9 +156,7 @@ class ParlayStrategy(BotStrategy):
         legs = random.sample(candidates, num_legs)
 
         pct = Decimal(str(random.uniform(0.03, 0.08)))
-        stake = _clamp_stake(
-            (balance * pct).quantize(Decimal("0.01")), ceiling=Decimal("30")
-        )
+        stake = _clamp_stake((balance * pct).quantize(Decimal("0.01")))
 
         return [
             ParlayPick(
@@ -178,7 +172,7 @@ class ParlayStrategy(BotStrategy):
 class DrawSpecialistStrategy(BotStrategy):
     """Only bets on draws, and only when draw odds are 2.80-3.80 (the sweet spot).
 
-    Stake: 5-10% of balance, max 75.
+    Stake: 5-10% of balance.
     """
 
     MIN_DRAW_ODDS = Decimal("2.80")
@@ -196,9 +190,7 @@ class DrawSpecialistStrategy(BotStrategy):
                 continue
 
             pct = Decimal(str(random.uniform(0.05, 0.10)))
-            stake = _clamp_stake(
-                (balance * pct).quantize(Decimal("0.01")), ceiling=Decimal("75")
-            )
+            stake = _clamp_stake((balance * pct).quantize(Decimal("0.01")))
 
             picks.append(BetPick(match_id=match.pk, selection="DRAW", stake=stake))
 
@@ -210,7 +202,7 @@ class ValueHunterStrategy(BotStrategy):
 
     Requires full per-bookmaker odds (passed via odds_map["_full"][match_id]).
     Skips matches where full data is unavailable or only one bookmaker is present.
-    Stake: 8-12% of balance, max 80.
+    Stake: 8-12% of balance.
     """
 
     MIN_SPREAD = Decimal("0.30")
@@ -242,9 +234,7 @@ class ValueHunterStrategy(BotStrategy):
                 continue
 
             pct = Decimal(str(random.uniform(0.08, 0.12)))
-            stake = _clamp_stake(
-                (balance * pct).quantize(Decimal("0.01")), ceiling=Decimal("80")
-            )
+            stake = _clamp_stake((balance * pct).quantize(Decimal("0.01")))
 
             picks.append(
                 BetPick(match_id=match.pk, selection=best_selection, stake=stake)
@@ -256,16 +246,15 @@ class ValueHunterStrategy(BotStrategy):
 class HomerBotStrategy(BotStrategy):
     """Bets exclusively on one team, every match they play.
 
-    - Home: always HOME_WIN, 15–25% of balance, max 150.
-    - Away, not a big underdog (away_win odds < draw_underdog_threshold): AWAY_WIN, 10–20% of balance, max 150.
-    - Away, big underdog (away_win odds >= draw_underdog_threshold): DRAW, 10–20% of balance, max 150.
+    - Home: always HOME_WIN, 15–25% of balance.
+    - Away, not a big underdog (away_win odds < draw_underdog_threshold): AWAY_WIN, 10–20% of balance.
+    - Away, big underdog (away_win odds >= draw_underdog_threshold): DRAW, 10–20% of balance.
     - Skips all matches where the supported team is not involved.
     - No odds ceiling — blind loyalty doesn't do expected-value calculations.
     """
 
     HOME_PCT = (0.15, 0.25)
     AWAY_PCT = (0.10, 0.20)
-    MAX_STAKE = Decimal("15000")
 
     def __init__(
         self, team_id: int, draw_underdog_threshold: Decimal = Decimal("3.50")
@@ -296,10 +285,7 @@ class HomerBotStrategy(BotStrategy):
                     selection = "AWAY_WIN"
                 pct = Decimal(str(random.uniform(*self.AWAY_PCT)))
 
-            stake = _clamp_stake(
-                (balance * pct).quantize(Decimal("0.01")),
-                ceiling=self.MAX_STAKE,
-            )
+            stake = _clamp_stake((balance * pct).quantize(Decimal("0.01")))
             picks.append(BetPick(match_id=match.pk, selection=selection, stake=stake))
 
         return picks
@@ -309,7 +295,7 @@ class AllInAliceStrategy(BotStrategy):
     """Picks the single strongest favorite of the week and goes all in.
 
     One bet per run — the match with the lowest odds (most likely outcome).
-    Stakes entire balance, capped at 10,000.
+    Stakes entire balance.
     """
 
     MAX_STAKE = Decimal("100000000")
@@ -347,7 +333,7 @@ class AllInAliceStrategy(BotStrategy):
 class ChaosAgentStrategy(BotStrategy):
     """Random match, random selection, random stake. Pure chaos.
 
-    50% chance of betting on each match. Stake: random 5-100.
+    50% chance of betting on each match. Stake: 2-15% of balance.
     """
 
     SELECTIONS = ["HOME_WIN", "DRAW", "AWAY_WIN"]
@@ -361,11 +347,8 @@ class ChaosAgentStrategy(BotStrategy):
                 continue
 
             selection = random.choice(self.SELECTIONS)
-            stake = Decimal(str(random.randint(5, 100)))
-            stake = min(stake, balance)
-
-            if stake < Decimal("1.00"):
-                continue
+            pct = Decimal(str(random.uniform(0.02, 0.15)))
+            stake = _clamp_stake((balance * pct).quantize(Decimal("0.01")))
 
             picks.append(BetPick(match_id=match.pk, selection=selection, stake=stake))
 

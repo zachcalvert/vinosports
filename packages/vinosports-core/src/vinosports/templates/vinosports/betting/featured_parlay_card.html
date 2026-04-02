@@ -1,4 +1,4 @@
-{% load i18n %}
+{% load i18n humanize %}
 <div id="featured-parlay-{{ parlay.pk }}" class="bg-surface-container-lowest rounded-xl border border-outline-variant overflow-hidden flex flex-col h-full shadow-sm hover:shadow-md transition-shadow">
     {% if featured_error %}
     <div class="px-5 pt-4">
@@ -67,8 +67,8 @@
             <p class="font-mono font-bold text-primary text-2xl leading-tight tabular-nums">{{ parlay.combined_odds }}x</p>
         </div>
         <div class="text-right">
-            <span class="text-[10px] font-label text-muted uppercase tracking-widest block">${{ parlay.reference_stake }} returns</span>
-            <p class="font-mono font-bold text-positive text-2xl leading-tight tabular-nums">${{ parlay.potential_payout }}</p>
+            <span class="text-[10px] font-label text-muted uppercase tracking-widest block">${{ parlay.reference_stake|intcomma }} returns</span>
+            <p class="font-mono font-bold text-positive text-2xl leading-tight tabular-nums">${{ parlay.potential_payout|intcomma }}</p>
         </div>
     </div>
 

@@ -1,3 +1,4 @@
+{% load humanize %}
 <div id="featured-parlay-{{ featured_parlay.pk }}" class="bg-surface-container-lowest rounded-xl border border-accent/30 overflow-hidden flex flex-col h-full">
     <div class="p-5 text-center flex flex-col items-center justify-center h-full">
         <div class="text-accent text-3xl mb-2">&#10003;</div>
@@ -8,7 +9,7 @@
         <div class="grid grid-cols-3 gap-3 text-center mb-4 w-full">
             <div>
                 <div class="text-[10px] font-label text-muted uppercase tracking-widest">Stake</div>
-                <div class="font-mono font-bold text-sm text-secondary">${{ stake }}</div>
+                <div class="font-mono font-bold text-sm text-secondary">${{ stake|intcomma }}</div>
             </div>
             <div>
                 <div class="text-[10px] font-label text-muted uppercase tracking-widest">Odds</div>
@@ -16,7 +17,7 @@
             </div>
             <div>
                 <div class="text-[10px] font-label text-muted uppercase tracking-widest">Payout</div>
-                <div class="font-mono font-bold text-sm text-accent">${{ potential_payout }}</div>
+                <div class="font-mono font-bold text-sm text-accent">${{ potential_payout|intcomma }}</div>
             </div>
         </div>
 
