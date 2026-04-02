@@ -1,0 +1,74 @@
+{# Offseason futures preview — Super Bowl top favorites for the dashboard #}
+<div class="max-w-2xl">
+    <div class="mb-8">
+        <span class="text-xs font-bold uppercase tracking-widest text-primary mb-2 block">Offseason</span>
+        <h1 class="font-headline italic font-black text-4xl sm:text-5xl uppercase tracking-tight leading-none">
+            {{ futures_market.season }} <span class="text-primary">Futures</span>
+        </h1>
+        <p class="text-secondary text-sm mt-3">
+            Place your bets on the Super Bowl Winner before the season starts.
+        </p>
+    </div>
+
+    <section class="bg-surface rounded-xl border-l-4 border-primary p-6 shadow-sm">
+        <div class="flex items-center justify-between mb-6">
+            <div>
+                <h2 class="font-headline text-2xl font-black italic uppercase tracking-tight">Super Bowl</h2>
+                <p class="text-xs text-secondary mt-0.5">{{ futures_market.season }} Season Outright</p>
+            </div>
+            <a href="{% url 'nfl_betting:futures' %}"
+               class="text-xs text-primary font-bold uppercase tracking-wider hover:underline">
+                All Markets &rarr;
+            </a>
+        </div>
+
+        {# Column headers #}
+        <div class="hidden sm:grid grid-cols-12 px-4 py-2 text-xs font-bold uppercase tracking-widest text-secondary">
+            <div class="col-span-1"></div>
+            <div class="col-span-6">Team</div>
+            <div class="col-span-2 text-right">Odds</div>
+            <div class="col-span-3"></div>
+        </div>
+
+        {# Team rows #}
+        <div class="space-y-1">
+            {% for outcome in futures_preview %}
+            <a href="{% url 'nfl_betting:futures_detail' futures_market.id_hash %}"
+               class="grid grid-cols-12 items-center px-4 py-3 rounded-lg transition-colors hover:bg-surface-container-low {% if forloop.counter|divisibleby:2 %}bg-surface-container-low/50{% endif %}">
+                <div class="col-span-1 text-center">
+                    <span class="text-xs font-bold text-muted">{{ forloop.counter }}</span>
+                </div>
+                <div class="col-span-6 sm:col-span-6 flex items-center gap-3">
+                    {% if outcome.team.logo_url %}
+                        <img src="{{ outcome.team.logo_url }}" alt="" class="w-8 h-8 rounded-lg object-contain bg-surface-container-highest p-0.5">
+                    {% else %}
+                        <div class="w-8 h-8 rounded-lg bg-surface-container-highest flex items-center justify-center">
+                            <i class="ph-duotone ph-shield text-secondary opacity-40"></i>
+                        </div>
+                    {% endif %}
+                    <span class="font-headline font-bold text-sm sm:text-base">{{ outcome.team.name }}</span>
+                </div>
+                <div class="col-span-3 sm:col-span-2 text-right">
+                    <span class="font-headline font-bold text-primary text-base sm:text-lg">
+                        {% if outcome.odds > 0 %}+{% endif %}{{ outcome.odds }}
+                    </span>
+                </div>
+                <div class="col-span-2 sm:col-span-3 text-right">
+                    <span class="text-xs text-secondary font-bold uppercase tracking-wider hidden sm:inline">Bet &rarr;</span>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+
+        <div class="mt-6 pt-4 border-t border-outline-variant flex items-center justify-between">
+            <a href="{% url 'nfl_betting:futures_detail' futures_market.id_hash %}"
+               class="text-xs text-secondary hover:text-primary font-bold uppercase tracking-wider">
+                View All 32 Teams &rarr;
+            </a>
+            <a href="{% url 'nfl_betting:futures' %}"
+               class="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-white rounded-lg font-headline font-bold text-sm uppercase tracking-wider hover:bg-primary/90 transition-colors">
+                Browse All Markets
+            </a>
+        </div>
+    </section>
+</div>

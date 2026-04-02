@@ -3,6 +3,7 @@
 {% block title %}Dashboard — NFL Bets{% endblock %}
 
 {% block content %}
+{% if not is_offseason %}
 <div class="mb-6 flex items-center justify-between">
     <div>
         <h1 class="font-headline italic font-black text-4xl sm:text-5xl uppercase tracking-tight leading-none">
@@ -20,6 +21,7 @@
         <span id="ws-label">Connecting&hellip;</span>
     </div>
 </div>
+{% endif %}
 
 <div class="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_24rem] gap-6 items-start">
     <div class="order-2 xl:order-1" id="game-grid"
@@ -64,8 +66,10 @@
         </div>
         {% endif %}
 
-        {# No games #}
-        {% if not live_games and not upcoming_games and not final_games %}
+        {# Offseason: show futures preview #}
+        {% if is_offseason and futures_preview %}
+            {% include "nfl_website/components/futures_preview.html" %}
+        {% elif not live_games and not upcoming_games and not final_games %}
             {% include "nfl_website/components/empty_state.html" with icon="calendar" title="No games this week" message="Check back later or browse the full schedule." cta_url="/nfl/games/schedule/" cta_text="View Schedule" %}
         {% endif %}
     </div>

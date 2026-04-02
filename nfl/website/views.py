@@ -3,10 +3,16 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import redirect, render
 from django.views import View
 
+from nfl.betting.models import FuturesMarket, FuturesOutcome
 from nfl.games.models import Game, GameStatus, Standing
 from nfl.games.views import _nfl_current_season, _nfl_current_week
 from nfl.website.theme import THEME_SESSION_KEY, get_theme, normalize_theme
-from vinosports.betting.models import BalanceTransaction, UserBalance, UserStats
+from vinosports.betting.models import (
+    BalanceTransaction,
+    FuturesMarketStatus,
+    UserBalance,
+    UserStats,
+)
 
 
 class DashboardView(LoginRequiredMixin, View):
@@ -64,6 +70,34 @@ class DashboardView(LoginRequiredMixin, View):
             .order_by("-created_at")[:2]
         )
 
+        is_offseason = not live and not upcoming and not final
+
+        # During the offseason, show Super Bowl futures as the main content
+        futures_preview = None
+        futures_market = None
+        if is_offseason:
+            from django.utils import timezone
+
+            today = timezone.now().date()
+            futures_season = (
+                str(today.year)
+                if 3 <= today.month < 9
+                else str(today.year if today.month >= 9 else today.year - 1)
+            )
+            try:
+                futures_market = FuturesMarket.objects.get(
+                    season=futures_season,
+                    market_type="SUPER_BOWL",
+                    status=FuturesMarketStatus.OPEN,
+                )
+                futures_preview = (
+                    FuturesOutcome.objects.filter(market=futures_market, is_active=True)
+                    .select_related("team")
+                    .order_by("odds")[:8]
+                )
+            except FuturesMarket.DoesNotExist:
+                pass
+
         return render(
             request,
             "nfl_website/dashboard.html",
@@ -76,6 +110,9 @@ class DashboardView(LoginRequiredMixin, View):
                 "standings_by_team": standings_by_team,
                 "odds_by_game": odds_by_game,
                 "featured_parlays": featured_parlays,
+                "is_offseason": is_offseason,
+                "futures_preview": futures_preview,
+                "futures_market": futures_market,
             },
         )
 
