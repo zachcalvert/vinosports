@@ -493,6 +493,11 @@ CELERY_BEAT_SCHEDULE = {
         "task": "vinosports.betting.tasks.expire_featured_parlays",
         "schedule": timedelta(minutes=30),
     },
+    # ===== News =====
+    "news-generate-recaps-hourly": {
+        "task": "news.tasks.generate_pending_recaps",
+        "schedule": crontab(minute=45),
+    },
 }
 
 # External APIs

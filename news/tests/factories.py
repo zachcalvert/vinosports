@@ -4,6 +4,7 @@ import factory
 from django.utils import timezone
 
 from news.models import NewsArticle
+from vinosports.bots.models import BotProfile, StrategyType
 from vinosports.users.models import User
 
 
@@ -45,3 +46,18 @@ class NewsArticleFactory(factory.django.DjangoModelFactory):
 class DraftArticleFactory(NewsArticleFactory):
     status = NewsArticle.Status.DRAFT
     published_at = None
+
+
+class BotProfileFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = BotProfile
+
+    user = factory.SubFactory(BotUserFactory)
+    strategy_type = StrategyType.HOMER
+    is_active = True
+    active_in_epl = True
+    active_in_nba = True
+    active_in_nfl = True
+    risk_multiplier = 1.0
+    max_daily_bets = 5
+    persona_prompt = "You are an opinionated sports commentator."
