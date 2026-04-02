@@ -56,14 +56,22 @@ class TestBotScannerBlockMiddleware:
 
 
 class TestRateLimitMiddleware:
+    """Each test uses a unique fake IP to avoid cross-test cache pollution."""
+
+    @staticmethod
+    def _next_ip():
+        import uuid
+
+        return f"test-{uuid.uuid4().hex[:12]}"
+
     def _make_mw(self):
         mw = RateLimitMiddleware(_make_response)
         mw.max_requests = 3
         mw.window = 60
         return mw
 
-    def _anon_request(self, rf, path="/nba/games/schedule/"):
-        request = rf.get(path)
+    def _anon_request(self, rf, path="/nba/games/schedule/", ip=None):
+        request = rf.get(path, HTTP_X_FORWARDED_FOR=ip or "127.0.0.1")
         request.user = MagicMock(is_authenticated=False)
         return request
 
@@ -84,56 +92,39 @@ class TestRateLimitMiddleware:
 
     @pytest.mark.django_db
     def test_blocks_anonymous_after_threshold(self, rf):
-        from django.core.cache import cache
-
-        cache.clear()
+        ip = self._next_ip()
         mw = self._make_mw()
         for i in range(3):
-            request = self._anon_request(rf)
-            response = mw(request)
+            response = mw(self._anon_request(rf, ip=ip))
             assert response.status_code == 200, f"Request {i + 1} should be allowed"
 
-        request = self._anon_request(rf)
-        response = mw(request)
+        response = mw(self._anon_request(rf, ip=ip))
         assert response.status_code == 429
 
     @pytest.mark.django_db
-    def test_rate_limits_all_league_prefixes(self, rf):
-        from django.core.cache import cache
+    @pytest.mark.parametrize("prefix", ["/epl/", "/nba/", "/nfl/"])
+    def test_rate_limits_league_prefix(self, rf, prefix):
+        ip = self._next_ip()
+        mw = self._make_mw()
+        for _ in range(3):
+            mw(self._anon_request(rf, path=f"{prefix}schedule/", ip=ip))
 
-        for prefix in ("/epl/", "/nba/", "/nfl/"):
-            cache.clear()
-            mw = self._make_mw()
-            for _ in range(3):
-                mw(self._anon_request(rf, path=f"{prefix}schedule/"))
-
-            response = mw(self._anon_request(rf, path=f"{prefix}schedule/"))
-            assert response.status_code == 429, f"{prefix} should be rate limited"
+        response = mw(self._anon_request(rf, path=f"{prefix}schedule/", ip=ip))
+        assert response.status_code == 429, f"{prefix} should be rate limited"
 
     @pytest.mark.django_db
     def test_uses_x_forwarded_for(self, rf):
-        from django.core.cache import cache
-
-        cache.clear()
+        ip = self._next_ip()
         mw = self._make_mw()
         for _ in range(3):
-            request = rf.get(
-                "/nba/games/schedule/", HTTP_X_FORWARDED_FOR="1.2.3.4, 10.0.0.1"
-            )
-            request.user = MagicMock(is_authenticated=False)
-            mw(request)
+            mw(self._anon_request(rf, ip=ip))
 
-        request = rf.get(
-            "/nba/games/schedule/", HTTP_X_FORWARDED_FOR="1.2.3.4, 10.0.0.1"
-        )
-        request.user = MagicMock(is_authenticated=False)
-        response = mw(request)
+        response = mw(self._anon_request(rf, ip=ip))
         assert response.status_code == 429
 
         # Different IP should still be allowed
-        request = rf.get("/nba/games/schedule/", HTTP_X_FORWARDED_FOR="5.6.7.8")
-        request.user = MagicMock(is_authenticated=False)
-        response = mw(request)
+        other_ip = self._next_ip()
+        response = mw(self._anon_request(rf, ip=other_ip))
         assert response.status_code == 200
 
 
