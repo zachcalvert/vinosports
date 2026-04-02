@@ -59,7 +59,7 @@ class TestRewardDistribution:
         reward.distribute_to_users([user])
 
         balance = UserBalance.objects.get(user=user)
-        assert balance.balance == Decimal("1050.00")
+        assert balance.balance == Decimal("100050.00")
 
     @patch("vinosports.rewards.models._broadcast_rewards")
     def test_multiple_users(self, mock_broadcast):

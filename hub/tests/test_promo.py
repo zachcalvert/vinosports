@@ -23,17 +23,17 @@ class TestEvaluatePromoCode:
     def test_returns_parsed_score(self, mock_settings, mock_anthropic):
         mock_settings.ANTHROPIC_API_KEY = "test-key"
         mock_response = MagicMock()
-        mock_response.content = [MagicMock(text="750")]
+        mock_response.content = [MagicMock(text="75000")]
         mock_anthropic.Anthropic.return_value.messages.create.return_value = (
             mock_response
         )
 
         result = evaluate_promo_code("VinoVeritasVictory")
-        assert result == 750
+        assert result == 75000
 
     @patch("hub.promo.anthropic")
     @patch("hub.promo.settings")
-    def test_clamps_to_minimum_250(self, mock_settings, mock_anthropic):
+    def test_clamps_to_minimum_25000(self, mock_settings, mock_anthropic):
         mock_settings.ANTHROPIC_API_KEY = "test-key"
         mock_response = MagicMock()
         mock_response.content = [MagicMock(text="50")]
@@ -42,20 +42,20 @@ class TestEvaluatePromoCode:
         )
 
         result = evaluate_promo_code("boring")
-        assert result == 250
+        assert result == 25000
 
     @patch("hub.promo.anthropic")
     @patch("hub.promo.settings")
-    def test_clamps_to_maximum_1000(self, mock_settings, mock_anthropic):
+    def test_clamps_to_maximum_100000(self, mock_settings, mock_anthropic):
         mock_settings.ANTHROPIC_API_KEY = "test-key"
         mock_response = MagicMock()
-        mock_response.content = [MagicMock(text="9999")]
+        mock_response.content = [MagicMock(text="999999")]
         mock_anthropic.Anthropic.return_value.messages.create.return_value = (
             mock_response
         )
 
         result = evaluate_promo_code("amazing")
-        assert result == 1000
+        assert result == 100000
 
     @patch("hub.promo.anthropic")
     @patch("hub.promo.settings")
@@ -86,10 +86,10 @@ class TestEvaluatePromoCode:
     def test_extracts_number_from_mixed_text(self, mock_settings, mock_anthropic):
         mock_settings.ANTHROPIC_API_KEY = "test-key"
         mock_response = MagicMock()
-        mock_response.content = [MagicMock(text="I rate this 600 points")]
+        mock_response.content = [MagicMock(text="I rate this 60000 points")]
         mock_anthropic.Anthropic.return_value.messages.create.return_value = (
             mock_response
         )
 
         result = evaluate_promo_code("test")
-        assert result == 600
+        assert result == 60000

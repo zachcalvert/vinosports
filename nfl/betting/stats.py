@@ -17,7 +17,7 @@ from vinosports.betting.models import UserStats
 
 logger = logging.getLogger(__name__)
 
-MAX_SINGLE_STAKE = Decimal("1000.00")
+MAX_SINGLE_STAKE = Decimal("100000.00")
 
 
 def record_bet_result(

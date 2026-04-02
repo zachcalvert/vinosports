@@ -445,7 +445,7 @@ BOT_PERSONAS = [
     },
 ]
 
-STARTING_BALANCE = Decimal("1000.00")
+STARTING_BALANCE = Decimal("100000.00")
 
 
 class Command(BaseCommand):

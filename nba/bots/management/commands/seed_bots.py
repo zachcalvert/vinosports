@@ -204,7 +204,7 @@ class Command(BaseCommand):
                 user.save()
 
             UserBalance.objects.get_or_create(
-                user=user, defaults={"balance": Decimal("1000.00")}
+                user=user, defaults={"balance": Decimal("100000.00")}
             )
             UserStats.objects.get_or_create(user=user)
 

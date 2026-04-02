@@ -316,11 +316,11 @@ class TestPlaceBotParlay:
 class TestMaybeTopupBot:
     def test_no_topup_when_balance_sufficient(self):
         bot = BotUserFactory()
-        UserBalanceFactory(user=bot, balance=Decimal("500.00"))
+        UserBalanceFactory(user=bot, balance=Decimal("50000.00"))
 
         maybe_topup_bot(bot)
         balance = UserBalance.objects.get(user=bot)
-        assert balance.balance == Decimal("500.00")
+        assert balance.balance == Decimal("50000.00")
 
     def test_topup_when_balance_low_and_no_pending(self):
         bot = BotUserFactory()

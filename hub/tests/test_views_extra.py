@@ -191,7 +191,7 @@ class TestSignupViewExtra:
         )
         txn = BalanceTransaction.objects.get(user__email="txn@test.com")
         assert txn.transaction_type == BalanceTransaction.Type.SIGNUP
-        assert txn.amount == Decimal("1000.00")
+        assert txn.amount == Decimal("100000.00")
 
     @patch("hub.views.evaluate_promo_code", return_value=0)
     def test_signup_logs_user_in(self, mock_promo, client):
@@ -285,7 +285,7 @@ class TestProfileView:
     def test_default_balance_when_missing(self, client, bot_with_profile):
         bot_user, bp = bot_with_profile
         resp = client.get(reverse("hub:profile", args=[bot_user.slug]))
-        assert resp.context["balance"] == Decimal("1000.00")
+        assert resp.context["balance"] == Decimal("100000.00")
 
     def test_real_balance_when_present(self, client, bot_with_profile):
         bot_user, bp = bot_with_profile
@@ -640,7 +640,7 @@ class TestMyBetsView:
 
     def test_default_balance_when_missing(self, authed_client):
         resp = authed_client.get(reverse("hub:my_bets"))
-        assert resp.context["current_balance"] == Decimal("1000.00")
+        assert resp.context["current_balance"] == Decimal("100000.00")
 
     def test_context_has_activity(self, authed_client):
         resp = authed_client.get(reverse("hub:my_bets"))

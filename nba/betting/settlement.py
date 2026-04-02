@@ -338,7 +338,7 @@ def _check_bankruptcy(user) -> bool:
     return False
 
 
-def grant_bailout(user, amount: Decimal = Decimal("500.00")) -> Bailout:
+def grant_bailout(user, amount: Decimal = Decimal("50000.00")) -> Bailout:
     """
     Grant a bailout to a bankrupt user. Credits balance and creates a Bailout record.
     Raises ValueError if user is not bankrupt (balance > threshold).

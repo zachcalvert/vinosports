@@ -23,7 +23,7 @@ class ParlayPick:
     stake: Decimal = Decimal("0")
 
 
-def _clamp_stake(stake, floor=Decimal("1.00"), ceiling=Decimal("10000.00")):
+def _clamp_stake(stake, floor=Decimal("1.00"), ceiling=Decimal("100000000.00")):
     return max(floor, min(stake, ceiling))
 
 
@@ -265,7 +265,7 @@ class HomerBotStrategy(BotStrategy):
 
     HOME_PCT = (0.15, 0.25)
     AWAY_PCT = (0.10, 0.20)
-    MAX_STAKE = Decimal("150")
+    MAX_STAKE = Decimal("15000")
 
     def __init__(
         self, team_id: int, draw_underdog_threshold: Decimal = Decimal("3.50")
@@ -312,7 +312,7 @@ class AllInAliceStrategy(BotStrategy):
     Stakes entire balance, capped at 10,000.
     """
 
-    MAX_STAKE = Decimal("10000")
+    MAX_STAKE = Decimal("100000000")
 
     def pick_bets(self, available_matches, odds_map, balance):
         best_match_id = None

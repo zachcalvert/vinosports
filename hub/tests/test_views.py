@@ -91,7 +91,7 @@ class TestSignupView:
         )
         assert resp.status_code == 302
         balance = UserBalance.objects.get(user__email="promo@test.com")
-        assert balance.balance == Decimal("1500.00")  # 1000 + 500
+        assert balance.balance == Decimal("100500.00")  # 100000 + 500
 
     def test_registration_closed(self, client):
         site = SiteSettings.load()

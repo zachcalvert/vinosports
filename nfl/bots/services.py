@@ -127,7 +127,7 @@ def _place_parlay(user, instr: ParlayInstruction) -> bool:
     combined_odds = decimal_to_american(combined_decimal)
 
     max_payout = calculate_payout(instr.stake, combined_odds)
-    cap = Decimal("10000.00")
+    cap = Decimal("100000000.00")
     max_payout = min(max_payout, cap)
 
     try:

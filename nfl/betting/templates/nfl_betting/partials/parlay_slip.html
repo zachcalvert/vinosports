@@ -130,7 +130,7 @@
     if (!stakeInput || !payoutDisplay) return;
 
     var combinedOdds = parseFloat(form.dataset.combinedOdds) || 0;
-    var maxPayout = parseFloat(form.dataset.maxPayout) || 10000;
+    var maxPayout = parseFloat(form.dataset.maxPayout) || 10000000000;
 
     function updatePayout() {
         var stake = parseFloat(stakeInput.value) || 0;

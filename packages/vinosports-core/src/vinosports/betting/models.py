@@ -21,7 +21,7 @@ class UserBalance(BaseModel):
         verbose_name=_("user"),
     )
     balance = models.DecimalField(
-        _("balance"), max_digits=10, decimal_places=2, default=1000.00
+        _("balance"), max_digits=14, decimal_places=2, default=100000.00
     )
 
     def __str__(self):
@@ -52,9 +52,9 @@ class BalanceTransaction(BaseModel):
         related_name="balance_transactions",
         verbose_name=_("user"),
     )
-    amount = models.DecimalField(_("amount"), max_digits=10, decimal_places=2)
+    amount = models.DecimalField(_("amount"), max_digits=14, decimal_places=2)
     balance_after = models.DecimalField(
-        _("balance after"), max_digits=10, decimal_places=2
+        _("balance after"), max_digits=14, decimal_places=2
     )
     transaction_type = models.CharField(_("type"), max_length=20, choices=Type.choices)
     description = models.CharField(
@@ -85,13 +85,13 @@ class UserStats(BaseModel):
     total_wins = models.PositiveIntegerField(_("total wins"), default=0)
     total_losses = models.PositiveIntegerField(_("total losses"), default=0)
     total_staked = models.DecimalField(
-        _("total staked"), max_digits=10, decimal_places=2, default=Decimal("0.00")
+        _("total staked"), max_digits=14, decimal_places=2, default=Decimal("0.00")
     )
     total_payout = models.DecimalField(
-        _("total payout"), max_digits=10, decimal_places=2, default=Decimal("0.00")
+        _("total payout"), max_digits=14, decimal_places=2, default=Decimal("0.00")
     )
     net_profit = models.DecimalField(
-        _("net profit"), max_digits=10, decimal_places=2, default=Decimal("0.00")
+        _("net profit"), max_digits=14, decimal_places=2, default=Decimal("0.00")
     )
     current_streak = models.IntegerField(
         _("current streak"),
@@ -178,7 +178,7 @@ class Bankruptcy(BaseModel):
     )
     balance_at_bankruptcy = models.DecimalField(
         _("balance at bankruptcy"),
-        max_digits=10,
+        max_digits=14,
         decimal_places=2,
     )
 
@@ -205,7 +205,7 @@ class Bailout(BaseModel):
     )
     amount = models.DecimalField(
         _("amount"),
-        max_digits=10,
+        max_digits=14,
         decimal_places=2,
     )
 
@@ -245,7 +245,7 @@ class AbstractBetSlip(BaseModel):
         related_name="%(app_label)s_bets",
         verbose_name=_("user"),
     )
-    stake = models.DecimalField(_("stake"), max_digits=10, decimal_places=2)
+    stake = models.DecimalField(_("stake"), max_digits=14, decimal_places=2)
     status = models.CharField(
         _("status"),
         max_length=10,
@@ -253,7 +253,7 @@ class AbstractBetSlip(BaseModel):
         default=BetStatus.PENDING,
     )
     payout = models.DecimalField(
-        _("payout"), max_digits=10, decimal_places=2, null=True, blank=True
+        _("payout"), max_digits=14, decimal_places=2, null=True, blank=True
     )
 
     class Meta:
@@ -274,7 +274,7 @@ class AbstractParlay(BaseModel):
         related_name="%(app_label)s_parlays",
         verbose_name=_("user"),
     )
-    stake = models.DecimalField(_("stake"), max_digits=10, decimal_places=2)
+    stake = models.DecimalField(_("stake"), max_digits=14, decimal_places=2)
     status = models.CharField(
         _("status"),
         max_length=10,
@@ -282,10 +282,10 @@ class AbstractParlay(BaseModel):
         default=BetStatus.PENDING,
     )
     payout = models.DecimalField(
-        _("payout"), max_digits=12, decimal_places=2, null=True, blank=True
+        _("payout"), max_digits=14, decimal_places=2, null=True, blank=True
     )
     max_payout = models.DecimalField(
-        _("max payout"), max_digits=12, decimal_places=2, default=PARLAY_MAX_PAYOUT
+        _("max payout"), max_digits=14, decimal_places=2, default=PARLAY_MAX_PAYOUT
     )
     featured_parlay = models.ForeignKey(
         "betting.FeaturedParlay",
@@ -393,7 +393,7 @@ class AbstractFuturesBet(BaseModel):
         related_name="%(app_label)s_futures_bets",
         verbose_name=_("user"),
     )
-    stake = models.DecimalField(_("stake"), max_digits=10, decimal_places=2)
+    stake = models.DecimalField(_("stake"), max_digits=14, decimal_places=2)
     status = models.CharField(
         _("status"),
         max_length=10,
@@ -401,7 +401,7 @@ class AbstractFuturesBet(BaseModel):
         default=BetStatus.PENDING,
     )
     payout = models.DecimalField(
-        _("payout"), max_digits=10, decimal_places=2, null=True, blank=True
+        _("payout"), max_digits=14, decimal_places=2, null=True, blank=True
     )
 
     class Meta:

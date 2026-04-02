@@ -187,7 +187,7 @@ class TestPlaceFeaturedParlayStakeValidation:
         fp = _create_featured_parlay(games)
 
         url = reverse("nba_betting:place_featured_parlay", args=[fp.pk])
-        resp = c.post(url, {"stake": "20000"})
+        resp = c.post(url, {"stake": "200000000"})
 
         assert resp.status_code == 200
         assert b"Maximum wager" in resp.content

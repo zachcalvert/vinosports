@@ -240,7 +240,7 @@ class ProfileView(TemplateView):
         try:
             ctx["balance"] = profile_user.balance.balance
         except UserBalance.DoesNotExist:
-            ctx["balance"] = Decimal("1000.00")
+            ctx["balance"] = Decimal("100000.00")
 
         ctx["user_rank"] = get_user_rank(profile_user)
 
@@ -686,7 +686,7 @@ class MyBetsView(LoginRequiredMixin, TemplateView):
             total_payout += totals["total_payout"] or Decimal("0")
 
         balance = getattr(user, "balance", None)
-        current_balance = balance.balance if balance else Decimal("1000.00")
+        current_balance = balance.balance if balance else Decimal("100000.00")
 
         # Build unified activity feed: pending first, then by date
         activity = []

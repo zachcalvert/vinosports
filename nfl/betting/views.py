@@ -335,7 +335,7 @@ class PlaceParlayView(LoginRequiredMixin, View):
 
         combined_odds = decimal_to_american(combined_decimal)
         max_payout = calculate_payout(stake, combined_odds)
-        cap = Decimal("10000.00")
+        cap = Decimal("100000000.00")
         max_payout = min(max_payout, cap)
 
         with transaction.atomic():
@@ -422,8 +422,8 @@ class PlaceFeaturedParlayView(LoginRequiredMixin, View):
             return self._card_error(request, fp, "Please enter a valid wager amount.")
         if stake < Decimal("0.50"):
             return self._card_error(request, fp, "Minimum wager is $0.50.")
-        if stake > Decimal("10000"):
-            return self._card_error(request, fp, "Maximum wager is $10,000.")
+        if stake > Decimal("100000000"):
+            return self._card_error(request, fp, "Maximum wager is $100,000,000.")
 
         if Parlay.objects.filter(user=request.user, featured_parlay=fp).exists():
             return render(
@@ -505,7 +505,9 @@ class PlaceFeaturedParlayView(LoginRequiredMixin, View):
             combined_decimal *= american_to_decimal(int(ld["odds"]))
 
         combined_odds = decimal_to_american(combined_decimal)
-        max_payout = min(calculate_payout(stake, combined_odds), Decimal("10000.00"))
+        max_payout = min(
+            calculate_payout(stake, combined_odds), Decimal("100000000.00")
+        )
 
         try:
             balance_obj = log_transaction(

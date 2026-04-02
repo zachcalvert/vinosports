@@ -171,7 +171,7 @@ class RewardDistributionAdmin(admin.ModelAdmin):
         if not change:
             with transaction.atomic():
                 balance, _ = UserBalance.objects.select_for_update().get_or_create(
-                    user=obj.user, defaults={"balance": Decimal("1000.00")}
+                    user=obj.user, defaults={"balance": Decimal("100000.00")}
                 )
                 log_transaction(
                     balance,

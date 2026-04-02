@@ -72,7 +72,7 @@ class FeaturedParlay(BaseModel):
         _("reference stake"),
         max_digits=10,
         decimal_places=2,
-        default=Decimal("10.00"),
+        default=Decimal("1000.00"),
         help_text=_("Stake used when computing potential_payout."),
     )
 
