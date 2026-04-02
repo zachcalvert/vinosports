@@ -265,6 +265,7 @@ CELERY_TASK_ROUTES = {
     "epl.*": {"queue": "epl"},
     "nba.*": {"queue": "nba"},
     "nfl.*": {"queue": "nfl"},
+    "news.*": {"queue": "news"},
 }
 
 # Beat Schedule — EPL and NBA tasks merged, prefixed to avoid key collisions

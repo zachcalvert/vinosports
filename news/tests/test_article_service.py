@@ -11,6 +11,8 @@ from news.article_service import (
     _get_game_url,
     _parse_article_response,
     _select_recap_bot,
+    _spread_result,
+    _trim_to_last_sentence,
     generate_game_recap,
 )
 from news.models import NewsArticle
@@ -431,3 +433,62 @@ class TestHelpers:
         match.slug = "ars-che-2026-03-15"
         url = _get_game_url("epl", match)
         assert "/epl/match/ars-che-2026-03-15/" in url
+
+
+# ---------------------------------------------------------------------------
+# Trim to last sentence
+# ---------------------------------------------------------------------------
+
+
+class TestTrimToLastSentence:
+    def test_trims_at_period(self):
+        assert _trim_to_last_sentence("Hello world. This is cut") == "Hello world."
+
+    def test_trims_at_exclamation(self):
+        assert _trim_to_last_sentence("What a game! The team") == "What a game!"
+
+    def test_trims_at_question(self):
+        assert _trim_to_last_sentence("Can they win? The odds") == "Can they win?"
+
+    def test_returns_as_is_if_no_punctuation(self):
+        assert _trim_to_last_sentence("no ending here") == "no ending here"
+
+    def test_already_ends_with_punctuation(self):
+        assert _trim_to_last_sentence("Complete sentence.") == "Complete sentence."
+
+
+# ---------------------------------------------------------------------------
+# Spread result helper
+# ---------------------------------------------------------------------------
+
+
+class TestSpreadResult:
+    def test_home_favorite_covers(self):
+        # Home -7, wins by 10 → margin=10, ats=10+(-7)=3 → home covered
+        home_covered, text = _spread_result(27, 17, -7, "KC", "BUF")
+        assert home_covered is True
+        assert "KC covered" in text
+
+    def test_home_favorite_does_not_cover(self):
+        # Home -7, wins by 3 → margin=3, ats=3+(-7)=-4 → away covered
+        home_covered, text = _spread_result(20, 17, -7, "KC", "BUF")
+        assert home_covered is False
+        assert "BUF covered" in text
+
+    def test_home_underdog_covers(self):
+        # Home +3.5, loses by 2 → margin=-2, ats=-2+3.5=1.5 → home covered
+        home_covered, text = _spread_result(17, 19, 3.5, "BUF", "KC")
+        assert home_covered is True
+        assert "BUF covered" in text
+
+    def test_home_underdog_does_not_cover(self):
+        # Home +3.5, loses by 7 → margin=-7, ats=-7+3.5=-3.5 → away covered
+        home_covered, text = _spread_result(14, 21, 3.5, "BUF", "KC")
+        assert home_covered is False
+        assert "KC covered" in text
+
+    def test_push(self):
+        # Home -7, wins by exactly 7 → margin=7, ats=7+(-7)=0 → push
+        home_covered, text = _spread_result(24, 17, -7, "KC", "BUF")
+        assert home_covered is None
+        assert text == "PUSH"

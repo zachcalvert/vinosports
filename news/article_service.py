@@ -159,6 +159,8 @@ def generate_game_recap(league, game_obj):
             messages=[{"role": "user", "content": user_prompt}],
         )
         raw_text = response.content[0].text
+        if response.stop_reason == "max_tokens":
+            raw_text = _trim_to_last_sentence(raw_text)
     except Exception as exc:
         logger.error(
             "Claude API error for recap: league=%s, game=%s, error=%s",
@@ -244,6 +246,8 @@ def generate_weekly_roundup(league):
             messages=[{"role": "user", "content": user_prompt}],
         )
         raw_text = response.content[0].text
+        if response.stop_reason == "max_tokens":
+            raw_text = _trim_to_last_sentence(raw_text)
     except Exception as exc:
         logger.error("Claude API error for roundup: league=%s, error=%s", league, exc)
         return None
@@ -313,6 +317,8 @@ def generate_betting_trend(league):
             messages=[{"role": "user", "content": user_prompt}],
         )
         raw_text = response.content[0].text
+        if response.stop_reason == "max_tokens":
+            raw_text = _trim_to_last_sentence(raw_text)
     except Exception as exc:
         logger.error("Claude API error for trend: league=%s, error=%s", league, exc)
         return None
@@ -380,6 +386,8 @@ def generate_cross_league_article():
             messages=[{"role": "user", "content": user_prompt}],
         )
         raw_text = response.content[0].text
+        if response.stop_reason == "max_tokens":
+            raw_text = _trim_to_last_sentence(raw_text)
     except Exception as exc:
         logger.error("Claude API error for cross-league article: %s", exc)
         return None
@@ -1636,6 +1644,18 @@ def _cross_league_format_instructions():
 # ---------------------------------------------------------------------------
 # Response parsing
 # ---------------------------------------------------------------------------
+
+
+def _trim_to_last_sentence(text):
+    """Trim text to the last sentence-ending punctuation mark.
+
+    Same helper as epl/bots/comment_service.py — prevents abruptly
+    cut-off articles when the model hits max_tokens mid-sentence.
+    """
+    for i in range(len(text) - 1, -1, -1):
+        if text[i] in ".!?":
+            return text[: i + 1]
+    return text
 
 
 def _parse_article_response(raw_text):

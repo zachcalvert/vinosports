@@ -98,7 +98,7 @@ services:
   # --- Celery Worker (all queues) ---
   worker:
     <<: *app-build
-    command: celery -A config worker -l info -Q epl,nba,nfl
+    command: celery -A config worker -l info -Q epl,nba,nfl,news
     volumes:
       - ./config:/app/config
       - ./epl:/app/epl

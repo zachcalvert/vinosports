@@ -30,7 +30,9 @@ def generate_pending_recaps():
 
         epl_existing = set(
             NewsArticle.objects.filter(
-                article_type=NewsArticle.ArticleType.RECAP, league="epl"
+                article_type=NewsArticle.ArticleType.RECAP,
+                league="epl",
+                created_at__gte=cutoff,
             ).values_list("game_id_hash", flat=True)
         )
         epl_matches = Match.objects.filter(
@@ -49,7 +51,9 @@ def generate_pending_recaps():
 
         nba_existing = set(
             NewsArticle.objects.filter(
-                article_type=NewsArticle.ArticleType.RECAP, league="nba"
+                article_type=NewsArticle.ArticleType.RECAP,
+                league="nba",
+                created_at__gte=cutoff,
             ).values_list("game_id_hash", flat=True)
         )
         nba_games = Game.objects.filter(
@@ -69,7 +73,9 @@ def generate_pending_recaps():
 
         nfl_existing = set(
             NewsArticle.objects.filter(
-                article_type=NewsArticle.ArticleType.RECAP, league="nfl"
+                article_type=NewsArticle.ArticleType.RECAP,
+                league="nfl",
+                created_at__gte=cutoff,
             ).values_list("game_id_hash", flat=True)
         )
         nfl_games = NflGame.objects.filter(
