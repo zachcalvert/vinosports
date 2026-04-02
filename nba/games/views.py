@@ -485,7 +485,11 @@ def _get_box_score_context(game):
     if not box_scores.exists():
         from nba.games.tasks import fetch_box_score
 
-        fetch_box_score.delay(game.pk)
+        try:
+            fetch_box_score.delay(game.pk)
+        except Exception:
+            # In eager mode (tests) or if broker is down, don't block the page
+            pass
         return {"box_score_loading": True}
 
     if not box_scores.exists():
