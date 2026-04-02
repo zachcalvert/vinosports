@@ -1,4 +1,4 @@
-{% extends "hub/base.html" %}
+{% extends base_template %}
 
 {% block title %}News — Vino Sports{% endblock %}
 
@@ -13,7 +13,8 @@
         </p>
     </div>
 
-    {# League filter tabs #}
+    {# League filter tabs — only shown on hub-level /news/ page #}
+    {% if news_namespace == "news" %}
     <div class="flex items-center gap-2 mb-6 border-b border-outline-variant pb-3">
         <a href="{% url 'news:article_list' %}"
            hx-get="{% url 'news:article_list' %}"
@@ -36,6 +37,7 @@
         </a>
         {% endfor %}
     </div>
+    {% endif %}
 
     {% include "news/partials/article_feed.html" %}
 </section>

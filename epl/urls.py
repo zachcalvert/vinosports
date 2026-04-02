@@ -9,6 +9,7 @@ urlpatterns = [
         name="epl_balance_history_api",
     ),
     path("odds/", include("epl.betting.urls")),
+    path("news/", include(("news.urls", "epl_news"))),
     path("profile/<slug:slug>/", ProfileView.as_view(), name="epl_profile"),
     path("", include("epl.website.challenge_urls")),
     path("", include("epl.discussions.urls")),

@@ -1,3 +1,4 @@
+from .constants import LEAGUE_NEWS_NAMESPACES
 from .models import NewsArticle
 
 
@@ -9,4 +10,9 @@ def latest_articles(request):
     ).select_related("author__bot_profile")
     if league:
         qs = qs.filter(league=league)
-    return {"latest_articles": qs[:4]}
+    ns = LEAGUE_NEWS_NAMESPACES.get(league, "news")
+    return {
+        "latest_articles": qs[:4],
+        "news_list_url_name": f"{ns}:article_list",
+        "news_detail_url_name": f"{ns}:article_detail",
+    }

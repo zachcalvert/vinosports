@@ -33,7 +33,7 @@
 <div class="mb-8">
     <div class="flex items-center justify-between mb-3">
         <h2 class="text-lg font-headline font-bold uppercase tracking-wider">News</h2>
-        <a href="{% url 'news:article_list' %}?league=epl" class="text-xs text-primary hover:underline">All Articles &rarr;</a>
+        <a href="{% url 'epl_news:article_list' %}" class="text-xs text-primary hover:underline">All Articles &rarr;</a>
     </div>
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         {% for article in latest_articles %}
