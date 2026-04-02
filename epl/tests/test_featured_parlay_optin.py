@@ -28,8 +28,8 @@ def _create_featured_parlay(matches, sponsor=None):
         description="Test description.",
         expires_at=timezone.now() + timedelta(days=1),
         combined_odds=Decimal("6.00"),
-        potential_payout=Decimal("60.00"),
-        reference_stake=Decimal("10.00"),
+        potential_payout=Decimal("60000.00"),
+        reference_stake=Decimal("10000.00"),
     )
     selections = ["HOME_WIN", "AWAY_WIN", "DRAW"]
     for i, match in enumerate(matches):

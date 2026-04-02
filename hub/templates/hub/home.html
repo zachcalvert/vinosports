@@ -21,28 +21,28 @@
                 {# Balance #}
                 <div class="bg-surface-container-lowest rounded-xl border-b-4 border-primary p-4 text-center">
                   <div class="font-label text-[10px] font-bold text-secondary uppercase tracking-widest mb-1">Balance</div>
-                  <div class="text-2xl font-mono font-bold text-positive">{{ dash_balance|currency:user }}</div>
+                  <div class="text-lg sm:text-2xl font-mono font-bold text-positive">{{ dash_balance|currency:user }}</div>
                 </div>
                 {# 24h Change #}
                 <div class="bg-surface-container-lowest rounded-xl border-b-4 border-outline-variant p-4 text-center">
                   <div class="font-label text-[10px] font-bold text-secondary uppercase tracking-widest mb-1">24h</div>
                   {% if dash_change_24h != None %}
-                  <div class="text-2xl font-mono font-bold {% if dash_change_24h > 0 %}text-positive{% elif dash_change_24h < 0 %}text-danger{% endif %}">
+                  <div class="text-lg sm:text-2xl font-mono font-bold {% if dash_change_24h > 0 %}text-positive{% elif dash_change_24h < 0 %}text-danger{% endif %}">
                     {% if dash_change_24h > 0 %}+{% endif %}{{ dash_change_24h|currency:user }}
                   </div>
                   {% else %}
-                  <div class="text-2xl font-mono font-bold text-muted">&mdash;</div>
+                  <div class="text-lg sm:text-2xl font-mono font-bold text-muted">&mdash;</div>
                   {% endif %}
                 </div>
                 {# 7d Change #}
                 <div class="bg-surface-container-lowest rounded-xl border-b-4 border-outline-variant p-4 text-center">
                   <div class="font-label text-[10px] font-bold text-secondary uppercase tracking-widest mb-1">7 Day</div>
                   {% if dash_change_7d != None %}
-                  <div class="text-2xl font-mono font-bold {% if dash_change_7d > 0 %}text-positive{% elif dash_change_7d < 0 %}text-danger{% endif %}">
+                  <div class="text-lg sm:text-2xl font-mono font-bold {% if dash_change_7d > 0 %}text-positive{% elif dash_change_7d < 0 %}text-danger{% endif %}">
                     {% if dash_change_7d > 0 %}+{% endif %}{{ dash_change_7d|currency:user }}
                   </div>
                   {% else %}
-                  <div class="text-2xl font-mono font-bold text-muted">&mdash;</div>
+                  <div class="text-lg sm:text-2xl font-mono font-bold text-muted">&mdash;</div>
                   {% endif %}
                 </div>
                 {# In Play #}
@@ -50,7 +50,7 @@
                   <div class="font-label text-[10px] font-bold text-secondary uppercase tracking-widest mb-1">In Play</div>
                   <div class="text-2xl font-mono font-bold">{{ dash_pending_count }}</div>
                   {% if dash_at_stake %}
-                  <div class="text-[10px] font-label font-bold text-muted uppercase tracking-widest mt-0.5">{{ dash_at_stake|currency:user }} at stake</div>
+                  <div class="text-[9px] sm:text-[10px] font-label font-bold text-muted uppercase tracking-widest mt-0.5">{{ dash_at_stake|currency:user }} at stake</div>
                   {% endif %}
                 </div>
                 {% if dash_total_bets %}
