@@ -1,10 +1,16 @@
-"""Tests for vinosports middleware — BotScannerBlockMiddleware and CanonicalHostMiddleware."""
+"""Tests for vinosports middleware — BotScannerBlockMiddleware, RateLimitMiddleware, and CanonicalHostMiddleware."""
+
+from unittest.mock import MagicMock
 
 import pytest
 from django.http import HttpResponse
 from django.test import RequestFactory, override_settings
 
-from vinosports.middleware import BotScannerBlockMiddleware, CanonicalHostMiddleware
+from vinosports.middleware import (
+    BotScannerBlockMiddleware,
+    CanonicalHostMiddleware,
+    RateLimitMiddleware,
+)
 
 
 @pytest.fixture
@@ -45,6 +51,99 @@ class TestBotScannerBlockMiddleware:
     def test_allows_root(self, rf):
         mw = BotScannerBlockMiddleware(_make_response)
         request = rf.get("/")
+        response = mw(request)
+        assert response.status_code == 200
+
+
+@override_settings(RATE_LIMIT_REQUESTS=3, RATE_LIMIT_WINDOW=60)
+class TestRateLimitMiddleware:
+    def _make_mw(self):
+        return RateLimitMiddleware(_make_response)
+
+    def _anon_request(self, rf, path="/nba/games/schedule/"):
+        request = rf.get(path)
+        request.user = MagicMock(is_authenticated=False)
+        return request
+
+    def test_allows_non_league_paths(self, rf):
+        mw = self._make_mw()
+        request = rf.get("/about/")
+        request.user = MagicMock(is_authenticated=False)
+        response = mw(request)
+        assert response.status_code == 200
+
+    def test_allows_authenticated_users(self, rf):
+        mw = self._make_mw()
+        for _ in range(5):
+            request = rf.get("/nba/games/schedule/")
+            request.user = MagicMock(is_authenticated=True)
+            response = mw(request)
+            assert response.status_code == 200
+
+    @pytest.mark.django_db
+    def test_blocks_anonymous_after_threshold(self, rf):
+        from django.core.cache import cache
+
+        cache.clear()
+        mw = self._make_mw()
+        for i in range(3):
+            request = self._anon_request(rf)
+            response = mw(request)
+            assert response.status_code == 200, f"Request {i + 1} should be allowed"
+
+        request = self._anon_request(rf)
+        response = mw(request)
+        assert response.status_code == 429
+
+    @pytest.mark.django_db
+    def test_returns_retry_after_header(self, rf):
+        from django.core.cache import cache
+
+        cache.clear()
+        mw = self._make_mw()
+        for _ in range(3):
+            mw(self._anon_request(rf))
+
+        response = mw(self._anon_request(rf))
+        assert response.status_code == 429
+        assert response["Retry-After"] == "60"
+
+    @pytest.mark.django_db
+    def test_rate_limits_all_league_prefixes(self, rf):
+        from django.core.cache import cache
+
+        for prefix in ("/epl/", "/nba/", "/nfl/"):
+            cache.clear()
+            mw = self._make_mw()
+            for _ in range(3):
+                mw(self._anon_request(rf, path=f"{prefix}schedule/"))
+
+            response = mw(self._anon_request(rf, path=f"{prefix}schedule/"))
+            assert response.status_code == 429, f"{prefix} should be rate limited"
+
+    @pytest.mark.django_db
+    def test_uses_x_forwarded_for(self, rf):
+        from django.core.cache import cache
+
+        cache.clear()
+        mw = self._make_mw()
+        for _ in range(3):
+            request = rf.get(
+                "/nba/games/schedule/", HTTP_X_FORWARDED_FOR="1.2.3.4, 10.0.0.1"
+            )
+            request.user = MagicMock(is_authenticated=False)
+            mw(request)
+
+        request = rf.get(
+            "/nba/games/schedule/", HTTP_X_FORWARDED_FOR="1.2.3.4, 10.0.0.1"
+        )
+        request.user = MagicMock(is_authenticated=False)
+        response = mw(request)
+        assert response.status_code == 429
+
+        # Different IP should still be allowed
+        request = rf.get("/nba/games/schedule/", HTTP_X_FORWARDED_FOR="5.6.7.8")
+        request.user = MagicMock(is_authenticated=False)
         response = mw(request)
         assert response.status_code == 200
 

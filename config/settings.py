@@ -76,6 +76,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "vinosports.middleware.RateLimitMiddleware",
     "config.middleware.LeagueMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
@@ -168,6 +169,10 @@ CACHES = {
         "LOCATION": REDIS_URL,
     }
 }
+
+# Anonymous rate limiting (per IP, league pages only)
+RATE_LIMIT_REQUESTS = 30  # max requests per window
+RATE_LIMIT_WINDOW = 60  # seconds
 
 LANGUAGE_CODE = "en-us"
 TIME_ZONE = "UTC"

@@ -1,3 +1,4 @@
+import logging
 import re
 
 from django.conf import settings
@@ -6,6 +7,8 @@ from django.http import (
     HttpResponsePermanentRedirect,
     HttpResponseRedirect,
 )
+
+logger = logging.getLogger(__name__)
 
 # Patterns that vulnerability scanners/bots probe for.
 BLOCKED_PATH_PREFIXES = (
@@ -51,6 +54,72 @@ class BotScannerBlockMiddleware:
         ) or BLOCKED_PATH_RE.search(path):
             return HttpResponse("Forbidden", status=403)
         return self.get_response(request)
+
+
+class RateLimitMiddleware:
+    """Throttle anonymous requests to league pages by IP.
+
+    Uses Django's Redis cache to track request counts per IP in a
+    sliding window. Authenticated users are exempt. Returns 429 when
+    the threshold is exceeded.
+
+    Settings (with defaults):
+        RATE_LIMIT_REQUESTS = 60     # max requests per window
+        RATE_LIMIT_WINDOW   = 60     # window in seconds
+    """
+
+    LEAGUE_PREFIXES = ("/epl/", "/nba/", "/nfl/")
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+        self.max_requests = getattr(settings, "RATE_LIMIT_REQUESTS", 60)
+        self.window = getattr(settings, "RATE_LIMIT_WINDOW", 60)
+
+    def __call__(self, request):
+        # Only rate-limit league pages
+        if not any(request.path.startswith(p) for p in self.LEAGUE_PREFIXES):
+            return self.get_response(request)
+
+        # Authenticated users are exempt
+        if hasattr(request, "user") and request.user.is_authenticated:
+            return self.get_response(request)
+
+        ip = self._get_client_ip(request)
+        cache_key = f"rl:{ip}"
+
+        try:
+            from django.core.cache import cache
+
+            count = cache.get(cache_key, 0)
+            if count >= self.max_requests:
+                logger.warning(
+                    "Rate limited IP %s (%d requests in %ds)", ip, count, self.window
+                )
+                return HttpResponse(
+                    "Too Many Requests",
+                    status=429,
+                    headers={"Retry-After": str(self.window)},
+                )
+            # Increment atomically; set TTL on first request
+            _new_count = cache.incr(cache_key)  # raises ValueError if key missing
+        except ValueError:
+            # Key doesn't exist yet — initialize it
+            from django.core.cache import cache
+
+            cache.set(cache_key, 1, timeout=self.window)
+        except Exception:
+            # If Redis is down, fail open — don't block users
+            pass
+
+        return self.get_response(request)
+
+    @staticmethod
+    def _get_client_ip(request):
+        """Extract client IP, respecting X-Forwarded-For from Fly.io proxy."""
+        xff = request.META.get("HTTP_X_FORWARDED_FOR")
+        if xff:
+            return xff.split(",")[0].strip()
+        return request.META.get("REMOTE_ADDR", "unknown")
 
 
 class CanonicalHostMiddleware:
