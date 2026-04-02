@@ -498,6 +498,21 @@ CELERY_BEAT_SCHEDULE = {
         "task": "news.tasks.generate_pending_recaps",
         "schedule": crontab(minute=45),
     },
+    "news-weekly-roundup-epl": {
+        "task": "news.tasks.generate_weekly_roundup_task",
+        "schedule": crontab(hour=10, minute=0, day_of_week=1),  # Monday 10am
+        "args": ("epl",),
+    },
+    "news-weekly-roundup-nba": {
+        "task": "news.tasks.generate_weekly_roundup_task",
+        "schedule": crontab(hour=10, minute=0, day_of_week=1),
+        "args": ("nba",),
+    },
+    "news-weekly-roundup-nfl": {
+        "task": "news.tasks.generate_weekly_roundup_task",
+        "schedule": crontab(hour=10, minute=0, day_of_week=1),
+        "args": ("nfl",),
+    },
 }
 
 # External APIs

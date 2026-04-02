@@ -77,6 +77,30 @@ def generate_pending_recaps():
 
 
 @shared_task(bind=True, max_retries=1, default_retry_delay=300)
+def generate_weekly_roundup_task(self, league):
+    """
+    Generate a weekly roundup article for a single league.
+    Runs Monday 10am ET via Celery beat. Articles start as drafts for admin review.
+    """
+    from news.article_service import generate_weekly_roundup
+
+    try:
+        article = generate_weekly_roundup(league)
+    except Exception as exc:
+        logger.error("Roundup generation failed: league=%s, error=%s", league, exc)
+        raise self.retry(exc=exc)
+
+    if article:
+        logger.info(
+            "Roundup created: league=%s, article=%s (draft)",
+            league,
+            article.id_hash,
+        )
+        return {"status": "created", "article_id": article.id_hash}
+    return {"status": "skipped"}
+
+
+@shared_task(bind=True, max_retries=1, default_retry_delay=300)
 def generate_game_recap_task(self, game_id_hash, league):
     """
     Generate a recap article for a single completed game.

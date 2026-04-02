@@ -1,11 +1,16 @@
-"""Tests for news Celery tasks — recap polling and generation dispatch."""
+"""Tests for news Celery tasks — recap polling, roundup dispatch, and generation."""
 
 from unittest.mock import MagicMock, patch
 
 import pytest
 
 from news.models import NewsArticle
-from news.tasks import _resolve_game, generate_game_recap_task, generate_pending_recaps
+from news.tasks import (
+    _resolve_game,
+    generate_game_recap_task,
+    generate_pending_recaps,
+    generate_weekly_roundup_task,
+)
 
 from .factories import NewsArticleFactory
 
@@ -128,3 +133,29 @@ class TestResolveGame:
     def test_returns_none_for_invalid_league(self):
         resolved = _resolve_game("abc12345", "invalid")
         assert resolved is None
+
+
+# ---------------------------------------------------------------------------
+# generate_weekly_roundup_task
+# ---------------------------------------------------------------------------
+
+
+class TestGenerateWeeklyRoundupTask:
+    @patch("news.article_service.generate_weekly_roundup")
+    def test_calls_service(self, mock_generate):
+        mock_generate.return_value = MagicMock(id_hash="roundup123")
+        result = generate_weekly_roundup_task("nba")
+        mock_generate.assert_called_once_with("nba")
+        assert result["status"] == "created"
+
+    @patch("news.article_service.generate_weekly_roundup")
+    def test_returns_skipped_when_none(self, mock_generate):
+        mock_generate.return_value = None
+        result = generate_weekly_roundup_task("nba")
+        assert result["status"] == "skipped"
+
+    @patch("news.article_service.generate_weekly_roundup")
+    def test_retries_on_exception(self, mock_generate):
+        mock_generate.side_effect = Exception("API error")
+        with pytest.raises(Exception):
+            generate_weekly_roundup_task("nba")

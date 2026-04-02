@@ -1,5 +1,5 @@
 """
-Article generation service for news recaps.
+Article generation service for news recaps and weekly roundups.
 
 Follows the same pattern as epl/bots/comment_service.py:
 - System prompt = bot personality (persona_prompt)
@@ -10,6 +10,7 @@ Follows the same pattern as epl/bots/comment_service.py:
 
 import logging
 import re
+from datetime import timedelta
 
 import anthropic
 from django.conf import settings
@@ -26,6 +27,7 @@ logger = logging.getLogger(__name__)
 # Claude API settings — same model as comment generation, higher token limit
 MODEL = "claude-sonnet-4-20250514"
 MAX_TOKENS = 800
+ROUNDUP_MAX_TOKENS = 1200  # Roundups are longer (4-6 paragraphs)
 TEMPERATURE = 0.9
 
 # Post-hoc filter thresholds (wider than comment filter's 10-500)
@@ -208,6 +210,77 @@ def generate_game_recap(league, game_obj):
     return article
 
 
+def generate_weekly_roundup(league):
+    """
+    Generate a weekly roundup article for a league.
+
+    Aggregates last week's results, standings, and betting trends into a
+    prompt for a neutral analyst bot.
+
+    Returns the created NewsArticle, or None if generation failed or no games.
+    """
+    bot_user = _select_analyst_bot(league)
+    if bot_user is None:
+        logger.warning("No analyst bot available for roundup: league=%s", league)
+        return None
+
+    bot_profile = BotProfile.objects.get(user=bot_user)
+    system_prompt = bot_profile.persona_prompt
+
+    # Build roundup prompt with aggregated data
+    user_prompt = _build_roundup_prompt(league)
+    if user_prompt is None:
+        logger.info("No games last week for roundup: league=%s", league)
+        return None
+
+    # Call Claude API — roundups get more tokens
+    try:
+        client = anthropic.Anthropic(api_key=settings.ANTHROPIC_API_KEY)
+        response = client.messages.create(
+            model=MODEL,
+            max_tokens=ROUNDUP_MAX_TOKENS,
+            temperature=TEMPERATURE,
+            system=system_prompt,
+            messages=[{"role": "user", "content": user_prompt}],
+        )
+        raw_text = response.content[0].text
+    except Exception as exc:
+        logger.error("Claude API error for roundup: league=%s, error=%s", league, exc)
+        return None
+
+    # Parse structured response
+    title, subtitle, body = _parse_article_response(raw_text)
+
+    # Post-hoc filter — roundups start as drafts for admin review
+    ok, reason = _filter_article(title, body)
+    status = NewsArticle.Status.DRAFT  # Always draft — admin publishes
+
+    try:
+        article = NewsArticle.objects.create(
+            league=league,
+            author=bot_user,
+            article_type=NewsArticle.ArticleType.ROUNDUP,
+            title=title[:200],
+            subtitle=subtitle[:300],
+            body=body,
+            status=status,
+            prompt_used=f"SYSTEM:\n{system_prompt}\n\nUSER:\n{user_prompt}",
+            raw_response=raw_text,
+        )
+    except Exception as exc:
+        logger.error("Error creating roundup article: league=%s, error=%s", league, exc)
+        return None
+
+    if not ok:
+        logger.warning(
+            "Roundup filtered (%s): league=%s — saved as draft for review",
+            reason,
+            league,
+        )
+
+    return article
+
+
 # ---------------------------------------------------------------------------
 # Bot selection
 # ---------------------------------------------------------------------------
@@ -276,6 +349,41 @@ def _get_loser(league, game_obj):
     if winner == game_obj.home_team:
         return game_obj.away_team
     return game_obj.home_team
+
+
+def _select_analyst_bot(league):
+    """
+    Pick a neutral analyst bot for roundups/trends/cross-league articles.
+
+    Prefers bots with no team affiliation for the given league (neutral voice).
+    Falls back to any active bot if no unaffiliated bots exist.
+    """
+    active_flag = LEAGUE_ACTIVE_FLAGS.get(league)
+    affiliation_field = LEAGUE_BOT_FIELDS.get(league, (None,))[0]
+
+    filters = {"is_active": True}
+    if active_flag:
+        filters[active_flag] = True
+
+    active_bots = (
+        BotProfile.objects.filter(**filters)
+        .exclude(persona_prompt="")
+        .select_related("user")
+    )
+
+    if not active_bots.exists():
+        return None
+
+    # Prefer unaffiliated bots (neutral analyst voice)
+    if affiliation_field:
+        unaffiliated = active_bots.filter(**{affiliation_field: ""})
+        if unaffiliated.exists():
+            bot = unaffiliated.order_by("?").first()
+            return bot.user
+
+    # Fallback: any active bot
+    bot = active_bots.order_by("?").first()
+    return bot.user if bot else None
 
 
 # ---------------------------------------------------------------------------
@@ -587,6 +695,371 @@ def _article_format_instructions():
         "Focus on what actually happened in the game, informed by the game notes if available.",
         "Reference the spread/total result where relevant.",
         "Keep it under 500 words.",
+    ]
+
+
+# ---------------------------------------------------------------------------
+# Roundup prompt building
+# ---------------------------------------------------------------------------
+
+
+def _build_roundup_prompt(league):
+    """Dispatch to league-specific roundup prompt builder."""
+    builders = {
+        "epl": _build_epl_roundup,
+        "nba": _build_nba_roundup,
+        "nfl": _build_nfl_roundup,
+    }
+    return builders[league]()
+
+
+def _get_last_week_range():
+    """Return (start_date, end_date) for the previous Monday-Sunday week."""
+    today = timezone.now().date()
+    # Monday of this week
+    this_monday = today - timedelta(days=today.weekday())
+    last_monday = this_monday - timedelta(days=7)
+    last_sunday = this_monday - timedelta(days=1)
+    return last_monday, last_sunday
+
+
+def _build_epl_roundup():
+    """Build roundup prompt for EPL — last week's matches, standings, betting."""
+    from epl.betting.models import BetSlip
+    from epl.matches.models import Match, Standing
+
+    start_date, end_date = _get_last_week_range()
+
+    matches = (
+        Match.objects.filter(
+            status=Match.Status.FINISHED,
+            kickoff__date__gte=start_date,
+            kickoff__date__lte=end_date,
+        )
+        .select_related("home_team", "away_team")
+        .prefetch_related("odds")
+        .order_by("kickoff")
+    )
+
+    if not matches.exists():
+        return None
+
+    lines = [
+        "You are writing a weekly roundup article for the Premier League on a sports betting platform.",
+        "",
+        f"**Week of {start_date.strftime('%B %d')} - {end_date.strftime('%B %d, %Y')}**",
+        "",
+        "**Results this week**:",
+    ]
+
+    for match in matches:
+        result = f"{match.home_team.short_name or match.home_team.name} {match.home_score} - {match.away_team.short_name or match.away_team.name} {match.away_score}"
+        odds = match.odds.order_by("-fetched_at").first()
+        if odds:
+            # Determine result vs odds
+            if match.home_score > match.away_score:
+                outcome = f"Home win @ {odds.home_win}"
+            elif match.away_score > match.home_score:
+                outcome = f"Away win @ {odds.away_win}"
+            else:
+                outcome = f"Draw @ {odds.draw}"
+            result += f" ({outcome})"
+        lines.append(f"- {result}")
+
+    # Standings snapshot — top 6
+    standings = (
+        Standing.objects.filter(
+            season=str(start_date.year),
+        )
+        .select_related("team")
+        .order_by("position")[:6]
+    )
+
+    if standings.exists():
+        lines.extend(["", "**Top of the table**:"])
+        for s in standings:
+            lines.append(
+                f"- {s.position}. {s.team.short_name or s.team.name} — {s.points}pts (W{s.won} D{s.drawn} L{s.lost}, GD {s.goal_difference:+d})"
+            )
+
+    # Betting stats for the week
+    week_bets = BetSlip.objects.filter(
+        match__in=matches,
+    )
+    bet_count = week_bets.count()
+    if bet_count:
+        won_count = week_bets.filter(status="WON").count()
+        lines.extend(
+            [
+                "",
+                f"**Community betting this week**: {bet_count} bets placed, {won_count} winners",
+            ]
+        )
+        # Most popular selections
+        popular = (
+            week_bets.values("selection")
+            .annotate(count=Count("id"))
+            .order_by("-count")[:3]
+        )
+        if popular:
+            selections = ", ".join(f"{p['selection']} ({p['count']})" for p in popular)
+            lines.append(f"**Popular selections**: {selections}")
+
+    lines.extend(_roundup_format_instructions("Premier League"))
+    return "\n".join(lines)
+
+
+def _build_nba_roundup():
+    """Build roundup prompt for NBA — last week's games, standings, betting."""
+    from nba.betting.models import BetSlip
+    from nba.games.models import Game, GameStatus, Standing
+
+    start_date, end_date = _get_last_week_range()
+
+    games = (
+        Game.objects.filter(
+            status=GameStatus.FINAL,
+            game_date__gte=start_date,
+            game_date__lte=end_date,
+        )
+        .select_related("home_team", "away_team")
+        .prefetch_related("odds")
+        .order_by("game_date")
+    )
+
+    if not games.exists():
+        return None
+
+    lines = [
+        "You are writing a weekly roundup article for the NBA on a sports betting platform.",
+        "",
+        f"**Week of {start_date.strftime('%B %d')} - {end_date.strftime('%B %d, %Y')}**",
+        "",
+        "**Results this week**:",
+    ]
+
+    covers = 0
+    overs = 0
+    games_with_spread = 0
+    games_with_total = 0
+
+    for game in games:
+        result = f"{game.away_team.abbreviation} {game.away_score} @ {game.home_team.abbreviation} {game.home_score}"
+        odds = game.odds.order_by("-fetched_at").first()
+        details = []
+        if odds:
+            if odds.spread_line is not None:
+                margin = game.home_score - game.away_score
+                home_covered = (
+                    margin > -odds.spread_line
+                    if odds.spread_line < 0
+                    else margin > odds.spread_line
+                )
+                cover_team = (
+                    game.home_team.abbreviation
+                    if home_covered
+                    else game.away_team.abbreviation
+                )
+                details.append(f"{cover_team} covered {odds.spread_line:+g}")
+                games_with_spread += 1
+                if home_covered:
+                    covers += 1
+
+            if odds.total_line is not None:
+                actual_total = game.home_score + game.away_score
+                if actual_total > odds.total_line:
+                    details.append(f"OVER {odds.total_line:g}")
+                    overs += 1
+                elif actual_total < odds.total_line:
+                    details.append(f"UNDER {odds.total_line:g}")
+                else:
+                    details.append(f"PUSH {odds.total_line:g}")
+                games_with_total += 1
+
+        if details:
+            result += f" ({', '.join(details)})"
+        lines.append(f"- {result}")
+
+    # Spread/O-U trends
+    if games_with_spread:
+        lines.extend(
+            [
+                "",
+                "**Betting trends**:",
+                f"- Home teams covering: {covers}/{games_with_spread}",
+            ]
+        )
+    if games_with_total:
+        lines.append(f"- Games going over: {overs}/{games_with_total}")
+
+    # Standings snapshot — top 5 per conference
+    for conf_label, conf_value in [("Eastern", "EAST"), ("Western", "WEST")]:
+        standings = (
+            Standing.objects.filter(
+                season=start_date.year,
+                conference=conf_value,
+            )
+            .select_related("team")
+            .order_by("conference_rank")[:5]
+        )
+        if standings.exists():
+            lines.extend(["", f"**{conf_label} Conference top 5**:"])
+            for s in standings:
+                streak_str = f" ({s.streak})" if s.streak else ""
+                lines.append(
+                    f"- {s.conference_rank}. {s.team.abbreviation} — {s.wins}-{s.losses} ({s.win_pct:.3f}){streak_str}"
+                )
+
+    # Betting stats for the week
+    week_bets = BetSlip.objects.filter(game__in=games)
+    bet_count = week_bets.count()
+    if bet_count:
+        won_count = week_bets.filter(status="WON").count()
+        lines.extend(
+            [
+                "",
+                f"**Community betting this week**: {bet_count} bets placed, {won_count} winners",
+            ]
+        )
+
+    lines.extend(_roundup_format_instructions("NBA"))
+    return "\n".join(lines)
+
+
+def _build_nfl_roundup():
+    """Build roundup prompt for NFL — last week's games, standings, betting."""
+    from nfl.betting.models import BetSlip, Odds
+    from nfl.games.models import Game, GameStatus, Standing
+
+    start_date, end_date = _get_last_week_range()
+
+    games = (
+        Game.objects.filter(
+            status__in=[GameStatus.FINAL, GameStatus.FINAL_OT],
+            game_date__gte=start_date,
+            game_date__lte=end_date,
+        )
+        .select_related("home_team", "away_team")
+        .order_by("game_date")
+    )
+
+    if not games.exists():
+        return None
+
+    # Determine the NFL week from the first game
+    first_game = games.first()
+    week_label = f"Week {first_game.week}" if first_game.week else "Last week"
+
+    lines = [
+        "You are writing a weekly roundup article for the NFL on a sports betting platform.",
+        "",
+        f"**{week_label} — {start_date.strftime('%B %d')} - {end_date.strftime('%B %d, %Y')}**",
+        "",
+        "**Results this week**:",
+    ]
+
+    covers = 0
+    overs = 0
+    games_with_spread = 0
+    games_with_total = 0
+
+    for game in games:
+        ot_tag = " (OT)" if game.status == GameStatus.FINAL_OT else ""
+        result = f"{game.away_team.abbreviation} {game.away_score} @ {game.home_team.abbreviation} {game.home_score}{ot_tag}"
+
+        odds = Odds.objects.filter(game=game).order_by("-fetched_at").first()
+        details = []
+        if odds:
+            if odds.spread_line is not None:
+                margin = game.home_score - game.away_score
+                home_covered = (
+                    margin > -odds.spread_line
+                    if odds.spread_line < 0
+                    else margin > odds.spread_line
+                )
+                cover_team = (
+                    game.home_team.abbreviation
+                    if home_covered
+                    else game.away_team.abbreviation
+                )
+                details.append(f"{cover_team} covered {odds.spread_line:+g}")
+                games_with_spread += 1
+                if home_covered:
+                    covers += 1
+
+            if odds.total_line is not None:
+                actual_total = game.home_score + game.away_score
+                if actual_total > odds.total_line:
+                    details.append(f"OVER {odds.total_line:g}")
+                    overs += 1
+                elif actual_total < odds.total_line:
+                    details.append(f"UNDER {odds.total_line:g}")
+                else:
+                    details.append(f"PUSH {odds.total_line:g}")
+                games_with_total += 1
+
+        if details:
+            result += f" ({', '.join(details)})"
+        lines.append(f"- {result}")
+
+    # Spread/O-U trends
+    if games_with_spread:
+        lines.extend(
+            [
+                "",
+                "**Betting trends**:",
+                f"- Home teams covering: {covers}/{games_with_spread}",
+            ]
+        )
+    if games_with_total:
+        lines.append(f"- Games going over: {overs}/{games_with_total}")
+
+    # Division leaders
+    standings = (
+        Standing.objects.filter(season=start_date.year, division_rank=1)
+        .select_related("team")
+        .order_by("division")
+    )
+    if standings.exists():
+        lines.extend(["", "**Division leaders**:"])
+        for s in standings:
+            record = f"{s.wins}-{s.losses}"
+            if s.ties:
+                record += f"-{s.ties}"
+            streak_str = f" ({s.streak})" if s.streak else ""
+            lines.append(
+                f"- {s.team.abbreviation} ({s.division}) — {record}{streak_str}"
+            )
+
+    # Betting stats for the week
+    week_bets = BetSlip.objects.filter(game__in=games)
+    bet_count = week_bets.count()
+    if bet_count:
+        won_count = week_bets.filter(status="WON").count()
+        lines.extend(
+            [
+                "",
+                f"**Community betting this week**: {bet_count} bets placed, {won_count} winners",
+            ]
+        )
+
+    lines.extend(_roundup_format_instructions("NFL"))
+    return "\n".join(lines)
+
+
+def _roundup_format_instructions(league_name):
+    """Shared instructions appended to every roundup prompt."""
+    return [
+        "",
+        "---",
+        "",
+        f"Write a weekly roundup article for {league_name} (4-6 paragraphs). Include:",
+        "1. A punchy, opinionated headline (on its own line, prefixed with TITLE:)",
+        "2. A one-sentence subtitle (on its own line, prefixed with SUBTITLE:)",
+        "3. The article body",
+        "",
+        "Cover the biggest storylines, betting trends, and what to watch next week.",
+        "Opinionated and entertaining. Under 600 words.",
     ]
 
 
