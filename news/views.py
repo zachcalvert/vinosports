@@ -52,7 +52,9 @@ class ArticleListView(LeagueNewsMixin, ListView):
         return ctx
 
     def get_template_names(self):
-        if self.request.htmx:
+        # Return partial only for targeted HTMX swaps (filter tabs),
+        # not for hx-boost navigation which needs the full page.
+        if self.request.htmx and not self.request.htmx.boosted:
             return ["news/partials/article_feed.html"]
         return [self.template_name]
 
