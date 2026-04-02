@@ -5,7 +5,7 @@ from nba.website.views import DashboardView
 urlpatterns = [
     path("games/", include("nba.games.urls")),
     path("odds/", include("nba.betting.urls")),
-    path("news/", include(("news.urls", "nba_news"))),
+    path("news/", include("news.urls", namespace="nba_news")),
     path("", include("nba.website.challenge_urls")),
     path("", include("nba.discussions.urls")),
     path("activity/", include("nba.activity.urls")),
