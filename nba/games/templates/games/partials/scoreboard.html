@@ -103,11 +103,11 @@ Context expected:
     <!-- Footer info -->
     <div class="text-center mt-3 sm:mt-4 text-xs sm:text-sm text-muted">
         {% if game.is_live %}
-            <span id="last-updated" class="text-xs">Score updated just now</span>
-            <span class="ws-status mt-1">
+            <div class="flex items-center justify-center gap-1.5">
+                <span id="last-updated" class="text-xs">Score updated just now</span>
                 <span id="ws-dot" class="ws-status-dot connecting"></span>
-                <span id="ws-label">Connecting</span>
-            </span>
+                <span id="ws-label" class="text-xs">Connecting</span>
+            </div>
         {% elif game.status == "SCHEDULED" and game.tip_off %}
             <time datetime="{{ game.tip_off|date:'c' }}">{{ game.tip_off|date:"l, F j, Y — g:i A" }}</time>
             <div id="countdown" class="mt-2 text-xs font-mono text-primary" data-tipoff="{{ game.tip_off|date:'c' }}"></div>
