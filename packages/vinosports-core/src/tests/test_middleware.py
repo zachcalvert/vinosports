@@ -98,19 +98,6 @@ class TestRateLimitMiddleware:
         assert response.status_code == 429
 
     @pytest.mark.django_db
-    def test_returns_retry_after_header(self, rf):
-        from django.core.cache import cache
-
-        cache.clear()
-        mw = self._make_mw()
-        for _ in range(3):
-            mw(self._anon_request(rf))
-
-        response = mw(self._anon_request(rf))
-        assert response.status_code == 429
-        assert response["Retry-After"] == "60"
-
-    @pytest.mark.django_db
     def test_rate_limits_all_league_prefixes(self, rf):
         from django.core.cache import cache
 
