@@ -532,40 +532,40 @@ Grid of article cards. League filter tabs (All / EPL / NBA / NFL). Paginated. HT
 ## Implementation Sequence
 
 ### Phase 1: Foundation
-- [ ] Create `news/` app (models, apps, admin)
-- [ ] Add to `INSTALLED_APPS`, `makemigrations`, `migrate`
-- [ ] Add `path("news/", include("news.urls"))` to `config/urls.py`
-- [ ] Basic views (list + detail) with templates
-- [ ] Context processor for latest articles
-- [ ] Add news section to hub homepage template
-- [ ] Add news section to league dashboard templates
+- [x] Create `news/` app (models, apps, admin)
+- [x] Add to `INSTALLED_APPS`, `makemigrations`, `migrate`
+- [x] Add `path("news/", include("news.urls"))` to `config/urls.py`
+- [x] Basic views (list + detail) with templates
+- [x] Context processor for latest articles
+- [x] Add news section to hub homepage template
+- [x] Add news section to league dashboard templates
 
 ### Phase 2: Game Recaps
-- [ ] `article_service.py` — `generate_game_recap()` with prompt building
-- [ ] League-specific data extractors (`_build_recap_prompt` per league)
-- [ ] Response parser (`_parse_article_response`)
-- [ ] Post-hoc filter (adapted from comment filter — longer thresholds)
-- [ ] Celery task `generate_game_recap_task`
-- [ ] Hook into post-match comment dispatch in each league's `tasks.py`
-- [ ] Tests: model, service, task, views
+- [x] `article_service.py` — `generate_game_recap()` with prompt building
+- [x] League-specific data extractors (`_build_recap_prompt` per league)
+- [x] Response parser (`_parse_article_response`)
+- [x] Post-hoc filter (adapted from comment filter — longer thresholds)
+- [x] Celery task `generate_game_recap_task`
+- [x] Hook into post-match comment dispatch in each league's `tasks.py`
+- [x] Tests: model, service, task, views
 
 ### Phase 3: Weekly Roundups
-- [ ] `generate_weekly_roundup()` in article_service
-- [ ] Aggregate queries: week's results, standings changes, spread/o-u trends
-- [ ] Celery beat schedule (Monday 10am)
-- [ ] Tests
+- [x] `generate_weekly_roundup()` in article_service
+- [x] Aggregate queries: week's results, standings changes, spread/o-u trends
+- [x] Celery beat schedule (Monday 10am)
+- [x] Tests
 
 ### Phase 4: Betting Trends
-- [ ] `generate_betting_trend()` in article_service
-- [ ] Aggregate betting queries: cover rates, popular selections, leaderboard movement
-- [ ] Celery beat schedule (Wednesday 10am)
-- [ ] Tests
+- [x] `generate_betting_trend()` in article_service
+- [x] Aggregate betting queries: cover rates, popular selections, leaderboard movement
+- [x] Celery beat schedule (Wednesday 10am)
+- [x] Tests
 
 ### Phase 5: Cross-League Takes
-- [ ] `generate_cross_league_article()` in article_service
-- [ ] Cross-league data aggregation (all three leagues' weekly results + trends)
-- [ ] Celery beat schedule (Friday 10am)
-- [ ] Tests
+- [x] `generate_cross_league_article()` in article_service
+- [x] Cross-league data aggregation (all three leagues' weekly results + trends)
+- [x] Celery beat schedule (Friday 10am)
+- [x] Tests
 
 ## Not In Scope (Yet)
 
