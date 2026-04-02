@@ -1,12 +1,14 @@
 """Tests for NFL futures odds engine and futures settlement."""
 
+from datetime import date
 from decimal import Decimal
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 
 from nfl.betting.futures_odds_engine import (
     _championship_strength,
+    _generate_odds_from_rankings,
     _softmax,
     generate_division_odds,
     generate_futures_odds,
@@ -17,6 +19,11 @@ from nfl.betting.futures_settlement import (
     void_futures_market,
 )
 from nfl.betting.models import FuturesBet, FuturesMarket, FuturesOutcome
+from nfl.betting.preseason_rankings import (
+    PRESEASON_POWER_RANKINGS,
+    RANKINGS_SEASON,
+    rank_to_strength,
+)
 from nfl.games.models import Conference, Division
 from nfl.tests.factories import (
     StandingFactory,
@@ -132,6 +139,206 @@ class TestGenerateFuturesOdds:
             season=2025, market_type="DIVISION", division=Division.AFC_EAST
         )
         assert len(results) == 1
+
+
+# ---------------------------------------------------------------------------
+# Preseason Rankings & Offseason Fallback
+# ---------------------------------------------------------------------------
+
+
+class TestRankToStrength:
+    def test_rank_1_is_strongest(self):
+        assert rank_to_strength(1, 32) == 1.0
+
+    def test_rank_32_is_weakest(self):
+        assert rank_to_strength(32, 32) == pytest.approx(0.0, abs=0.001)
+
+    def test_midrank(self):
+        assert 0.4 < rank_to_strength(16, 32) < 0.6
+
+
+class TestPreseasonRankings:
+    def test_all_32_teams_ranked(self):
+        assert len(PRESEASON_POWER_RANKINGS) == 32
+
+    def test_ranks_are_unique(self):
+        ranks = list(PRESEASON_POWER_RANKINGS.values())
+        assert len(set(ranks)) == 32
+
+    def test_ranks_range_1_to_32(self):
+        ranks = sorted(PRESEASON_POWER_RANKINGS.values())
+        assert ranks == list(range(1, 33))
+
+
+@pytest.mark.django_db
+class TestGenerateOddsFromRankings:
+    def _create_ranked_teams(
+        self, abbrevs, conference=Conference.AFC, division=Division.AFC_EAST
+    ):
+        teams = []
+        for abbr in abbrevs:
+            teams.append(
+                TeamFactory(abbreviation=abbr, conference=conference, division=division)
+            )
+        return teams
+
+    def test_returns_odds_for_ranked_teams(self):
+        teams = self._create_ranked_teams(["SEA", "LAR", "BUF", "NE"])
+        results = _generate_odds_from_rankings(teams, 2.0, 0.30)
+        assert len(results) == 4
+
+    def test_higher_ranked_team_gets_shorter_odds(self):
+        teams = self._create_ranked_teams(["SEA", "CLE"])
+        results = _generate_odds_from_rankings(teams, 2.0, 0.30)
+        odds_by_id = {r["team_id"]: r["odds"] for r in results}
+        # SEA rank 1 should have shorter (lower) odds than CLE rank 32
+        assert odds_by_id[teams[0].pk] < odds_by_id[teams[1].pk]
+
+    def test_skips_unranked_teams(self):
+        teams = self._create_ranked_teams(["SEA", "ZZZ"])
+        results = _generate_odds_from_rankings(teams, 2.0, 0.30)
+        assert len(results) == 1
+
+    def test_daily_drift_is_deterministic(self):
+        """Same date produces same odds."""
+        teams = self._create_ranked_teams(["SEA", "BUF"])
+        r1 = _generate_odds_from_rankings(teams, 2.0, 0.30)
+        r2 = _generate_odds_from_rankings(teams, 2.0, 0.30)
+        assert r1 == r2
+
+    def test_different_day_produces_different_odds(self):
+        """Mocking a different date should shift odds."""
+        teams = self._create_ranked_teams(["SEA", "BUF", "KC", "CLE"])
+
+        r1 = _generate_odds_from_rankings(teams, 2.0, 0.30)
+
+        with patch("nfl.betting.futures_odds_engine.timezone") as mock_tz:
+            mock_now = MagicMock()
+            mock_now.date.return_value = date(2099, 1, 1)
+            mock_tz.now.return_value = mock_now
+            r2 = _generate_odds_from_rankings(teams, 2.0, 0.30)
+
+        # At least one team's odds should differ
+        odds1 = {r["team_id"]: r["odds"] for r in r1}
+        odds2 = {r["team_id"]: r["odds"] for r in r2}
+        assert odds1 != odds2
+
+
+@pytest.mark.django_db
+class TestFuturesOddsPreseasonFallback:
+    def _create_all_teams(self):
+        """Create teams matching the 32 abbreviations in PRESEASON_POWER_RANKINGS."""
+        # Conference/division assignments for test teams
+        afc_divs = [
+            Division.AFC_EAST,
+            Division.AFC_NORTH,
+            Division.AFC_SOUTH,
+            Division.AFC_WEST,
+        ]
+        nfc_divs = [
+            Division.NFC_EAST,
+            Division.NFC_NORTH,
+            Division.NFC_SOUTH,
+            Division.NFC_WEST,
+        ]
+
+        afc_abbrevs = [
+            "BUF",
+            "NE",
+            "MIA",
+            "NYJ",
+            "BAL",
+            "CIN",
+            "CLE",
+            "PIT",
+            "HOU",
+            "IND",
+            "JAX",
+            "TEN",
+            "DEN",
+            "KC",
+            "LV",
+            "LAC",
+        ]
+        nfc_abbrevs = [
+            "DAL",
+            "NYG",
+            "PHI",
+            "WAS",
+            "CHI",
+            "DET",
+            "GB",
+            "MIN",
+            "ATL",
+            "CAR",
+            "NO",
+            "TB",
+            "ARI",
+            "LAR",
+            "SF",
+            "SEA",
+        ]
+
+        teams = []
+        for i, abbr in enumerate(afc_abbrevs):
+            teams.append(
+                TeamFactory(
+                    abbreviation=abbr,
+                    conference=Conference.AFC,
+                    division=afc_divs[i // 4],
+                )
+            )
+        for i, abbr in enumerate(nfc_abbrevs):
+            teams.append(
+                TeamFactory(
+                    abbreviation=abbr,
+                    conference=Conference.NFC,
+                    division=nfc_divs[i // 4],
+                )
+            )
+        return teams
+
+    def test_super_bowl_fallback_returns_32_teams(self):
+        self._create_all_teams()
+        results = generate_futures_odds(
+            season=RANKINGS_SEASON, market_type="SUPER_BOWL"
+        )
+        assert len(results) == 32
+
+    def test_conference_fallback_returns_16_teams(self):
+        self._create_all_teams()
+        results = generate_futures_odds(
+            season=RANKINGS_SEASON, market_type="AFC_CHAMPION"
+        )
+        assert len(results) == 16
+
+    def test_division_fallback_returns_4_teams(self):
+        self._create_all_teams()
+        results = generate_futures_odds(
+            season=RANKINGS_SEASON,
+            market_type="DIVISION",
+            division=Division.AFC_EAST,
+        )
+        assert len(results) == 4
+
+    def test_no_fallback_for_non_rankings_season(self):
+        self._create_all_teams()
+        results = generate_futures_odds(
+            season=RANKINGS_SEASON - 5, market_type="SUPER_BOWL"
+        )
+        assert results == []
+
+    def test_standings_take_precedence_over_rankings(self):
+        """When standings exist, use them instead of preseason rankings."""
+        teams = self._create_all_teams()
+        # Create standings for just 2 teams
+        for t in teams[:2]:
+            StandingFactory(team=t, season=RANKINGS_SEASON)
+        results = generate_futures_odds(
+            season=RANKINGS_SEASON, market_type="SUPER_BOWL"
+        )
+        # Should use standings (2 teams), not rankings (32 teams)
+        assert len(results) == 2
 
 
 # ---------------------------------------------------------------------------

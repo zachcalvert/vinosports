@@ -1,14 +1,25 @@
 """
 Futures odds engine — generates realistic American odds for NFL season-level
 markets (Super Bowl, Conference, Division) based on standings.
+
+During the offseason, when no standings exist for the upcoming season, the
+engine falls back to preseason power rankings with daily drift so odds stay
+dynamic year-round.
 """
 
+import hashlib
 import logging
 import math
+import random
 
 from django.utils import timezone
 
-from nfl.games.models import Conference, Division, Standing
+from nfl.betting.preseason_rankings import (
+    PRESEASON_POWER_RANKINGS,
+    RANKINGS_SEASON,
+    rank_to_strength,
+)
+from nfl.games.models import Conference, Division, Standing, Team
 
 logger = logging.getLogger(__name__)
 
@@ -108,6 +119,52 @@ def _generate_odds_from_standings(
     ]
 
 
+# --- Preseason rankings fallback ---
+
+DRIFT_SIGMA = 0.008  # small daily noise on strength scores
+
+
+def _daily_seed(team_id: int) -> int:
+    """Deterministic seed for a team on a given day (same odds all day)."""
+    today = timezone.now().date().isoformat()
+    raw = f"{team_id}:{today}"
+    return int(hashlib.sha256(raw.encode()).hexdigest()[:8], 16)
+
+
+def _generate_odds_from_rankings(
+    teams: list, temperature: float, margin: float
+) -> list[dict]:
+    """Generate odds from preseason power rankings with daily drift."""
+    if not teams:
+        return []
+
+    total = len(PRESEASON_POWER_RANKINGS)
+    strengths = []
+    valid_teams = []
+
+    for team in teams:
+        rank = PRESEASON_POWER_RANKINGS.get(team.abbreviation)
+        if rank is None:
+            continue
+        base = rank_to_strength(rank, total)
+        # Add small daily drift so odds feel dynamic
+        rng = random.Random(_daily_seed(team.pk))
+        drift = rng.gauss(0, DRIFT_SIGMA)
+        strengths.append(max(0.01, base + drift))
+        valid_teams.append(team)
+
+    if not valid_teams:
+        return []
+
+    probs = _softmax(strengths, temperature)
+    probs_with_margin = _apply_margin(probs, margin)
+
+    return [
+        {"team_id": t.pk, "odds": _clamp_american(_probability_to_american(p))}
+        for t, p in zip(valid_teams, probs_with_margin)
+    ]
+
+
 def generate_super_bowl_odds(standings: list) -> list[dict]:
     """Generate Super Bowl Winner odds from all 32 team standings."""
     return _generate_odds_from_standings(
@@ -162,6 +219,14 @@ def generate_futures_odds(
 
     standings = list(qs)
 
+    # Fallback to preseason rankings when no standings exist for the season
+    if not standings and season == RANKINGS_SEASON:
+        logger.info(
+            "generate_futures_odds: no standings for season %s, using preseason rankings",
+            season,
+        )
+        return _generate_futures_from_rankings(market_type, division, conference)
+
     if not standings:
         logger.warning("generate_futures_odds: no standings for season %s", season)
         return []
@@ -181,5 +246,39 @@ def generate_futures_odds(
         len(results),
         market_type,
         season,
+    )
+    return results
+
+
+def _generate_futures_from_rankings(
+    market_type: str,
+    division: str = "",
+    conference: str = "",
+) -> list[dict]:
+    """Generate futures odds from preseason rankings (offseason fallback)."""
+    teams_qs = Team.objects.all()
+
+    if market_type == "DIVISION" and division:
+        teams_qs = teams_qs.filter(division=division)
+        temperature = SOFTMAX_TEMPERATURE_DIVISION
+        margin = MARGIN_DIVISION
+    elif market_type in ("AFC_CHAMPION", "NFC_CHAMPION"):
+        conf = conference or ("AFC" if market_type == "AFC_CHAMPION" else "NFC")
+        teams_qs = teams_qs.filter(conference=conf)
+        temperature = SOFTMAX_TEMPERATURE_CONFERENCE
+        margin = MARGIN_CONFERENCE
+    elif market_type == "SUPER_BOWL":
+        temperature = SOFTMAX_TEMPERATURE_SUPER_BOWL
+        margin = MARGIN_SUPER_BOWL
+    else:
+        return []
+
+    teams = list(teams_qs)
+    results = _generate_odds_from_rankings(teams, temperature, margin)
+
+    logger.info(
+        "generate_futures_odds (rankings): %d outcomes for %s",
+        len(results),
+        market_type,
     )
     return results
