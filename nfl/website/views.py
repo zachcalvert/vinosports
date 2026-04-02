@@ -15,7 +15,7 @@ from vinosports.betting.models import (
 )
 
 
-class DashboardView(LoginRequiredMixin, View):
+class DashboardView(View):
     def get(self, request):
         season = _nfl_current_season()
         current_week = _nfl_current_week(season)

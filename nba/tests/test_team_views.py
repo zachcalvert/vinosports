@@ -85,12 +85,11 @@ class TestTeamDetailView:
         resp = self.client.get("/nba/games/teams/zzz/")
         assert resp.status_code == 404
 
-    def test_requires_login_redirects_anonymous(self):
+    def test_anonymous_user_can_browse(self):
         team = TeamFactory()
         anon_client = Client()
         resp = anon_client.get(f"/nba/games/teams/{team.abbreviation.lower()}/")
-        assert resp.status_code == 302
-        assert "/login/" in resp.url
+        assert resp.status_code == 200
 
     def test_opponent_standing_in_context(self):
         """When a final game exists with opponent having a standing, standings_by_team is populated."""

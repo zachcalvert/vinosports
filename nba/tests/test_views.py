@@ -34,9 +34,9 @@ def superuser_client(db):
 
 @pytest.mark.django_db
 class TestDashboardView:
-    def test_redirects_unauthenticated_user(self, client):
+    def test_anonymous_user_can_browse(self, client):
         response = client.get("/nba/")
-        assert response.status_code in (301, 302)
+        assert response.status_code == 200
 
     def test_authenticated_user_gets_200(self, logged_in_client):
         c, user = logged_in_client
@@ -80,8 +80,8 @@ class TestLogoutView:
         c, user = logged_in_client
         c.post("/nba/logout/")
         response = c.get("/nba/")
-        # After logout, dashboard should redirect to login
-        assert response.status_code in (301, 302)
+        # After logout, dashboard is still accessible (open browsing)
+        assert response.status_code == 200
 
 
 @pytest.mark.django_db
