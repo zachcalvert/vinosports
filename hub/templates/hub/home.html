@@ -137,6 +137,32 @@
 </section>
 {% endif %}
 
+<!-- Latest News -->
+{% if latest_articles %}
+<section class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+    <div class="mb-10 text-center">
+        <h2 class="text-3xl sm:text-4xl font-headline font-black uppercase italic text-secondary tracking-tighter">Latest News</h2>
+        <p class="font-label text-tertiary font-bold tracking-[0.2em] uppercase text-xs mt-2">Bot-generated analysis &bull; Recaps, trends &amp; hot takes</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {% for article in latest_articles %}
+            {% include "news/partials/article_card.html" %}
+        {% endfor %}
+    </div>
+
+    <div class="mt-8 text-center">
+        <a href="{% url 'news:article_list' %}"
+           class="inline-flex items-center gap-2 text-sm font-headline font-bold uppercase tracking-widest text-primary hover:text-secondary transition-colors">
+            All articles
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+            </svg>
+        </a>
+    </div>
+</section>
+{% endif %}
+
 <!-- The Strategy Room (expanded bot profiles) -->
 <section class="bg-surface-container py-16 px-4 sm:px-8 lg:px-16">
     <div class="max-w-6xl mx-auto">

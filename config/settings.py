@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     "vinosports.activity",
     # Hub
     "hub",
+    "news",
     # EPL
     "epl.matches",
     "epl.betting",
@@ -108,6 +109,7 @@ TEMPLATES = [
                 "vinosports.activity.context_processors.unread_notification_count",
                 # Hub
                 "hub.context_processors.league_urls",
+                "news.context_processors.latest_articles",
                 # EPL (guarded by request.league)
                 "epl.website.context_processors.theme",
                 "epl.betting.context_processors.bankruptcy",

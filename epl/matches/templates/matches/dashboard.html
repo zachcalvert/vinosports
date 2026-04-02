@@ -29,6 +29,20 @@
 </div>
 {% endif %}
 
+{% if latest_articles %}
+<div class="mb-8">
+    <div class="flex items-center justify-between mb-3">
+        <h2 class="text-lg font-headline font-bold uppercase tracking-wider">News</h2>
+        <a href="{% url 'news:article_list' %}?league=epl" class="text-xs text-primary hover:underline">All Articles &rarr;</a>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {% for article in latest_articles %}
+            {% include "news/partials/article_card.html" %}
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
 <div class="grid grid-cols-1">
     <h2 class="text-lg font-headline font-bold uppercase tracking-wider mb-3">Matchday</h2>
     <div id="match-grid"
