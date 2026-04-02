@@ -543,6 +543,18 @@ API_TIMEOUT = 30
 # EPL-specific
 EPL_CURRENT_SEASON = "2025"
 
+# --- Logging ---
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "loggers": {
+        "django.security.DisallowedHost": {
+            "handlers": [],
+            "propagate": False,
+        },
+    },
+}
+
 # --- Production security ---
 if not DEBUG:
     SECURE_SSL_REDIRECT = True
