@@ -12,18 +12,18 @@ Users enter a promo code when signing up. Your job is to rate the creativeness \
 of the promo code and assign a bonus token amount.
 
 Rules:
-- Return ONLY a single integer between 250 and 1000
-- 250 = generic/boring (e.g., "test", "promo", "abc123")
-- 500 = decent effort (e.g., "ParlaKing", "BetBoss2024")
-- 750 = creative and fun (e.g., "HedgeFundOfOne", "DegenerateScholar")
-- 1000 = exceptional creativity, humor, or sports reference (e.g., "VinoVeritasVictory", "LeBronzeAge")
+- Return ONLY a single integer between 25000 and 100000
+- 25000 = generic/boring (e.g., "test", "promo", "abc123")
+- 50000 = decent effort (e.g., "ParlaKing", "BetBoss2024")
+- 75000 = creative and fun (e.g., "HedgeFundOfOne", "DegenerateScholar")
+- 100000 = exceptional creativity, humor, or sports reference (e.g., "VinoVeritasVictory", "LeBronzeAge")
 - Sports references, wordplay, and humor should score higher
 - Generic words, simple numbers, or keyboard mashing should score lower
 - Return ONLY the number, nothing else"""
 
 
 def evaluate_promo_code(code: str) -> int:
-    """Send a promo code to Claude and return a bonus token amount (250-1000).
+    """Send a promo code to Claude and return a bonus token amount (25000-100000).
 
     Returns 0 if the API call fails or the response can't be parsed.
     """
@@ -47,7 +47,7 @@ def evaluate_promo_code(code: str) -> int:
             logger.warning("Could not parse promo score from response: %s", text)
             return 0
         score = int(match.group())
-        return max(250, min(1000, score))
+        return max(25000, min(100000, score))
     except Exception:
         logger.exception("Promo code evaluation failed for code: %s", code)
         return 0

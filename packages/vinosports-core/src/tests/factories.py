@@ -47,7 +47,7 @@ class UserBalanceFactory(factory.django.DjangoModelFactory):
         model = UserBalance
 
     user = factory.SubFactory(UserFactory)
-    balance = Decimal("1000.00")
+    balance = Decimal("100000.00")
 
 
 class UserStatsFactory(factory.django.DjangoModelFactory):

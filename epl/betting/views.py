@@ -294,12 +294,12 @@ class PlaceBetView(LoginRequiredMixin, View):
         except UserBalance.DoesNotExist:
             # Auto-create balance if missing (shouldn't happen with signup flow)
             balance = UserBalance.objects.create(
-                user=request.user, balance=Decimal("1000.00") - stake
+                user=request.user, balance=Decimal("100000.00") - stake
             )
             BalanceTransaction.objects.create(
                 user=request.user,
-                amount=Decimal("1000.00"),
-                balance_after=Decimal("1000.00"),
+                amount=Decimal("100000.00"),
+                balance_after=Decimal("100000.00"),
                 transaction_type=BalanceTransaction.Type.SIGNUP,
                 description="Initial signup bonus",
             )
@@ -375,7 +375,7 @@ class ProfileView(TemplateView):
             balance = profile_user.balance
             ctx["balance"] = balance.balance
         except UserBalance.DoesNotExist:
-            ctx["balance"] = Decimal("1000.00")
+            ctx["balance"] = Decimal("100000.00")
 
         ctx["user_rank"] = get_user_rank(profile_user)
 
@@ -528,7 +528,7 @@ class BailoutView(LoginRequiredMixin, View):
                 balance_at_bankruptcy=balance.balance,
             )
 
-            amount = random.randint(1000, 3000)
+            amount = random.randint(100000, 300000)
 
             Bailout.objects.create(
                 user=request.user,
@@ -867,8 +867,8 @@ class PlaceFeaturedParlayView(LoginRequiredMixin, View):
             return self._card_error(request, fp, "Please enter a valid wager amount.")
         if stake < Decimal("0.50"):
             return self._card_error(request, fp, "Minimum wager is $0.50.")
-        if stake > Decimal("10000"):
-            return self._card_error(request, fp, "Maximum wager is $10,000.")
+        if stake > Decimal("100000000"):
+            return self._card_error(request, fp, "Maximum wager is $100,000,000.")
 
         # Prevent duplicate opt-ins
         if Parlay.objects.filter(user=request.user, featured_parlay=fp).exists():

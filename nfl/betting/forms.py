@@ -18,7 +18,7 @@ class PlaceBetForm(forms.Form):
     line = forms.FloatField(required=False, widget=forms.HiddenInput())
     stake = forms.DecimalField(
         min_value=Decimal("0.50"),
-        max_value=Decimal("10000.00"),
+        max_value=Decimal("100000000.00"),
         max_digits=10,
         decimal_places=2,
         widget=forms.NumberInput(
@@ -27,7 +27,7 @@ class PlaceBetForm(forms.Form):
                 "placeholder": "0.00",
                 "step": "0.50",
                 "min": "0.50",
-                "max": "10000.00",
+                "max": "100000000.00",
             }
         ),
     )
@@ -36,7 +36,7 @@ class PlaceBetForm(forms.Form):
 class PlaceParlayForm(forms.Form):
     stake = forms.DecimalField(
         min_value=Decimal("0.50"),
-        max_value=Decimal("10000.00"),
+        max_value=Decimal("100000000.00"),
         max_digits=10,
         decimal_places=2,
         widget=forms.NumberInput(
@@ -45,7 +45,7 @@ class PlaceParlayForm(forms.Form):
                 "placeholder": "0.00",
                 "step": "0.50",
                 "min": "0.50",
-                "max": "10000.00",
+                "max": "100000000.00",
                 "id": "parlay-stake-input",
             }
         ),
@@ -55,7 +55,7 @@ class PlaceParlayForm(forms.Form):
 class PlaceFuturesBetForm(forms.Form):
     stake = forms.DecimalField(
         min_value=Decimal("0.50"),
-        max_value=Decimal("10000.00"),
+        max_value=Decimal("100000000.00"),
         max_digits=10,
         decimal_places=2,
         widget=forms.NumberInput(
@@ -64,7 +64,7 @@ class PlaceFuturesBetForm(forms.Form):
                 "placeholder": "0.00",
                 "step": "0.50",
                 "min": "0.50",
-                "max": "10000.00",
+                "max": "100000000.00",
             }
         ),
     )

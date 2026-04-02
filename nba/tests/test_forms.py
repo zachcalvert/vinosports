@@ -45,7 +45,7 @@ class TestPlaceBetForm:
             "market": "MONEYLINE",
             "selection": "HOME",
             "odds": -150,
-            "stake": "99999.00",
+            "stake": "999999999.00",
         }
         form = PlaceBetForm(data)
         assert not form.is_valid()
@@ -97,7 +97,7 @@ class TestPlaceParlayForm:
         assert "stake" in form.errors
 
     def test_stake_above_maximum_rejected(self):
-        form = PlaceParlayForm({"stake": "99999.00"})
+        form = PlaceParlayForm({"stake": "999999999.00"})
         assert not form.is_valid()
 
     def test_missing_stake_rejected(self):

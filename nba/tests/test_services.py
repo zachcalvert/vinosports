@@ -150,7 +150,7 @@ class TestPlaceParlay:
         ok = _place_parlay(user, instr)
         assert ok is True
         parlay = Parlay.objects.get(user=user)
-        assert parlay.max_payout <= Decimal("10000.00")
+        assert parlay.max_payout <= Decimal("100000000.00")
 
     def test_insufficient_balance_skips(self):
         user = BotUserFactory()

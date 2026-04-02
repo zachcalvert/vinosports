@@ -34,7 +34,7 @@ class TestClampStake:
         assert _clamp_stake(Decimal("0.50")) == Decimal("1.00")
 
     def test_clamps_above_ceiling(self):
-        assert _clamp_stake(Decimal("20000")) == Decimal("10000.00")
+        assert _clamp_stake(Decimal("200000000")) == Decimal("100000000.00")
 
     def test_passthrough_in_range(self):
         assert _clamp_stake(Decimal("50.00")) == Decimal("50.00")
@@ -448,7 +448,7 @@ class TestHomerBotStrategy:
         picks = strategy.pick_bets([match], odds_map, Decimal("1000.00"))
         assert len(picks) == 0
 
-    def test_stake_capped_at_150(self):
+    def test_stake_capped_at_15000(self):
         team = TeamFactory()
         match = MatchFactory(home_team=team)
         odds_map = {
@@ -461,7 +461,7 @@ class TestHomerBotStrategy:
         strategy = HomerBotStrategy(team_id=team.pk)
         picks = strategy.pick_bets([match], odds_map, Decimal("10000.00"))
         assert len(picks) == 1
-        assert picks[0].stake <= Decimal("150.00")
+        assert picks[0].stake <= Decimal("15000.00")
 
 
 # ---------------------------------------------------------------------------
@@ -511,7 +511,7 @@ class TestAllInAliceStrategy:
         assert len(picks) == 1
         assert picks[0].stake == Decimal("500.00")
 
-    def test_stake_capped_at_10000(self):
+    def test_stake_capped_at_100000000(self):
         match = MatchFactory()
         odds_map = {
             match.pk: {
@@ -521,9 +521,9 @@ class TestAllInAliceStrategy:
             }
         }
         strategy = AllInAliceStrategy()
-        picks = strategy.pick_bets([match], odds_map, Decimal("50000.00"))
+        picks = strategy.pick_bets([match], odds_map, Decimal("500000000.00"))
         assert len(picks) == 1
-        assert picks[0].stake == Decimal("10000.00")
+        assert picks[0].stake == Decimal("100000000.00")
 
 
 # ---------------------------------------------------------------------------

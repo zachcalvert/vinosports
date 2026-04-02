@@ -160,8 +160,8 @@ class TestParlayBuilderPreview:
             .preview(stake=Decimal("100.00"))
         )
 
-        # 100 * 10000 = 1,000,000 but capped at 50,000
-        assert preview.potential_payout == Decimal("50000.00")
+        # 100 * 10000 = 1,000,000 but capped at 500,000,000
+        assert preview.potential_payout == Decimal("1000000.00")
 
     def test_preview_has_no_side_effects(self):
         m1 = MatchFactory()
@@ -288,7 +288,7 @@ class TestParlayBuilderPlace:
             .place(user, stake=Decimal("100.00"))
         )
 
-        assert parlay.max_payout == Decimal("50000.00")
+        assert parlay.max_payout == Decimal("1000000.00")
 
     def test_place_insufficient_balance_raises(self):
         user = UserFactory()

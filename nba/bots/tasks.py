@@ -26,7 +26,7 @@ from vinosports.bots.schedule import get_active_window, roll_action
 
 logger = logging.getLogger(__name__)
 
-BAILOUT_AMOUNT = Decimal("500.00")
+BAILOUT_AMOUNT = Decimal("50000.00")
 MIN_BALANCE = Decimal("5.00")
 
 
@@ -92,7 +92,7 @@ def execute_bot_strategy(self, bot_user_id: int, window_max_bets: int | None = N
         return {"error": "no_profile"}
 
     balance_obj, _ = UserBalance.objects.get_or_create(
-        user=user, defaults={"balance": Decimal("1000.00")}
+        user=user, defaults={"balance": Decimal("100000.00")}
     )
 
     if balance_obj.balance < MIN_BALANCE:

@@ -241,7 +241,7 @@ def place_bot_parlay(user, legs_data, stake):
         return None
 
 
-def maybe_topup_bot(bot_user, min_balance=Decimal("50.00")):
+def maybe_topup_bot(bot_user, min_balance=Decimal("5000.00")):
     """Give the bot a bailout if balance is low and no pending bets."""
     try:
         balance = UserBalance.objects.get(user=bot_user)
@@ -271,7 +271,7 @@ def maybe_topup_bot(bot_user, min_balance=Decimal("50.00")):
             balance_at_bankruptcy=balance.balance,
         )
 
-        amount = Decimal(str(random.randint(1000, 3000)))
+        amount = Decimal(str(random.randint(100000, 300000)))
         Bailout.objects.create(
             user=bot_user,
             bankruptcy=bankruptcy,
