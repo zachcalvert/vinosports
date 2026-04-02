@@ -1,0 +1,39 @@
+<div id="game-notes-panel" class="bg-surface-container-lowest rounded-xl border-b-4 border-outline-variant p-5">
+    <div class="flex items-center justify-between mb-3">
+        <h3 class="text-sm font-bold uppercase tracking-wide flex items-center gap-2">
+            <i data-lucide="notebook-pen" class="w-4 h-4 text-primary"></i>
+            Game Notes
+        </h3>
+        {% if game_notes %}
+            <span class="text-xs text-muted">Last saved {{ game_notes.updated_at|timesince }} ago</span>
+        {% endif %}
+    </div>
+
+    {% if saved %}
+        <div class="mb-3 rounded-md bg-positive/10 border border-positive/30 px-3 py-2 text-xs text-positive">
+            Notes saved — bots will use these for post-game and reply comments.
+        </div>
+    {% endif %}
+
+    <form hx-post="{% url 'nba_games:game_notes' game.id_hash %}"
+          hx-target="#game-notes-panel"
+          hx-swap="outerHTML">
+        {% csrf_token %}
+        <label for="{{ game_notes_form.body.id_for_label }}" class="sr-only">Game notes</label>
+        {{ game_notes_form.body }}
+        {% if game_notes_form.body.errors %}
+            <div class="mt-1 text-xs text-danger">
+                {% for error in game_notes_form.body.errors %}{{ error }}{% endfor %}
+            </div>
+        {% endif %}
+        <div class="flex items-center justify-between mt-3">
+            <p class="text-xs text-muted">
+                These notes are injected into bot prompts for post-game and reply comments.
+            </p>
+            <button type="submit"
+                    class="bg-primary text-dark font-bold py-1.5 px-4 rounded-md hover:bg-primary/90 transition-colors text-sm">
+                Save
+            </button>
+        </div>
+    </form>
+</div>

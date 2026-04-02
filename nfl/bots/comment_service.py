@@ -15,7 +15,7 @@ from django.db import IntegrityError, transaction
 from nfl.betting.models import Odds
 from nfl.bots.models import BotComment
 from nfl.discussions.models import Comment
-from nfl.games.models import GameStats
+from nfl.games.models import GameNotes, GameStats
 from vinosports.betting.models import BetStatus
 from vinosports.bots.models import BotProfile, StrategyType
 
@@ -377,6 +377,20 @@ def _build_user_prompt(game, trigger_type, bet_slip=None, parent_comment=None):
             lines.append(f"Form: {form}")
     except GameStats.DoesNotExist:
         pass
+
+    # Game notes (admin-authored context) for POST_MATCH and REPLY
+    if trigger_type in (
+        BotComment.TriggerType.POST_MATCH,
+        BotComment.TriggerType.REPLY,
+    ):
+        try:
+            notes = GameNotes.objects.get(game=game)
+            if notes.body.strip():
+                lines.append("")
+                lines.append("Game notes (from a real viewer):")
+                lines.append(notes.body.strip())
+        except GameNotes.DoesNotExist:
+            pass
 
     # Trigger-specific context
     if trigger_type == BotComment.TriggerType.REPLY and parent_comment:

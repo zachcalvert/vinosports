@@ -125,6 +125,29 @@ class GameStats(BaseModel):
         return f"Stats for {self.game}"
 
 
+class GameNotes(BaseModel):
+    """Admin-authored game notes injected into bot comment prompts."""
+
+    game = models.OneToOneField(
+        Game,
+        on_delete=models.CASCADE,
+        related_name="notes",
+        verbose_name=_("game"),
+    )
+    body = models.TextField(
+        _("notes"),
+        blank=True,
+        help_text=_("Free-form game observations for bot context"),
+    )
+
+    class Meta:
+        verbose_name = "game notes"
+        verbose_name_plural = "game notes"
+
+    def __str__(self):
+        return f"Notes for {self.game}"
+
+
 class Player(BaseModel):
     """NBA player — synced from BallDontLie /players endpoint."""
 

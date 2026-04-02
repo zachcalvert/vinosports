@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from nfl.games.models import Game, GameStats, Player, Standing, Team
+from nfl.games.models import Game, GameNotes, GameStats, Player, Standing, Team
 
 
 @admin.register(Team)
@@ -59,6 +59,14 @@ class StandingAdmin(admin.ModelAdmin):
     list_filter = ["division", "conference", "season"]
     search_fields = ["team__name"]
     raw_id_fields = ["team"]
+
+
+@admin.register(GameNotes)
+class GameNotesAdmin(admin.ModelAdmin):
+    list_display = ["game", "created_at", "updated_at"]
+    list_select_related = ["game__home_team", "game__away_team"]
+    search_fields = ["game__home_team__name", "game__away_team__name"]
+    raw_id_fields = ["game"]
 
 
 @admin.register(GameStats)

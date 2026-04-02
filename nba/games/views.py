@@ -1,17 +1,21 @@
 from datetime import timedelta
 
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.db.models import Count, Prefetch, Q, Sum
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.template.loader import render_to_string
 from django.utils import timezone
 from django.views import View
 
 from nba.betting.forms import PlaceBetForm
 from nba.betting.models import BetSlip
 from nba.discussions.forms import CommentForm
+from nba.games.forms import GameNotesForm
 from nba.games.models import (
     Conference,
     Game,
+    GameNotes,
     GameStatus,
     Odds,
     Player,
@@ -619,4 +623,49 @@ class GameDetailView(LoginRequiredMixin, View):
         ctx.update(recap_ctx)
         ctx.update(_get_box_score_context(game))
 
+        # Game notes form (superusers only)
+        if request.user.is_authenticated and request.user.is_superuser:
+            try:
+                notes = game.notes
+            except GameNotes.DoesNotExist:
+                notes = None
+            ctx["game_notes_form"] = GameNotesForm(instance=notes)
+            ctx["game_notes"] = notes
+
         return render(request, "games/game_detail.html", ctx)
+
+
+class GameNotesView(UserPassesTestMixin, View):
+    """HTMX endpoint for superusers to create/update game notes."""
+
+    def test_func(self):
+        return self.request.user.is_superuser
+
+    def post(self, request, id_hash):
+        game = get_object_or_404(Game, id_hash=id_hash)
+        notes, _created = GameNotes.objects.get_or_create(
+            game=game, defaults={"body": ""}
+        )
+
+        form = GameNotesForm(request.POST, instance=notes)
+        saved = False
+        status = 200
+        if form.is_valid():
+            form.save()
+            notes.refresh_from_db()
+            form = GameNotesForm(instance=notes)
+            saved = True
+        else:
+            status = 400
+
+        html = render_to_string(
+            "games/partials/game_notes_panel.html",
+            {
+                "game": game,
+                "game_notes_form": form,
+                "game_notes": notes,
+                "saved": saved,
+            },
+            request=request,
+        )
+        return HttpResponse(html, status=status)
