@@ -77,6 +77,26 @@ def generate_pending_recaps():
 
 
 @shared_task(bind=True, max_retries=1, default_retry_delay=300)
+def generate_cross_league_task(self):
+    """
+    Generate a cross-league weekend preview article.
+    Runs Friday 10am ET via Celery beat. Articles start as drafts for admin review.
+    """
+    from news.article_service import generate_cross_league_article
+
+    try:
+        article = generate_cross_league_article()
+    except Exception as exc:
+        logger.error("Cross-league generation failed: error=%s", exc)
+        raise self.retry(exc=exc)
+
+    if article:
+        logger.info("Cross-league article created: %s (draft)", article.id_hash)
+        return {"status": "created", "article_id": article.id_hash}
+    return {"status": "skipped"}
+
+
+@shared_task(bind=True, max_retries=1, default_retry_delay=300)
 def generate_betting_trend_task(self, league):
     """
     Generate a mid-week betting trend article for a single league.

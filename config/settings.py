@@ -528,6 +528,10 @@ CELERY_BEAT_SCHEDULE = {
         "schedule": crontab(hour=10, minute=0, day_of_week=3),
         "args": ("nfl",),
     },
+    "news-cross-league": {
+        "task": "news.tasks.generate_cross_league_task",
+        "schedule": crontab(hour=10, minute=0, day_of_week=5),  # Friday 10am
+    },
 }
 
 # External APIs

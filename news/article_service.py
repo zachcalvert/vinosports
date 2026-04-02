@@ -348,6 +348,72 @@ def generate_betting_trend(league):
     return article
 
 
+def generate_cross_league_article():
+    """
+    Generate a cross-league weekend preview article.
+
+    Pulls recent results and betting trends from all three leagues into a
+    single article. Uses a neutral analyst bot active in any league.
+
+    Returns the created NewsArticle, or None if generation failed or no data.
+    """
+    bot_user = _select_analyst_bot(None)
+    if bot_user is None:
+        logger.warning("No bot available for cross-league article")
+        return None
+
+    bot_profile = BotProfile.objects.get(user=bot_user)
+    system_prompt = bot_profile.persona_prompt
+
+    user_prompt = _build_cross_league_prompt()
+    if user_prompt is None:
+        logger.info("No data for cross-league article")
+        return None
+
+    try:
+        client = anthropic.Anthropic(api_key=settings.ANTHROPIC_API_KEY)
+        response = client.messages.create(
+            model=MODEL,
+            max_tokens=ROUNDUP_MAX_TOKENS,
+            temperature=TEMPERATURE,
+            system=system_prompt,
+            messages=[{"role": "user", "content": user_prompt}],
+        )
+        raw_text = response.content[0].text
+    except Exception as exc:
+        logger.error("Claude API error for cross-league article: %s", exc)
+        return None
+
+    title, subtitle, body = _parse_article_response(raw_text)
+
+    ok, reason = _filter_article(title, body)
+    status = NewsArticle.Status.DRAFT  # Always draft — admin publishes
+
+    try:
+        article = NewsArticle.objects.create(
+            league="",  # cross-league — no single league scope
+            author=bot_user,
+            article_type=NewsArticle.ArticleType.CROSS_LEAGUE,
+            title=title[:200],
+            subtitle=subtitle[:300],
+            body=body,
+            status=status,
+            prompt_used=f"SYSTEM:\n{system_prompt}\n\nUSER:\n{user_prompt}",
+            raw_response=raw_text,
+        )
+    except Exception as exc:
+        logger.error("Error creating cross-league article: %s", exc)
+        return None
+
+    if not ok:
+        logger.warning(
+            "Cross-league article filtered (%s) — saved as draft for review",
+            reason,
+        )
+
+    return article
+
+
 # ---------------------------------------------------------------------------
 # Bot selection
 # ---------------------------------------------------------------------------
@@ -1349,6 +1415,237 @@ def _trend_format_instructions(league_name):
         "Analyze what the betting data reveals — which markets are hot, who's on a streak,",
         "and what the community should watch for. Be opinionated about where the value is.",
         "Under 500 words.",
+    ]
+
+
+# ---------------------------------------------------------------------------
+# Cross-league prompt building
+# ---------------------------------------------------------------------------
+
+
+def _build_cross_league_prompt():
+    """
+    Build a prompt combining data from all three leagues.
+
+    Pulls last week's results and betting activity across EPL, NBA, and NFL
+    for a cross-sport weekend preview.
+    """
+    start_date, end_date = _get_last_week_range()
+    sections = []
+    has_data = False
+
+    # --- EPL section ---
+    epl_section = _build_cross_league_epl_section(start_date, end_date)
+    if epl_section:
+        sections.append(epl_section)
+        has_data = True
+
+    # --- NBA section ---
+    nba_section = _build_cross_league_nba_section(start_date, end_date)
+    if nba_section:
+        sections.append(nba_section)
+        has_data = True
+
+    # --- NFL section ---
+    nfl_section = _build_cross_league_nfl_section(start_date, end_date)
+    if nfl_section:
+        sections.append(nfl_section)
+        has_data = True
+
+    if not has_data:
+        return None
+
+    lines = [
+        "You are writing a cross-league weekend preview article for a sports betting platform "
+        "that covers the Premier League, NBA, and NFL.",
+        "",
+        f"**Week of {start_date.strftime('%B %d')} - {end_date.strftime('%B %d, %Y')}**",
+    ]
+
+    for section in sections:
+        lines.extend(["", "---", ""])
+        lines.extend(section)
+
+    # Cross-league betting summary
+    cross_league_stats = _build_cross_league_betting_summary()
+    if cross_league_stats:
+        lines.extend(["", "---", ""])
+        lines.extend(cross_league_stats)
+
+    lines.extend(_cross_league_format_instructions())
+    return "\n".join(lines)
+
+
+def _build_cross_league_epl_section(start_date, end_date):
+    """EPL summary for the cross-league article."""
+    try:
+        from epl.betting.models import BetSlip
+        from epl.matches.models import Match
+    except ImportError:
+        return None
+
+    matches = (
+        Match.objects.filter(
+            status=Match.Status.FINISHED,
+            kickoff__date__gte=start_date,
+            kickoff__date__lte=end_date,
+        )
+        .select_related("home_team", "away_team")
+        .order_by("kickoff")
+    )
+
+    if not matches.exists():
+        return None
+
+    lines = ["**Premier League**:", ""]
+
+    for match in matches[:8]:  # cap at 8 to keep prompt size reasonable
+        home = match.home_team.short_name or match.home_team.name
+        away = match.away_team.short_name or match.away_team.name
+        lines.append(f"- {home} {match.home_score} - {away} {match.away_score}")
+
+    # Betting summary
+    bet_count = BetSlip.objects.filter(match__in=matches).count()
+    if bet_count:
+        won = BetSlip.objects.filter(match__in=matches, status="WON").count()
+        lines.append(f"- Community: {bet_count} bets, {won} winners")
+
+    return lines
+
+
+def _build_cross_league_nba_section(start_date, end_date):
+    """NBA summary for the cross-league article."""
+    try:
+        from nba.betting.models import BetSlip
+        from nba.games.models import Game, GameStatus
+    except ImportError:
+        return None
+
+    games = (
+        Game.objects.filter(
+            status=GameStatus.FINAL,
+            game_date__gte=start_date,
+            game_date__lte=end_date,
+        )
+        .select_related("home_team", "away_team")
+        .order_by("game_date")
+    )
+
+    if not games.exists():
+        return None
+
+    lines = [f"**NBA** ({games.count()} games):", ""]
+
+    for game in games[:10]:  # cap at 10
+        lines.append(
+            f"- {game.away_team.abbreviation} {game.away_score} @ "
+            f"{game.home_team.abbreviation} {game.home_score}"
+        )
+
+    # Betting summary
+    bet_count = BetSlip.objects.filter(game__in=games).count()
+    if bet_count:
+        won = BetSlip.objects.filter(game__in=games, status="WON").count()
+        lines.append(f"- Community: {bet_count} bets, {won} winners")
+
+    return lines
+
+
+def _build_cross_league_nfl_section(start_date, end_date):
+    """NFL summary for the cross-league article."""
+    try:
+        from nfl.betting.models import BetSlip
+        from nfl.games.models import Game, GameStatus
+    except ImportError:
+        return None
+
+    games = (
+        Game.objects.filter(
+            status__in=[GameStatus.FINAL, GameStatus.FINAL_OT],
+            game_date__gte=start_date,
+            game_date__lte=end_date,
+        )
+        .select_related("home_team", "away_team")
+        .order_by("game_date")
+    )
+
+    if not games.exists():
+        return None
+
+    first_game = games.first()
+    week_label = f"Week {first_game.week}" if first_game.week else ""
+    header = (
+        f"**NFL{' — ' + week_label if week_label else ''}** ({games.count()} games):"
+    )
+    lines = [header, ""]
+
+    for game in games[:16]:  # full NFL slate
+        ot_tag = " (OT)" if game.status == GameStatus.FINAL_OT else ""
+        lines.append(
+            f"- {game.away_team.abbreviation} {game.away_score} @ "
+            f"{game.home_team.abbreviation} {game.home_score}{ot_tag}"
+        )
+
+    # Betting summary
+    bet_count = BetSlip.objects.filter(game__in=games).count()
+    if bet_count:
+        won = BetSlip.objects.filter(game__in=games, status="WON").count()
+        lines.append(f"- Community: {bet_count} bets, {won} winners")
+
+    return lines
+
+
+def _build_cross_league_betting_summary():
+    """Aggregate betting stats across all leagues for the cross-league article."""
+    from vinosports.betting.models import UserStats
+
+    lines = ["**Cross-league leaderboard highlights**:"]
+
+    # Top performers across all leagues
+    top_profit = (
+        UserStats.objects.filter(total_bets__gte=10, user__is_bot=False)
+        .select_related("user")
+        .order_by("-net_profit")[:3]
+    )
+
+    if not top_profit:
+        return None
+
+    lines.append("")
+    for s in top_profit:
+        lines.append(
+            f"- {s.user.display_name}: {s.net_profit:+.0f} coins "
+            f"({s.total_wins}W-{s.total_losses}L)"
+        )
+
+    # Hot streaks
+    hot = (
+        UserStats.objects.filter(current_streak__gte=3, user__is_bot=False)
+        .select_related("user")
+        .order_by("-current_streak")[:3]
+    )
+    if hot:
+        lines.extend(["", "**Hot hands**:"])
+        for s in hot:
+            lines.append(f"- {s.user.display_name}: {s.current_streak}W streak")
+
+    return lines
+
+
+def _cross_league_format_instructions():
+    """Instructions for cross-league weekend preview articles."""
+    return [
+        "",
+        "---",
+        "",
+        "Write a cross-league weekend preview article (4-6 paragraphs). Include:",
+        "1. A punchy, opinionated headline (on its own line, prefixed with TITLE:)",
+        "2. A one-sentence subtitle (on its own line, prefixed with SUBTITLE:)",
+        "3. The article body",
+        "",
+        "Connect the dots across leagues — compare betting trends, highlight the biggest ",
+        "storylines from each league, and preview what to watch this weekend.",
+        "Be opinionated and entertaining. Under 600 words.",
     ]
 
 
