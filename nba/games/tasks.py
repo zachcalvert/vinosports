@@ -3,6 +3,7 @@ import logging
 from celery import shared_task
 
 from nba.games.services import (
+    sync_box_score,
     sync_games,
     sync_live_scores,
     sync_players,
@@ -69,6 +70,24 @@ def fetch_live_scores(self):
         return {"updated": count}
     except Exception as exc:
         logger.error("fetch_live_scores failed: %s", exc)
+        raise self.retry(exc=exc)
+
+
+@shared_task(bind=True, max_retries=3, default_retry_delay=30)
+def fetch_box_score(self, game_pk: int):
+    """Async box score fetch — kicked off when a user views a game with no stats yet."""
+    from nba.games.models import Game
+
+    try:
+        game = Game.objects.get(pk=game_pk)
+    except Game.DoesNotExist:
+        return {"error": "game not found"}
+
+    try:
+        count = sync_box_score(game)
+        return {"synced": count, "game": game_pk}
+    except Exception as exc:
+        logger.error("fetch_box_score failed (game=%s): %s", game_pk, exc)
         raise self.retry(exc=exc)
 
 

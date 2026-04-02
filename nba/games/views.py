@@ -481,17 +481,12 @@ def _get_box_score_context(game):
         "team", "player"
     )
 
-    # On-demand fetch if no data exists yet
+    # Kick off async fetch if no data exists yet
     if not box_scores.exists():
-        from nba.games.services import sync_box_score
+        from nba.games.tasks import fetch_box_score
 
-        try:
-            sync_box_score(game)
-            box_scores = PlayerBoxScore.objects.filter(game=game).select_related(
-                "team", "player"
-            )
-        except Exception:
-            return {}
+        fetch_box_score.delay(game.pk)
+        return {"box_score_loading": True}
 
     if not box_scores.exists():
         return {}
@@ -636,6 +631,27 @@ class GameDetailView(View):
             ctx["game_notes"] = notes
 
         return render(request, "games/game_detail.html", ctx)
+
+
+class BoxScorePartialView(View):
+    """HTMX endpoint for polling box score data."""
+
+    def get(self, request, id_hash):
+        game = get_object_or_404(
+            Game.objects.select_related("home_team", "away_team"), id_hash=id_hash
+        )
+        ctx = _get_box_score_context(game)
+
+        if ctx.get("box_score_loading"):
+            # Still loading — return the polling placeholder again
+            return render(
+                request, "games/partials/box_score_loading.html", {"game": game}
+            )
+
+        if not ctx.get("has_box_score"):
+            return HttpResponse()
+
+        return render(request, "games/partials/box_score.html", {**ctx, "game": game})
 
 
 class GameNotesView(UserPassesTestMixin, View):

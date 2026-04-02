@@ -98,6 +98,8 @@
 <!-- Box Score (live + final games) -->
 {% if has_box_score %}
     {% include "games/partials/box_score.html" %}
+{% elif box_score_loading %}
+    {% include "games/partials/box_score_loading.html" %}
 {% endif %}
 
 <!-- Game notes — superuser only -->

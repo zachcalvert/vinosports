@@ -1,0 +1,17 @@
+<div id="box-score"
+     hx-get="{% url 'nba_games:box_score_partial' game.id_hash %}"
+     hx-trigger="every 3s"
+     hx-swap="outerHTML"
+     class="rounded-xl border-b-4 border-outline-variant bg-surface-container-lowest overflow-hidden mb-6">
+    <div class="px-5 py-3 border-b border-outline-variant flex items-center gap-3">
+        <span class="w-1 h-6 rounded-full bg-nba"></span>
+        <h3 class="text-xs font-semibold uppercase tracking-widest">Box Score</h3>
+    </div>
+    <div class="flex items-center justify-center py-10 text-muted text-sm gap-2">
+        <svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+        </svg>
+        Loading box score...
+    </div>
+</div>
