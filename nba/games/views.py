@@ -468,7 +468,7 @@ def _get_recap_context(game):
     }
 
 
-def _get_box_score_context(game):
+def _get_box_score_context(game, request=None):
     """Build box score data grouped by team for template rendering."""
     if game.status not in (
         GameStatus.IN_PROGRESS,
@@ -481,16 +481,22 @@ def _get_box_score_context(game):
         "team", "player"
     )
 
-    # Kick off async fetch if no data exists yet
+    # Kick off async fetch if no data exists yet (authenticated users only)
     if not box_scores.exists():
-        from nba.games.tasks import fetch_box_score
+        if request and request.user.is_authenticated:
+            from django.core.cache import cache
 
-        try:
-            fetch_box_score.delay(game.pk)
-        except Exception:
-            # In eager mode (tests) or if broker is down, don't block the page
-            pass
-        return {"box_score_loading": True}
+            from nba.games.tasks import fetch_box_score
+
+            lock_key = f"fetch_box_score:{game.pk}"
+            if cache.add(lock_key, "1", timeout=120):
+                try:
+                    fetch_box_score.delay(game.pk)
+                except Exception:
+                    # In eager mode (tests) or if broker is down, don't block the page
+                    cache.delete(lock_key)
+            return {"box_score_loading": True}
+        return {}
 
     if not box_scores.exists():
         return {}
@@ -623,7 +629,7 @@ class GameDetailView(View):
             "away_standing": standings_map.get(game.away_team_id),
         }
         ctx.update(recap_ctx)
-        ctx.update(_get_box_score_context(game))
+        ctx.update(_get_box_score_context(game, request=request))
 
         # Game notes form (superusers only)
         if request.user.is_authenticated and request.user.is_superuser:
@@ -638,13 +644,16 @@ class GameDetailView(View):
 
 
 class BoxScorePartialView(View):
-    """HTMX endpoint for polling box score data."""
+    """HTMX endpoint for polling box score data (authenticated users only)."""
 
     def get(self, request, id_hash):
+        if not request.user.is_authenticated:
+            return HttpResponse()
+
         game = get_object_or_404(
             Game.objects.select_related("home_team", "away_team"), id_hash=id_hash
         )
-        ctx = _get_box_score_context(game)
+        ctx = _get_box_score_context(game, request=request)
 
         if ctx.get("box_score_loading"):
             # Still loading — return the polling placeholder again
