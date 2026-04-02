@@ -90,7 +90,7 @@ class RateLimitMiddleware:
         try:
             from django.core.cache import cache
 
-            count = cache.get(cache_key, 0)
+            count = cache.get_or_set(cache_key, 0, timeout=self.window)
             if count >= self.max_requests:
                 logger.warning(
                     "Rate limited IP %s (%d requests in %ds)", ip, count, self.window
@@ -100,13 +100,7 @@ class RateLimitMiddleware:
                     status=429,
                     headers={"Retry-After": str(self.window)},
                 )
-            # Increment atomically; set TTL on first request
-            _new_count = cache.incr(cache_key)  # raises ValueError if key missing
-        except ValueError:
-            # Key doesn't exist yet — initialize it
-            from django.core.cache import cache
-
-            cache.set(cache_key, 1, timeout=self.window)
+            cache.incr(cache_key)
         except Exception:
             # If Redis is down, fail open — don't block users
             pass
