@@ -99,5 +99,12 @@
 {% if has_box_score %}
     {% include "games/partials/box_score.html" %}
 {% endif %}
+
+<!-- Game notes — superuser only -->
+{% if game_notes_form %}
+    <div class="mb-6">
+        {% include "games/partials/game_notes_panel.html" %}
+    </div>
+{% endif %}
 {% endblock %}
 
