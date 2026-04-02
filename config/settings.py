@@ -513,6 +513,21 @@ CELERY_BEAT_SCHEDULE = {
         "schedule": crontab(hour=10, minute=0, day_of_week=1),
         "args": ("nfl",),
     },
+    "news-betting-trend-epl": {
+        "task": "news.tasks.generate_betting_trend_task",
+        "schedule": crontab(hour=10, minute=0, day_of_week=3),  # Wednesday 10am
+        "args": ("epl",),
+    },
+    "news-betting-trend-nba": {
+        "task": "news.tasks.generate_betting_trend_task",
+        "schedule": crontab(hour=10, minute=0, day_of_week=3),
+        "args": ("nba",),
+    },
+    "news-betting-trend-nfl": {
+        "task": "news.tasks.generate_betting_trend_task",
+        "schedule": crontab(hour=10, minute=0, day_of_week=3),
+        "args": ("nfl",),
+    },
 }
 
 # External APIs

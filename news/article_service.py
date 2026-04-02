@@ -15,7 +15,7 @@ from datetime import timedelta
 import anthropic
 from django.conf import settings
 from django.db import IntegrityError
-from django.db.models import Count
+from django.db.models import Count, Q
 from django.urls import reverse
 from django.utils import timezone
 
@@ -274,6 +274,73 @@ def generate_weekly_roundup(league):
     if not ok:
         logger.warning(
             "Roundup filtered (%s): league=%s — saved as draft for review",
+            reason,
+            league,
+        )
+
+    return article
+
+
+def generate_betting_trend(league):
+    """
+    Generate a mid-week betting trend article for a league.
+
+    Aggregates recent betting activity — popular markets, win rates,
+    cover trends, and top performers — into a prompt for a neutral analyst bot.
+
+    Returns the created NewsArticle, or None if generation failed or no data.
+    """
+    bot_user = _select_analyst_bot(league)
+    if bot_user is None:
+        logger.warning("No analyst bot available for trend: league=%s", league)
+        return None
+
+    bot_profile = BotProfile.objects.get(user=bot_user)
+    system_prompt = bot_profile.persona_prompt
+
+    user_prompt = _build_trend_prompt(league)
+    if user_prompt is None:
+        logger.info("No betting data for trend: league=%s", league)
+        return None
+
+    try:
+        client = anthropic.Anthropic(api_key=settings.ANTHROPIC_API_KEY)
+        response = client.messages.create(
+            model=MODEL,
+            max_tokens=ROUNDUP_MAX_TOKENS,
+            temperature=TEMPERATURE,
+            system=system_prompt,
+            messages=[{"role": "user", "content": user_prompt}],
+        )
+        raw_text = response.content[0].text
+    except Exception as exc:
+        logger.error("Claude API error for trend: league=%s, error=%s", league, exc)
+        return None
+
+    title, subtitle, body = _parse_article_response(raw_text)
+
+    ok, reason = _filter_article(title, body)
+    status = NewsArticle.Status.DRAFT  # Always draft — admin publishes
+
+    try:
+        article = NewsArticle.objects.create(
+            league=league,
+            author=bot_user,
+            article_type=NewsArticle.ArticleType.TREND,
+            title=title[:200],
+            subtitle=subtitle[:300],
+            body=body,
+            status=status,
+            prompt_used=f"SYSTEM:\n{system_prompt}\n\nUSER:\n{user_prompt}",
+            raw_response=raw_text,
+        )
+    except Exception as exc:
+        logger.error("Error creating trend article: league=%s, error=%s", league, exc)
+        return None
+
+    if not ok:
+        logger.warning(
+            "Trend filtered (%s): league=%s — saved as draft for review",
             reason,
             league,
         )
@@ -1060,6 +1127,228 @@ def _roundup_format_instructions(league_name):
         "",
         "Cover the biggest storylines, betting trends, and what to watch next week.",
         "Opinionated and entertaining. Under 600 words.",
+    ]
+
+
+# ---------------------------------------------------------------------------
+# Trend prompt building
+# ---------------------------------------------------------------------------
+
+# How far back to look for betting trend data
+TREND_LOOKBACK_DAYS = 14
+
+
+def _build_trend_prompt(league):
+    """Dispatch to league-specific trend prompt builder."""
+    builders = {
+        "epl": _build_epl_trend,
+        "nba": _build_nba_trend,
+        "nfl": _build_nfl_trend,
+    }
+    return builders[league]()
+
+
+def _build_betting_stats_section(bet_qs, has_market=True):
+    """
+    Build shared betting stats lines from a BetSlip queryset.
+
+    Args:
+        bet_qs: QuerySet of BetSlip objects (already filtered to time range).
+        has_market: True for NBA/NFL (market field), False for EPL (1X2 only).
+
+    Returns list of prompt lines, or empty list if no bets.
+    """
+    total = bet_qs.count()
+    if not total:
+        return []
+
+    won = bet_qs.filter(status="WON").count()
+    lost = bet_qs.filter(status="LOST").count()
+    settled = won + lost
+
+    lines = [
+        f"**Total bets placed**: {total}",
+        f"**Settled**: {settled} ({won} won, {lost} lost)",
+    ]
+    if settled:
+        lines.append(f"**Overall win rate**: {won / settled * 100:.1f}%")
+
+    # Market breakdown (NBA/NFL only)
+    if has_market:
+        markets = (
+            bet_qs.filter(status__in=["WON", "LOST"])
+            .values("market")
+            .annotate(
+                total=Count("id"),
+                wins=Count("id", filter=Q(status="WON")),
+            )
+            .order_by("-total")
+        )
+        if markets:
+            lines.append("")
+            lines.append("**Win rate by market**:")
+            for m in markets:
+                rate = m["wins"] / m["total"] * 100 if m["total"] else 0
+                lines.append(f"- {m['market']}: {m['wins']}/{m['total']} ({rate:.1f}%)")
+
+    # Selection popularity
+    popular = (
+        bet_qs.values("selection").annotate(count=Count("id")).order_by("-count")[:5]
+    )
+    if popular:
+        lines.append("")
+        lines.append("**Most popular selections**:")
+        for p in popular:
+            lines.append(f"- {p['selection']}: {p['count']} bets")
+
+    return lines
+
+
+def _build_top_bettors_section():
+    """Build lines showing top performers from UserStats."""
+    from vinosports.betting.models import UserStats
+
+    lines = []
+
+    # Top by net profit (min 10 bets, exclude bots)
+    top_profit = (
+        UserStats.objects.filter(total_bets__gte=10, user__is_bot=False)
+        .select_related("user")
+        .order_by("-net_profit")[:5]
+    )
+    if top_profit:
+        lines.extend(["", "**Top performers (by profit)**:"])
+        for s in top_profit:
+            lines.append(
+                f"- {s.user.display_name}: {s.net_profit:+.0f} coins "
+                f"({s.total_wins}W-{s.total_losses}L, {s.win_rate}% win rate)"
+            )
+
+    # Hot streaks
+    hot_streaks = (
+        UserStats.objects.filter(current_streak__gte=3, user__is_bot=False)
+        .select_related("user")
+        .order_by("-current_streak")[:3]
+    )
+    if hot_streaks:
+        lines.extend(["", "**Hot streaks**:"])
+        for s in hot_streaks:
+            lines.append(f"- {s.user.display_name}: {s.current_streak}W streak")
+
+    # Cold streaks
+    cold_streaks = (
+        UserStats.objects.filter(current_streak__lte=-3, user__is_bot=False)
+        .select_related("user")
+        .order_by("current_streak")[:3]
+    )
+    if cold_streaks:
+        lines.extend(["", "**Cold streaks**:"])
+        for s in cold_streaks:
+            lines.append(f"- {s.user.display_name}: {abs(s.current_streak)}L streak")
+
+    return lines
+
+
+def _build_epl_trend():
+    """Build trend prompt for EPL — betting activity over the last 2 weeks."""
+    from epl.betting.models import BetSlip
+
+    cutoff = timezone.now() - timedelta(days=TREND_LOOKBACK_DAYS)
+    recent_bets = BetSlip.objects.filter(created_at__gte=cutoff)
+
+    if not recent_bets.exists():
+        return None
+
+    lines = [
+        "You are writing a mid-week betting trend article for the Premier League on a sports betting platform.",
+        "",
+        f"**Betting data from the last {TREND_LOOKBACK_DAYS} days**:",
+        "",
+    ]
+
+    lines.extend(_build_betting_stats_section(recent_bets, has_market=False))
+
+    # EPL-specific: selection breakdown (Home/Draw/Away win rates)
+    selections = (
+        recent_bets.filter(status__in=["WON", "LOST"])
+        .values("selection")
+        .annotate(
+            total=Count("id"),
+            wins=Count("id", filter=Q(status="WON")),
+        )
+        .order_by("-total")
+    )
+    if selections:
+        lines.extend(["", "**Win rate by selection**:"])
+        for s in selections:
+            rate = s["wins"] / s["total"] * 100 if s["total"] else 0
+            lines.append(f"- {s['selection']}: {s['wins']}/{s['total']} ({rate:.1f}%)")
+
+    lines.extend(_build_top_bettors_section())
+    lines.extend(_trend_format_instructions("Premier League"))
+    return "\n".join(lines)
+
+
+def _build_nba_trend():
+    """Build trend prompt for NBA — betting activity over the last 2 weeks."""
+    from nba.betting.models import BetSlip
+
+    cutoff = timezone.now() - timedelta(days=TREND_LOOKBACK_DAYS)
+    recent_bets = BetSlip.objects.filter(created_at__gte=cutoff)
+
+    if not recent_bets.exists():
+        return None
+
+    lines = [
+        "You are writing a mid-week betting trend article for the NBA on a sports betting platform.",
+        "",
+        f"**Betting data from the last {TREND_LOOKBACK_DAYS} days**:",
+        "",
+    ]
+
+    lines.extend(_build_betting_stats_section(recent_bets, has_market=True))
+    lines.extend(_build_top_bettors_section())
+    lines.extend(_trend_format_instructions("NBA"))
+    return "\n".join(lines)
+
+
+def _build_nfl_trend():
+    """Build trend prompt for NFL — betting activity over the last 2 weeks."""
+    from nfl.betting.models import BetSlip
+
+    cutoff = timezone.now() - timedelta(days=TREND_LOOKBACK_DAYS)
+    recent_bets = BetSlip.objects.filter(created_at__gte=cutoff)
+
+    if not recent_bets.exists():
+        return None
+
+    lines = [
+        "You are writing a mid-week betting trend article for the NFL on a sports betting platform.",
+        "",
+        f"**Betting data from the last {TREND_LOOKBACK_DAYS} days**:",
+        "",
+    ]
+
+    lines.extend(_build_betting_stats_section(recent_bets, has_market=True))
+    lines.extend(_build_top_bettors_section())
+    lines.extend(_trend_format_instructions("NFL"))
+    return "\n".join(lines)
+
+
+def _trend_format_instructions(league_name):
+    """Shared instructions appended to every trend prompt."""
+    return [
+        "",
+        "---",
+        "",
+        f"Write a mid-week betting trend article for {league_name} (3-5 paragraphs). Include:",
+        "1. A punchy, opinionated headline (on its own line, prefixed with TITLE:)",
+        "2. A one-sentence subtitle (on its own line, prefixed with SUBTITLE:)",
+        "3. The article body",
+        "",
+        "Analyze what the betting data reveals — which markets are hot, who's on a streak,",
+        "and what the community should watch for. Be opinionated about where the value is.",
+        "Under 500 words.",
     ]
 
 

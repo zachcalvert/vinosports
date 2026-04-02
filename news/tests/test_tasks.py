@@ -7,6 +7,7 @@ import pytest
 from news.models import NewsArticle
 from news.tasks import (
     _resolve_game,
+    generate_betting_trend_task,
     generate_game_recap_task,
     generate_pending_recaps,
     generate_weekly_roundup_task,
@@ -159,3 +160,29 @@ class TestGenerateWeeklyRoundupTask:
         mock_generate.side_effect = Exception("API error")
         with pytest.raises(Exception):
             generate_weekly_roundup_task("nba")
+
+
+# ---------------------------------------------------------------------------
+# generate_betting_trend_task
+# ---------------------------------------------------------------------------
+
+
+class TestGenerateBettingTrendTask:
+    @patch("news.article_service.generate_betting_trend")
+    def test_calls_service(self, mock_generate):
+        mock_generate.return_value = MagicMock(id_hash="trend123")
+        result = generate_betting_trend_task("nba")
+        mock_generate.assert_called_once_with("nba")
+        assert result["status"] == "created"
+
+    @patch("news.article_service.generate_betting_trend")
+    def test_returns_skipped_when_none(self, mock_generate):
+        mock_generate.return_value = None
+        result = generate_betting_trend_task("nba")
+        assert result["status"] == "skipped"
+
+    @patch("news.article_service.generate_betting_trend")
+    def test_retries_on_exception(self, mock_generate):
+        mock_generate.side_effect = Exception("API error")
+        with pytest.raises(Exception):
+            generate_betting_trend_task("nba")

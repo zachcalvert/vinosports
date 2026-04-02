@@ -77,6 +77,30 @@ def generate_pending_recaps():
 
 
 @shared_task(bind=True, max_retries=1, default_retry_delay=300)
+def generate_betting_trend_task(self, league):
+    """
+    Generate a mid-week betting trend article for a single league.
+    Runs Wednesday 10am ET via Celery beat. Articles start as drafts for admin review.
+    """
+    from news.article_service import generate_betting_trend
+
+    try:
+        article = generate_betting_trend(league)
+    except Exception as exc:
+        logger.error("Trend generation failed: league=%s, error=%s", league, exc)
+        raise self.retry(exc=exc)
+
+    if article:
+        logger.info(
+            "Trend created: league=%s, article=%s (draft)",
+            league,
+            article.id_hash,
+        )
+        return {"status": "created", "article_id": article.id_hash}
+    return {"status": "skipped"}
+
+
+@shared_task(bind=True, max_retries=1, default_retry_delay=300)
 def generate_weekly_roundup_task(self, league):
     """
     Generate a weekly roundup article for a single league.
