@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     "vinosports.activity",
     # Hub
     "hub",
+    "news",
     # EPL
     "epl.matches",
     "epl.betting",
@@ -108,6 +109,7 @@ TEMPLATES = [
                 "vinosports.activity.context_processors.unread_notification_count",
                 # Hub
                 "hub.context_processors.league_urls",
+                "news.context_processors.latest_articles",
                 # EPL (guarded by request.league)
                 "epl.website.context_processors.theme",
                 "epl.betting.context_processors.bankruptcy",
@@ -263,6 +265,7 @@ CELERY_TASK_ROUTES = {
     "epl.*": {"queue": "epl"},
     "nba.*": {"queue": "nba"},
     "nfl.*": {"queue": "nfl"},
+    "news.*": {"queue": "news"},
 }
 
 # Beat Schedule — EPL and NBA tasks merged, prefixed to avoid key collisions
@@ -490,6 +493,45 @@ CELERY_BEAT_SCHEDULE = {
     "expire-featured-parlays-30m": {
         "task": "vinosports.betting.tasks.expire_featured_parlays",
         "schedule": timedelta(minutes=30),
+    },
+    # ===== News =====
+    "news-generate-recaps-hourly": {
+        "task": "news.tasks.generate_pending_recaps",
+        "schedule": crontab(minute=45),
+    },
+    "news-weekly-roundup-epl": {
+        "task": "news.tasks.generate_weekly_roundup_task",
+        "schedule": crontab(hour=10, minute=0, day_of_week=1),  # Monday 10am
+        "args": ("epl",),
+    },
+    "news-weekly-roundup-nba": {
+        "task": "news.tasks.generate_weekly_roundup_task",
+        "schedule": crontab(hour=10, minute=0, day_of_week=1),
+        "args": ("nba",),
+    },
+    "news-weekly-roundup-nfl": {
+        "task": "news.tasks.generate_weekly_roundup_task",
+        "schedule": crontab(hour=10, minute=0, day_of_week=1),
+        "args": ("nfl",),
+    },
+    "news-betting-trend-epl": {
+        "task": "news.tasks.generate_betting_trend_task",
+        "schedule": crontab(hour=10, minute=0, day_of_week=3),  # Wednesday 10am
+        "args": ("epl",),
+    },
+    "news-betting-trend-nba": {
+        "task": "news.tasks.generate_betting_trend_task",
+        "schedule": crontab(hour=10, minute=0, day_of_week=3),
+        "args": ("nba",),
+    },
+    "news-betting-trend-nfl": {
+        "task": "news.tasks.generate_betting_trend_task",
+        "schedule": crontab(hour=10, minute=0, day_of_week=3),
+        "args": ("nfl",),
+    },
+    "news-cross-league": {
+        "task": "news.tasks.generate_cross_league_task",
+        "schedule": crontab(hour=10, minute=0, day_of_week=5),  # Friday 10am
     },
 }
 

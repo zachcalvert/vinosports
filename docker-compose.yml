@@ -62,6 +62,7 @@ services:
       - ./nba:/app/nba
       - ./nfl:/app/nfl
       - ./hub:/app/hub
+      - ./news:/app/news
       - ./manage.py:/app/manage.py
       - ./pyproject.toml:/app/pyproject.toml
       - ./packages/vinosports-core/src:/packages/vinosports-core/src
@@ -79,6 +80,7 @@ services:
       - ./nba:/app/nba
       - ./nfl:/app/nfl
       - ./hub:/app/hub
+      - ./news:/app/news
     depends_on: []
 
   # --- JS bundle watcher (dev only) ---
@@ -96,13 +98,14 @@ services:
   # --- Celery Worker (all queues) ---
   worker:
     <<: *app-build
-    command: celery -A config worker -l info -Q epl,nba,nfl
+    command: celery -A config worker -l info -Q epl,nba,nfl,news
     volumes:
       - ./config:/app/config
       - ./epl:/app/epl
       - ./nba:/app/nba
       - ./nfl:/app/nfl
       - ./hub:/app/hub
+      - ./news:/app/news
       - ./manage.py:/app/manage.py
       - ./packages/vinosports-core/src:/packages/vinosports-core/src
       - media:/app/media
@@ -117,6 +120,7 @@ services:
       - ./nba:/app/nba
       - ./nfl:/app/nfl
       - ./hub:/app/hub
+      - ./news:/app/news
       - ./manage.py:/app/manage.py
       - ./packages/vinosports-core/src:/packages/vinosports-core/src
 

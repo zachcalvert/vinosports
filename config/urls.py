@@ -10,6 +10,7 @@ urlpatterns = [
     path("epl/", include("epl.urls")),
     path("nba/", include("nba.urls")),
     path("nfl/", include("nfl.urls")),
+    path("news/", include("news.urls")),
     path("", include("hub.urls")),
 ]
 

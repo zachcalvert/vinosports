@@ -120,6 +120,28 @@
             </div>
         </div>
         {% endif %}
+
+        {# Latest News #}
+        {% if latest_articles %}
+        <div class="bg-surface-container-lowest rounded-xl p-4 border-b-4 border-outline-variant">
+            <div class="flex items-center justify-between mb-3">
+                <h3 class="font-headline font-black text-sm uppercase tracking-widest text-secondary">News</h3>
+                <a href="{% url 'news:article_list' %}?league=nba" class="text-xs text-primary hover:underline">All Articles &rarr;</a>
+            </div>
+            <div class="space-y-3">
+                {% for article in latest_articles %}
+                <a href="{% url 'news:article_detail' article.id_hash %}" class="block group">
+                    <p class="text-sm font-headline font-bold uppercase tracking-tight text-secondary leading-tight group-hover:text-primary transition-colors">
+                        {{ article.title|truncatechars:60 }}
+                    </p>
+                    {% if article.published_at %}
+                    <p class="text-[10px] font-label text-muted uppercase tracking-widest mt-0.5">{{ article.published_at|timesince }} ago</p>
+                    {% endif %}
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
     </div>
 </div>
 {% endblock %}

@@ -33,6 +33,7 @@ COPY epl/ epl/
 COPY nba/ nba/
 COPY nfl/ nfl/
 COPY hub/ hub/
+COPY news/ news/
 COPY manage.py .
 COPY tailwind.config.js .
 COPY frontend/ frontend/
