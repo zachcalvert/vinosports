@@ -2,6 +2,7 @@ import logging
 import re
 
 from django.conf import settings
+from django.core.cache import cache
 from django.http import (
     HttpResponse,
     HttpResponsePermanentRedirect,
@@ -88,8 +89,6 @@ class RateLimitMiddleware:
         cache_key = f"rl:{ip}"
 
         try:
-            from django.core.cache import cache
-
             count = cache.get_or_set(cache_key, 0, timeout=self.window)
             if count >= self.max_requests:
                 logger.warning(
