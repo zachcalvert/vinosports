@@ -1,6 +1,6 @@
 # News System
 
-> Status: **Ready to implement**
+> Status: **Dev Complete**
 > Depends on: Game Notes (0040) ✅
 
 ## Vision

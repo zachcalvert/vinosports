@@ -21,11 +21,6 @@ def generate_pending_recaps():
     """
     cutoff = timezone.now() - timedelta(hours=24)
     cutoff_date = cutoff.date()
-    existing_hashes = set(
-        NewsArticle.objects.filter(
-            article_type=NewsArticle.ArticleType.RECAP,
-        ).values_list("game_id_hash", flat=True)
-    )
 
     dispatched = 0
 
@@ -33,10 +28,15 @@ def generate_pending_recaps():
     try:
         from epl.matches.models import Match
 
+        epl_existing = set(
+            NewsArticle.objects.filter(
+                article_type=NewsArticle.ArticleType.RECAP, league="epl"
+            ).values_list("game_id_hash", flat=True)
+        )
         epl_matches = Match.objects.filter(
             status=Match.Status.FINISHED,
             kickoff__gte=cutoff,
-        ).exclude(id_hash__in=existing_hashes)
+        ).exclude(id_hash__in=epl_existing)
         for match in epl_matches:
             generate_game_recap_task.delay(match.id_hash, "epl")
             dispatched += 1
@@ -47,10 +47,15 @@ def generate_pending_recaps():
     try:
         from nba.games.models import Game, GameStatus
 
+        nba_existing = set(
+            NewsArticle.objects.filter(
+                article_type=NewsArticle.ArticleType.RECAP, league="nba"
+            ).values_list("game_id_hash", flat=True)
+        )
         nba_games = Game.objects.filter(
             status=GameStatus.FINAL,
             game_date__gte=cutoff_date,
-        ).exclude(id_hash__in=existing_hashes)
+        ).exclude(id_hash__in=nba_existing)
         for game in nba_games:
             generate_game_recap_task.delay(game.id_hash, "nba")
             dispatched += 1
@@ -62,10 +67,15 @@ def generate_pending_recaps():
         from nfl.games.models import Game as NflGame
         from nfl.games.models import GameStatus as NflGameStatus
 
+        nfl_existing = set(
+            NewsArticle.objects.filter(
+                article_type=NewsArticle.ArticleType.RECAP, league="nfl"
+            ).values_list("game_id_hash", flat=True)
+        )
         nfl_games = NflGame.objects.filter(
             status__in=[NflGameStatus.FINAL, NflGameStatus.FINAL_OT],
             game_date__gte=cutoff_date,
-        ).exclude(id_hash__in=existing_hashes)
+        ).exclude(id_hash__in=nfl_existing)
         for game in nfl_games:
             generate_game_recap_task.delay(game.id_hash, "nfl")
             dispatched += 1
@@ -175,25 +185,36 @@ def generate_game_recap_task(self, game_id_hash, league):
 
 def _resolve_game(game_id_hash, league):
     """Resolve a game/match object from id_hash and league string."""
-    try:
-        if league == "epl":
-            from epl.matches.models import Match
+    if league == "epl":
+        from epl.matches.models import Match
 
+        try:
             return Match.objects.select_related("home_team", "away_team").get(
                 id_hash=game_id_hash
             )
-        elif league == "nba":
-            from nba.games.models import Game
+        except (Match.DoesNotExist, ValueError):
+            logger.info("EPL match not found: id_hash=%s", game_id_hash)
+            return None
+    elif league == "nba":
+        from nba.games.models import Game
 
+        try:
             return Game.objects.select_related("home_team", "away_team").get(
                 id_hash=game_id_hash
             )
-        elif league == "nfl":
-            from nfl.games.models import Game
+        except (Game.DoesNotExist, ValueError):
+            logger.info("NBA game not found: id_hash=%s", game_id_hash)
+            return None
+    elif league == "nfl":
+        from nfl.games.models import Game
 
+        try:
             return Game.objects.select_related("home_team", "away_team").get(
                 id_hash=game_id_hash
             )
-    except Exception:
-        return None
+        except (Game.DoesNotExist, ValueError):
+            logger.info("NFL game not found: id_hash=%s", game_id_hash)
+            return None
+
+    logger.warning("Unknown league for game resolution: %s", league)
     return None

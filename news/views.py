@@ -20,7 +20,8 @@ class ArticleListView(ListView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx["current_league"] = self.request.GET.get("league", "")
+        league = self.request.GET.get("league", "")
+        ctx["current_league"] = league if league in ("epl", "nba", "nfl") else ""
         ctx["league_choices"] = [("epl", "EPL"), ("nba", "NBA"), ("nfl", "NFL")]
         return ctx
 

@@ -632,18 +632,14 @@ def _build_nba_recap(game, bot_profile):
 
         # Spread/total result
         if odds.spread_line is not None and game.home_score is not None:
-            margin = game.home_score - game.away_score
-            covered_spread = (
-                margin > -odds.spread_line
-                if odds.spread_line < 0
-                else margin > odds.spread_line
+            _, spread_text = _spread_result(
+                game.home_score,
+                game.away_score,
+                odds.spread_line,
+                game.home_team.abbreviation,
+                game.away_team.abbreviation,
             )
-            spread_team = (
-                game.home_team.abbreviation
-                if covered_spread
-                else game.away_team.abbreviation
-            )
-            lines.append(f"**Spread result**: {spread_team} covered")
+            lines.append(f"**Spread result**: {spread_text}")
 
         if odds.total_line is not None and game.home_score is not None:
             actual_total = game.home_score + game.away_score
@@ -751,18 +747,14 @@ def _build_nfl_recap(game, bot_profile):
 
         # Spread/total result
         if odds.spread_line is not None and game.home_score is not None:
-            margin = game.home_score - game.away_score
-            covered_spread = (
-                margin > -odds.spread_line
-                if odds.spread_line < 0
-                else margin > odds.spread_line
+            _, spread_text = _spread_result(
+                game.home_score,
+                game.away_score,
+                odds.spread_line,
+                game.home_team.abbreviation,
+                game.away_team.abbreviation,
             )
-            spread_team = (
-                game.home_team.abbreviation
-                if covered_spread
-                else game.away_team.abbreviation
-            )
-            lines.append(f"**Spread result**: {spread_team} covered")
+            lines.append(f"**Spread result**: {spread_text}")
 
         if odds.total_line is not None and game.home_score is not None:
             actual_total = game.home_score + game.away_score
@@ -982,20 +974,16 @@ def _build_nba_roundup():
         details = []
         if odds:
             if odds.spread_line is not None:
-                margin = game.home_score - game.away_score
-                home_covered = (
-                    margin > -odds.spread_line
-                    if odds.spread_line < 0
-                    else margin > odds.spread_line
+                home_covered, spread_text = _spread_result(
+                    game.home_score,
+                    game.away_score,
+                    odds.spread_line,
+                    game.home_team.abbreviation,
+                    game.away_team.abbreviation,
                 )
-                cover_team = (
-                    game.home_team.abbreviation
-                    if home_covered
-                    else game.away_team.abbreviation
-                )
-                details.append(f"{cover_team} covered {odds.spread_line:+g}")
+                details.append(spread_text)
                 games_with_spread += 1
-                if home_covered:
+                if home_covered is True:
                     covers += 1
 
             if odds.total_line is not None:
@@ -1104,20 +1092,16 @@ def _build_nfl_roundup():
         details = []
         if odds:
             if odds.spread_line is not None:
-                margin = game.home_score - game.away_score
-                home_covered = (
-                    margin > -odds.spread_line
-                    if odds.spread_line < 0
-                    else margin > odds.spread_line
+                home_covered, spread_text = _spread_result(
+                    game.home_score,
+                    game.away_score,
+                    odds.spread_line,
+                    game.home_team.abbreviation,
+                    game.away_team.abbreviation,
                 )
-                cover_team = (
-                    game.home_team.abbreviation
-                    if home_covered
-                    else game.away_team.abbreviation
-                )
-                details.append(f"{cover_team} covered {odds.spread_line:+g}")
+                details.append(spread_text)
                 games_with_spread += 1
-                if home_covered:
+                if home_covered is True:
                     covers += 1
 
             if odds.total_line is not None:
@@ -1727,6 +1711,25 @@ def _filter_article(title, body):
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
+
+def _spread_result(home_score, away_score, spread_line, home_abbr, away_abbr):
+    """
+    Determine which side covered the spread, or if it was a push.
+
+    spread_line is from the home team's perspective:
+    - Negative means home is favored (laying points)
+    - Positive means home is underdog (getting points)
+
+    Returns (home_covered, text) where home_covered is True/False/None (push).
+    """
+    margin = home_score - away_score
+    ats_margin = margin + spread_line
+    if ats_margin > 0:
+        return True, f"{home_abbr} covered"
+    elif ats_margin < 0:
+        return False, f"{away_abbr} covered"
+    return None, "PUSH"
 
 
 def _get_game_url(league, game_obj):

@@ -1,27 +1,29 @@
-<div id="article-feed" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-    {% for article in articles %}
-        {% include "news/partials/article_card.html" %}
-    {% empty %}
-    <p class="text-sm text-muted col-span-full text-center py-8">No articles yet. Check back soon.</p>
-    {% endfor %}
-</div>
+<div id="article-feed">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for article in articles %}
+            {% include "news/partials/article_card.html" %}
+        {% empty %}
+        <p class="text-sm text-muted col-span-full text-center py-8">No articles yet. Check back soon.</p>
+        {% endfor %}
+    </div>
 
-{% if is_paginated %}
-<div class="flex justify-center gap-2 mt-8">
-    {% if page_obj.has_previous %}
-    <a href="?{% if current_league %}league={{ current_league }}&{% endif %}page={{ page_obj.previous_page_number }}"
-       class="px-4 py-2 rounded-lg bg-surface-container-lowest border border-outline-variant text-sm font-label font-bold uppercase tracking-wider text-secondary hover:border-primary transition-colors">
-        Previous
-    </a>
-    {% endif %}
-    <span class="px-4 py-2 text-sm font-label text-muted">
-        Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
-    </span>
-    {% if page_obj.has_next %}
-    <a href="?{% if current_league %}league={{ current_league }}&{% endif %}page={{ page_obj.next_page_number }}"
-       class="px-4 py-2 rounded-lg bg-surface-container-lowest border border-outline-variant text-sm font-label font-bold uppercase tracking-wider text-secondary hover:border-primary transition-colors">
-        Next
-    </a>
+    {% if is_paginated %}
+    <div class="flex justify-center gap-2 mt-8">
+        {% if page_obj.has_previous %}
+        <a href="?{% if current_league %}league={{ current_league }}&{% endif %}page={{ page_obj.previous_page_number }}"
+           class="px-4 py-2 rounded-lg bg-surface-container-lowest border border-outline-variant text-sm font-label font-bold uppercase tracking-wider text-secondary hover:border-primary transition-colors">
+            Previous
+        </a>
+        {% endif %}
+        <span class="px-4 py-2 text-sm font-label text-muted">
+            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+        </span>
+        {% if page_obj.has_next %}
+        <a href="?{% if current_league %}league={{ current_league }}&{% endif %}page={{ page_obj.next_page_number }}"
+           class="px-4 py-2 rounded-lg bg-surface-container-lowest border border-outline-variant text-sm font-label font-bold uppercase tracking-wider text-secondary hover:border-primary transition-colors">
+            Next
+        </a>
+        {% endif %}
+    </div>
     {% endif %}
 </div>
-{% endif %}
