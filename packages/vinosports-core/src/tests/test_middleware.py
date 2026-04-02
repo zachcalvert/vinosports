@@ -55,10 +55,12 @@ class TestBotScannerBlockMiddleware:
         assert response.status_code == 200
 
 
-@override_settings(RATE_LIMIT_REQUESTS=3, RATE_LIMIT_WINDOW=60)
 class TestRateLimitMiddleware:
     def _make_mw(self):
-        return RateLimitMiddleware(_make_response)
+        mw = RateLimitMiddleware(_make_response)
+        mw.max_requests = 3
+        mw.window = 60
+        return mw
 
     def _anon_request(self, rf, path="/nba/games/schedule/"):
         request = rf.get(path)
