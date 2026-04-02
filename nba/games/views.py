@@ -1,6 +1,6 @@
 from datetime import timedelta
 
-from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.contrib.auth.mixins import UserPassesTestMixin
 from django.db.models import Count, Prefetch, Q, Sum
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -26,7 +26,7 @@ from nba.games.models import (
 from vinosports.betting.models import BetStatus
 
 
-class ScheduleView(LoginRequiredMixin, View):
+class ScheduleView(View):
     def get(self, request):
         date_str = request.GET.get("date")
         conference = request.GET.get("conference")
@@ -118,7 +118,7 @@ class ScheduleView(LoginRequiredMixin, View):
         return render(request, "games/schedule.html", ctx)
 
 
-class StandingsView(LoginRequiredMixin, View):
+class StandingsView(View):
     def get(self, request):
         from nba.games.tasks import _current_season
 
@@ -173,7 +173,7 @@ class StandingsView(LoginRequiredMixin, View):
         return render(request, "games/standings.html", ctx)
 
 
-class PlayerListView(LoginRequiredMixin, View):
+class PlayerListView(View):
     def get(self, request):
         team_abbr = request.GET.get("team")
         position = request.GET.get("position")
@@ -200,7 +200,7 @@ class PlayerListView(LoginRequiredMixin, View):
         return render(request, "games/player_list.html", ctx)
 
 
-class PlayerDetailView(LoginRequiredMixin, View):
+class PlayerDetailView(View):
     def get(self, request, slug):
         id_hash = slug.rsplit("-", 1)[-1]
         player = get_object_or_404(
@@ -251,7 +251,7 @@ class PlayerDetailView(LoginRequiredMixin, View):
         return render(request, "games/player_detail.html", ctx)
 
 
-class TeamDetailView(LoginRequiredMixin, View):
+class TeamDetailView(View):
     def get(self, request, abbreviation):
         from nba.games.tasks import _current_season
 
@@ -535,7 +535,7 @@ def _get_box_score_context(game):
     }
 
 
-class GameDetailView(LoginRequiredMixin, View):
+class GameDetailView(View):
     def get(self, request, id_hash):
         game = get_object_or_404(
             Game.objects.select_related("home_team", "away_team"),
@@ -595,9 +595,12 @@ class GameDetailView(LoginRequiredMixin, View):
         if game.status == GameStatus.FINAL:
             recap_ctx = _get_recap_context(game)
 
-        user_bets = BetSlip.objects.filter(user=request.user, game=game).order_by(
-            "-created_at"
-        )
+        if request.user.is_authenticated:
+            user_bets = BetSlip.objects.filter(user=request.user, game=game).order_by(
+                "-created_at"
+            )
+        else:
+            user_bets = BetSlip.objects.none()
 
         # Team standings (records)
         season = game.season

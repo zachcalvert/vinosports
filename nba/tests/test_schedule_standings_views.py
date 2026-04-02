@@ -41,9 +41,9 @@ def _all_schedule_games(response):
 
 @pytest.mark.django_db
 class TestScheduleView:
-    def test_unauthenticated_redirected(self):
+    def test_anonymous_user_can_browse(self):
         response = Client().get("/nba/games/schedule/")
-        assert response.status_code in (301, 302)
+        assert response.status_code == 200
 
     def test_returns_200(self, auth_client):
         response = auth_client.get("/nba/games/schedule/")
@@ -136,9 +136,9 @@ class TestScheduleView:
 
 @pytest.mark.django_db
 class TestStandingsView:
-    def test_unauthenticated_redirected(self):
+    def test_anonymous_user_can_browse(self):
         response = Client().get("/nba/games/standings/")
-        assert response.status_code in (301, 302)
+        assert response.status_code == 200
 
     def test_returns_200(self, auth_client):
         response = auth_client.get("/nba/games/standings/")

@@ -97,9 +97,8 @@ class TestPlayerDetailView:
         assert resp.status_code == 301
         assert resp.url == f"/nba/games/players/{player.slug}/"
 
-    def test_requires_login_redirects_anonymous(self):
+    def test_anonymous_user_can_browse(self):
         player = PlayerFactory()
         anon_client = Client()
         resp = anon_client.get(f"/nba/games/players/{player.slug}/")
-        assert resp.status_code == 302
-        assert "/login/" in resp.url
+        assert resp.status_code == 200

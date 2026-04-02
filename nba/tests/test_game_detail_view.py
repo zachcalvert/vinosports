@@ -23,11 +23,11 @@ def auth_client(db):
 
 @pytest.mark.django_db
 class TestGameDetailView:
-    def test_unauthenticated_redirected(self):
+    def test_anonymous_user_can_browse(self):
         c = Client()
         game = GameFactory()
         response = c.get(f"/nba/games/{game.id_hash}/")
-        assert response.status_code in (301, 302)
+        assert response.status_code == 200
 
     def test_authenticated_user_gets_200(self, auth_client):
         c, user = auth_client

@@ -12,7 +12,7 @@ from vinosports.betting.models import BalanceTransaction, UserBalance, UserStats
 User = get_user_model()
 
 
-class DashboardView(LoginRequiredMixin, View):
+class DashboardView(View):
     def get(self, request):
         from nba.games.services import today_et
 
