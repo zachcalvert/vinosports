@@ -558,6 +558,15 @@ LOGGING = {
             "handlers": [],
             "propagate": False,
         },
+        "epl.activity.tasks": {
+            "level": "WARNING",
+        },
+        "nba.activity.tasks": {
+            "level": "WARNING",
+        },
+        "nfl.activity.tasks": {
+            "level": "WARNING",
+        },
     },
 }
 

@@ -39,7 +39,7 @@ def broadcast_next_activity_event():
             "event_type": event.event_type,
         },
     )
-    logger.info("Broadcast activity event: %s", event.message)
+    logger.debug("Broadcast activity event: %s", event.message)
 
 
 @shared_task
