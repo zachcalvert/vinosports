@@ -24,7 +24,9 @@ pytestmark = pytest.mark.django_db
 
 class TestBuildCrossLeaguePrompt:
     def test_returns_none_when_no_data(self):
-        prompt = _build_cross_league_prompt()
+        prompt = _build_cross_league_prompt(
+            BotProfileFactory(nba_team_abbr="", epl_team_tla="", nfl_team_abbr="")
+        )
         assert prompt is None
 
     def test_includes_nba_section_when_games_exist(self):
@@ -39,7 +41,9 @@ class TestBuildCrossLeaguePrompt:
             away_score=98,
         )
 
-        prompt = _build_cross_league_prompt()
+        prompt = _build_cross_league_prompt(
+            BotProfileFactory(nba_team_abbr="", epl_team_tla="", nfl_team_abbr="")
+        )
         assert prompt is not None
         assert "NBA" in prompt
         assert "110" in prompt
@@ -59,7 +63,9 @@ class TestBuildCrossLeaguePrompt:
             away_score=0,
         )
 
-        prompt = _build_cross_league_prompt()
+        prompt = _build_cross_league_prompt(
+            BotProfileFactory(nba_team_abbr="", epl_team_tla="", nfl_team_abbr="")
+        )
         assert prompt is not None
         assert "Premier League" in prompt
 
@@ -76,7 +82,9 @@ class TestBuildCrossLeaguePrompt:
             week=5,
         )
 
-        prompt = _build_cross_league_prompt()
+        prompt = _build_cross_league_prompt(
+            BotProfileFactory(nba_team_abbr="", epl_team_tla="", nfl_team_abbr="")
+        )
         assert prompt is not None
         assert "NFL" in prompt
         assert "Week 5" in prompt
@@ -101,7 +109,9 @@ class TestBuildCrossLeaguePrompt:
             away_score=21,
         )
 
-        prompt = _build_cross_league_prompt()
+        prompt = _build_cross_league_prompt(
+            BotProfileFactory(nba_team_abbr="", epl_team_tla="", nfl_team_abbr="")
+        )
         assert prompt is not None
         assert "NBA" in prompt
         assert "NFL" in prompt
@@ -115,7 +125,9 @@ class TestBuildCrossLeaguePrompt:
             status=GameStatus.FINAL, game_date=start, home_score=100, away_score=90
         )
 
-        prompt = _build_cross_league_prompt()
+        prompt = _build_cross_league_prompt(
+            BotProfileFactory(nba_team_abbr="", epl_team_tla="", nfl_team_abbr="")
+        )
         assert "TITLE:" in prompt
         assert "SUBTITLE:" in prompt
         assert "cross-league" in prompt.lower()
@@ -140,7 +152,9 @@ class TestBuildCrossLeaguePrompt:
             net_profit=500,
         )
 
-        prompt = _build_cross_league_prompt()
+        prompt = _build_cross_league_prompt(
+            BotProfileFactory(nba_team_abbr="", epl_team_tla="", nfl_team_abbr="")
+        )
         assert "leaderboard" in prompt.lower() or "Cross-league" in prompt
 
 

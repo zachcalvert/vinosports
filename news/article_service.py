@@ -20,7 +20,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from news.models import NewsArticle
-from vinosports.bots.models import BotProfile
+from vinosports.bots.models import BotProfile, StrategyType
 
 logger = logging.getLogger(__name__)
 
@@ -230,7 +230,7 @@ def generate_weekly_roundup(league):
     system_prompt = bot_profile.persona_prompt
 
     # Build roundup prompt with aggregated data
-    user_prompt = _build_roundup_prompt(league)
+    user_prompt = _build_roundup_prompt(league, bot_profile)
     if user_prompt is None:
         logger.info("No games last week for roundup: league=%s", league)
         return None
@@ -302,7 +302,7 @@ def generate_betting_trend(league):
     bot_profile = BotProfile.objects.get(user=bot_user)
     system_prompt = bot_profile.persona_prompt
 
-    user_prompt = _build_trend_prompt(league)
+    user_prompt = _build_trend_prompt(league, bot_profile)
     if user_prompt is None:
         logger.info("No betting data for trend: league=%s", league)
         return None
@@ -371,7 +371,7 @@ def generate_cross_league_article():
     bot_profile = BotProfile.objects.get(user=bot_user)
     system_prompt = bot_profile.persona_prompt
 
-    user_prompt = _build_cross_league_prompt()
+    user_prompt = _build_cross_league_prompt(bot_profile)
     if user_prompt is None:
         logger.info("No data for cross-league article")
         return None
@@ -532,6 +532,136 @@ def _select_analyst_bot(league):
 # ---------------------------------------------------------------------------
 
 
+STRATEGY_WRITING_HINTS = {
+    StrategyType.FRONTRUNNER: "You ride with favorites and big names. When they win, you saw it coming. When they lose, it's a fluke. Lean into your confidence — you trust the chalk.",
+    StrategyType.UNDERDOG: "You live for upsets and always see value in the dog. When underdogs cash, you're euphoric. When favorites cruise, you're already hunting the next upset.",
+    StrategyType.SPREAD_SHARK: "You're all about the number. Margins matter more than winners. You see games through the lens of the spread — a win by 1 is a loss if they were -3.",
+    StrategyType.PARLAY: "You're a parlay degen and proud of it. You love stacking legs for big payoffs. When they hit, you're insufferable. When one leg busts, you tell the tragic tale.",
+    StrategyType.TOTAL_GURU: "You see the game through points — overs, unders, pace, defense. You care less about who wins and more about whether the total hits.",
+    StrategyType.DRAW_SPECIALIST: "You're the contrarian who sees draws everywhere. You love the value in a result most bettors ignore, and you never miss a chance to say 'I told you so' when one hits.",
+    StrategyType.VALUE_HUNTER: "You're obsessed with odds vs. probability. You don't care who wins — you care about whether the price was right. Frame everything through expected value.",
+    StrategyType.CHAOS_AGENT: "You love chaos, variance, and wild outcomes. Blowouts bore you. Overtimes, backdoor covers, and improbable collapses are your bread and butter.",
+    StrategyType.ALL_IN_ALICE: "You go big or go home. Every bet is max conviction. Your wins are massive celebrations and your losses are spectacular flameouts you wear as badges of honor.",
+    StrategyType.HOMER: "You're a ride-or-die fan of your team. Everything you write is colored by your loyalty — your team's wins are triumphs for the ages, their losses are referee conspiracies or flukes.",
+    StrategyType.ANTI_HOMER: "You bet against your own team because you 'know them too well.' You have a complicated, jaded relationship with your squad and it shows in your writing.",
+}
+
+
+def _build_bot_personality_lines(bot_profile):
+    """Build prompt lines that inject the bot's betting identity and strategy."""
+    lines = []
+
+    if bot_profile.strategy_type:
+        hint = STRATEGY_WRITING_HINTS.get(bot_profile.strategy_type, "")
+        label = bot_profile.get_strategy_type_display()
+        lines.extend(
+            [
+                "",
+                f"**Your betting identity**: {label}",
+            ]
+        )
+        if hint:
+            lines.append(f"**Writing guidance**: {hint}")
+
+    if bot_profile.tagline:
+        lines.append(f'**Your tagline**: "{bot_profile.tagline}"')
+
+    return lines
+
+
+def _build_bot_bet_on_game_lines(league, game_obj, bot_user):
+    """
+    Fetch the bot's own bet(s) on this specific game and format as prompt lines.
+    Also pulls recent betting record (last 20 settled bets) for context.
+    """
+    lines = []
+
+    if league == "epl":
+        from epl.betting.models import BetSlip
+
+        bot_bets = BetSlip.objects.filter(user=bot_user, match=game_obj).select_related(
+            "match"
+        )
+        recent_bets = BetSlip.objects.filter(
+            user=bot_user, status__in=["WON", "LOST"]
+        ).order_by("-created_at")[:20]
+    elif league == "nba":
+        from nba.betting.models import BetSlip
+
+        bot_bets = BetSlip.objects.filter(user=bot_user, game=game_obj).select_related(
+            "game"
+        )
+        recent_bets = BetSlip.objects.filter(
+            user=bot_user, status__in=["WON", "LOST"]
+        ).order_by("-created_at")[:20]
+    elif league == "nfl":
+        from nfl.betting.models import BetSlip
+
+        bot_bets = BetSlip.objects.filter(user=bot_user, game=game_obj).select_related(
+            "game"
+        )
+        recent_bets = BetSlip.objects.filter(
+            user=bot_user, status__in=["WON", "LOST"]
+        ).order_by("-created_at")[:20]
+    else:
+        return lines
+
+    # Bot's bet(s) on this game
+    if bot_bets.exists():
+        lines.extend(["", "**YOUR bet on this game**:"])
+        for bet in bot_bets:
+            bet_desc = f"- {bet.selection}"
+            if hasattr(bet, "market"):
+                bet_desc = f"- {bet.get_market_display()}: {bet.selection}"
+            if hasattr(bet, "line") and bet.line is not None:
+                bet_desc += f" ({bet.line:+g})"
+            bet_desc += f" — staked {bet.stake}"
+            if bet.status == "WON":
+                bet_desc += f" ✅ WON (payout: {bet.payout})"
+            elif bet.status == "LOST":
+                bet_desc += " ❌ LOST"
+            elif bet.status == "PENDING":
+                bet_desc += " (pending)"
+            lines.append(bet_desc)
+
+        lines.append("")
+        lines.append(
+            "This is YOUR bet — write about the game from the perspective of someone "
+            "who had money on it. If you won, gloat, celebrate, talk about how you saw it coming. "
+            "If you lost, be honest about it — vent, make excuses, find silver linings, "
+            "or own the bad beat depending on your personality."
+        )
+    else:
+        lines.extend(
+            [
+                "",
+                "**You did not bet on this game** — write as an observer, but still bring your "
+                "betting perspective and opinions about where the value was.",
+            ]
+        )
+
+    # Recent record
+    if recent_bets:
+        wins = sum(1 for b in recent_bets if b.status == "WON")
+        losses = sum(1 for b in recent_bets if b.status == "LOST")
+        lines.extend(
+            [
+                "",
+                f"**Your recent form**: {wins}W-{losses}L in your last {wins + losses} bets",
+            ]
+        )
+        if wins + losses >= 5:
+            rate = wins / (wins + losses) * 100
+            if rate >= 60:
+                lines.append("You're on a hot streak — let that confidence show.")
+            elif rate <= 35:
+                lines.append(
+                    "You've been cold lately — that frustration or self-deprecation can color your writing."
+                )
+
+    return lines
+
+
 def _build_recap_prompt(league, game_obj, bot_profile):
     """Dispatch to league-specific prompt builder."""
     builders = {
@@ -595,9 +725,12 @@ def _build_epl_recap(match, bot_profile):
         if popular:
             lines.append(f"**Most popular selection**: {popular['selection']}")
 
-    # Bot team affiliation context
+    # Bot personality and betting context
     if bot_profile.epl_team_tla:
         lines.extend(["", f"**Your team**: {bot_profile.epl_team_tla}"])
+    lines.extend(_build_bot_personality_lines(bot_profile))
+    lines.extend(_build_bot_bet_on_game_lines("epl", match, bot_profile.user))
+    lines.extend(["", f"**Your persona**: {bot_profile.persona_prompt}"])
 
     lines.extend(_article_format_instructions())
     return "\n".join(lines)
@@ -690,9 +823,12 @@ def _build_nba_recap(game, bot_profile):
         if popular:
             lines.append(f"**Most popular selection**: {popular['selection']}")
 
-    # Bot team affiliation context
+    # Bot personality and betting context
     if bot_profile.nba_team_abbr:
         lines.extend(["", f"**Your team**: {bot_profile.nba_team_abbr}"])
+    lines.extend(_build_bot_personality_lines(bot_profile))
+    lines.extend(_build_bot_bet_on_game_lines("nba", game, bot_profile.user))
+    lines.extend(["", f"**Your persona**: {bot_profile.persona_prompt}"])
 
     lines.extend(_article_format_instructions())
     return "\n".join(lines)
@@ -805,9 +941,12 @@ def _build_nfl_recap(game, bot_profile):
         if popular:
             lines.append(f"**Most popular selection**: {popular['selection']}")
 
-    # Bot team affiliation context
+    # Bot personality and betting context
     if bot_profile.nfl_team_abbr:
         lines.extend(["", f"**Your team**: {bot_profile.nfl_team_abbr}"])
+    lines.extend(_build_bot_personality_lines(bot_profile))
+    lines.extend(_build_bot_bet_on_game_lines("nfl", game, bot_profile.user))
+    lines.extend(["", f"**Your persona**: {bot_profile.persona_prompt}"])
 
     lines.extend(_article_format_instructions())
     return "\n".join(lines)
@@ -824,9 +963,13 @@ def _article_format_instructions():
         "2. A one-sentence subtitle (on its own line, prefixed with SUBTITLE:)",
         "3. The article body",
         "",
-        "Write in your voice — opinionated, entertaining, with betting angles woven in naturally.",
-        "Focus on what actually happened in the game, informed by the game notes if available.",
+        "CRITICAL — this is NOT a generic ESPN recap. You are a personality, not a journalist.",
+        "Write in FIRST PERSON. Use 'I', share your reactions, your bets, your biases.",
+        "Your persona, betting strategy, and team loyalty should drip from every sentence.",
+        "If you bet on this game, the article should be colored by that outcome — celebrate, vent, cope, gloat.",
+        "If your team played, be unapologetically biased.",
         "Reference the spread/total result where relevant.",
+        "Focus on what actually happened in the game, informed by the game notes if available.",
         "Keep it under 500 words.",
     ]
 
@@ -836,14 +979,14 @@ def _article_format_instructions():
 # ---------------------------------------------------------------------------
 
 
-def _build_roundup_prompt(league):
+def _build_roundup_prompt(league, bot_profile):
     """Dispatch to league-specific roundup prompt builder."""
     builders = {
         "epl": _build_epl_roundup,
         "nba": _build_nba_roundup,
         "nfl": _build_nfl_roundup,
     }
-    return builders[league]()
+    return builders[league](bot_profile)
 
 
 def _get_last_week_range():
@@ -856,7 +999,7 @@ def _get_last_week_range():
     return last_monday, last_sunday
 
 
-def _build_epl_roundup():
+def _build_epl_roundup(bot_profile):
     """Build roundup prompt for EPL — last week's matches, standings, betting."""
     from epl.betting.models import BetSlip
     from epl.matches.models import Match, Standing
@@ -938,11 +1081,13 @@ def _build_epl_roundup():
             selections = ", ".join(f"{p['selection']} ({p['count']})" for p in popular)
             lines.append(f"**Popular selections**: {selections}")
 
+    lines.extend(_build_bot_personality_lines(bot_profile))
+    lines.extend(["", f"**Your persona**: {bot_profile.persona_prompt}"])
     lines.extend(_roundup_format_instructions("Premier League"))
     return "\n".join(lines)
 
 
-def _build_nba_roundup():
+def _build_nba_roundup(bot_profile):
     """Build roundup prompt for NBA — last week's games, standings, betting."""
     from nba.betting.models import BetSlip
     from nba.games.models import Game, GameStatus, Standing
@@ -1051,11 +1196,13 @@ def _build_nba_roundup():
             ]
         )
 
+    lines.extend(_build_bot_personality_lines(bot_profile))
+    lines.extend(["", f"**Your persona**: {bot_profile.persona_prompt}"])
     lines.extend(_roundup_format_instructions("NBA"))
     return "\n".join(lines)
 
 
-def _build_nfl_roundup():
+def _build_nfl_roundup(bot_profile):
     """Build roundup prompt for NFL — last week's games, standings, betting."""
     from nfl.betting.models import BetSlip, Odds
     from nfl.games.models import Game, GameStatus, Standing
@@ -1168,6 +1315,8 @@ def _build_nfl_roundup():
             ]
         )
 
+    lines.extend(_build_bot_personality_lines(bot_profile))
+    lines.extend(["", f"**Your persona**: {bot_profile.persona_prompt}"])
     lines.extend(_roundup_format_instructions("NFL"))
     return "\n".join(lines)
 
@@ -1183,7 +1332,9 @@ def _roundup_format_instructions(league_name):
         "2. A one-sentence subtitle (on its own line, prefixed with SUBTITLE:)",
         "3. The article body",
         "",
+        "Write in FIRST PERSON. You are a personality with opinions, not a wire service.",
         "Cover the biggest storylines, betting trends, and what to watch next week.",
+        "Your betting strategy and biases should shape which storylines you emphasize.",
         "Opinionated and entertaining. Under 600 words.",
     ]
 
@@ -1196,14 +1347,14 @@ def _roundup_format_instructions(league_name):
 TREND_LOOKBACK_DAYS = 14
 
 
-def _build_trend_prompt(league):
+def _build_trend_prompt(league, bot_profile):
     """Dispatch to league-specific trend prompt builder."""
     builders = {
         "epl": _build_epl_trend,
         "nba": _build_nba_trend,
         "nfl": _build_nfl_trend,
     }
-    return builders[league]()
+    return builders[league](bot_profile)
 
 
 def _build_betting_stats_section(bet_qs, has_market=True):
@@ -1307,7 +1458,7 @@ def _build_top_bettors_section():
     return lines
 
 
-def _build_epl_trend():
+def _build_epl_trend(bot_profile):
     """Build trend prompt for EPL — betting activity over the last 2 weeks."""
     from epl.betting.models import BetSlip
 
@@ -1343,11 +1494,13 @@ def _build_epl_trend():
             lines.append(f"- {s['selection']}: {s['wins']}/{s['total']} ({rate:.1f}%)")
 
     lines.extend(_build_top_bettors_section())
+    lines.extend(_build_bot_personality_lines(bot_profile))
+    lines.extend(["", f"**Your persona**: {bot_profile.persona_prompt}"])
     lines.extend(_trend_format_instructions("Premier League"))
     return "\n".join(lines)
 
 
-def _build_nba_trend():
+def _build_nba_trend(bot_profile):
     """Build trend prompt for NBA — betting activity over the last 2 weeks."""
     from nba.betting.models import BetSlip
 
@@ -1366,11 +1519,13 @@ def _build_nba_trend():
 
     lines.extend(_build_betting_stats_section(recent_bets, has_market=True))
     lines.extend(_build_top_bettors_section())
+    lines.extend(_build_bot_personality_lines(bot_profile))
+    lines.extend(["", f"**Your persona**: {bot_profile.persona_prompt}"])
     lines.extend(_trend_format_instructions("NBA"))
     return "\n".join(lines)
 
 
-def _build_nfl_trend():
+def _build_nfl_trend(bot_profile):
     """Build trend prompt for NFL — betting activity over the last 2 weeks."""
     from nfl.betting.models import BetSlip
 
@@ -1389,6 +1544,8 @@ def _build_nfl_trend():
 
     lines.extend(_build_betting_stats_section(recent_bets, has_market=True))
     lines.extend(_build_top_bettors_section())
+    lines.extend(_build_bot_personality_lines(bot_profile))
+    lines.extend(["", f"**Your persona**: {bot_profile.persona_prompt}"])
     lines.extend(_trend_format_instructions("NFL"))
     return "\n".join(lines)
 
@@ -1404,9 +1561,10 @@ def _trend_format_instructions(league_name):
         "2. A one-sentence subtitle (on its own line, prefixed with SUBTITLE:)",
         "3. The article body",
         "",
-        "Analyze what the betting data reveals — which markets are hot, who's on a streak,",
-        "and what the community should watch for. Be opinionated about where the value is.",
-        "Under 500 words.",
+        "Write in FIRST PERSON. You are a personality with opinions, not a wire service.",
+        "Analyze what the betting data reveals through the lens of YOUR betting strategy.",
+        "Which markets are hot, who's on a streak, and where do YOU see value?",
+        "Be opinionated and specific. Under 500 words.",
     ]
 
 
@@ -1415,7 +1573,7 @@ def _trend_format_instructions(league_name):
 # ---------------------------------------------------------------------------
 
 
-def _build_cross_league_prompt():
+def _build_cross_league_prompt(bot_profile):
     """
     Build a prompt combining data from all three leagues.
 
@@ -1464,6 +1622,8 @@ def _build_cross_league_prompt():
         lines.extend(["", "---", ""])
         lines.extend(cross_league_stats)
 
+    lines.extend(_build_bot_personality_lines(bot_profile))
+    lines.extend(["", f"**Your persona**: {bot_profile.persona_prompt}"])
     lines.extend(_cross_league_format_instructions())
     return "\n".join(lines)
 
@@ -1635,8 +1795,9 @@ def _cross_league_format_instructions():
         "2. A one-sentence subtitle (on its own line, prefixed with SUBTITLE:)",
         "3. The article body",
         "",
-        "Connect the dots across leagues — compare betting trends, highlight the biggest ",
-        "storylines from each league, and preview what to watch this weekend.",
+        "Write in FIRST PERSON. You are a personality with opinions, not a wire service.",
+        "Connect the dots across leagues through YOUR betting lens — where do you see value,",
+        "what trends match your strategy, and what are you actually betting this weekend?",
         "Be opinionated and entertaining. Under 600 words.",
     ]
 

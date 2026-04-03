@@ -191,13 +191,19 @@ class TestBuildRecapPrompt:
     @pytest.fixture(autouse=True)
     def _patch_nba_models(self):
         """Patch ORM manager methods to avoid DB hits on mock game objects."""
+        from nba.betting.models import BetSlip as NbaBetSlip
         from nba.games.models import GameNotes, Odds
 
         with (
             patch.object(Odds.objects, "filter") as mock_filter,
             patch.object(GameNotes.objects, "get", side_effect=GameNotes.DoesNotExist),
+            patch.object(NbaBetSlip.objects, "filter") as mock_bet_filter,
         ):
             mock_filter.return_value.order_by.return_value.first.return_value = None
+            mock_bet_filter.return_value.exists.return_value = False
+            mock_bet_filter.return_value.order_by.return_value.__getitem__ = (
+                lambda s, k: []
+            )
             yield
 
     def _make_nba_game(self):
@@ -262,13 +268,19 @@ class TestGenerateGameRecap:
     @pytest.fixture(autouse=True)
     def _patch_nba_models(self):
         """Patch ORM manager methods to avoid DB hits on mock game objects."""
+        from nba.betting.models import BetSlip as NbaBetSlip
         from nba.games.models import GameNotes, Odds
 
         with (
             patch.object(Odds.objects, "filter") as mock_filter,
             patch.object(GameNotes.objects, "get", side_effect=GameNotes.DoesNotExist),
+            patch.object(NbaBetSlip.objects, "filter") as mock_bet_filter,
         ):
             mock_filter.return_value.order_by.return_value.first.return_value = None
+            mock_bet_filter.return_value.exists.return_value = False
+            mock_bet_filter.return_value.order_by.return_value.__getitem__ = (
+                lambda s, k: []
+            )
             yield
 
     def _make_mock_game(self):

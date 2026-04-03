@@ -104,20 +104,20 @@ class TestBuildNbaRoundup:
         )
 
     def test_returns_prompt_with_results(self):
-        prompt = _build_roundup_prompt("nba")
+        prompt = _build_roundup_prompt("nba", BotProfileFactory(nba_team_abbr=""))
         assert prompt is not None
         assert "Results this week" in prompt
         assert "110" in prompt
         assert "102" in prompt
 
     def test_includes_both_games(self):
-        prompt = _build_roundup_prompt("nba")
+        prompt = _build_roundup_prompt("nba", BotProfileFactory(nba_team_abbr=""))
         # Both games should appear
         assert "98" in prompt
         assert "105" in prompt
 
     def test_includes_format_instructions(self):
-        prompt = _build_roundup_prompt("nba")
+        prompt = _build_roundup_prompt("nba", BotProfileFactory(nba_team_abbr=""))
         assert "TITLE:" in prompt
         assert "SUBTITLE:" in prompt
         assert "4-6 paragraphs" in prompt
@@ -128,7 +128,7 @@ class TestBuildNbaRoundup:
         from nba.games.models import Game
 
         Game.objects.all().delete()
-        prompt = _build_roundup_prompt("nba")
+        prompt = _build_roundup_prompt("nba", BotProfileFactory(nba_team_abbr=""))
         assert prompt is None
 
 
@@ -152,7 +152,7 @@ class TestBuildEplRoundup:
         )
 
     def test_returns_prompt_with_results(self):
-        prompt = _build_roundup_prompt("epl")
+        prompt = _build_roundup_prompt("epl", BotProfileFactory(epl_team_tla=""))
         assert prompt is not None
         assert "Results this week" in prompt
         assert "Premier League" in prompt
@@ -161,7 +161,7 @@ class TestBuildEplRoundup:
         from epl.matches.models import Match
 
         Match.objects.all().delete()
-        prompt = _build_roundup_prompt("epl")
+        prompt = _build_roundup_prompt("epl", BotProfileFactory(epl_team_tla=""))
         assert prompt is None
 
 
@@ -182,7 +182,7 @@ class TestBuildNflRoundup:
         )
 
     def test_returns_prompt_with_results(self):
-        prompt = _build_roundup_prompt("nfl")
+        prompt = _build_roundup_prompt("nfl", BotProfileFactory(nfl_team_abbr=""))
         assert prompt is not None
         assert "Results this week" in prompt
         assert "NFL" in prompt
@@ -192,7 +192,7 @@ class TestBuildNflRoundup:
         from nfl.games.models import Game
 
         Game.objects.all().delete()
-        prompt = _build_roundup_prompt("nfl")
+        prompt = _build_roundup_prompt("nfl", BotProfileFactory(nfl_team_abbr=""))
         assert prompt is None
 
 

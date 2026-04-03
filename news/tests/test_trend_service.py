@@ -174,13 +174,13 @@ class TestBuildTrendPrompt:
         BetSlipFactory(status="WON")
         BetSlipFactory(status="LOST")
 
-        prompt = _build_trend_prompt("nba")
+        prompt = _build_trend_prompt("nba", BotProfileFactory(nba_team_abbr=""))
         assert prompt is not None
         assert "NBA" in prompt
         assert "betting trend" in prompt.lower() or "Betting data" in prompt
 
     def test_nba_returns_none_when_no_bets(self):
-        prompt = _build_trend_prompt("nba")
+        prompt = _build_trend_prompt("nba", BotProfileFactory(nba_team_abbr=""))
         assert prompt is None
 
     def test_epl_returns_prompt_with_bets(self):
@@ -188,7 +188,7 @@ class TestBuildTrendPrompt:
 
         BetSlipFactory(status="WON")
 
-        prompt = _build_trend_prompt("epl")
+        prompt = _build_trend_prompt("epl", BotProfileFactory(epl_team_tla=""))
         assert prompt is not None
         assert "Premier League" in prompt
 
@@ -198,7 +198,7 @@ class TestBuildTrendPrompt:
         BetSlipFactory(selection="HOME_WIN", status="WON")
         BetSlipFactory(selection="DRAW", status="LOST")
 
-        prompt = _build_trend_prompt("epl")
+        prompt = _build_trend_prompt("epl", BotProfileFactory(epl_team_tla=""))
         assert "Win rate by selection" in prompt
 
     def test_nfl_returns_prompt_with_bets(self):
@@ -206,7 +206,7 @@ class TestBuildTrendPrompt:
 
         BetSlipFactory(status="WON")
 
-        prompt = _build_trend_prompt("nfl")
+        prompt = _build_trend_prompt("nfl", BotProfileFactory(nfl_team_abbr=""))
         assert prompt is not None
         assert "NFL" in prompt
 
@@ -215,7 +215,7 @@ class TestBuildTrendPrompt:
 
         BetSlipFactory(status="WON")
 
-        prompt = _build_trend_prompt("nba")
+        prompt = _build_trend_prompt("nba", BotProfileFactory(nba_team_abbr=""))
         assert "TITLE:" in prompt
         assert "SUBTITLE:" in prompt
         assert "3-5 paragraphs" in prompt
