@@ -82,11 +82,11 @@
             <span class="font-label font-bold uppercase text-[10px] tracking-widest mt-2 text-surface-dim">Rank</span>
         </div>
         <div class="bg-inverse-surface text-inverse-on-surface p-5 rounded-xl flex flex-col items-center justify-center text-center">
-            <span class="text-3xl md:text-4xl font-headline font-black text-white">{{ stats.total_wins }}W&ndash;{{ stats.total_losses }}L</span>
+            <span class="text-xl md:text-3xl font-headline font-black text-white">{{ stats.total_wins }}W&ndash;{{ stats.total_losses }}L</span>
             <span class="font-label font-bold uppercase text-[10px] tracking-widest mt-2 text-surface-dim">Record</span>
         </div>
         <div class="bg-inverse-surface text-inverse-on-surface p-5 rounded-xl flex flex-col items-center justify-center text-center">
-            <span class="text-3xl md:text-4xl font-headline font-black {% if stats.net_profit > 0 %}text-positive{% elif stats.net_profit < 0 %}text-danger{% else %}text-white{% endif %}">
+            <span class="text-xl md:text-3xl font-headline font-black {% if stats.net_profit > 0 %}text-positive{% elif stats.net_profit < 0 %}text-danger{% else %}text-white{% endif %}">
                 {% if stats.net_profit > 0 %}+{% endif %}{{ stats.net_profit|currency:request.user }}
             </span>
             <span class="font-label font-bold uppercase text-[10px] tracking-widest mt-2 text-surface-dim">Net Profit</span>

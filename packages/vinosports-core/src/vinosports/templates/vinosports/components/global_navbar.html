@@ -62,18 +62,6 @@
         <!-- Right: auth -->
         <div class="flex items-center gap-2 sm:gap-3">
             {% if user.is_authenticated %}
-            {# Inbox icon with badge #}
-            <a href="{% url 'hub:inbox' %}"
-               class="global-nav-inbox"
-               id="inbox-icon"
-               aria-label="Inbox{% if unread_notification_count %} ({{ unread_notification_count }} unread){% endif %}">
-                <i class="ph-duotone ph-envelope-simple text-xl"></i>
-                {% if unread_notification_count %}
-                <span class="inbox-badge" id="inbox-badge">{{ unread_notification_count }}</span>
-                {% else %}
-                <span class="inbox-badge hidden" id="inbox-badge"></span>
-                {% endif %}
-            </a>
             <div class="global-nav-user relative" x-data="{ open: false }">
                 <button type="button"
                         class="global-nav-user-btn"
@@ -365,8 +353,8 @@
     background-color: rgba(72, 95, 132, 0.06);
 }
 .global-nav-avatar {
-    width: 1.5rem;
-    height: 1.5rem;
+    width: 2rem;
+    height: 2rem;
     border-radius: 9999px;
     object-fit: cover;
     border: 1.5px solid #b3262f;
@@ -423,9 +411,8 @@
 @media (max-width: 639px) {
     .global-nav-auth-link { display: none; }
     .global-nav-signup-btn { padding: 0.3125rem 0.625rem; font-size: 0.8125rem; }
-    .global-nav-user-btn { gap: 0.25rem; padding-left: 0.375rem; }
-    .global-nav-user-btn .league-dropdown-chevron { display: none; }
-    #global-user-balance { font-size: 0.75rem; }
+    .global-nav-user-btn { gap: 0.375rem; padding-left: 0.5rem; }
+    #global-user-balance { font-size: 0.875rem; }
 }
 
 /* Alpine x-cloak: hide elements until Alpine initializes */
