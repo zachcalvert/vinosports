@@ -15,4 +15,5 @@ def latest_articles(request):
         "latest_articles": qs[:4],
         "news_list_url_name": f"{ns}:article_list",
         "news_detail_url_name": f"{ns}:article_detail",
+        "news_delete_url_name": f"{ns}:article_delete",
     }

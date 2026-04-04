@@ -1,5 +1,6 @@
 {% load news_filters %}
 <a href="{% url news_detail_url_name article.id_hash %}"
+   id="article-card-{{ article.id_hash }}"
    class="bg-surface-container-lowest rounded-xl border border-outline-variant p-5 block hover:border-primary transition-all group">
     <div class="flex items-center justify-between mb-3">
         <div class="flex items-center gap-2">
@@ -17,11 +18,24 @@
                 {{ article.get_article_type_display }}
             </span>
         </div>
-        {% if article.published_at %}
-        <span class="text-[10px] font-label text-muted uppercase tracking-widest">
-            {{ article.published_at|smart_timesince }}
-        </span>
-        {% endif %}
+        <div class="flex items-center gap-2">
+            {% if article.published_at %}
+            <span class="text-[10px] font-label text-muted uppercase tracking-widest">
+                {{ article.published_at|smart_timesince }}
+            </span>
+            {% endif %}
+            {% if user.is_superuser %}
+            <button hx-post="{% url news_delete_url_name article.id_hash %}"
+                    hx-target="#article-card-{{ article.id_hash }}"
+                    hx-swap="outerHTML"
+                    hx-confirm="Delete this article?"
+                    @click.prevent.stop
+                    class="text-muted hover:text-danger transition-colors p-1 rounded"
+                    aria-label="Delete article">
+                <i class="ph-duotone ph-x text-sm"></i>
+            </button>
+            {% endif %}
+        </div>
     </div>
 
     <h3 class="font-headline font-black text-lg uppercase italic tracking-tight text-secondary leading-tight group-hover:text-primary transition-colors">

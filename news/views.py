@@ -1,3 +1,7 @@
+from django.contrib.auth.mixins import UserPassesTestMixin
+from django.http import HttpResponse
+from django.shortcuts import get_object_or_404
+from django.views import View
 from django.views.generic import DetailView, ListView
 
 from .constants import LEAGUE_BASE_TEMPLATES, LEAGUE_NEWS_NAMESPACES
@@ -25,7 +29,20 @@ class LeagueNewsMixin:
         ctx["news_namespace"] = ns
         ctx["news_list_url_name"] = f"{ns}:article_list"
         ctx["news_detail_url_name"] = f"{ns}:article_detail"
+        ctx["news_delete_url_name"] = f"{ns}:article_delete"
         return ctx
+
+
+class SuperuserRequiredMixin(UserPassesTestMixin):
+    def test_func(self):
+        return self.request.user.is_superuser
+
+
+class ArticleDeleteView(SuperuserRequiredMixin, View):
+    def post(self, request, id_hash):
+        article = get_object_or_404(NewsArticle, id_hash=id_hash)
+        article.delete()
+        return HttpResponse("")
 
 
 class ArticleListView(LeagueNewsMixin, ListView):
