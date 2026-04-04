@@ -2,7 +2,7 @@
 
 import pytest
 
-from vinosports.core.knowledge import get_global_context
+from vinosports.core.knowledge import MAX_GLOBAL_CONTEXT_ITEMS, get_global_context
 from vinosports.core.models import GlobalKnowledge
 
 pytestmark = pytest.mark.django_db
@@ -62,3 +62,9 @@ class TestGetGlobalContext:
         result = get_global_context()
         assert "Visible" in result
         assert "Hidden" not in result
+
+    def test_limited_to_max_items(self):
+        for i in range(MAX_GLOBAL_CONTEXT_ITEMS + 5):
+            GlobalKnowledge.objects.create(headline=f"Headline {i}")
+        result = get_global_context()
+        assert result.count("- Headline") == MAX_GLOBAL_CONTEXT_ITEMS

@@ -1,12 +1,16 @@
 from vinosports.core.models import GlobalKnowledge
 
+MAX_GLOBAL_CONTEXT_ITEMS = 10
+
 
 def get_global_context():
     """Return formatted global knowledge for injection into bot prompts.
 
     Returns an empty string if no active headlines exist.
     """
-    items = GlobalKnowledge.objects.filter(is_active=True)
+    items = list(
+        GlobalKnowledge.objects.filter(is_active=True)[:MAX_GLOBAL_CONTEXT_ITEMS]
+    )
     if not items:
         return ""
 
