@@ -114,4 +114,9 @@ urlpatterns = [
         views.AdminCommentsFullView.as_view(),
         name="admin_comments_full",
     ),
+    path(
+        "featured-parlays/<int:pk>/delete/",
+        views.DeleteFeaturedParlayView.as_view(),
+        name="delete_featured_parlay",
+    ),
 ]

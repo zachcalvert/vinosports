@@ -1450,6 +1450,19 @@ class MarkNotificationReadView(LoginRequiredMixin, View):
         return redirect(notification.url or "hub:inbox")
 
 
+class DeleteFeaturedParlayView(SuperuserRequiredMixin, View):
+    """Superuser-only: delete a featured parlay directly from the card."""
+
+    def post(self, request, pk):
+        from vinosports.betting.featured import FeaturedParlay
+
+        fp = get_object_or_404(FeaturedParlay, pk=pk)
+        fp.delete()
+        from django.http import HttpResponse
+
+        return HttpResponse("")
+
+
 class MarkAllReadView(LoginRequiredMixin, View):
     """Mark all unread notifications as read."""
 

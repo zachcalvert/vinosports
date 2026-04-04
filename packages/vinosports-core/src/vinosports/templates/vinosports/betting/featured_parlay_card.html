@@ -26,12 +26,24 @@
                 <p class="text-xs font-label text-muted uppercase tracking-widest">Sponsored Pick</p>
             </div>
         </div>
-        <span class="inline-block px-3 py-1 rounded-full text-xs font-headline font-bold uppercase tracking-widest
-                      {% if parlay.league == 'epl' %}bg-tertiary-container/20 text-tertiary
-                      {% elif parlay.league == 'nba' %}bg-secondary-container/30 text-secondary
-                      {% else %}bg-primary/10 text-primary{% endif %}">
-            {{ parlay.league|upper }}
-        </span>
+        <div class="flex items-center gap-2">
+            <span class="inline-block px-3 py-1 rounded-full text-xs font-headline font-bold uppercase tracking-widest
+                          {% if parlay.league == 'epl' %}bg-tertiary-container/20 text-tertiary
+                          {% elif parlay.league == 'nba' %}bg-secondary-container/30 text-secondary
+                          {% else %}bg-primary/10 text-primary{% endif %}">
+                {{ parlay.league|upper }}
+            </span>
+            {% if user.is_superuser %}
+            <button hx-post="{% url 'hub:delete_featured_parlay' parlay.pk %}"
+                    hx-target="#featured-parlay-{{ parlay.pk }}"
+                    hx-swap="outerHTML"
+                    hx-confirm="Delete this featured parlay?"
+                    class="text-muted hover:text-danger transition-colors p-1 rounded"
+                    aria-label="Delete parlay">
+                <i class="ph-duotone ph-x text-base"></i>
+            </button>
+            {% endif %}
+        </div>
     </div>
 
     {# Title + description #}
