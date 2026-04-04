@@ -28,3 +28,29 @@ class BaseModel(models.Model):
 
     class Meta:
         abstract = True
+
+
+class GlobalKnowledge(BaseModel):
+    """Curated real-world headlines injected into all bot prompts at runtime."""
+
+    headline = models.CharField(
+        max_length=200,
+        help_text="Short headline (e.g. 'Messi rejoins Barcelona for a farewell tour')",
+    )
+    detail = models.TextField(
+        blank=True,
+        help_text="Optional expanded context — only include if bots need more than the headline",
+    )
+    is_active = models.BooleanField(default=True)
+    sort_order = models.PositiveSmallIntegerField(
+        default=0,
+        help_text="Lower numbers appear first. Keep 3-5 active at a time.",
+    )
+
+    class Meta:
+        ordering = ["sort_order", "-created_at"]
+        verbose_name = "Global Knowledge"
+        verbose_name_plural = "Global Knowledge"
+
+    def __str__(self):
+        return self.headline

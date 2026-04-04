@@ -503,6 +503,14 @@ def _build_user_prompt(match, trigger_type, bet_slip=None, parent_comment=None):
     if home.venue:
         lines.append(f"Venue: {home.venue}")
 
+    # Global knowledge (curated real-world headlines)
+    from vinosports.core.knowledge import get_global_context
+
+    global_ctx = get_global_context()
+    if global_ctx:
+        lines.append("")
+        lines.append(global_ctx)
+
     # Odds
     odds_map = get_best_odds_map([match.pk])
     match_odds = odds_map.get(match.pk, {})

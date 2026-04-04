@@ -355,6 +355,14 @@ def _build_user_prompt(game, trigger_type, bet_slip=None, parent_comment=None):
     if game.venue:
         lines.append(f"Venue: {game.venue}")
 
+    # Global knowledge (curated real-world headlines)
+    from vinosports.core.knowledge import get_global_context
+
+    global_ctx = get_global_context()
+    if global_ctx:
+        lines.append("")
+        lines.append(global_ctx)
+
     # Latest odds
     odds = Odds.objects.filter(game=game).order_by("-fetched_at").first()
     if odds:
