@@ -12,6 +12,14 @@ from django.utils import timezone
 from django.views import View
 from django.views.generic import TemplateView
 
+from hub.forms import (
+    BotProfileForm,
+    CurrencyForm,
+    DisplayNameForm,
+    LoginForm,
+    ProfileImageForm,
+    SignupForm,
+)
 from vinosports.activity.models import Notification
 from vinosports.betting.balance import log_transaction
 from vinosports.betting.leaderboard import (
@@ -30,16 +38,10 @@ from vinosports.betting.models import (
 )
 from vinosports.bots.models import BotProfile
 
-from .forms import (
-    BotProfileForm,
-    CurrencyForm,
-    DisplayNameForm,
-    LoginForm,
-    ProfileImageForm,
-    SignupForm,
-)
 from .models import SiteSettings
 from .promo import evaluate_promo_code
+
+User = get_user_model()
 
 logger = logging.getLogger(__name__)
 
@@ -487,10 +489,14 @@ def _account_context(
         badge.earned = earned_map.get(badge.pk)
         all_badges.append(badge)
 
-    # Bot profile (may not exist)
-    try:
-        bot_profile = user.bot_profile
-    except BotProfile.DoesNotExist:
+    # Bot user + profile (may not exist)
+    bot_user = getattr(user, "bot_user", None)
+    if bot_user is not None:
+        try:
+            bot_profile = bot_user.bot_profile
+        except BotProfile.DoesNotExist:
+            bot_profile = None
+    else:
         bot_profile = None
 
     return {
@@ -505,6 +511,7 @@ def _account_context(
         "stats": stats,
         "user_rank": get_user_rank(user),
         "all_badges": all_badges,
+        "bot_user": bot_user,
         "bot_profile": bot_profile,
     }
 
@@ -575,82 +582,102 @@ class ProfileImageUploadView(LoginRequiredMixin, View):
 # ---------------------------------------------------------------------------
 
 
+def _get_bot_user(owner):
+    """Return the bot User created by *owner*, or None."""
+    return getattr(owner, "bot_user", None)
+
+
 class CreateBotProfileView(LoginRequiredMixin, View):
-    """Allow a logged-in user to create a bot profile for their account."""
+    """Create a new bot User + BotProfile owned by the logged-in user."""
 
     template_name = "hub/bot_profile_form.html"
 
-    def _has_bot_profile(self, user):
-        try:
-            _ = user.bot_profile
-            return True
-        except BotProfile.DoesNotExist:
-            return False
-
     def get(self, request):
-        if self._has_bot_profile(request.user):
+        if _get_bot_user(request.user):
             return redirect("hub:edit_bot_profile")
         return render(request, self.template_name, {"form": BotProfileForm()})
 
     def post(self, request):
-        if self._has_bot_profile(request.user):
+        if _get_bot_user(request.user):
             return redirect("hub:edit_bot_profile")
-        form = BotProfileForm(request.POST)
+        form = BotProfileForm(request.POST, request.FILES)
         if not form.is_valid():
             return render(request, self.template_name, {"form": form})
         with transaction.atomic():
-            user = request.user
-            user.is_bot = True
-            user.save(update_fields=["is_bot"])
+            owner = request.user
+            # Create a bot user account (no usable password, not a real login)
+            display_name = form.cleaned_data["display_name"]
+            bot_email = f"bot+{owner.id_hash}@vinosports.com"
+            bot_user = User(
+                email=bot_email,
+                is_bot=True,
+                display_name=display_name,
+                created_by=owner,
+            )
+            if form.cleaned_data.get("profile_image"):
+                bot_user.profile_image = form.cleaned_data["profile_image"]
+            bot_user.set_unusable_password()
+            bot_user.save()
+            # Create the bot profile linked to the bot user
             bot_profile = form.save(commit=False)
-            bot_profile.user = user
+            bot_profile.user = bot_user
             bot_profile.is_active = False
             bot_profile.save()
         return redirect("hub:account")
 
 
 class EditBotProfileView(LoginRequiredMixin, View):
-    """Allow a logged-in user to edit their existing bot profile."""
+    """Edit the bot User + BotProfile owned by the logged-in user."""
 
     template_name = "hub/bot_profile_form.html"
 
-    def _get_bot_profile(self, user):
-        try:
-            return user.bot_profile
-        except BotProfile.DoesNotExist:
-            return None
-
     def get(self, request):
-        bot_profile = self._get_bot_profile(request.user)
-        if bot_profile is None:
+        bot_user = _get_bot_user(request.user)
+        if bot_user is None:
             return redirect("hub:create_bot_profile")
         return render(
             request,
             self.template_name,
-            {"form": BotProfileForm(instance=bot_profile), "editing": True},
+            {
+                "form": BotProfileForm(
+                    instance=bot_user.bot_profile, bot_user=bot_user
+                ),
+                "editing": True,
+                "bot_user": bot_user,
+            },
         )
 
     def post(self, request):
-        bot_profile = self._get_bot_profile(request.user)
-        if bot_profile is None:
+        bot_user = _get_bot_user(request.user)
+        if bot_user is None:
             return redirect("hub:create_bot_profile")
-        form = BotProfileForm(request.POST, instance=bot_profile)
+        form = BotProfileForm(
+            request.POST,
+            request.FILES,
+            instance=bot_user.bot_profile,
+            bot_user=bot_user,
+        )
         if not form.is_valid():
-            return render(
-                request, self.template_name, {"form": form, "editing": True}
-            )
-        form.save()
+            return render(request, self.template_name, {"form": form, "editing": True})
+        with transaction.atomic():
+            bot_user.display_name = form.cleaned_data["display_name"]
+            update_fields = ["display_name"]
+            if form.cleaned_data.get("profile_image"):
+                bot_user.profile_image = form.cleaned_data["profile_image"]
+                update_fields.append("profile_image")
+            bot_user.save(update_fields=update_fields)
+            form.save()
         return redirect("hub:account")
 
 
 class ToggleBotProfileView(LoginRequiredMixin, View):
-    """Toggle the active state of the logged-in user's bot profile."""
+    """Toggle the active state of the bot owned by the logged-in user."""
 
     def post(self, request):
-        try:
-            bot_profile = request.user.bot_profile
-        except BotProfile.DoesNotExist:
+        bot_user = _get_bot_user(request.user)
+        if bot_user is None:
             return redirect("hub:create_bot_profile")
+        bot_profile = bot_user.bot_profile
         bot_profile.is_active = not bot_profile.is_active
         bot_profile.save(update_fields=["is_active"])
         return redirect("hub:account")

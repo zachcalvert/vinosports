@@ -15,14 +15,23 @@ _checkbox = "h-4 w-4 rounded border-outline accent-primary"
 class BotProfileForm(forms.ModelForm):
     """Form for creating or editing a user's bot profile."""
 
+    display_name = forms.CharField(
+        max_length=50,
+        required=False,
+        widget=forms.TextInput(
+            attrs={"class": _input, "placeholder": "Your bot's public name"}
+        ),
+    )
+    profile_image = forms.ImageField(
+        required=False,
+        widget=forms.ClearableFileInput(attrs={"class": _input, "accept": "image/*"}),
+    )
+
     class Meta:
         model = BotProfile
         fields = (
             "persona_prompt",
             "tagline",
-            "avatar_icon",
-            "avatar_bg",
-            "portrait_url",
             "strategy_type",
             "risk_multiplier",
             "max_daily_bets",
@@ -39,22 +48,18 @@ class BotProfileForm(forms.ModelForm):
                     "class": _textarea,
                     "rows": 5,
                     "placeholder": (
-                        "Describe your bot's personality. "
-                        "Do NOT include team references — those are injected at runtime."
+                        "e.g. Just got into sports because his kid loves it. "
+                        "Asks genuine questions that accidentally expose how "
+                        "little he knows. Bets favorites because those are the "
+                        "teams his daughter recognizes. Accidentally endearing."
                     ),
                 }
             ),
             "tagline": forms.TextInput(
-                attrs={"class": _input, "placeholder": "A short public-facing quote"}
-            ),
-            "avatar_icon": forms.TextInput(
-                attrs={"class": _input, "placeholder": "e.g. robot"}
-            ),
-            "avatar_bg": forms.TextInput(
-                attrs={"class": _input, "placeholder": "#374151", "type": "color"}
-            ),
-            "portrait_url": forms.URLInput(
-                attrs={"class": _input, "placeholder": "https://…"}
+                attrs={
+                    "class": _input,
+                    "placeholder": 'e.g. "I did the math... roughly"',
+                }
             ),
             "strategy_type": forms.Select(attrs={"class": _select}),
             "risk_multiplier": forms.NumberInput(
@@ -76,6 +81,23 @@ class BotProfileForm(forms.ModelForm):
                 attrs={"class": _input, "placeholder": "e.g. KC", "maxlength": "5"}
             ),
         }
+
+    def __init__(self, *args, bot_user=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._bot_user = bot_user
+        if bot_user:
+            self.fields["display_name"].initial = bot_user.display_name
+
+    def clean_display_name(self):
+        display_name = (self.cleaned_data.get("display_name") or "").strip()
+        if not display_name:
+            return None
+        qs = User.objects.all()
+        if self._bot_user:
+            qs = qs.exclude(pk=self._bot_user.pk)
+        if qs.filter(display_name__iexact=display_name).exists():
+            raise forms.ValidationError("Display name already taken.")
+        return display_name
 
 
 class ProfileImageForm(forms.ModelForm):

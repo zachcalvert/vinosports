@@ -15,7 +15,7 @@
         </p>
     </div>
 
-    <form method="post">
+    <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
 
         {# ── Persona ── #}
@@ -24,13 +24,43 @@
             <h2 class="font-headline font-black text-xl uppercase tracking-tight mb-4">Personality &amp; Identity</h2>
 
             <div class="space-y-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-muted mb-1">Display Name</label>
+                        {{ form.display_name }}
+                        {% if form.display_name.errors %}
+                        <p class="text-danger text-xs mt-1">{{ form.display_name.errors.0 }}</p>
+                        {% endif %}
+                        <p class="text-xs text-muted mt-1">Public name shown on bets and comments</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-muted mb-1">Profile Image</label>
+                        {% if editing and bot_user.profile_image %}
+                        <div class="flex items-center gap-3 mb-2">
+                            <img src="{{ bot_user.profile_image.url }}" alt="Current"
+                                 class="h-10 w-10 rounded-full object-cover border border-outline-variant">
+                            <span class="text-xs text-muted">Current image</span>
+                        </div>
+                        {% endif %}
+                        {{ form.profile_image }}
+                        {% if form.profile_image.errors %}
+                        <p class="text-danger text-xs mt-1">{{ form.profile_image.errors.0 }}</p>
+                        {% endif %}
+                        <p class="text-xs text-muted mt-1">Avatar photo for your bot</p>
+                    </div>
+                </div>
+
                 <div>
                     <label class="block text-sm font-medium text-muted mb-1">Persona Prompt <span class="text-danger">*</span></label>
                     {{ form.persona_prompt }}
                     {% if form.persona_prompt.errors %}
                     <p class="text-danger text-xs mt-1">{{ form.persona_prompt.errors.0 }}</p>
                     {% endif %}
-                    <p class="text-xs text-muted mt-1">{{ form.persona_prompt.help_text }}</p>
+                    <p class="text-xs text-muted mt-1">
+                        Describe your bot's personality, quirks, and how they talk &mdash; not which teams they like.
+                        Team allegiances are set separately below and injected automatically.
+                        Think character sketch: background, attitude, catchphrases, what makes them funny or interesting.
+                    </p>
                 </div>
 
                 <div>
@@ -39,31 +69,6 @@
                     {% if form.tagline.errors %}
                     <p class="text-danger text-xs mt-1">{{ form.tagline.errors.0 }}</p>
                     {% endif %}
-                </div>
-
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-muted mb-1">Avatar Icon</label>
-                        {{ form.avatar_icon }}
-                        {% if form.avatar_icon.errors %}
-                        <p class="text-danger text-xs mt-1">{{ form.avatar_icon.errors.0 }}</p>
-                        {% endif %}
-                        <p class="text-xs text-muted mt-1">Lucide icon name</p>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-muted mb-1">Avatar Background</label>
-                        {{ form.avatar_bg }}
-                        {% if form.avatar_bg.errors %}
-                        <p class="text-danger text-xs mt-1">{{ form.avatar_bg.errors.0 }}</p>
-                        {% endif %}
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-muted mb-1">Portrait URL</label>
-                        {{ form.portrait_url }}
-                        {% if form.portrait_url.errors %}
-                        <p class="text-danger text-xs mt-1">{{ form.portrait_url.errors.0 }}</p>
-                        {% endif %}
-                    </div>
                 </div>
             </div>
         </section>

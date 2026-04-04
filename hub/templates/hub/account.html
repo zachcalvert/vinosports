@@ -183,10 +183,14 @@
     {% if bot_profile %}
     <div class="rounded-xl border-b-4 {% if bot_profile.is_active %}border-positive{% else %}border-outline-variant{% endif %} bg-surface-container-lowest p-5">
         <div class="flex flex-col sm:flex-row sm:items-start gap-4">
+            {% if bot_user.profile_image %}
+            <img src="{{ bot_user.profile_image.url }}" alt="{{ bot_user.display_name }}"
+                 class="h-14 w-14 rounded-full object-cover shrink-0 border-2 border-outline-variant">
+            {% endif %}
             <div class="flex-1 min-w-0">
                 <div class="flex items-center gap-2 mb-1">
                     <i class="ph-duotone ph-robot text-lg text-primary"></i>
-                    <span class="font-headline font-black text-lg uppercase tracking-tight">{{ user.display_name }}</span>
+                    <span class="font-headline font-black text-lg uppercase tracking-tight">{{ bot_user.display_name }}</span>
                     {% if bot_profile.is_active %}
                     <span class="inline-flex items-center gap-1 rounded-full bg-positive/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-positive">
                         <span class="h-1.5 w-1.5 rounded-full bg-positive"></span> Active

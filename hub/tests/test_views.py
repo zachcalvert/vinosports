@@ -218,9 +218,6 @@ class TestStandingsView:
 _BOT_FORM_DATA = {
     "persona_prompt": "A test bot persona",
     "tagline": "Testing 1-2-3",
-    "avatar_icon": "robot",
-    "avatar_bg": "#374151",
-    "portrait_url": "",
     "strategy_type": "frontrunner",
     "risk_multiplier": "1.0",
     "max_daily_bets": "5",
@@ -233,6 +230,22 @@ _BOT_FORM_DATA = {
 }
 
 
+def _create_bot_for(owner, **profile_overrides):
+    """Helper: create a bot User + BotProfile owned by *owner*."""
+    defaults = {"persona_prompt": "test persona", "strategy_type": "frontrunner"}
+    defaults.update(profile_overrides)
+    bot_user = UserFactory(
+        email=f"bot+{owner.id_hash}@vinosports.com",
+        is_bot=True,
+        display_name=f"Bot of {owner.id_hash}",
+    )
+    bot_user.created_by = owner
+    bot_user.set_unusable_password()
+    bot_user.save()
+    profile = BotProfile.objects.create(user=bot_user, **defaults)
+    return bot_user, profile
+
+
 class TestCreateBotProfileView:
     def test_requires_login(self, client):
         resp = client.get(reverse("hub:create_bot_profile"))
@@ -243,34 +256,61 @@ class TestCreateBotProfileView:
         assert resp.status_code == 200
         assert "form" in resp.context
 
-    def test_redirect_if_profile_exists(self, authed_client, user):
-        user.is_bot = True
-        user.save()
-        BotProfile.objects.create(
-            user=user, persona_prompt="existing", strategy_type="frontrunner"
-        )
+    def test_redirect_if_bot_exists(self, authed_client, user):
+        _create_bot_for(user)
         resp = authed_client.get(reverse("hub:create_bot_profile"))
         assert resp.status_code == 302
         assert "edit" in resp["Location"]
 
-    def test_create_sets_is_bot(self, authed_client, user):
+    def test_create_makes_separate_bot_user(self, authed_client, user):
         authed_client.post(reverse("hub:create_bot_profile"), _BOT_FORM_DATA)
         user.refresh_from_db()
-        assert user.is_bot is True
+        # Owner should NOT become a bot
+        assert user.is_bot is False
+        # A separate bot user should exist
+        from django.contrib.auth import get_user_model
+
+        User = get_user_model()
+        bot_user = User.objects.get(created_by=user)
+        assert bot_user.is_bot is True
+        assert not bot_user.has_usable_password()
 
     def test_create_creates_bot_profile(self, authed_client, user):
         authed_client.post(reverse("hub:create_bot_profile"), _BOT_FORM_DATA)
-        assert BotProfile.objects.filter(user=user).exists()
+        from django.contrib.auth import get_user_model
+
+        User = get_user_model()
+        bot_user = User.objects.get(created_by=user)
+        assert BotProfile.objects.filter(user=bot_user).exists()
 
     def test_create_bot_profile_inactive_by_default(self, authed_client, user):
         authed_client.post(reverse("hub:create_bot_profile"), _BOT_FORM_DATA)
-        profile = BotProfile.objects.get(user=user)
-        assert profile.is_active is False
+        from django.contrib.auth import get_user_model
+
+        User = get_user_model()
+        bot_user = User.objects.get(created_by=user)
+        assert bot_user.bot_profile.is_active is False
 
     def test_create_redirects_to_account(self, authed_client):
         resp = authed_client.post(reverse("hub:create_bot_profile"), _BOT_FORM_DATA)
         assert resp.status_code == 302
         assert resp["Location"].endswith(reverse("hub:account"))
+
+    def test_create_sets_bot_display_name(self, authed_client, user):
+        data = dict(_BOT_FORM_DATA, display_name="RoboGambler")
+        authed_client.post(reverse("hub:create_bot_profile"), data)
+        from django.contrib.auth import get_user_model
+
+        User = get_user_model()
+        bot_user = User.objects.get(created_by=user)
+        assert bot_user.display_name == "RoboGambler"
+
+    def test_create_duplicate_display_name_rejected(self, authed_client):
+        UserFactory(display_name="TakenName")
+        data = dict(_BOT_FORM_DATA, display_name="TakenName")
+        resp = authed_client.post(reverse("hub:create_bot_profile"), data)
+        assert resp.status_code == 200
+        assert "form" in resp.context
 
     def test_invalid_form_rerenders(self, authed_client):
         resp = authed_client.post(
@@ -285,38 +325,37 @@ class TestEditBotProfileView:
         resp = client.get(reverse("hub:edit_bot_profile"))
         assert resp.status_code == 302
 
-    def test_redirect_if_no_profile(self, authed_client):
+    def test_redirect_if_no_bot(self, authed_client):
         resp = authed_client.get(reverse("hub:edit_bot_profile"))
         assert resp.status_code == 302
         assert "create" in resp["Location"]
 
     def test_get_renders_form_with_instance(self, authed_client, user):
-        user.is_bot = True
-        user.save()
-        BotProfile.objects.create(
-            user=user, persona_prompt="original", strategy_type="underdog"
-        )
+        _create_bot_for(user, persona_prompt="original", strategy_type="underdog")
         resp = authed_client.get(reverse("hub:edit_bot_profile"))
         assert resp.status_code == 200
         assert resp.context["editing"] is True
 
     def test_post_updates_profile(self, authed_client, user):
-        user.is_bot = True
-        user.save()
-        BotProfile.objects.create(
-            user=user, persona_prompt="original", strategy_type="underdog"
+        bot_user, _ = _create_bot_for(
+            user, persona_prompt="original", strategy_type="underdog"
         )
         data = dict(_BOT_FORM_DATA, persona_prompt="updated persona")
         authed_client.post(reverse("hub:edit_bot_profile"), data)
-        profile = BotProfile.objects.get(user=user)
+        profile = BotProfile.objects.get(user=bot_user)
         assert profile.persona_prompt == "updated persona"
 
-    def test_post_redirects_to_account(self, authed_client, user):
-        user.is_bot = True
-        user.save()
-        BotProfile.objects.create(
-            user=user, persona_prompt="original", strategy_type="underdog"
+    def test_post_updates_bot_display_name(self, authed_client, user):
+        bot_user, _ = _create_bot_for(
+            user, persona_prompt="original", strategy_type="underdog"
         )
+        data = dict(_BOT_FORM_DATA, display_name="NewBotName")
+        authed_client.post(reverse("hub:edit_bot_profile"), data)
+        bot_user.refresh_from_db()
+        assert bot_user.display_name == "NewBotName"
+
+    def test_post_redirects_to_account(self, authed_client, user):
+        _create_bot_for(user, persona_prompt="original", strategy_type="underdog")
         resp = authed_client.post(reverse("hub:edit_bot_profile"), _BOT_FORM_DATA)
         assert resp.status_code == 302
         assert resp["Location"].endswith(reverse("hub:account"))
@@ -328,46 +367,25 @@ class TestToggleBotProfileView:
         assert resp.status_code == 302
         assert "login" in resp["Location"]
 
-    def test_redirect_if_no_profile(self, authed_client):
+    def test_redirect_if_no_bot(self, authed_client):
         resp = authed_client.post(reverse("hub:toggle_bot_profile"))
         assert resp.status_code == 302
         assert "create" in resp["Location"]
 
     def test_activates_inactive_profile(self, authed_client, user):
-        user.is_bot = True
-        user.save()
-        profile = BotProfile.objects.create(
-            user=user,
-            persona_prompt="test",
-            strategy_type="frontrunner",
-            is_active=False,
-        )
+        _, profile = _create_bot_for(user, is_active=False)
         authed_client.post(reverse("hub:toggle_bot_profile"))
         profile.refresh_from_db()
         assert profile.is_active is True
 
     def test_deactivates_active_profile(self, authed_client, user):
-        user.is_bot = True
-        user.save()
-        profile = BotProfile.objects.create(
-            user=user,
-            persona_prompt="test",
-            strategy_type="frontrunner",
-            is_active=True,
-        )
+        _, profile = _create_bot_for(user, is_active=True)
         authed_client.post(reverse("hub:toggle_bot_profile"))
         profile.refresh_from_db()
         assert profile.is_active is False
 
     def test_redirects_to_account(self, authed_client, user):
-        user.is_bot = True
-        user.save()
-        BotProfile.objects.create(
-            user=user,
-            persona_prompt="test",
-            strategy_type="frontrunner",
-            is_active=False,
-        )
+        _create_bot_for(user, is_active=False)
         resp = authed_client.post(reverse("hub:toggle_bot_profile"))
         assert resp.status_code == 302
         assert resp["Location"].endswith(reverse("hub:account"))
@@ -380,11 +398,7 @@ class TestAccountViewBotProfileContext:
         assert resp.context["bot_profile"] is None
 
     def test_bot_profile_in_context_when_exists(self, authed_client, user):
-        user.is_bot = True
-        user.save()
-        BotProfile.objects.create(
-            user=user, persona_prompt="test", strategy_type="frontrunner"
-        )
+        _create_bot_for(user)
         resp = authed_client.get(reverse("hub:account"))
         assert resp.context["bot_profile"] is not None
-
+        assert resp.context["bot_user"] is not None
