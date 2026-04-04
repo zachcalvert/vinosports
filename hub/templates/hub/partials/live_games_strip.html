@@ -15,7 +15,7 @@
             <div class="w-px h-5 bg-white/20 flex-shrink-0"></div>
             {# Game tiles #}
             {% for game in live_games %}
-            <a href="{{ game.url }}"
+            <a href="{{ game.url }}" hx-boost="false"
                class="flex items-center gap-3 flex-shrink-0 px-3 py-1.5 rounded-lg hover:bg-white/10 transition-colors group">
                 {# League badge #}
                 <span class="text-[9px] font-label font-bold uppercase tracking-wider px-1.5 py-0.5 rounded
