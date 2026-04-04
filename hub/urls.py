@@ -20,6 +20,21 @@ urlpatterns = [
         name="profile_image_upload",
     ),
     path(
+        "account/bot-profile/create/",
+        views.CreateBotProfileView.as_view(),
+        name="create_bot_profile",
+    ),
+    path(
+        "account/bot-profile/edit/",
+        views.EditBotProfileView.as_view(),
+        name="edit_bot_profile",
+    ),
+    path(
+        "account/bot-profile/toggle/",
+        views.ToggleBotProfileView.as_view(),
+        name="toggle_bot_profile",
+    ),
+    path(
         "api/balance-history/<slug:slug>/",
         views.BalanceHistoryAPI.as_view(),
         name="balance_history_api",

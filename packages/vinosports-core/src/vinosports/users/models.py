@@ -28,6 +28,14 @@ class User(AbstractUser):
         default=False,
         help_text="Designates bot/automated accounts.",
     )
+    created_by = models.OneToOneField(
+        "self",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="bot_user",
+        help_text="The real user who created this bot account.",
+    )
     avatar_icon = models.CharField(max_length=50, default="user-circle")
     avatar_bg = models.CharField(max_length=7, default="#374151")
     avatar_frame = models.CharField(max_length=50, blank=True, default="")

@@ -177,6 +177,80 @@
     </div>
 </div>
 
+{# ── BOT PROFILE ── #}
+<section class="mb-10">
+    <h2 class="font-headline font-black text-2xl uppercase tracking-tight mb-4">Bot Profile</h2>
+    {% if bot_profile %}
+    <div class="rounded-xl border-b-4 {% if bot_profile.is_active %}border-positive{% else %}border-outline-variant{% endif %} bg-surface-container-lowest p-5">
+        <div class="flex flex-col sm:flex-row sm:items-start gap-4">
+            {% if bot_user.profile_image %}
+            <img src="{{ bot_user.profile_image.url }}" alt="{{ bot_user.display_name }}"
+                 class="h-14 w-14 rounded-full object-cover shrink-0 border-2 border-outline-variant">
+            {% endif %}
+            <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2 mb-1">
+                    <i class="ph-duotone ph-robot text-lg text-primary"></i>
+                    <span class="font-headline font-black text-lg uppercase tracking-tight">{{ bot_user.display_name }}</span>
+                    {% if bot_profile.is_active %}
+                    <span class="inline-flex items-center gap-1 rounded-full bg-positive/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-positive">
+                        <span class="h-1.5 w-1.5 rounded-full bg-positive"></span> Active
+                    </span>
+                    {% else %}
+                    <span class="inline-flex items-center gap-1 rounded-full bg-surface-container px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-muted">
+                        Inactive
+                    </span>
+                    {% endif %}
+                </div>
+                {% if bot_profile.tagline %}
+                <p class="text-sm text-muted italic mb-2">&ldquo;{{ bot_profile.tagline }}&rdquo;</p>
+                {% endif %}
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs mt-3">
+                    <div>
+                        <span class="font-label font-bold uppercase tracking-widest text-muted">Strategy</span>
+                        <p class="font-medium text-on-surface">{{ bot_profile.get_strategy_type_display }}</p>
+                    </div>
+                    <div>
+                        <span class="font-label font-bold uppercase tracking-widest text-muted">Risk</span>
+                        <p class="font-medium text-on-surface">{{ bot_profile.risk_multiplier }}x</p>
+                    </div>
+                    <div>
+                        <span class="font-label font-bold uppercase tracking-widest text-muted">Max Daily Bets</span>
+                        <p class="font-medium text-on-surface">{{ bot_profile.max_daily_bets }}</p>
+                    </div>
+                </div>
+                <div class="flex flex-wrap gap-2 mt-3">
+                    {% if bot_profile.active_in_epl %}<span class="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-primary">EPL</span>{% endif %}
+                    {% if bot_profile.active_in_nba %}<span class="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-primary">NBA</span>{% endif %}
+                    {% if bot_profile.active_in_nfl %}<span class="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-primary">NFL</span>{% endif %}
+                </div>
+            </div>
+            <div class="flex flex-col gap-2 shrink-0">
+                <form method="post" action="{% url 'hub:toggle_bot_profile' %}">
+                    {% csrf_token %}
+                    <button type="submit"
+                        class="jukebox-btn w-full rounded-full {% if bot_profile.is_active %}bg-danger{% else %}bg-positive{% endif %} px-5 py-2 text-sm font-headline font-black uppercase tracking-widest text-white">
+                        {% if bot_profile.is_active %}Deactivate{% else %}Activate{% endif %}
+                    </button>
+                </form>
+                <a href="{% url 'hub:edit_bot_profile' %}"
+                   class="jukebox-btn block text-center rounded-full bg-surface-container px-5 py-2 text-sm font-headline font-black uppercase tracking-widest text-on-surface-variant border border-outline-variant">
+                    Edit
+                </a>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="rounded-xl border border-dashed border-outline-variant p-6 text-center">
+        <i class="ph-duotone ph-robot text-4xl text-muted mb-3 block"></i>
+        <p class="text-sm text-muted mb-4">You don&rsquo;t have a bot profile yet. Create one to let an AI persona bet and comment on your behalf.</p>
+        <a href="{% url 'hub:create_bot_profile' %}"
+           class="jukebox-btn inline-block rounded-full bg-primary px-6 py-2.5 text-sm font-headline font-black uppercase tracking-widest text-on-primary">
+            Create Bot Profile
+        </a>
+    </div>
+    {% endif %}
+</section>
+
 {# ── BADGES ── #}
 {% if all_badges %}
 <section class="mb-10">

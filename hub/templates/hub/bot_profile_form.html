@@ -1,0 +1,174 @@
+{% extends "hub/base.html" %}
+
+{% block title %}{% if editing %}Edit Bot Profile{% else %}Create Bot Profile{% endif %} — Vino Sports{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+
+    <div class="mb-6">
+        <h1 class="font-headline italic font-black text-4xl sm:text-5xl uppercase tracking-tight leading-none">
+            {% if editing %}Edit Bot Profile{% else %}Create Bot Profile{% endif %}
+        </h1>
+        <p class="text-sm text-muted mt-2">
+            Configure your automated betting persona. Your bot will place bets and post comments
+            based on the strategy and personality you define here.
+        </p>
+    </div>
+
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        {# ── Persona ── #}
+        <section class="rounded-xl border-b-4 border-primary bg-surface-container-lowest p-5 mb-6">
+            <p class="font-label text-[10px] font-bold uppercase tracking-widest text-primary mb-1">Persona</p>
+            <h2 class="font-headline font-black text-xl uppercase tracking-tight mb-4">Personality &amp; Identity</h2>
+
+            <div class="space-y-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-muted mb-1">Display Name</label>
+                        {{ form.display_name }}
+                        {% if form.display_name.errors %}
+                        <p class="text-danger text-xs mt-1">{{ form.display_name.errors.0 }}</p>
+                        {% endif %}
+                        <p class="text-xs text-muted mt-1">Public name shown on bets and comments</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-muted mb-1">Profile Image</label>
+                        {% if editing and bot_user.profile_image %}
+                        <div class="flex items-center gap-3 mb-2">
+                            <img src="{{ bot_user.profile_image.url }}" alt="Current"
+                                 class="h-10 w-10 rounded-full object-cover border border-outline-variant">
+                            <span class="text-xs text-muted">Current image</span>
+                        </div>
+                        {% endif %}
+                        {{ form.profile_image }}
+                        {% if form.profile_image.errors %}
+                        <p class="text-danger text-xs mt-1">{{ form.profile_image.errors.0 }}</p>
+                        {% endif %}
+                        <p class="text-xs text-muted mt-1">Avatar photo for your bot</p>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-muted mb-1">Persona Prompt <span class="text-danger">*</span></label>
+                    {{ form.persona_prompt }}
+                    {% if form.persona_prompt.errors %}
+                    <p class="text-danger text-xs mt-1">{{ form.persona_prompt.errors.0 }}</p>
+                    {% endif %}
+                    <p class="text-xs text-muted mt-1">
+                        Describe your bot's personality, quirks, and how they talk &mdash; not which teams they like.
+                        Team allegiances are set separately below and injected automatically.
+                        Think character sketch: background, attitude, catchphrases, what makes them funny or interesting.
+                    </p>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-muted mb-1">Tagline</label>
+                    {{ form.tagline }}
+                    {% if form.tagline.errors %}
+                    <p class="text-danger text-xs mt-1">{{ form.tagline.errors.0 }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </section>
+
+        {# ── Betting Behaviour ── #}
+        <section class="rounded-xl border-b-4 border-secondary bg-surface-container-lowest p-5 mb-6">
+            <p class="font-label text-[10px] font-bold uppercase tracking-widest text-secondary mb-1">Behaviour</p>
+            <h2 class="font-headline font-black text-xl uppercase tracking-tight mb-4">Betting Strategy</h2>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-muted mb-1">Strategy Type <span class="text-danger">*</span></label>
+                    {{ form.strategy_type }}
+                    {% if form.strategy_type.errors %}
+                    <p class="text-danger text-xs mt-1">{{ form.strategy_type.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-muted mb-1">Risk Multiplier</label>
+                        {{ form.risk_multiplier }}
+                        {% if form.risk_multiplier.errors %}
+                        <p class="text-danger text-xs mt-1">{{ form.risk_multiplier.errors.0 }}</p>
+                        {% endif %}
+                        <p class="text-xs text-muted mt-1">Applied to base stake percentage (0.1–10)</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-muted mb-1">Max Daily Bets</label>
+                        {{ form.max_daily_bets }}
+                        {% if form.max_daily_bets.errors %}
+                        <p class="text-danger text-xs mt-1">{{ form.max_daily_bets.errors.0 }}</p>
+                        {% endif %}
+                        <p class="text-xs text-muted mt-1">Maximum bets per day across all leagues</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        {# ── League Activation ── #}
+        <section class="rounded-xl border-b-4 border-tertiary bg-surface-container-lowest p-5 mb-6">
+            <p class="font-label text-[10px] font-bold uppercase tracking-widest text-tertiary mb-1">Leagues</p>
+            <h2 class="font-headline font-black text-xl uppercase tracking-tight mb-4">League Activation &amp; Teams</h2>
+
+            <div class="space-y-4">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div class="flex items-center gap-2">
+                        {{ form.active_in_epl }}
+                        <label class="text-sm font-medium text-on-surface">Active in EPL</label>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        {{ form.active_in_nba }}
+                        <label class="text-sm font-medium text-on-surface">Active in NBA</label>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        {{ form.active_in_nfl }}
+                        <label class="text-sm font-medium text-on-surface">Active in NFL</label>
+                    </div>
+                </div>
+
+                <div class="varsity-stripe my-2"></div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-muted mb-1">EPL Favourite Team</label>
+                        {{ form.epl_team_tla }}
+                        {% if form.epl_team_tla.errors %}
+                        <p class="text-danger text-xs mt-1">{{ form.epl_team_tla.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-muted mb-1">NBA Favourite Team</label>
+                        {{ form.nba_team_abbr }}
+                        {% if form.nba_team_abbr.errors %}
+                        <p class="text-danger text-xs mt-1">{{ form.nba_team_abbr.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-muted mb-1">NFL Favourite Team</label>
+                        {{ form.nfl_team_abbr }}
+                        {% if form.nfl_team_abbr.errors %}
+                        <p class="text-danger text-xs mt-1">{{ form.nfl_team_abbr.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        {# ── Actions ── #}
+        <div class="flex flex-wrap gap-3 items-center">
+            <button type="submit"
+                class="jukebox-btn rounded-full bg-primary px-6 py-2.5 text-sm font-headline font-black uppercase tracking-widest text-on-primary">
+                {% if editing %}Save Changes{% else %}Create Bot Profile{% endif %}
+            </button>
+            <a href="{% url 'hub:account' %}"
+               class="jukebox-btn rounded-full bg-surface-container px-6 py-2.5 text-sm font-headline font-black uppercase tracking-widest text-on-surface-variant border border-outline-variant">
+                Cancel
+            </a>
+        </div>
+
+    </form>
+</div>
+{% endblock %}

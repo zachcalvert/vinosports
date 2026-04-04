@@ -1,7 +1,103 @@
 from django import forms
 from django.contrib.auth import get_user_model
 
+from vinosports.bots.models import BotProfile
+
 User = get_user_model()
+
+
+_input = "themed-input themed-input-sm"
+_textarea = "themed-input w-full"
+_select = "themed-input themed-input-sm"
+_checkbox = "h-4 w-4 rounded border-outline accent-primary"
+
+
+class BotProfileForm(forms.ModelForm):
+    """Form for creating or editing a user's bot profile."""
+
+    display_name = forms.CharField(
+        max_length=50,
+        required=False,
+        widget=forms.TextInput(
+            attrs={"class": _input, "placeholder": "Your bot's public name"}
+        ),
+    )
+    profile_image = forms.ImageField(
+        required=False,
+        widget=forms.ClearableFileInput(attrs={"class": _input, "accept": "image/*"}),
+    )
+
+    class Meta:
+        model = BotProfile
+        fields = (
+            "persona_prompt",
+            "tagline",
+            "strategy_type",
+            "risk_multiplier",
+            "max_daily_bets",
+            "active_in_epl",
+            "active_in_nba",
+            "active_in_nfl",
+            "epl_team_tla",
+            "nba_team_abbr",
+            "nfl_team_abbr",
+        )
+        widgets = {
+            "persona_prompt": forms.Textarea(
+                attrs={
+                    "class": _textarea,
+                    "rows": 5,
+                    "placeholder": (
+                        "e.g. Just got into sports because his kid loves it. "
+                        "Asks genuine questions that accidentally expose how "
+                        "little he knows. Bets favorites because those are the "
+                        "teams his daughter recognizes. Accidentally endearing."
+                    ),
+                }
+            ),
+            "tagline": forms.TextInput(
+                attrs={
+                    "class": _input,
+                    "placeholder": 'e.g. "I did the math... roughly"',
+                }
+            ),
+            "strategy_type": forms.Select(attrs={"class": _select}),
+            "risk_multiplier": forms.NumberInput(
+                attrs={"class": _input, "step": "0.1", "min": "0.1", "max": "10"}
+            ),
+            "max_daily_bets": forms.NumberInput(
+                attrs={"class": _input, "min": "1", "max": "50"}
+            ),
+            "active_in_epl": forms.CheckboxInput(attrs={"class": _checkbox}),
+            "active_in_nba": forms.CheckboxInput(attrs={"class": _checkbox}),
+            "active_in_nfl": forms.CheckboxInput(attrs={"class": _checkbox}),
+            "epl_team_tla": forms.TextInput(
+                attrs={"class": _input, "placeholder": "e.g. ARS", "maxlength": "5"}
+            ),
+            "nba_team_abbr": forms.TextInput(
+                attrs={"class": _input, "placeholder": "e.g. GSW", "maxlength": "5"}
+            ),
+            "nfl_team_abbr": forms.TextInput(
+                attrs={"class": _input, "placeholder": "e.g. KC", "maxlength": "5"}
+            ),
+        }
+
+    def __init__(self, *args, bot_user=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._bot_user = bot_user
+        if bot_user:
+            self.fields["display_name"].initial = bot_user.display_name
+
+    def clean_display_name(self):
+        display_name = (self.cleaned_data.get("display_name") or "").strip()
+        if not display_name:
+            return None
+        qs = User.objects.all()
+        if self._bot_user:
+            qs = qs.exclude(pk=self._bot_user.pk)
+        if qs.filter(display_name__iexact=display_name).exists():
+            raise forms.ValidationError("Display name already taken.")
+        return display_name
 
 
 class ProfileImageForm(forms.ModelForm):
