@@ -19,6 +19,7 @@ from epl.discussions.models import Comment
 from epl.matches.models import MatchNotes, MatchStats, Odds
 from vinosports.betting.models import BetStatus
 from vinosports.bots.models import BotProfile, StrategyType
+from vinosports.core.knowledge import get_global_context
 
 User = get_user_model()
 logger = logging.getLogger(__name__)
@@ -504,8 +505,6 @@ def _build_user_prompt(match, trigger_type, bet_slip=None, parent_comment=None):
         lines.append(f"Venue: {home.venue}")
 
     # Global knowledge (curated real-world headlines)
-    from vinosports.core.knowledge import get_global_context
-
     global_ctx = get_global_context()
     if global_ctx:
         lines.append("")
