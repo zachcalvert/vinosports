@@ -1,7 +1,81 @@
 from django import forms
 from django.contrib.auth import get_user_model
 
+from vinosports.bots.models import BotProfile
+
 User = get_user_model()
+
+
+_input = "themed-input themed-input-sm"
+_textarea = "themed-input w-full"
+_select = "themed-input themed-input-sm"
+_checkbox = "h-4 w-4 rounded border-outline accent-primary"
+
+
+class BotProfileForm(forms.ModelForm):
+    """Form for creating or editing a user's bot profile."""
+
+    class Meta:
+        model = BotProfile
+        fields = (
+            "persona_prompt",
+            "tagline",
+            "avatar_icon",
+            "avatar_bg",
+            "portrait_url",
+            "strategy_type",
+            "risk_multiplier",
+            "max_daily_bets",
+            "active_in_epl",
+            "active_in_nba",
+            "active_in_nfl",
+            "epl_team_tla",
+            "nba_team_abbr",
+            "nfl_team_abbr",
+        )
+        widgets = {
+            "persona_prompt": forms.Textarea(
+                attrs={
+                    "class": _textarea,
+                    "rows": 5,
+                    "placeholder": (
+                        "Describe your bot's personality. "
+                        "Do NOT include team references — those are injected at runtime."
+                    ),
+                }
+            ),
+            "tagline": forms.TextInput(
+                attrs={"class": _input, "placeholder": "A short public-facing quote"}
+            ),
+            "avatar_icon": forms.TextInput(
+                attrs={"class": _input, "placeholder": "e.g. robot"}
+            ),
+            "avatar_bg": forms.TextInput(
+                attrs={"class": _input, "placeholder": "#374151", "type": "color"}
+            ),
+            "portrait_url": forms.URLInput(
+                attrs={"class": _input, "placeholder": "https://…"}
+            ),
+            "strategy_type": forms.Select(attrs={"class": _select}),
+            "risk_multiplier": forms.NumberInput(
+                attrs={"class": _input, "step": "0.1", "min": "0.1", "max": "10"}
+            ),
+            "max_daily_bets": forms.NumberInput(
+                attrs={"class": _input, "min": "1", "max": "50"}
+            ),
+            "active_in_epl": forms.CheckboxInput(attrs={"class": _checkbox}),
+            "active_in_nba": forms.CheckboxInput(attrs={"class": _checkbox}),
+            "active_in_nfl": forms.CheckboxInput(attrs={"class": _checkbox}),
+            "epl_team_tla": forms.TextInput(
+                attrs={"class": _input, "placeholder": "e.g. ARS", "maxlength": "5"}
+            ),
+            "nba_team_abbr": forms.TextInput(
+                attrs={"class": _input, "placeholder": "e.g. GSW", "maxlength": "5"}
+            ),
+            "nfl_team_abbr": forms.TextInput(
+                attrs={"class": _input, "placeholder": "e.g. KC", "maxlength": "5"}
+            ),
+        }
 
 
 class ProfileImageForm(forms.ModelForm):

@@ -31,6 +31,7 @@ from vinosports.betting.models import (
 from vinosports.bots.models import BotProfile
 
 from .forms import (
+    BotProfileForm,
     CurrencyForm,
     DisplayNameForm,
     LoginForm,
@@ -486,6 +487,12 @@ def _account_context(
         badge.earned = earned_map.get(badge.pk)
         all_badges.append(badge)
 
+    # Bot profile (may not exist)
+    try:
+        bot_profile = user.bot_profile
+    except BotProfile.DoesNotExist:
+        bot_profile = None
+
     return {
         "display_name_form": display_name_form or DisplayNameForm(instance=user),
         "currency_form": currency_form or CurrencyForm(instance=user),
@@ -498,6 +505,7 @@ def _account_context(
         "stats": stats,
         "user_rank": get_user_rank(user),
         "all_badges": all_badges,
+        "bot_profile": bot_profile,
     }
 
 
@@ -560,6 +568,92 @@ class ProfileImageUploadView(LoginRequiredMixin, View):
             "hub/account.html",
             _account_context(request.user, profile_image_form=form),
         )
+
+
+# ---------------------------------------------------------------------------
+# Bot profile management
+# ---------------------------------------------------------------------------
+
+
+class CreateBotProfileView(LoginRequiredMixin, View):
+    """Allow a logged-in user to create a bot profile for their account."""
+
+    template_name = "hub/bot_profile_form.html"
+
+    def _has_bot_profile(self, user):
+        try:
+            _ = user.bot_profile
+            return True
+        except BotProfile.DoesNotExist:
+            return False
+
+    def get(self, request):
+        if self._has_bot_profile(request.user):
+            return redirect("hub:edit_bot_profile")
+        return render(request, self.template_name, {"form": BotProfileForm()})
+
+    def post(self, request):
+        if self._has_bot_profile(request.user):
+            return redirect("hub:edit_bot_profile")
+        form = BotProfileForm(request.POST)
+        if not form.is_valid():
+            return render(request, self.template_name, {"form": form})
+        with transaction.atomic():
+            user = request.user
+            user.is_bot = True
+            user.save(update_fields=["is_bot"])
+            bot_profile = form.save(commit=False)
+            bot_profile.user = user
+            bot_profile.is_active = False
+            bot_profile.save()
+        return redirect("hub:account")
+
+
+class EditBotProfileView(LoginRequiredMixin, View):
+    """Allow a logged-in user to edit their existing bot profile."""
+
+    template_name = "hub/bot_profile_form.html"
+
+    def _get_bot_profile(self, user):
+        try:
+            return user.bot_profile
+        except BotProfile.DoesNotExist:
+            return None
+
+    def get(self, request):
+        bot_profile = self._get_bot_profile(request.user)
+        if bot_profile is None:
+            return redirect("hub:create_bot_profile")
+        return render(
+            request,
+            self.template_name,
+            {"form": BotProfileForm(instance=bot_profile), "editing": True},
+        )
+
+    def post(self, request):
+        bot_profile = self._get_bot_profile(request.user)
+        if bot_profile is None:
+            return redirect("hub:create_bot_profile")
+        form = BotProfileForm(request.POST, instance=bot_profile)
+        if not form.is_valid():
+            return render(
+                request, self.template_name, {"form": form, "editing": True}
+            )
+        form.save()
+        return redirect("hub:account")
+
+
+class ToggleBotProfileView(LoginRequiredMixin, View):
+    """Toggle the active state of the logged-in user's bot profile."""
+
+    def post(self, request):
+        try:
+            bot_profile = request.user.bot_profile
+        except BotProfile.DoesNotExist:
+            return redirect("hub:create_bot_profile")
+        bot_profile.is_active = not bot_profile.is_active
+        bot_profile.save(update_fields=["is_active"])
+        return redirect("hub:account")
 
 
 class BalanceHistoryAPI(View):
