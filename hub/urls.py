@@ -119,4 +119,5 @@ urlpatterns = [
         views.DeleteFeaturedParlayView.as_view(),
         name="delete_featured_parlay",
     ),
+    path("live-games/", views.LiveGamesStripView.as_view(), name="live_games_strip"),
 ]

@@ -1,0 +1,53 @@
+{% if live_games %}
+<section class="bg-inverse-surface/95 border-b border-white/10"
+         id="live-games-strip"
+         hx-get="{% url 'hub:live_games_strip' %}"
+         hx-trigger="every 60s"
+         hx-target="#live-games-strip"
+         hx-swap="outerHTML">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+        <div class="flex items-center gap-4 overflow-x-auto scrollbar-none">
+            {# "LIVE" label #}
+            <div class="flex items-center gap-1.5 flex-shrink-0">
+                <span class="inline-block w-2 h-2 rounded-full bg-danger animate-pulse"></span>
+                <span class="text-[10px] font-label font-bold uppercase tracking-widest text-white/50">Live</span>
+            </div>
+            <div class="w-px h-5 bg-white/20 flex-shrink-0"></div>
+            {# Game tiles #}
+            {% for game in live_games %}
+            <a href="{{ game.url }}"
+               class="flex items-center gap-3 flex-shrink-0 px-3 py-1.5 rounded-lg hover:bg-white/10 transition-colors group">
+                {# League badge #}
+                <span class="text-[9px] font-label font-bold uppercase tracking-wider px-1.5 py-0.5 rounded
+                             {% if game.league == 'epl' %}bg-tertiary/20 text-tertiary
+                             {% elif game.league == 'nba' %}bg-secondary/20 text-secondary-fixed-dim
+                             {% else %}bg-primary/30 text-primary-fixed-dim{% endif %}">
+                    {{ game.league|upper }}
+                </span>
+                {# Teams + scores #}
+                <div class="font-mono text-sm font-bold text-white tabular-nums">
+                    {{ game.away_name }}
+                    {% if game.away_score is not None %}
+                    <span class="text-white/60 font-normal mx-0.5">{{ game.away_score }}</span>
+                    {% endif %}
+                    <span class="text-white/30 font-normal mx-1">@</span>
+                    {{ game.home_name }}
+                    {% if game.home_score is not None %}
+                    <span class="text-white/60 font-normal mx-0.5">{{ game.home_score }}</span>
+                    {% endif %}
+                </div>
+                {# Status badge #}
+                {% if game.is_halftime %}
+                <span class="text-[9px] font-label font-bold uppercase tracking-wider text-warning">HT</span>
+                {% else %}
+                <span class="text-[9px] font-label font-bold uppercase tracking-wider text-danger animate-pulse">●</span>
+                {% endif %}
+            </a>
+            {% if not forloop.last %}
+            <div class="w-px h-5 bg-white/10 flex-shrink-0"></div>
+            {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}

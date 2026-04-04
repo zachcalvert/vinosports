@@ -46,6 +46,92 @@ User = get_user_model()
 logger = logging.getLogger(__name__)
 
 
+def _get_live_games():
+    """Return a normalized list of live games across all leagues."""
+    from epl.matches.models import Match
+    from nba.games.models import Game as NbaGame
+    from nba.games.models import GameStatus as NbaGameStatus
+    from nfl.games.models import Game as NflGame
+    from nfl.games.models import GameStatus as NflGameStatus
+
+    games = []
+
+    # EPL
+    for m in (
+        Match.objects.filter(status__in=[Match.Status.IN_PLAY, Match.Status.PAUSED])
+        .select_related("home_team", "away_team")
+        .order_by("kickoff")
+    ):
+        games.append(
+            {
+                "league": "epl",
+                "home_name": m.home_team.tla
+                or m.home_team.short_name
+                or m.home_team.name,
+                "away_name": m.away_team.tla
+                or m.away_team.short_name
+                or m.away_team.name,
+                "home_score": m.home_score,
+                "away_score": m.away_score,
+                "is_halftime": m.status == Match.Status.PAUSED,
+                "url": m.get_absolute_url(),
+            }
+        )
+
+    # NBA
+    for g in (
+        NbaGame.objects.filter(
+            status__in=[NbaGameStatus.IN_PROGRESS, NbaGameStatus.HALFTIME]
+        )
+        .select_related("home_team", "away_team")
+        .order_by("tip_off")
+    ):
+        games.append(
+            {
+                "league": "nba",
+                "home_name": g.home_team.abbreviation,
+                "away_name": g.away_team.abbreviation,
+                "home_score": g.home_score,
+                "away_score": g.away_score,
+                "is_halftime": g.status == NbaGameStatus.HALFTIME,
+                "url": g.get_absolute_url(),
+            }
+        )
+
+    # NFL
+    for g in (
+        NflGame.objects.filter(
+            status__in=[NflGameStatus.IN_PROGRESS, NflGameStatus.HALFTIME]
+        )
+        .select_related("home_team", "away_team")
+        .order_by("kickoff")
+    ):
+        games.append(
+            {
+                "league": "nfl",
+                "home_name": g.home_team.abbreviation,
+                "away_name": g.away_team.abbreviation,
+                "home_score": g.home_score,
+                "away_score": g.away_score,
+                "is_halftime": g.status == NflGameStatus.HALFTIME,
+                "url": g.get_absolute_url(),
+            }
+        )
+
+    return games
+
+
+class LiveGamesStripView(View):
+    """HTMX endpoint: returns the live games strip partial for polling."""
+
+    def get(self, request):
+        return render(
+            request,
+            "hub/partials/live_games_strip.html",
+            {"live_games": _get_live_games()},
+        )
+
+
 class HomeView(TemplateView):
     template_name = "hub/home.html"
 
@@ -70,6 +156,7 @@ class HomeView(TemplateView):
             .prefetch_related("legs")
             .order_by("-created_at")[:4]
         )
+        ctx["live_games"] = _get_live_games()
 
         # ── Authenticated user dashboard ──
         user = self.request.user
