@@ -18,6 +18,7 @@ from nfl.discussions.models import Comment
 from nfl.games.models import GameNotes, GameStats
 from vinosports.betting.models import BetStatus
 from vinosports.bots.models import BotProfile, StrategyType
+from vinosports.core.knowledge import get_global_context
 
 User = get_user_model()
 logger = logging.getLogger(__name__)
@@ -354,6 +355,12 @@ def _build_user_prompt(game, trigger_type, bet_slip=None, parent_comment=None):
         lines.append(f"Week {game.week}")
     if game.venue:
         lines.append(f"Venue: {game.venue}")
+
+    # Global knowledge (curated real-world headlines)
+    global_ctx = get_global_context()
+    if global_ctx:
+        lines.append("")
+        lines.append(global_ctx)
 
     # Latest odds
     odds = Odds.objects.filter(game=game).order_by("-fetched_at").first()
