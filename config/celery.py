@@ -58,3 +58,7 @@ app.autodiscover_tasks(
         "nfl.website",
     ]
 )
+app.autodiscover_tasks(
+    ["epl.website", "nba.website"],
+    related_name="challenge_tasks",
+)
