@@ -5,6 +5,7 @@ from django.utils import timezone
 from tests.factories import UserBalanceFactory, UserFactory  # noqa: F401 — re-exported
 
 from worldcup.betting.models import BetSlip, Parlay, ParlayLeg
+from worldcup.discussions.models import Comment
 from worldcup.matches.models import (
     Confederation,
     Group,
@@ -114,3 +115,14 @@ class ParlayLegFactory(factory.django.DjangoModelFactory):
     match = factory.SubFactory(MatchFactory)
     selection = BetSlip.Selection.HOME_WIN
     odds_at_placement = Decimal("2.10")
+
+
+class CommentFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Comment
+
+    user = factory.SubFactory(UserFactory)
+    match = factory.SubFactory(MatchFactory)
+    body = factory.Sequence(lambda n: f"Comment body {n}")
+    parent = None
+    is_deleted = False

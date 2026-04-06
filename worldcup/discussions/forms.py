@@ -1,18 +1,15 @@
 from django import forms
 
-from worldcup.discussions.models import Comment
 
-
-class CommentForm(forms.ModelForm):
-    class Meta:
-        model = Comment
-        fields = ["body"]
-        widgets = {
-            "body": forms.Textarea(
-                attrs={
-                    "rows": 3,
-                    "placeholder": "Share your thoughts...",
-                    "maxlength": 1000,
-                }
-            ),
-        }
+class CommentForm(forms.Form):
+    body = forms.CharField(
+        max_length=1000,
+        widget=forms.Textarea(
+            attrs={
+                "class": "themed-input w-full text-sm",
+                "rows": 3,
+                "placeholder": "Join the discussion...",
+                "maxlength": "1000",
+            }
+        ),
+    )
