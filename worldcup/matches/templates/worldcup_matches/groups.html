@@ -1,0 +1,80 @@
+{% extends "worldcup_website/base.html" %}
+
+{% block title %}Group Stage{% endblock %}
+
+{% block content %}
+
+<div class="mb-6">
+    <h1 class="font-headline italic font-black text-4xl sm:text-5xl uppercase tracking-tight leading-none">
+        Group Stage
+    </h1>
+    <div class="flex items-center gap-2 mt-3">
+        <span class="w-1 h-5 rounded-full bg-accent"></span>
+        <p class="text-muted text-sm uppercase tracking-wider font-medium">12 groups · 48 teams · Top 2 advance</p>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+    {% for group in groups %}
+    <div class="rounded-xl border border-outline-variant bg-surface-container-lowest overflow-hidden">
+        <!-- Group header -->
+        <div class="flex items-center justify-between px-5 py-3.5 border-b border-outline-variant bg-surface-container">
+            <h2 class="font-headline font-black text-lg uppercase tracking-wider">
+                Group {{ group.letter }}
+            </h2>
+            <a href="{% url 'worldcup_matches:group_detail' letter=group.letter %}"
+               class="text-xs text-accent hover:underline font-semibold">
+                Details →
+            </a>
+        </div>
+
+        <!-- Standings table -->
+        <table class="w-full group-table">
+            <thead>
+                <tr>
+                    <th class="text-left pl-5">#</th>
+                    <th class="text-left">Team</th>
+                    <th class="text-center">P</th>
+                    <th class="text-center">W</th>
+                    <th class="text-center">D</th>
+                    <th class="text-center">L</th>
+                    <th class="text-center">GD</th>
+                    <th class="text-center pr-5">Pts</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for standing in group.standings.all|dictsort:"position" %}
+                <tr {% if standing.position == 3 %}class="qualify-border"{% endif %}>
+                    <td class="pl-5 text-muted">{{ standing.position }}</td>
+                    <td class="font-semibold">
+                        <div class="flex items-center gap-2">
+                            {% if standing.team.crest_url %}
+                            <img src="{{ standing.team.crest_url }}" alt=""
+                                 class="w-5 h-5 object-contain flex-shrink-0">
+                            {% endif %}
+                            <span class="truncate">{{ standing.team.short_name|default:standing.team.tla }}</span>
+                        </div>
+                    </td>
+                    <td class="text-center text-muted">{{ standing.played }}</td>
+                    <td class="text-center text-muted">{{ standing.won }}</td>
+                    <td class="text-center text-muted">{{ standing.drawn }}</td>
+                    <td class="text-center text-muted">{{ standing.lost }}</td>
+                    <td class="text-center text-muted">
+                        {% if standing.goal_difference > 0 %}+{% endif %}{{ standing.goal_difference }}
+                    </td>
+                    <td class="text-center font-mono font-bold pr-5">{{ standing.points }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" class="px-5 py-4 text-center text-sm text-muted">
+                        Standings not yet available
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endfor %}
+</div>
+
+{% endblock %}

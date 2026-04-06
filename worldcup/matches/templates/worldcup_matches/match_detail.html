@@ -1,0 +1,221 @@
+{% extends "worldcup_website/base.html" %}
+{% load worldcup_match_tags %}
+
+{% block title %}{{ match.home_team.tla }} vs {{ match.away_team.tla }} — World Cup 2026{% endblock %}
+
+{% block content %}
+
+<!-- Breadcrumb -->
+<div class="flex items-center gap-2 text-xs text-muted mb-4 uppercase tracking-wide font-semibold">
+    <a href="{% url 'worldcup_matches:dashboard' %}" class="hover:text-accent transition-colors">World Cup</a>
+    <span>/</span>
+    {% if match.group %}
+    <a href="{% url 'worldcup_matches:group_detail' letter=match.group.letter %}"
+       class="hover:text-accent transition-colors">Group {{ match.group.letter }}</a>
+    <span>/</span>
+    {% else %}
+    <a href="{% url 'worldcup_matches:bracket' %}" class="hover:text-accent transition-colors">{{ match.stage.name }}</a>
+    <span>/</span>
+    {% endif %}
+    <span class="text-muted/60">{{ match.home_team.tla }} vs {{ match.away_team.tla }}</span>
+</div>
+
+<!-- Match header card (WebSocket live score) -->
+<div class="rounded-xl border border-outline-variant bg-surface-container-lowest mb-6 overflow-hidden"
+     hx-ext="ws" ws-connect="/worldcup/ws/live/{{ match.pk }}/">
+
+    <!-- Status bar -->
+    <div class="flex items-center justify-between px-5 py-3 border-b border-outline-variant bg-surface-container">
+        <div class="flex items-center gap-3">
+            <span id="match-status">{% wc_status_badge match %}</span>
+            {% if match.group %}
+            <span class="text-sm text-muted">Group {{ match.group.letter }}</span>
+            {% else %}
+            <span class="text-sm text-muted">{{ match.stage.name }}</span>
+            {% endif %}
+        </div>
+        {% if match.venue %}
+        <span class="text-xs text-muted hidden sm:block">
+            <i class="ph-duotone ph-map-pin text-sm"></i>
+            {{ match.venue }}{% if match.city %}, {{ match.city }}{% endif %}
+        </span>
+        {% endif %}
+    </div>
+
+    <!-- Teams & score -->
+    <div class="p-6 sm:p-8">
+        <div class="flex items-center justify-center gap-6 sm:gap-12">
+
+            <!-- Home team -->
+            <div class="text-center flex-1">
+                {% if match.home_team.crest_url %}
+                <img src="{{ match.home_team.crest_url }}" alt="{{ match.home_team.name }}"
+                     class="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-3 object-contain">
+                {% endif %}
+                <h2 class="font-bold text-base sm:text-lg leading-tight">
+                    {{ match.home_team.short_name|default:match.home_team.name }}
+                </h2>
+                {% if match.home_team.confederation %}
+                <span class="confed-badge confed-badge--{{ match.home_team.confederation }} mt-1 inline-block">
+                    {{ match.home_team.confederation }}
+                </span>
+                {% endif %}
+                <p class="text-xs text-muted mt-1 uppercase tracking-widest">Home</p>
+            </div>
+
+            <!-- Score -->
+            <div id="score-display" class="flex-shrink-0">
+                {% wc_score_display match %}
+            </div>
+
+            <!-- Away team -->
+            <div class="text-center flex-1">
+                {% if match.away_team.crest_url %}
+                <img src="{{ match.away_team.crest_url }}" alt="{{ match.away_team.name }}"
+                     class="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-3 object-contain">
+                {% endif %}
+                <h2 class="font-bold text-base sm:text-lg leading-tight">
+                    {{ match.away_team.short_name|default:match.away_team.name }}
+                </h2>
+                {% if match.away_team.confederation %}
+                <span class="confed-badge confed-badge--{{ match.away_team.confederation }} mt-1 inline-block">
+                    {{ match.away_team.confederation }}
+                </span>
+                {% endif %}
+                <p class="text-xs text-muted mt-1 uppercase tracking-widest">Away</p>
+            </div>
+
+        </div>
+
+        <!-- Kickoff date -->
+        <p class="text-center text-sm text-muted mt-5">
+            <time datetime="{{ match.kickoff|date:'c' }}">
+                {{ match.kickoff|date:"l, j F Y · H:i" }} UTC
+            </time>
+        </p>
+    </div>
+</div>
+
+<!-- Two-column layout: odds + betting | discussion -->
+<div class="grid grid-cols-1 lg:grid-cols-[26rem_minmax(0,1fr)] gap-6">
+
+    <!-- Left: Odds card -->
+    <div class="space-y-4">
+
+        {% if odds %}
+        <div class="rounded-xl border border-outline-variant bg-surface-container-lowest overflow-hidden">
+            <div class="px-5 py-3.5 border-b border-outline-variant bg-surface-container">
+                <h3 class="font-headline font-bold text-sm uppercase tracking-wider">House Odds</h3>
+            </div>
+            <div class="p-5">
+                {% if request.user.is_authenticated and match.status in "SCHEDULED TIMED" %}
+                <!-- Authenticated: clickable bet buttons -->
+                <div class="grid grid-cols-3 gap-3">
+                    <!-- Home win -->
+                    <button type="button"
+                            hx-get="{% url 'worldcup_betting:quick_bet_form' match.slug %}?selection=HOME_WIN&container=bet-container"
+                            hx-target="#bet-container"
+                            hx-swap="innerHTML"
+                            class="rounded-lg border border-outline-variant bg-surface-container p-3 text-center hover:border-accent hover:bg-accent/5 transition-colors w-full">
+                        <div class="text-xs text-muted uppercase tracking-wide mb-1">{{ match.home_team.tla }}</div>
+                        <div class="font-mono font-bold text-xl text-accent">{{ odds.home_win }}</div>
+                        <div class="text-xs text-muted mt-1">Home Win</div>
+                    </button>
+                    <!-- Draw -->
+                    <button type="button"
+                            hx-get="{% url 'worldcup_betting:quick_bet_form' match.slug %}?selection=DRAW&container=bet-container"
+                            hx-target="#bet-container"
+                            hx-swap="innerHTML"
+                            class="rounded-lg border border-outline-variant bg-surface-container p-3 text-center hover:border-accent hover:bg-accent/5 transition-colors w-full">
+                        <div class="text-xs text-muted uppercase tracking-wide mb-1">Draw</div>
+                        <div class="font-mono font-bold text-xl text-accent">{{ odds.draw }}</div>
+                        <div class="text-xs text-muted mt-1">{% if match.group %}Group stage{% else %}90 min{% endif %}</div>
+                    </button>
+                    <!-- Away win -->
+                    <button type="button"
+                            hx-get="{% url 'worldcup_betting:quick_bet_form' match.slug %}?selection=AWAY_WIN&container=bet-container"
+                            hx-target="#bet-container"
+                            hx-swap="innerHTML"
+                            class="rounded-lg border border-outline-variant bg-surface-container p-3 text-center hover:border-accent hover:bg-accent/5 transition-colors w-full">
+                        <div class="text-xs text-muted uppercase tracking-wide mb-1">{{ match.away_team.tla }}</div>
+                        <div class="font-mono font-bold text-xl text-accent">{{ odds.away_win }}</div>
+                        <div class="text-xs text-muted mt-1">Away Win</div>
+                    </button>
+                </div>
+
+                <!-- Inline bet form / confirmation slot -->
+                <div id="bet-container" class="mt-3"></div>
+
+                {% else %}
+                <!-- Display-only odds (anonymous or match not bettable) -->
+                <div class="grid grid-cols-3 gap-3">
+                    <div class="rounded-lg border border-outline-variant bg-surface-container p-3 text-center">
+                        <div class="text-xs text-muted uppercase tracking-wide mb-1">{{ match.home_team.tla }}</div>
+                        <div class="font-mono font-bold text-xl text-accent">{{ odds.home_win }}</div>
+                        <div class="text-xs text-muted mt-1">Home Win</div>
+                    </div>
+                    <div class="rounded-lg border border-outline-variant bg-surface-container p-3 text-center">
+                        <div class="text-xs text-muted uppercase tracking-wide mb-1">Draw</div>
+                        <div class="font-mono font-bold text-xl text-accent">{{ odds.draw }}</div>
+                        <div class="text-xs text-muted mt-1">{% if match.group %}Group stage{% else %}90 min{% endif %}</div>
+                    </div>
+                    <div class="rounded-lg border border-outline-variant bg-surface-container p-3 text-center">
+                        <div class="text-xs text-muted uppercase tracking-wide mb-1">{{ match.away_team.tla }}</div>
+                        <div class="font-mono font-bold text-xl text-accent">{{ odds.away_win }}</div>
+                        <div class="text-xs text-muted mt-1">Away Win</div>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if not match.group %}
+                <p class="text-xs text-muted mt-3 text-center">
+                    <i class="ph-duotone ph-info text-sm"></i>
+                    Knockout bets settle on 90-minute result only
+                </p>
+                {% endif %}
+
+                {% if not request.user.is_authenticated %}
+                <div class="mt-4 pt-4 border-t border-outline-variant text-center">
+                    <p class="text-sm text-muted mb-3">Log in to place a bet</p>
+                    <a href="{% url 'hub:login' %}?next={{ request.path }}"
+                       class="inline-block bg-primary text-on-primary font-headline font-bold text-sm uppercase px-5 py-2 rounded-lg hover:bg-primary/90 transition-colors">
+                        Log In
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% else %}
+        <div class="rounded-xl border border-outline-variant border-dashed bg-surface-container-lowest p-6 text-center">
+            <i class="ph-duotone ph-chart-line-up text-3xl text-muted/40 mb-2 block"></i>
+            <p class="text-sm text-muted">Odds not yet available for this match.</p>
+        </div>
+        {% endif %}
+
+        {% include "worldcup_matches/partials/community_sentiment.html" %}
+
+    </div>
+
+    <!-- Right: Discussion (lazy-loaded via HTMX) -->
+    <div>
+        <div id="discussions"
+             hx-get="{% url 'worldcup_discussions:comment_list' match.slug %}"
+             hx-trigger="load"
+             hx-swap="outerHTML">
+            <!-- Skeleton while loading -->
+            <div class="rounded-xl border border-outline-variant bg-surface-container-lowest overflow-hidden animate-pulse">
+                <div class="px-5 py-3.5 border-b border-outline-variant bg-surface-container">
+                    <div class="h-3 w-28 bg-outline-variant/60 rounded"></div>
+                </div>
+                <div class="p-5 space-y-3">
+                    <div class="h-4 w-3/4 bg-outline-variant/40 rounded"></div>
+                    <div class="h-4 w-1/2 bg-outline-variant/40 rounded"></div>
+                    <div class="h-16 bg-outline-variant/30 rounded mt-4"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}

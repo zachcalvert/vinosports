@@ -1,0 +1,197 @@
+{% extends "worldcup_website/base.html" %}
+{% load worldcup_match_tags %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+
+<div class="mb-6 flex items-center justify-between">
+    <div>
+        <h1 class="font-headline italic font-black text-4xl sm:text-5xl uppercase tracking-tight leading-none">
+            World Cup 2026
+        </h1>
+        <div class="flex items-center gap-2 mt-3">
+            <span class="w-1 h-5 rounded-full bg-accent"></span>
+            <p class="text-muted text-sm uppercase tracking-wider font-medium">FIFA World Cup · USA · Canada · Mexico</p>
+        </div>
+    </div>
+    <div id="ws-status-container" class="flex items-center gap-2 text-xs text-muted">
+        <span class="ws-status disconnected" id="ws-dot"></span>
+        <span id="ws-label">Connecting…</span>
+    </div>
+</div>
+
+<!-- Live Now -->
+{% if live_matches %}
+<section class="mb-8">
+    <h2 class="text-lg font-headline font-bold uppercase tracking-wider mb-3 flex items-center gap-2">
+        <span class="h-2 w-2 rounded-full bg-accent animate-ping"></span>
+        Live Now
+    </h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3"
+         id="live-match-grid"
+         hx-ext="ws" ws-connect="/worldcup/ws/live/dashboard/">
+        {% for match in live_matches %}
+        <a href="{{ match.get_absolute_url }}"
+           class="live-match-card bracket-match-card bg-surface-container-lowest rounded-xl border border-outline-variant p-4 flex items-center justify-between gap-4 no-underline">
+            <div class="flex items-center gap-2 flex-1 min-w-0">
+                {% if match.home_team.crest_url %}
+                <img src="{{ match.home_team.crest_url }}" alt="" class="w-7 h-7 object-contain flex-shrink-0">
+                {% endif %}
+                <span class="font-bold text-sm truncate">{{ match.home_team.short_name|default:match.home_team.tla }}</span>
+            </div>
+            <div class="text-center flex-shrink-0">
+                <span class="font-mono font-black text-xl">{{ match.home_score }} – {{ match.away_score }}</span>
+                <div class="mt-0.5">{% wc_status_badge match %}</div>
+            </div>
+            <div class="flex items-center gap-2 flex-1 min-w-0 justify-end">
+                <span class="font-bold text-sm truncate text-right">{{ match.away_team.short_name|default:match.away_team.tla }}</span>
+                {% if match.away_team.crest_url %}
+                <img src="{{ match.away_team.crest_url }}" alt="" class="w-7 h-7 object-contain flex-shrink-0">
+                {% endif %}
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+<!-- Upcoming Matches -->
+{% if upcoming_matches %}
+<section class="mb-8">
+    <div class="flex items-center justify-between mb-3">
+        <h2 class="text-lg font-headline font-bold uppercase tracking-wider">Upcoming Matches</h2>
+        <a href="{% url 'worldcup_betting:odds_board' %}"
+           class="text-xs text-accent hover:underline font-semibold">View Odds →</a>
+    </div>
+    <div class="rounded-xl border border-outline-variant bg-surface-container-lowest overflow-hidden divide-y divide-outline-variant">
+        {% for match in upcoming_matches %}
+        <a href="{{ match.get_absolute_url }}"
+           class="flex items-center gap-4 px-5 py-3.5 hover:bg-surface-container transition-colors no-underline">
+            <!-- Stage / Group context -->
+            <div class="flex-shrink-0 w-20 text-right">
+                <span class="text-xs text-muted uppercase tracking-wide">
+                    {% if match.group %}Group {{ match.group.letter }}{% else %}{{ match.stage.name }}{% endif %}
+                </span>
+            </div>
+            <!-- Home team -->
+            <div class="flex items-center gap-2 flex-1 min-w-0 justify-end">
+                <span class="text-sm font-semibold truncate text-right">{{ match.home_team.short_name|default:match.home_team.tla }}</span>
+                {% if match.home_team.crest_url %}
+                <img src="{{ match.home_team.crest_url }}" alt="" class="w-6 h-6 object-contain flex-shrink-0">
+                {% endif %}
+            </div>
+            <!-- Kickoff time -->
+            <div class="flex-shrink-0 text-center w-24">
+                <div class="font-mono text-sm font-bold text-muted">{{ match.kickoff|date:"M d" }}</div>
+                <div class="font-mono text-xs text-muted">{{ match.kickoff|date:"H:i" }}</div>
+            </div>
+            <!-- Away team -->
+            <div class="flex items-center gap-2 flex-1 min-w-0">
+                {% if match.away_team.crest_url %}
+                <img src="{{ match.away_team.crest_url }}" alt="" class="w-6 h-6 object-contain flex-shrink-0">
+                {% endif %}
+                <span class="text-sm font-semibold truncate">{{ match.away_team.short_name|default:match.away_team.tla }}</span>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+</section>
+{% else %}
+<section class="mb-8">
+    <h2 class="text-lg font-headline font-bold uppercase tracking-wider mb-3">Upcoming Matches</h2>
+    <div class="rounded-xl border border-outline-variant border-dashed bg-surface-container-lowest p-10 text-center">
+        <i class="ph-duotone ph-calendar-blank text-4xl text-muted/50 mb-3 block"></i>
+        <p class="text-muted text-sm">The 2026 FIFA World Cup kicks off June 11, 2026.</p>
+        <a href="{% url 'worldcup_matches:groups' %}" class="mt-3 inline-block text-sm text-accent hover:underline font-semibold">
+            View Groups →
+        </a>
+    </div>
+</section>
+{% endif %}
+
+<!-- Recent Results -->
+{% if recent_results %}
+<section class="mb-8">
+    <h2 class="text-lg font-headline font-bold uppercase tracking-wider mb-3">Recent Results</h2>
+    <div class="rounded-xl border border-outline-variant bg-surface-container-lowest overflow-hidden divide-y divide-outline-variant">
+        {% for match in recent_results %}
+        <a href="{{ match.get_absolute_url }}"
+           class="flex items-center gap-4 px-5 py-3.5 hover:bg-surface-container transition-colors no-underline">
+            <div class="flex-shrink-0 w-20 text-right">
+                <span class="text-xs text-muted uppercase tracking-wide">
+                    {% if match.group %}Group {{ match.group.letter }}{% else %}{{ match.stage.name }}{% endif %}
+                </span>
+            </div>
+            <div class="flex items-center gap-2 flex-1 min-w-0 justify-end">
+                <span class="text-sm font-semibold truncate text-right">{{ match.home_team.short_name|default:match.home_team.tla }}</span>
+                {% if match.home_team.crest_url %}
+                <img src="{{ match.home_team.crest_url }}" alt="" class="w-6 h-6 object-contain flex-shrink-0">
+                {% endif %}
+            </div>
+            <div class="flex-shrink-0 text-center w-24">
+                <span class="font-mono font-black text-lg">{{ match.home_score }} – {{ match.away_score }}</span>
+                {% if match.home_score_penalties is not None %}
+                <div class="text-xs text-muted">pens</div>
+                {% elif match.home_score_et is not None %}
+                <div class="text-xs text-muted">AET</div>
+                {% endif %}
+            </div>
+            <div class="flex items-center gap-2 flex-1 min-w-0">
+                {% if match.away_team.crest_url %}
+                <img src="{{ match.away_team.crest_url }}" alt="" class="w-6 h-6 object-contain flex-shrink-0">
+                {% endif %}
+                <span class="text-sm font-semibold truncate">{{ match.away_team.short_name|default:match.away_team.tla }}</span>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+<!-- Quick links row -->
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+    <a href="{% url 'worldcup_matches:groups' %}"
+       class="rounded-xl border border-outline-variant bg-surface-container-lowest p-5 flex items-center gap-4 hover:border-accent hover:bg-accent/5 transition-colors no-underline group">
+        <i class="ph-duotone ph-circles-four text-3xl text-accent"></i>
+        <div>
+            <p class="font-headline font-bold uppercase text-sm tracking-wider">Groups</p>
+            <p class="text-xs text-muted mt-0.5">All 12 groups &amp; standings</p>
+        </div>
+    </a>
+    <a href="{% url 'worldcup_matches:bracket' %}"
+       class="rounded-xl border border-outline-variant bg-surface-container-lowest p-5 flex items-center gap-4 hover:border-accent hover:bg-accent/5 transition-colors no-underline group">
+        <i class="ph-duotone ph-tree text-3xl text-accent"></i>
+        <div>
+            <p class="font-headline font-bold uppercase text-sm tracking-wider">Bracket</p>
+            <p class="text-xs text-muted mt-0.5">Knockout rounds</p>
+        </div>
+    </a>
+    <a href="{% url 'worldcup_betting:odds_board' %}"
+       class="rounded-xl border border-outline-variant bg-surface-container-lowest p-5 flex items-center gap-4 hover:border-accent hover:bg-accent/5 transition-colors no-underline group">
+        <i class="ph-duotone ph-chart-line-up text-3xl text-accent"></i>
+        <div>
+            <p class="font-headline font-bold uppercase text-sm tracking-wider">Odds</p>
+            <p class="text-xs text-muted mt-0.5">Latest match odds</p>
+        </div>
+    </a>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.body.addEventListener('htmx:wsOpen', function () {
+        var dot = document.getElementById('ws-dot');
+        var label = document.getElementById('ws-label');
+        if (dot) { dot.className = 'ws-status connected'; }
+        if (label) { label.textContent = 'Live'; }
+    });
+    document.body.addEventListener('htmx:wsClose', function () {
+        var dot = document.getElementById('ws-dot');
+        var label = document.getElementById('ws-label');
+        if (dot) { dot.className = 'ws-status disconnected'; }
+        if (label) { label.textContent = 'Reconnecting…'; }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,85 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}World Cup 2026{% endblock %} — VinoSports</title>
+
+    <link rel="icon" type="image/png" href="{% static 'worldcup_website/favicon.png' %}">
+
+    {% include "vinosports/includes/head_design_system.html" %}
+    <link rel="stylesheet" href="{% static 'worldcup_website/css/styles.css' %}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="h-full theme-page"
+      hx-boost="true"
+      hx-ext="head-support,ws"
+      data-authenticated="{{ user.is_authenticated|yesno:'true,false' }}"
+      data-signup-url="{% url 'hub:signup' %}"
+      data-show-activity="{{ show_activity_toasts|yesno:'true,false' }}">
+
+    <div class="grain-overlay"></div>
+
+    <div class="min-h-full flex flex-col">
+        {% include "vinosports/components/global_navbar.html" %}
+
+        <div class="flex flex-1">
+            <!-- Desktop sidebar -->
+            <aside class="league-sidebar hidden lg:flex">
+                {% include "worldcup_website/components/sidebar.html" %}
+            </aside>
+
+            <!-- Main content -->
+            <main class="flex-1 min-w-0">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                    {% block content %}{% endblock %}
+                </div>
+            </main>
+        </div>
+
+        {% include "worldcup_website/components/footer.html" %}
+    </div>
+
+    <!-- Mobile sidebar overlay (Alpine controlled) -->
+    <div x-data="{ open: false }"
+         @toggle-sidebar.window="open = !open"
+         @keydown.escape.window="open = false">
+        <div x-show="open" class="sidebar-overlay" x-cloak>
+            <div class="sidebar-backdrop" @click="open = false"></div>
+            <aside class="sidebar-drawer">
+                <div class="sidebar-drawer-header">
+                    <span class="text-sm font-semibold uppercase tracking-wider text-muted">World Cup 2026</span>
+                    <button type="button" class="sidebar-close-btn" @click="open = false">
+                        <i class="ph-duotone ph-x" style="font-size:1.25rem;"></i>
+                    </button>
+                </div>
+                {% include "worldcup_website/components/sidebar.html" %}
+            </aside>
+        </div>
+    </div>
+
+    <!-- Toast notifications -->
+    <div id="notifications" class="fixed top-20 right-4 z-50 space-y-2 max-w-sm"></div>
+
+    <!-- Reward notifications (WebSocket) -->
+    {% if user.is_authenticated %}
+    <div id="reward-notifications"
+         class="fixed top-20 left-1/2 -translate-x-1/2 z-50 space-y-3 w-full max-w-sm px-4"
+         hx-ext="ws" ws-connect="/worldcup/ws/notifications/">
+    </div>
+    {% endif %}
+
+    <!-- Live activity feed (all visitors) -->
+    {% if show_activity_toasts %}
+    <div id="activity-toasts"
+         class="fixed bottom-4 left-4 z-40 space-y-2 max-w-xs"
+         hx-ext="ws" ws-connect="/worldcup/ws/activity/">
+    </div>
+    {% endif %}
+
+    {% include "worldcup_betting/partials/parlay_slip.html" %}
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

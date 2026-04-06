@@ -1,0 +1,54 @@
+{% load currency_tags %}
+<div class="bg-primary-fixed/20 rounded-xl border-b-4 border-secondary p-3 my-1">
+    {% if error %}
+    <div class="bg-danger/10 border border-danger/30 rounded-md p-2 mb-2">
+        <p class="text-danger text-xs">{{ error }}</p>
+    </div>
+    {% endif %}
+    <form hx-post="{% url 'worldcup_betting:place_bet' match.slug %}"
+          hx-target="#{{ container_id }}"
+          hx-swap="innerHTML"
+          hx-disabled-elt="find button[type='submit']"
+          class="space-y-2">
+        {% csrf_token %}
+        <input type="hidden" name="selection" value="{{ selection }}">
+        <input type="hidden" name="container_id" value="{{ container_id }}">
+
+        <div class="flex items-center justify-between">
+            <span class="text-sm">
+                <span class="text-accent font-semibold">
+                    {% if selection == "HOME_WIN" %}{{ match.home_team.short_name|default:match.home_team.name }} Win
+                    {% elif selection == "DRAW" %}Draw
+                    {% else %}{{ match.away_team.short_name|default:match.away_team.name }} Win
+                    {% endif %}
+                </span>
+                <span class="text-muted font-mono text-xs">@ {{ selected_odds }}</span>
+            </span>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <div class="flex items-center gap-2 flex-1">
+                <label class="text-xs text-muted shrink-0">Stake:</label>
+                <input type="number" name="stake"
+                       class="w-full bg-surface-container-lowest border-2 border-outline-variant rounded-sm px-2 py-1 font-mono text-base sm:text-sm text-right focus:outline-none focus:border-primary"
+                       placeholder="0.00" step="0.50" min="0.50" max="100000000.00" required
+                       autofocus>
+            </div>
+
+            <button type="submit"
+                    class="bg-primary text-on-primary font-headline font-black uppercase tracking-widest text-xs py-1.5 px-4 rounded-full disabled:opacity-50 shrink-0">
+                <span class="htmx-indicator"><span class="spinner spinner-sm mr-1"></span></span>Bet
+            </button>
+
+            <button type="button"
+                    class="text-muted hover:text-primary text-sm px-1 transition-colors shrink-0"
+                    onclick="document.getElementById('{{ container_id }}').innerHTML = ''">
+                &times;
+            </button>
+        </div>
+
+        {% if form.stake.errors %}
+        <p class="text-danger text-xs">{{ form.stake.errors.0 }}</p>
+        {% endif %}
+    </form>
+</div>

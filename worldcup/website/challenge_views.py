@@ -1,0 +1,1 @@
+"""World Cup challenge views."""

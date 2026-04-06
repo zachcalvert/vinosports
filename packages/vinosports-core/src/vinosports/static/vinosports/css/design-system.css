@@ -345,7 +345,7 @@
 /* Varsity stripe — signature triple-stripe divider */
 .varsity-stripe {
     height: 8px;
-    border-radius: 9999px;
+    /* border-radius: 9999px; */
     background: linear-gradient(to right,
         #b3262f 0%, #b3262f 45%,
         #f5f0e1 45%, #f5f0e1 55%,

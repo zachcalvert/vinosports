@@ -64,6 +64,14 @@ INSTALLED_APPS = [
     "nfl.discussions",
     "nfl.activity",
     "nfl.website",
+    # World Cup
+    "worldcup.matches",
+    "worldcup.betting",
+    "worldcup.bots",
+    "worldcup.discussions",
+    "worldcup.activity",
+    "worldcup.rewards",
+    "worldcup.website",
 ]
 
 AUTH_USER_MODEL = "users.User"
@@ -132,6 +140,13 @@ TEMPLATES = [
                 "nfl.betting.context_processors.parlay_slip",
                 "nfl.betting.context_processors.futures_sidebar",
                 "nfl.activity.context_processors.activity_toasts",
+                # World Cup (guarded by request.league)
+                "worldcup.website.context_processors.theme",
+                "worldcup.betting.context_processors.bankruptcy",
+                "worldcup.betting.context_processors.parlay_slip",
+                "worldcup.betting.context_processors.futures_sidebar",
+                "worldcup.rewards.context_processors.unseen_rewards",
+                "worldcup.activity.context_processors.activity_toasts",
             ],
         },
     },
@@ -214,6 +229,7 @@ for _static_dir in [
     BASE_DIR / "epl" / "static",
     BASE_DIR / "nba" / "static",
     BASE_DIR / "nfl" / "static",
+    BASE_DIR / "worldcup" / "static",
 ]:
     if _static_dir.is_dir():
         STATICFILES_DIRS.append(_static_dir)
@@ -255,6 +271,14 @@ LEAGUE_URLS = {
         "description": "NFL weekly picks, spreads, and survivor pools.",
         "icon": "ph-duotone ph-football",
     },
+    "worldcup": {
+        "name": "FIFA World Cup 2026",
+        "short": "WC",
+        "url": "/worldcup/",
+        "icon": "ph-duotone ph-globe",
+        "status": "active",
+        "description": "Bet on the 2026 FIFA World Cup — group stage, knockouts, and futures.",
+    },
 }
 
 LOGIN_URL = "/login/"
@@ -272,6 +296,7 @@ CELERY_TASK_ROUTES = {
     "nba.*": {"queue": "nba"},
     "nfl.*": {"queue": "nfl"},
     "news.*": {"queue": "news"},
+    "worldcup.*": {"queue": "worldcup"},
 }
 
 # Beat Schedule — EPL and NBA tasks merged, prefixed to avoid key collisions
@@ -495,6 +520,61 @@ CELERY_BEAT_SCHEDULE = {
         "task": "nfl.activity.tasks.cleanup_old_activity_events",
         "schedule": crontab(hour=5, minute=30),
     },
+    # ===== World Cup =====
+    # --- Data ingestion (daily during tournament: June 11 – July 19, 2026) ---
+    "wc-fetch-teams-weekly": {
+        "task": "worldcup.matches.tasks.fetch_teams",
+        "schedule": crontab(hour=4, minute=0, day_of_week="monday"),
+    },
+    "wc-fetch-matches-daily": {
+        "task": "worldcup.matches.tasks.fetch_matches",
+        "schedule": crontab(hour=4, minute=30),
+    },
+    "wc-fetch-standings-4h": {
+        "task": "worldcup.matches.tasks.fetch_standings",
+        "schedule": crontab(hour="0,4,8,12,16,20", minute=0),
+    },
+    "wc-fetch-live-scores-2m": {
+        "task": "worldcup.matches.tasks.fetch_live_scores",
+        "schedule": crontab(minute="*/2", hour="10-23,0-2"),
+    },
+    # --- WC Odds ---
+    "wc-generate-odds-10m": {
+        "task": "worldcup.betting.tasks.generate_odds",
+        "schedule": timedelta(minutes=10),
+    },
+    # --- WC Futures ---
+    "wc-update-futures-odds-hourly": {
+        "task": "worldcup.betting.tasks.update_futures_odds",
+        "schedule": crontab(minute=40),
+    },
+    # --- WC Bots ---
+    "wc-run-bot-strategies-hourly": {
+        "task": "worldcup.bots.tasks.run_bot_strategies",
+        "schedule": crontab(minute=8),
+    },
+    "wc-generate-prematch-comments-hourly": {
+        "task": "worldcup.bots.tasks.generate_prematch_comments",
+        "schedule": crontab(minute=18),
+    },
+    "wc-generate-postmatch-comments-hourly": {
+        "task": "worldcup.bots.tasks.generate_postmatch_comments",
+        "schedule": crontab(minute=38),
+    },
+    "wc-generate-featured-parlays-daily": {
+        "task": "worldcup.bots.tasks.generate_featured_parlays",
+        "schedule": crontab(hour=9, minute=0),
+    },
+    # --- WC Activity ---
+    "wc-broadcast-activity-event-20s": {
+        "task": "worldcup.activity.tasks.broadcast_next_activity_event",
+        "schedule": timedelta(seconds=20),
+        "options": {"expires": 20},
+    },
+    "wc-cleanup-old-activity-events-daily": {
+        "task": "worldcup.activity.tasks.cleanup_old_activity_events",
+        "schedule": crontab(hour=5, minute=45),
+    },
     # ===== Cross-league =====
     "expire-featured-parlays-30m": {
         "task": "vinosports.betting.tasks.expire_featured_parlays",
@@ -549,6 +629,9 @@ API_TIMEOUT = 30
 # EPL-specific
 EPL_CURRENT_SEASON = "2025"
 
+# World Cup
+FOOTBALL_DATA_API_KEY = os.environ.get("FOOTBALL_DATA_API_KEY", "")
+
 # --- Logging ---
 LOGGING = {
     "version": 1,
@@ -565,6 +648,9 @@ LOGGING = {
             "level": "WARNING",
         },
         "nfl.activity.tasks": {
+            "level": "WARNING",
+        },
+        "worldcup.activity.tasks": {
             "level": "WARNING",
         },
     },

@@ -1,0 +1,53 @@
+{% comment %}
+Community Sentiment partial — safe for HTMX OOB swaps.
+
+Context expected:
+  sentiment  — dict with total/home_pct/draw_pct/away_pct/most_popular, or None
+  oob        — if True, adds hx-swap-oob="true" to the root element
+{% endcomment %}
+
+<div id="community-sentiment"{% if oob %} hx-swap-oob="true"{% endif %}>
+    {% if sentiment %}
+    <div class="rounded-xl border border-outline-variant bg-surface-container-lowest overflow-hidden">
+        <div class="px-5 py-3.5 border-b border-outline-variant bg-surface-container">
+            <h3 class="font-headline font-bold text-sm uppercase tracking-wider">Community Sentiment</h3>
+        </div>
+        <div class="px-5 py-4">
+            <div class="flex items-center justify-between mb-3">
+                <p class="text-xs text-muted">Based on bets placed on this platform</p>
+                <span class="text-xs text-muted">{{ sentiment.total }} bet{{ sentiment.total|pluralize }}</span>
+            </div>
+            <!-- Bar -->
+            <div class="flex rounded overflow-hidden h-6 mb-2 text-xs font-semibold">
+                {% if sentiment.home_pct %}
+                <div class="flex items-center justify-center bg-accent text-dark"
+                     style="width: {{ sentiment.home_pct }}%">
+                    {% if sentiment.home_pct >= 12 %}{{ sentiment.home_pct }}%{% endif %}
+                </div>
+                {% endif %}
+                {% if sentiment.draw_pct %}
+                <div class="flex items-center justify-center bg-amber-500 text-dark"
+                     style="width: {{ sentiment.draw_pct }}%">
+                    {% if sentiment.draw_pct >= 12 %}{{ sentiment.draw_pct }}%{% endif %}
+                </div>
+                {% endif %}
+                {% if sentiment.away_pct %}
+                <div class="flex items-center justify-center bg-indigo-500 text-white"
+                     style="width: {{ sentiment.away_pct }}%">
+                    {% if sentiment.away_pct >= 12 %}{{ sentiment.away_pct }}%{% endif %}
+                </div>
+                {% endif %}
+            </div>
+            <!-- Legend -->
+            <div class="flex justify-between text-xs text-muted">
+                <span><span class="inline-block w-2 h-2 rounded-sm bg-accent mr-1"></span>Home {{ sentiment.home_pct }}%</span>
+                <span><span class="inline-block w-2 h-2 rounded-sm bg-amber-500 mr-1"></span>Draw {{ sentiment.draw_pct }}%</span>
+                <span><span class="inline-block w-2 h-2 rounded-sm bg-indigo-500 mr-1"></span>Away {{ sentiment.away_pct }}%</span>
+            </div>
+            <p class="mt-2 text-xs text-muted">
+                Most popular: <span class="font-semibold">{{ sentiment.most_popular }}</span>
+            </p>
+        </div>
+    </div>
+    {% endif %}
+</div>

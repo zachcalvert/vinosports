@@ -1,0 +1,95 @@
+{% load worldcup_match_tags %}
+
+<div id="comment-{{ comment.id_hash }}" class="{% if depth == 1 %}ml-8 pl-4 border-l border-outline-variant/50{% elif depth == 2 %}ml-16 pl-4 border-l border-outline-variant/50{% endif %}">
+    <div class="bg-surface-container-lowest rounded-xl border-b-4 border-outline-variant p-4">
+        <!-- Header: user info + bet badge + timestamp -->
+        <div class="flex items-center justify-between mb-2">
+            <div class="flex items-center gap-2 flex-wrap">
+                {% include "worldcup_website/components/avatar.html" with avatar_user=comment.user avatar_size="sm" %}
+                <span class="text-sm font-semibold">
+                    {{ comment.user.display_name|default:comment.user.email|truncatechars:20 }}
+                </span>
+                {% if comment.bet_position %}
+                <span class="inline-flex items-center gap-1 rounded-full bg-primary/15 px-2 py-0.5 text-xs font-medium text-primary">
+                    <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 6v.75m0 3v.75m0 3v.75m0 3V18m-9-5.25h5.25M7.5 15h3M3.375 5.25c-.621 0-1.125.504-1.125 1.125v3.026a2.999 2.999 0 010 5.198v3.026c0 .621.504 1.125 1.125 1.125h17.25c.621 0 1.125-.504 1.125-1.125v-3.026a2.999 2.999 0 010-5.198V6.375c0-.621-.504-1.125-1.125-1.125H3.375z"/>
+                    </svg>
+                    {{ comment.bet_position }}
+                </span>
+                {% endif %}
+            </div>
+            <span class="text-xs text-muted shrink-0">{{ comment.created_at|relative_time }}</span>
+        </div>
+
+        <!-- Body -->
+        {% if comment.is_deleted %}
+        <p class="text-sm text-muted italic">[Comment deleted]</p>
+        {% else %}
+        <p class="text-sm text-muted whitespace-pre-line break-words">{{ comment.body }}</p>
+
+        <!-- Actions -->
+        <div class="flex items-center gap-3 mt-2">
+            {% if depth < 2 %}
+            {% if depth == 0 and comment.reply_count > 0 %}
+            <span class="text-xs text-muted">
+                {{ comment.reply_count }} repl{{ comment.reply_count|pluralize:"y,ies" }}
+            </span>
+            {% endif %}
+            <button onclick="this.nextElementSibling.classList.toggle('hidden')"
+                    class="text-xs text-muted hover:text-primary transition-colors">
+                Reply
+            </button>
+            <form class="hidden w-full"
+                  hx-post="{% url 'worldcup_discussions:create_reply' match.slug comment.pk %}"
+                  hx-target="#replies-{{ comment.id_hash }}"
+                  hx-swap="beforeend"
+                  hx-on::after-request="if(event.detail.successful){this.reset();this.classList.add('hidden')}"
+                  hx-disabled-elt="find button[type='submit']">
+                {% csrf_token %}
+                <div class="flex gap-2 items-start mt-1">
+                    <textarea name="body" maxlength="1000" rows="2"
+                              placeholder="Write a reply..."
+                              class="themed-input flex-1 text-sm"
+                              required></textarea>
+                    <button type="submit"
+                            class="bg-primary text-dark font-bold py-1.5 px-3 rounded-md text-xs shrink-0 hover:bg-primary/90 transition-colors">
+                        <span class="htmx-indicator"><span class="spinner spinner-sm mr-1"></span></span>
+                        Reply
+                    </button>
+                </div>
+                <div id="reply-error-{{ comment.id_hash }}" class="text-danger text-xs mt-1"></div>
+            </form>
+            {% endif %}
+            {% if request.user.is_authenticated and comment.user_id == request.user.pk %}
+            <form hx-post="{% url 'worldcup_discussions:delete_comment' match.slug comment.pk %}"
+                  hx-target="#comment-{{ comment.id_hash }}"
+                  hx-swap="outerHTML"
+                  hx-confirm="Delete this comment?"
+                  class="ml-auto">
+                {% csrf_token %}
+                <button type="submit" class="text-xs text-muted/50 hover:text-danger transition-colors">
+                    Delete
+                </button>
+            </form>
+            {% endif %}
+        </div>
+        {% if depth == 0 and comment.reply_count == 0 and request.user.is_authenticated %}
+        <button onclick="this.previousElementSibling.querySelector('form').classList.remove('hidden');this.previousElementSibling.querySelector('textarea').focus();this.remove()"
+                class="text-xs text-muted/60 hover:text-muted transition-colors mt-1">
+            Be the first to reply
+        </button>
+        {% endif %}
+        {% endif %}
+    </div>
+
+    <!-- Replies -->
+    {% if depth < 2 %}
+    {% with next_depth=depth|add:1 %}
+    <div id="replies-{{ comment.id_hash }}" class="space-y-2 mt-2">
+        {% for reply in comment.prefetched_replies %}
+            {% include "worldcup_discussions/partials/comment_single.html" with comment=reply depth=next_depth %}
+        {% endfor %}
+    </div>
+    {% endwith %}
+    {% endif %}
+</div>

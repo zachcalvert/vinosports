@@ -1,0 +1,34 @@
+{% load currency_tags %}
+<div class="rounded-xl border border-accent/30 bg-surface-container-lowest p-5 text-center">
+    <div class="text-accent text-3xl mb-2">
+        <i class="ph-duotone ph-check-circle"></i>
+    </div>
+    <h3 class="text-lg font-bold mb-1">Bet Placed!</h3>
+    <p class="text-sm text-muted mb-4">
+        <span class="font-semibold text-primary">{{ bet.get_selection_display }}</span>
+        on {{ match.home_team.short_name|default:match.home_team.name }}
+        vs {{ match.away_team.short_name|default:match.away_team.name }}
+    </p>
+
+    <div class="grid grid-cols-3 gap-3 text-center mb-4">
+        <div class="bg-surface-container rounded-lg p-3">
+            <div class="text-xs text-muted uppercase tracking-wide mb-1">Stake</div>
+            <div class="font-mono font-semibold">{{ bet.stake|currency:request.user }}</div>
+        </div>
+        <div class="bg-surface-container rounded-lg p-3">
+            <div class="text-xs text-muted uppercase tracking-wide mb-1">Odds</div>
+            <div class="font-mono font-semibold">{{ bet.odds_at_placement }}</div>
+        </div>
+        <div class="bg-surface-container rounded-lg p-3">
+            <div class="text-xs text-muted uppercase tracking-wide mb-1">To Win</div>
+            <div class="font-mono font-semibold text-accent">{{ potential_payout|currency:request.user }}</div>
+        </div>
+    </div>
+
+    <a href="{% url 'hub:my_bets' %}"
+       class="text-sm text-accent hover:underline font-semibold">
+        View My Bets →
+    </a>
+</div>
+{% include "worldcup_website/components/balance_oob.html" with user=request.user %}
+{% include "worldcup_matches/partials/community_sentiment.html" with sentiment=sentiment oob=True %}

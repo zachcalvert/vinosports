@@ -21,8 +21,10 @@ COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
 
 # Install vinosports-core first (changes less frequently)
+# Editable install so Django resolves imports from /packages/vinosports-core/src,
+# which is volume-mounted in dev — migrations for core apps land in the repo.
 COPY packages/vinosports-core /packages/vinosports-core
-RUN pip install /packages/vinosports-core
+RUN pip install -e /packages/vinosports-core
 
 # Install additional dependencies not in core
 RUN pip install psycopg2-binary whitenoise
@@ -32,6 +34,7 @@ COPY config/ config/
 COPY epl/ epl/
 COPY nba/ nba/
 COPY nfl/ nfl/
+COPY worldcup/ worldcup/
 COPY hub/ hub/
 COPY news/ news/
 COPY manage.py .

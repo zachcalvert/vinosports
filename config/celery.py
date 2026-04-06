@@ -56,9 +56,15 @@ app.autodiscover_tasks(
         "nfl.discussions",
         "nfl.activity",
         "nfl.website",
+        "worldcup.matches",
+        "worldcup.betting",
+        "worldcup.bots",
+        "worldcup.discussions",
+        "worldcup.activity",
+        "worldcup.website",
     ]
 )
 app.autodiscover_tasks(
-    ["epl.website", "nba.website"],
+    ["epl.website", "nba.website", "worldcup.website"],
     related_name="challenge_tasks",
 )
