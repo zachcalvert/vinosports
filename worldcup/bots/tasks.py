@@ -35,13 +35,13 @@ def generate_bot_comment_task(bot_profile_pk, match_pk, trigger_type):
 
 
 @shared_task
-def generate_prematch_comments():
+def generate_prematch_comments(bot_user_ids=None):
     """Dispatch pre-match hype comments for upcoming World Cup matches."""
     logger.info("Generating World Cup pre-match comments")
 
 
 @shared_task
-def generate_postmatch_comments():
+def generate_postmatch_comments(bot_user_ids=None):
     """Dispatch post-match reaction comments for finished World Cup matches."""
     logger.info("Generating World Cup post-match comments")
 
