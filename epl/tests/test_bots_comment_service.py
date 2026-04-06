@@ -17,6 +17,7 @@ from epl.bots.comment_service import (
 )
 from epl.bots.models import BotComment
 from epl.tests.factories import (
+    BetSlipFactory,
     BotCommentFactory,
     BotProfileFactory,
     BotUserFactory,
@@ -24,7 +25,9 @@ from epl.tests.factories import (
     MatchFactory,
     OddsFactory,
     TeamFactory,
+    UserBalanceFactory,
     UserFactory,
+    UserStatsFactory,
 )
 from vinosports.bots.models import StrategyType
 
@@ -713,3 +716,212 @@ class TestBuildUserPrompt:
         )
         prompt = _build_user_prompt(match, BotComment.TriggerType.PRE_MATCH)
         assert "Odds:" in prompt
+
+    def test_bot_stats_included_when_provided(self):
+        match = MatchFactory()
+        prompt = _build_user_prompt(
+            match,
+            BotComment.TriggerType.PRE_MATCH,
+            bot_stats="Balance: 112,450 credits | Net profit: +12,450 | Last 10: 6W-4L",
+        )
+        assert "Your stats:" in prompt
+        assert "Balance: 112,450 credits" in prompt
+
+    def test_bot_stats_omitted_when_empty(self):
+        match = MatchFactory()
+        prompt = _build_user_prompt(
+            match, BotComment.TriggerType.PRE_MATCH, bot_stats=""
+        )
+        assert "Your stats:" not in prompt
+
+    def test_target_stats_included_in_reply(self):
+        match = MatchFactory()
+        parent = CommentFactory(match=match, body="Arsenal will bottle it.")
+        prompt = _build_user_prompt(
+            match,
+            BotComment.TriggerType.REPLY,
+            parent_comment=parent,
+            target_stats="Balance: 94,200 credits | Net profit: -5,800 | Last 10: 3W-7L",
+        )
+        assert "Net profit: -5,800" in prompt
+        assert parent.user.display_name in prompt
+
+    def test_target_stats_not_included_for_non_reply(self):
+        match = MatchFactory()
+        prompt = _build_user_prompt(
+            match,
+            BotComment.TriggerType.PRE_MATCH,
+            target_stats="Balance: 94,200 credits | Last 10: 3W-7L",
+        )
+        assert "Balance: 94,200 credits" not in prompt
+
+
+# ---------------------------------------------------------------------------
+# build_user_stats_context
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.django_db
+class TestBuildUserStatsContext:
+    def test_empty_when_no_data(self):
+        from epl.betting.models import BetSlip
+        from vinosports.bots.prompt_utils import build_user_stats_context
+
+        user = UserFactory()
+        result = build_user_stats_context(user, BetSlip.objects.filter(user=user))
+        assert result == ""
+
+    def test_includes_balance(self):
+        from epl.betting.models import BetSlip
+        from vinosports.bots.prompt_utils import build_user_stats_context
+
+        user = UserFactory()
+        UserBalanceFactory(user=user, balance=Decimal("75000.00"))
+        result = build_user_stats_context(user, BetSlip.objects.filter(user=user))
+        assert "Balance: 75,000 credits" in result
+
+    def test_includes_net_profit_positive(self):
+        from epl.betting.models import BetSlip
+        from vinosports.bots.prompt_utils import build_user_stats_context
+
+        user = UserFactory()
+        UserStatsFactory(
+            user=user,
+            net_profit=Decimal("12450.00"),
+            total_bets=20,
+            total_wins=12,
+            total_losses=8,
+        )
+        result = build_user_stats_context(user, BetSlip.objects.filter(user=user))
+        assert "Net profit: +12,450" in result
+        assert "Overall: 12W-8L" in result
+
+    def test_includes_net_profit_negative(self):
+        from epl.betting.models import BetSlip
+        from vinosports.bots.prompt_utils import build_user_stats_context
+
+        user = UserFactory()
+        UserStatsFactory(
+            user=user,
+            net_profit=Decimal("-5000.00"),
+            total_bets=10,
+            total_wins=3,
+            total_losses=7,
+        )
+        result = build_user_stats_context(user, BetSlip.objects.filter(user=user))
+        assert "Net profit: -5,000" in result
+
+    def test_includes_streak(self):
+        from epl.betting.models import BetSlip
+        from vinosports.bots.prompt_utils import build_user_stats_context
+
+        user = UserFactory()
+        UserStatsFactory(user=user, current_streak=3)
+        result = build_user_stats_context(user, BetSlip.objects.filter(user=user))
+        assert "Streak: 3W" in result
+
+    def test_losing_streak(self):
+        from epl.betting.models import BetSlip
+        from vinosports.bots.prompt_utils import build_user_stats_context
+
+        user = UserFactory()
+        UserStatsFactory(user=user, current_streak=-4)
+        result = build_user_stats_context(user, BetSlip.objects.filter(user=user))
+        assert "Streak: 4L" in result
+
+    def test_last_10_record_from_bets(self):
+        from epl.betting.models import BetSlip
+        from vinosports.betting.models import BetStatus
+        from vinosports.bots.prompt_utils import build_user_stats_context
+
+        user = UserFactory()
+        match = MatchFactory()
+        for _ in range(6):
+            BetSlipFactory(user=user, match=match, status=BetStatus.WON)
+        for _ in range(4):
+            BetSlipFactory(user=user, match=match, status=BetStatus.LOST)
+        result = build_user_stats_context(user, BetSlip.objects.filter(user=user))
+        assert "Last 10: 6W-4L" in result
+
+    def test_last_10_caps_at_10(self):
+        from epl.betting.models import BetSlip
+        from vinosports.betting.models import BetStatus
+        from vinosports.bots.prompt_utils import build_user_stats_context
+
+        user = UserFactory()
+        match = MatchFactory()
+        for _ in range(15):
+            BetSlipFactory(user=user, match=match, status=BetStatus.WON)
+        result = build_user_stats_context(user, BetSlip.objects.filter(user=user))
+        assert "Last 10: 10W-0L" in result
+
+    def test_pending_bets_excluded_from_last_10(self):
+        from epl.betting.models import BetSlip
+        from vinosports.betting.models import BetStatus
+        from vinosports.bots.prompt_utils import build_user_stats_context
+
+        user = UserFactory()
+        match = MatchFactory()
+        BetSlipFactory(user=user, match=match, status=BetStatus.WON)
+        BetSlipFactory(user=user, match=match, status=BetStatus.PENDING)
+        result = build_user_stats_context(user, BetSlip.objects.filter(user=user))
+        assert "Last 1: 1W-0L" in result
+
+
+# ---------------------------------------------------------------------------
+# generate_bot_comment — stats in prompt
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.django_db
+class TestGenerateBotCommentStats:
+    @patch("epl.bots.comment_service.anthropic.Anthropic")
+    def test_bot_stats_appear_in_stored_prompt(self, MockAnthropic, settings):
+        """Bot's balance/stats should be present in the prompt_used on BotComment."""
+        settings.ANTHROPIC_API_KEY = "test-key"
+        match = MatchFactory()
+        OddsFactory(match=match)
+        profile = BotProfileFactory(strategy_type=StrategyType.FRONTRUNNER)
+        bot_user = profile.user
+        UserBalanceFactory(user=bot_user, balance=Decimal("88000.00"))
+
+        mock_response = MagicMock()
+        mock_response.content = [
+            MagicMock(text="Arsenal looking strong today in the match")
+        ]
+        mock_response.stop_reason = "end_turn"
+        MockAnthropic.return_value.messages.create.return_value = mock_response
+
+        generate_bot_comment(bot_user, match, BotComment.TriggerType.PRE_MATCH)
+
+        bc = BotComment.objects.get(user=bot_user, match=match)
+        assert "88,000 credits" in bc.prompt_used
+
+    @patch("epl.bots.comment_service.anthropic.Anthropic")
+    def test_target_stats_appear_in_reply_prompt(self, MockAnthropic, settings):
+        """When replying, the target user's stats should be in the prompt."""
+        settings.ANTHROPIC_API_KEY = "test-key"
+        match = MatchFactory()
+        OddsFactory(match=match)
+        profile = BotProfileFactory(strategy_type=StrategyType.CHAOS_AGENT)
+        bot_user = profile.user
+
+        human = UserFactory()
+        UserBalanceFactory(user=human, balance=Decimal("55000.00"))
+        parent = CommentFactory(
+            match=match, user=human, body="This match is going to be a banger"
+        )
+
+        mock_response = MagicMock()
+        mock_response.content = [
+            MagicMock(text="Classic vibes bet on this match today")
+        ]
+        mock_response.stop_reason = "end_turn"
+        MockAnthropic.return_value.messages.create.return_value = mock_response
+
+        generate_bot_comment(
+            bot_user, match, BotComment.TriggerType.REPLY, parent_comment=parent
+        )
+
+        bc = BotComment.objects.get(user=bot_user, match=match)
+        assert "55,000 credits" in bc.prompt_used

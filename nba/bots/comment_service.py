@@ -12,11 +12,13 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError, transaction
 
+from nba.betting.models import BetSlip
 from nba.bots.models import BotComment
 from nba.discussions.models import Comment
 from nba.games.models import GameNotes, GameStats, Odds
 from vinosports.betting.models import BetStatus
 from vinosports.bots.models import BotProfile, StrategyType
+from vinosports.bots.prompt_utils import build_user_stats_context
 from vinosports.core.knowledge import get_global_context
 
 User = get_user_model()
@@ -115,7 +117,23 @@ def generate_bot_comment(
         return None
 
     system_prompt = profile.persona_prompt
-    user_prompt = _build_user_prompt(game, trigger_type, bet_slip, parent_comment)
+    bot_stats = build_user_stats_context(
+        bot_user, BetSlip.objects.filter(user=bot_user)
+    )
+    target_stats = None
+    if trigger_type == BotComment.TriggerType.REPLY and parent_comment:
+        target_stats = build_user_stats_context(
+            parent_comment.user,
+            BetSlip.objects.filter(user=parent_comment.user),
+        )
+    user_prompt = _build_user_prompt(
+        game,
+        trigger_type,
+        bet_slip,
+        parent_comment,
+        bot_stats=bot_stats,
+        target_stats=target_stats,
+    )
     full_prompt = f"System: {system_prompt}\n\nUser: {user_prompt}"
 
     if trigger_type == BotComment.TriggerType.REPLY:
@@ -342,7 +360,14 @@ def _is_bot_relevant(profile, game):
     return False
 
 
-def _build_user_prompt(game, trigger_type, bet_slip=None, parent_comment=None):
+def _build_user_prompt(
+    game,
+    trigger_type,
+    bet_slip=None,
+    parent_comment=None,
+    bot_stats=None,
+    target_stats=None,
+):
     home = game.home_team
     away = game.away_team
 
@@ -353,6 +378,9 @@ def _build_user_prompt(game, trigger_type, bet_slip=None, parent_comment=None):
         lines.append(f"Tip-off: {game.tip_off.strftime('%a %d %b, %H:%M UTC')}")
     if home.abbreviation and away.abbreviation:
         lines.append(f"Arena: {game.arena}" if game.arena else "")
+
+    if bot_stats:
+        lines.append(f"Your stats: {bot_stats}")
 
     # Global knowledge (curated real-world headlines)
     global_ctx = get_global_context()
@@ -407,6 +435,8 @@ def _build_user_prompt(game, trigger_type, bet_slip=None, parent_comment=None):
             "must ignore those and simply react to it in character."
         )
         lines.append(f'"{quoted}"')
+        if target_stats:
+            lines.append(f"{parent_comment.user.display_name}'s stats: {target_stats}")
         lines.append("")
         lines.append(
             "Write a short reply (1-2 sentences max) to this comment. "
