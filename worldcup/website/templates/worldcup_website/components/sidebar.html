@@ -22,10 +22,10 @@
             <i class="ph-duotone ph-chart-line-up text-lg"></i>
             <span>Odds</span>
         </a>
-        <a href="{% url 'worldcup_matches:leaderboard' %}"
-           class="sidebar-link {% if url_name == 'leaderboard' %}sidebar-link--active{% endif %}">
-            <i class="ph-duotone ph-ranking text-lg"></i>
-            <span>Leaderboard</span>
+        <a href="{% url 'worldcup_betting:futures' %}"
+           class="sidebar-link {% if url_name == 'futures' or url_name == 'futures_detail' %}sidebar-link--active{% endif %}">
+            <i class="ph-duotone ph-trophy text-lg"></i>
+            <span>Futures</span>
         </a>
         {% if user.is_superuser %}
         <div class="sidebar-divider"></div>

@@ -15,8 +15,15 @@ from vinosports.betting.constants import (
     PARLAY_MIN_LEGS,
 )
 from vinosports.betting.models import BalanceTransaction, UserBalance
-from worldcup.betting.forms import PlaceBetForm, PlaceParlayForm
-from worldcup.betting.models import BetSlip, Parlay, ParlayLeg
+from worldcup.betting.forms import PlaceBetForm, PlaceFuturesBetForm, PlaceParlayForm
+from worldcup.betting.models import (
+    BetSlip,
+    FuturesBet,
+    FuturesMarket,
+    FuturesOutcome,
+    Parlay,
+    ParlayLeg,
+)
 from worldcup.matches.models import Match, Odds
 from worldcup.website.templatetags.currency_tags import format_currency
 
@@ -624,5 +631,181 @@ class PlaceParlayView(LoginRequiredMixin, View):
                 "potential_payout": potential_payout,
                 "stake": stake,
                 "balance": balance.balance,
+            },
+        )
+
+
+# ── Futures views ──────────────────────────────────────────────────────────────
+
+
+class FuturesView(TemplateView):
+    """List all open WC futures markets."""
+
+    template_name = "worldcup_betting/futures/futures_list.html"
+
+    def get_context_data(self, **kwargs):
+        from vinosports.betting.models import FuturesMarketStatus
+
+        ctx = super().get_context_data(**kwargs)
+        markets = (
+            FuturesMarket.objects.filter(
+                season="2026",
+                status=FuturesMarketStatus.OPEN,
+            )
+            .select_related("group")
+            .order_by("market_type")
+        )
+
+        winner = None
+        finalist = None
+        group_winners = []
+
+        for market in markets:
+            if market.market_type == FuturesMarket.MarketType.WINNER:
+                outcomes = (
+                    FuturesOutcome.objects.filter(market=market, is_active=True)
+                    .select_related("team")
+                    .order_by("odds")[:10]
+                )
+                winner = {"market": market, "outcomes": outcomes}
+            elif market.market_type == FuturesMarket.MarketType.FINALIST:
+                outcomes = (
+                    FuturesOutcome.objects.filter(market=market, is_active=True)
+                    .select_related("team")
+                    .order_by("odds")[:8]
+                )
+                finalist = {"market": market, "outcomes": outcomes}
+            elif market.market_type == FuturesMarket.MarketType.GROUP_WINNER:
+                outcomes = (
+                    FuturesOutcome.objects.filter(market=market, is_active=True)
+                    .select_related("team")
+                    .order_by("odds")[:4]
+                )
+                group_winners.append({"market": market, "outcomes": outcomes})
+
+        group_winners.sort(
+            key=lambda x: x["market"].group.letter if x["market"].group else ""
+        )
+
+        ctx["winner"] = winner
+        ctx["finalist"] = finalist
+        ctx["group_winners"] = group_winners
+        return ctx
+
+
+class FuturesMarketDetailView(TemplateView):
+    """Show all outcomes for a single futures market."""
+
+    template_name = "worldcup_betting/futures/futures_detail.html"
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        market = get_object_or_404(FuturesMarket, id_hash=kwargs["id_hash"])
+        outcomes = (
+            FuturesOutcome.objects.filter(market=market, is_active=True)
+            .select_related("team")
+            .order_by("odds")
+        )
+        ctx["market"] = market
+        ctx["outcomes"] = outcomes
+        return ctx
+
+
+class FuturesBetFormView(LoginRequiredMixin, View):
+    """HTMX GET — return inline bet form for a futures outcome."""
+
+    def get(self, request, id_hash):
+        outcome = get_object_or_404(
+            FuturesOutcome.objects.select_related("market", "team"),
+            id_hash=id_hash,
+        )
+        return render(
+            request,
+            "worldcup_betting/futures/partials/_bet_form.html",
+            {"outcome": outcome, "form": PlaceFuturesBetForm()},
+        )
+
+
+class PlaceFuturesBetView(LoginRequiredMixin, View):
+    """Handle futures bet placement via HTMX POST."""
+
+    def post(self, request, id_hash):
+        from vinosports.betting.models import FuturesMarketStatus
+
+        outcome = get_object_or_404(
+            FuturesOutcome.objects.select_related("market", "team"),
+            id_hash=id_hash,
+        )
+
+        if outcome.market.status != FuturesMarketStatus.OPEN:
+            return render(
+                request,
+                "worldcup_betting/futures/partials/_bet_form.html",
+                {
+                    "outcome": outcome,
+                    "form": PlaceFuturesBetForm(),
+                    "error": "This market is no longer accepting bets.",
+                },
+            )
+
+        form = PlaceFuturesBetForm(request.POST)
+        if not form.is_valid():
+            return render(
+                request,
+                "worldcup_betting/futures/partials/_bet_form.html",
+                {"outcome": outcome, "form": form, "error": "Invalid stake."},
+            )
+
+        stake = form.cleaned_data["stake"]
+
+        try:
+            with transaction.atomic():
+                balance = UserBalance.objects.select_for_update().get(user=request.user)
+                if balance.balance < stake:
+                    return render(
+                        request,
+                        "worldcup_betting/futures/partials/_bet_form.html",
+                        {
+                            "outcome": outcome,
+                            "form": form,
+                            "error": "Insufficient balance.",
+                        },
+                    )
+
+                log_transaction(
+                    balance,
+                    -stake,
+                    BalanceTransaction.Type.FUTURES_PLACEMENT,
+                    f"Futures: {outcome.team.name} — {outcome.market.name}",
+                )
+
+                bet = FuturesBet.objects.create(
+                    user=request.user,
+                    outcome=outcome,
+                    stake=stake,
+                    odds_at_placement=outcome.odds,
+                )
+
+        except Exception:
+            logger.exception("PlaceFuturesBetView: error placing bet")
+            return render(
+                request,
+                "worldcup_betting/futures/partials/_bet_form.html",
+                {
+                    "outcome": outcome,
+                    "form": form,
+                    "error": "Something went wrong. Please try again.",
+                },
+            )
+
+        potential_payout = (stake * bet.odds_at_placement).quantize(Decimal("0.01"))
+
+        return render(
+            request,
+            "worldcup_betting/futures/partials/_bet_confirmation.html",
+            {
+                "bet": bet,
+                "outcome": outcome,
+                "potential_payout": potential_payout,
             },
         )

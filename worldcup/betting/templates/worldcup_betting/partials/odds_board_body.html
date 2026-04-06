@@ -16,8 +16,10 @@
             </div>
         </div>
 
-        <!-- Teams + kickoff row -->
-        <div class="flex items-center gap-4 mb-3">
+        <!-- Teams + kickoff row (links to match detail) -->
+        <a href="{{ item.match.get_absolute_url }}"
+           hx-boost="false"
+           class="flex items-center gap-4 mb-3 hover:opacity-80 transition-opacity no-underline">
             <!-- Home -->
             <div class="flex items-center gap-2 flex-1 min-w-0">
                 {% if item.match.home_team.crest_url %}
@@ -45,7 +47,7 @@
                      class="w-7 h-7 object-contain flex-shrink-0">
                 {% endif %}
             </div>
-        </div>
+        </a>
 
         <!-- Odds buttons -->
         {% if item.odds %}

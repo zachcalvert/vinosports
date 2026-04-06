@@ -1,0 +1,140 @@
+{% extends "worldcup_website/base.html" %}
+
+{% block title %}Futures — World Cup 2026{% endblock %}
+
+{% block content %}
+<!-- Page header -->
+<div class="mb-8">
+    <span class="text-xs font-bold uppercase tracking-widest text-amber-400 mb-2 block">Tournament Betting Markets</span>
+    <h1 class="font-headline text-4xl sm:text-5xl font-black uppercase tracking-tight leading-none">
+        World Cup <span class="text-accent">Futures</span>
+    </h1>
+    <p class="text-muted text-base mt-3 max-w-xl">
+        Long-range markets. Bet on who lifts the trophy, reaches the final, or tops their group.
+    </p>
+</div>
+
+{% if winner or finalist or group_winners %}
+
+<!-- Tournament Winner + Finalist bento -->
+<div class="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start mb-6">
+
+    {% if winner %}
+    <!-- Tournament Winner (wide card) -->
+    <section class="xl:col-span-7 bg-surface-container-lowest rounded-xl border-l-4 border-amber-500 p-6 shadow-sm">
+        <div class="flex items-center justify-between mb-6">
+            <div>
+                <h2 class="font-headline text-2xl font-black uppercase tracking-tight">Tournament Winner</h2>
+                <p class="text-xs text-muted mt-0.5">World Cup 2026 outright</p>
+            </div>
+            <a href="{% url 'worldcup_betting:futures_detail' winner.market.id_hash %}"
+               class="text-xs text-accent font-bold uppercase tracking-wider hover:underline">
+                View All &rarr;
+            </a>
+        </div>
+
+        <div class="hidden sm:grid grid-cols-12 px-4 py-2 text-xs font-bold uppercase tracking-widest text-muted">
+            <div class="col-span-7">Nation</div>
+            <div class="col-span-2 text-right">Odds</div>
+            <div class="col-span-3"></div>
+        </div>
+
+        <div class="space-y-1">
+            {% for outcome in winner.outcomes %}
+            <a href="{% url 'worldcup_betting:futures_detail' winner.market.id_hash %}"
+               class="grid grid-cols-12 items-center px-4 py-3 rounded-lg transition-colors hover:bg-surface-container-low {% if forloop.counter|divisibleby:2 %}bg-surface-container-low/50{% endif %} no-underline">
+                <div class="col-span-7 flex items-center gap-3">
+                    {% if outcome.team.crest_url %}
+                    <img src="{{ outcome.team.crest_url }}" alt=""
+                         class="w-8 h-8 object-contain flex-shrink-0">
+                    {% else %}
+                    <div class="w-8 h-8 rounded-lg bg-surface-container flex items-center justify-center">
+                        <i class="ph-duotone ph-flag text-muted opacity-40"></i>
+                    </div>
+                    {% endif %}
+                    <span class="font-headline font-bold text-sm sm:text-base">{{ outcome.team.name }}</span>
+                    {% if outcome.team.confederation %}
+                    <span class="confed-badge confed-badge--{{ outcome.team.confederation }} hidden sm:inline">{{ outcome.team.confederation }}</span>
+                    {% endif %}
+                </div>
+                <div class="col-span-3 sm:col-span-2 text-right">
+                    <span class="font-headline font-bold text-accent text-base sm:text-lg">{{ outcome.odds }}</span>
+                </div>
+                <div class="col-span-2 sm:col-span-3 text-right">
+                    <span class="text-xs text-muted font-bold uppercase tracking-wider hidden sm:inline">Bet &rarr;</span>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+
+    {% if finalist %}
+    <!-- Finalist card -->
+    <section class="xl:col-span-5 bg-surface-container-lowest rounded-xl border-l-4 border-secondary p-5 shadow-sm">
+        <div class="flex items-center justify-between mb-5">
+            <h3 class="font-headline text-lg font-black uppercase tracking-tight">Finalist</h3>
+            <a href="{% url 'worldcup_betting:futures_detail' finalist.market.id_hash %}"
+               class="text-xs text-accent font-bold uppercase tracking-wider hover:underline">
+                View All &rarr;
+            </a>
+        </div>
+        <div class="space-y-2">
+            {% for outcome in finalist.outcomes %}
+            <div class="flex items-center justify-between p-3 bg-surface-container rounded-lg">
+                <div class="flex items-center gap-2">
+                    {% if outcome.team.crest_url %}
+                    <img src="{{ outcome.team.crest_url }}" alt="" class="w-5 h-5 object-contain">
+                    {% endif %}
+                    <span class="font-headline font-bold text-sm">{{ outcome.team.name }}</span>
+                </div>
+                <span class="font-bold text-accent text-sm font-mono">{{ outcome.odds }}</span>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+
+</div>
+
+{% if group_winners %}
+<!-- Group Winners section -->
+<div class="mb-4">
+    <h2 class="font-headline text-xl font-black uppercase tracking-tight mb-4">Group Winners</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        {% for item in group_winners %}
+        <section class="bg-surface-container-lowest rounded-xl border border-outline-variant overflow-hidden">
+            <div class="flex items-center justify-between px-4 py-3 bg-surface-container border-b border-outline-variant">
+                <h3 class="font-headline font-bold text-sm uppercase tracking-wider">
+                    Group {{ item.market.group.letter }}
+                </h3>
+                <a href="{% url 'worldcup_betting:futures_detail' item.market.id_hash %}"
+                   class="text-xs text-muted hover:text-accent transition-colors">All &rarr;</a>
+            </div>
+            <div class="divide-y divide-outline-variant/50">
+                {% for outcome in item.outcomes %}
+                <div class="flex items-center justify-between px-4 py-2.5">
+                    <div class="flex items-center gap-2 min-w-0">
+                        {% if outcome.team.crest_url %}
+                        <img src="{{ outcome.team.crest_url }}" alt="" class="w-5 h-5 object-contain flex-shrink-0">
+                        {% endif %}
+                        <span class="text-sm font-medium truncate">{{ outcome.team.short_name|default:outcome.team.name }}</span>
+                    </div>
+                    <span class="font-mono font-bold text-sm text-accent ml-2 flex-shrink-0">{{ outcome.odds }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+{% else %}
+<div class="rounded-xl border border-outline-variant bg-surface-container-lowest p-12 text-center">
+    <i class="ph-duotone ph-trophy text-4xl text-muted/30 mb-3 block"></i>
+    <p class="text-muted text-sm">No futures markets are open right now.</p>
+    <p class="text-muted text-xs mt-1">Markets open closer to the tournament.</p>
+</div>
+{% endif %}
+{% endblock %}
