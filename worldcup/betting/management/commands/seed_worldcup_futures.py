@@ -6,7 +6,22 @@ from django.core.management.base import BaseCommand
 class Command(BaseCommand):
     help = "Create World Cup 2026 futures markets and initial odds"
 
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "--refresh-odds",
+            action="store_true",
+            help="Recalculate and update odds for all existing open markets (skips market/outcome creation).",
+        )
+
     def handle(self, *args, **options):
+        if options["refresh_odds"]:
+            from worldcup.betting.futures_odds_engine import update_all_futures_odds
+
+            self.stdout.write("Refreshing odds for all open futures markets...")
+            update_all_futures_odds()
+            self.stdout.write(self.style.SUCCESS("Futures odds refreshed!"))
+            return
+
         from worldcup.betting.futures_odds_engine import (
             generate_group_winner_odds,
             generate_winner_odds,
