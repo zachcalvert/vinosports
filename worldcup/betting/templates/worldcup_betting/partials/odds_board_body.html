@@ -1,18 +1,85 @@
-{% for item in matches_with_odds %}
-<div class="card p-4">
-    <div class="flex justify-between items-center mb-2">
-        <span class="text-sm text-gray-400">{{ item.match.stage.name }}</span>
-        <span class="text-sm text-gray-400">{{ item.match.kickoff|date:"M d, H:i" }}</span>
-    </div>
-    <div class="flex justify-between items-center">
-        <span>{{ item.match.home_team.tla }} vs {{ item.match.away_team.tla }}</span>
+{% load worldcup_match_tags %}
+
+{% if matches_with_odds %}
+<div class="rounded-xl border border-outline-variant bg-surface-container-lowest overflow-hidden divide-y divide-outline-variant">
+    {% for item in matches_with_odds %}
+    <div class="px-5 py-4 hover:bg-accent/5 transition-colors">
+        <!-- Match meta row -->
+        <div class="flex items-center justify-between mb-3">
+            <span class="text-xs text-muted uppercase tracking-wide font-semibold">
+                {% if item.match.group %}Group {{ item.match.group.letter }}{% else %}{{ item.match.stage.name }}{% endif %}
+            </span>
+            <div class="flex items-center gap-2">
+                {% wc_status_badge item.match %}
+            </div>
+        </div>
+
+        <!-- Teams + odds row -->
+        <div class="flex items-center gap-4">
+            <!-- Home -->
+            <div class="flex items-center gap-2 flex-1 min-w-0">
+                {% if item.match.home_team.crest_url %}
+                <img src="{{ item.match.home_team.crest_url }}" alt=""
+                     class="w-7 h-7 object-contain flex-shrink-0">
+                {% endif %}
+                <span class="text-sm font-semibold truncate">
+                    {{ item.match.home_team.short_name|default:item.match.home_team.tla }}
+                </span>
+            </div>
+
+            <!-- Kickoff -->
+            <div class="flex-shrink-0 text-center w-16">
+                <div class="font-mono text-xs text-muted">{{ item.match.kickoff|date:"M d" }}</div>
+                <div class="font-mono text-xs text-muted">{{ item.match.kickoff|date:"H:i" }}</div>
+            </div>
+
+            <!-- Away -->
+            <div class="flex items-center gap-2 flex-1 min-w-0 justify-end">
+                <span class="text-sm font-semibold truncate text-right">
+                    {{ item.match.away_team.short_name|default:item.match.away_team.tla }}
+                </span>
+                {% if item.match.away_team.crest_url %}
+                <img src="{{ item.match.away_team.crest_url }}" alt=""
+                     class="w-7 h-7 object-contain flex-shrink-0">
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Odds buttons -->
         {% if item.odds %}
-        <div class="flex gap-3 text-sm font-mono">
-            <span>{{ item.odds.home_win }}</span>
-            <span>{{ item.odds.draw }}</span>
-            <span>{{ item.odds.away_win }}</span>
+        <div class="grid grid-cols-3 gap-2 mt-3">
+            <a href="{{ item.match.get_absolute_url }}"
+               class="flex flex-col items-center rounded-lg border border-outline-variant bg-surface-container px-3 py-2.5 hover:border-accent hover:bg-accent/5 transition-colors no-underline">
+                <span class="text-xs text-muted uppercase tracking-wide mb-1">
+                    {{ item.match.home_team.tla }}
+                </span>
+                <span class="font-mono font-bold text-base text-accent">{{ item.odds.home_win }}</span>
+            </a>
+            <a href="{{ item.match.get_absolute_url }}"
+               class="flex flex-col items-center rounded-lg border border-outline-variant bg-surface-container px-3 py-2.5 hover:border-accent hover:bg-accent/5 transition-colors no-underline">
+                <span class="text-xs text-muted uppercase tracking-wide mb-1">Draw</span>
+                <span class="font-mono font-bold text-base text-accent">{{ item.odds.draw }}</span>
+            </a>
+            <a href="{{ item.match.get_absolute_url }}"
+               class="flex flex-col items-center rounded-lg border border-outline-variant bg-surface-container px-3 py-2.5 hover:border-accent hover:bg-accent/5 transition-colors no-underline">
+                <span class="text-xs text-muted uppercase tracking-wide mb-1">
+                    {{ item.match.away_team.tla }}
+                </span>
+                <span class="font-mono font-bold text-base text-accent">{{ item.odds.away_win }}</span>
+            </a>
+        </div>
+        {% else %}
+        <div class="mt-3 text-center text-xs text-muted py-2 border border-outline-variant border-dashed rounded-lg">
+            Odds not yet generated
         </div>
         {% endif %}
     </div>
+    {% endfor %}
 </div>
-{% endfor %}
+{% else %}
+<div class="rounded-xl border border-outline-variant border-dashed bg-surface-container-lowest p-12 text-center">
+    <i class="ph-duotone ph-calendar-blank text-4xl text-muted/30 mb-3 block"></i>
+    <p class="text-muted text-sm">No upcoming matches with odds available yet.</p>
+    <p class="text-muted text-xs mt-1">Check back closer to kick-off on June 11, 2026.</p>
+</div>
+{% endif %}

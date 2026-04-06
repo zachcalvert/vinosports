@@ -1,59 +1,160 @@
 {% extends "worldcup_website/base.html" %}
+{% load worldcup_match_tags %}
 
-{% block title %}World Cup 2026 — Group {{ group.letter }}{% endblock %}
+{% block title %}Group {{ group.letter }}{% endblock %}
 
 {% block content %}
-<h1 class="text-2xl font-bold mb-6">Group {{ group.letter }}</h1>
 
-<div class="card p-4 mb-6">
-    <table class="w-full text-sm">
-        <thead>
-            <tr class="text-gray-400">
-                <th class="text-left">#</th>
-                <th class="text-left">Team</th>
-                <th>P</th>
-                <th>W</th>
-                <th>D</th>
-                <th>L</th>
-                <th>GF</th>
-                <th>GA</th>
-                <th>GD</th>
-                <th>Pts</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for standing in standings %}
-            <tr>
-                <td>{{ standing.position }}</td>
-                <td class="text-left">{{ standing.team.name }}</td>
-                <td class="text-center">{{ standing.played }}</td>
-                <td class="text-center">{{ standing.won }}</td>
-                <td class="text-center">{{ standing.drawn }}</td>
-                <td class="text-center">{{ standing.lost }}</td>
-                <td class="text-center">{{ standing.goals_for }}</td>
-                <td class="text-center">{{ standing.goals_against }}</td>
-                <td class="text-center">{{ standing.goal_difference }}</td>
-                <td class="text-center font-semibold">{{ standing.points }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
-
-<h2 class="text-lg font-semibold mb-3">Matches</h2>
-<div class="grid gap-3">
-    {% for match in matches %}
-    <a href="{{ match.get_absolute_url }}" class="card p-4 flex justify-between items-center">
-        <span>{{ match.home_team.tla }}</span>
-        <span class="font-mono">
-            {% if match.home_score is not None %}
-                {{ match.home_score }} – {{ match.away_score }}
-            {% else %}
-                {{ match.kickoff|date:"M d, H:i" }}
-            {% endif %}
-        </span>
-        <span>{{ match.away_team.tla }}</span>
+<div class="mb-6">
+    <a href="{% url 'worldcup_matches:groups' %}"
+       class="text-xs text-muted hover:text-accent uppercase tracking-wider font-semibold inline-flex items-center gap-1 mb-2">
+        <i class="ph-duotone ph-arrow-left text-sm"></i> All Groups
     </a>
-    {% endfor %}
+    <h1 class="font-headline italic font-black text-4xl sm:text-5xl uppercase tracking-tight leading-none">
+        Group {{ group.letter }}
+    </h1>
+    <div class="flex items-center gap-2 mt-3">
+        <span class="w-1 h-5 rounded-full bg-accent"></span>
+        <p class="text-muted text-sm uppercase tracking-wider font-medium">
+            {{ group.teams.count }} Teams · Top 2 advance to Round of 32
+        </p>
+    </div>
 </div>
+
+<div class="grid grid-cols-1 lg:grid-cols-[1fr_1.5fr] gap-6">
+
+    <!-- Left: Standings + Team list -->
+    <div class="space-y-5">
+
+        <!-- Standings table -->
+        <div class="rounded-xl border border-outline-variant bg-surface-container-lowest overflow-hidden">
+            <div class="px-5 py-3.5 border-b border-outline-variant bg-surface-container">
+                <h2 class="font-headline font-bold text-base uppercase tracking-wider">Standings</h2>
+            </div>
+            <table class="w-full group-table">
+                <thead>
+                    <tr>
+                        <th class="text-left pl-5">#</th>
+                        <th class="text-left">Team</th>
+                        <th class="text-center">P</th>
+                        <th class="text-center">W</th>
+                        <th class="text-center">D</th>
+                        <th class="text-center">L</th>
+                        <th class="text-center">GF</th>
+                        <th class="text-center">GA</th>
+                        <th class="text-center">GD</th>
+                        <th class="text-center pr-5">Pts</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for standing in standings %}
+                    <tr {% if standing.position == 3 %}class="qualify-border"{% endif %}>
+                        <td class="pl-5 text-muted">{{ standing.position }}</td>
+                        <td class="font-semibold">
+                            <div class="flex items-center gap-2">
+                                {% if standing.team.crest_url %}
+                                <img src="{{ standing.team.crest_url }}" alt=""
+                                     class="w-5 h-5 object-contain flex-shrink-0">
+                                {% endif %}
+                                <div>
+                                    <div class="truncate">{{ standing.team.short_name|default:standing.team.name }}</div>
+                                    {% if standing.team.confederation %}
+                                    <span class="confed-badge confed-badge--{{ standing.team.confederation }}">
+                                        {{ standing.team.confederation }}
+                                    </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </td>
+                        <td class="text-center text-muted">{{ standing.played }}</td>
+                        <td class="text-center text-muted">{{ standing.won }}</td>
+                        <td class="text-center text-muted">{{ standing.drawn }}</td>
+                        <td class="text-center text-muted">{{ standing.lost }}</td>
+                        <td class="text-center text-muted">{{ standing.goals_for }}</td>
+                        <td class="text-center text-muted">{{ standing.goals_against }}</td>
+                        <td class="text-center text-muted">
+                            {% if standing.goal_difference > 0 %}+{% endif %}{{ standing.goal_difference }}
+                        </td>
+                        <td class="text-center font-mono font-bold pr-5">{{ standing.points }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="10" class="px-5 py-6 text-center text-sm text-muted">
+                            Group stage has not started yet.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <div class="px-5 py-2 border-t border-outline-variant bg-surface-container">
+                <p class="text-xs text-muted flex items-center gap-1.5">
+                    <span class="inline-block h-0.5 w-4 bg-accent rounded-full"></span>
+                    Qualification line — top 2 advance
+                </p>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Right: Match schedule -->
+    <div>
+        <div class="rounded-xl border border-outline-variant bg-surface-container-lowest overflow-hidden">
+            <div class="px-5 py-3.5 border-b border-outline-variant bg-surface-container">
+                <h2 class="font-headline font-bold text-base uppercase tracking-wider">Matches</h2>
+            </div>
+            <div class="divide-y divide-outline-variant">
+                {% for match in matches %}
+                <a href="{{ match.get_absolute_url }}"
+                   class="flex items-center gap-4 px-5 py-4 hover:bg-surface-container transition-colors no-underline">
+                    <!-- Home team -->
+                    <div class="flex items-center gap-2 flex-1 min-w-0 justify-end">
+                        <span class="text-sm font-semibold truncate text-right">
+                            {{ match.home_team.short_name|default:match.home_team.tla }}
+                        </span>
+                        {% if match.home_team.crest_url %}
+                        <img src="{{ match.home_team.crest_url }}" alt=""
+                             class="w-6 h-6 object-contain flex-shrink-0">
+                        {% endif %}
+                    </div>
+
+                    <!-- Score / time -->
+                    <div class="flex-shrink-0 text-center w-28">
+                        {% if match.home_score is not None %}
+                        <span class="font-mono font-black text-lg">
+                            {{ match.home_score }} – {{ match.away_score }}
+                        </span>
+                        {% if match.home_score_penalties is not None %}
+                        <div class="text-xs text-muted">pens {{ match.home_score_penalties }}–{{ match.away_score_penalties }}</div>
+                        {% elif match.home_score_et is not None %}
+                        <div class="text-xs text-muted">AET</div>
+                        {% endif %}
+                        {% else %}
+                        <div class="font-mono text-sm font-bold text-muted">{{ match.kickoff|date:"M d" }}</div>
+                        <div class="font-mono text-xs text-muted">{{ match.kickoff|date:"H:i" }}</div>
+                        {% endif %}
+                        <div class="mt-1">{% wc_status_badge match %}</div>
+                    </div>
+
+                    <!-- Away team -->
+                    <div class="flex items-center gap-2 flex-1 min-w-0">
+                        {% if match.away_team.crest_url %}
+                        <img src="{{ match.away_team.crest_url }}" alt=""
+                             class="w-6 h-6 object-contain flex-shrink-0">
+                        {% endif %}
+                        <span class="text-sm font-semibold truncate">
+                            {{ match.away_team.short_name|default:match.away_team.tla }}
+                        </span>
+                    </div>
+                </a>
+                {% empty %}
+                <div class="px-5 py-8 text-center text-sm text-muted">
+                    Match schedule not yet available.
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+</div>
+
 {% endblock %}

@@ -1,0 +1,40 @@
+{# World Cup sidebar — page navigation links #}
+{% with url_name=request.resolver_match.url_name %}
+<nav class="sidebar-nav" aria-label="World Cup navigation">
+    <div class="sidebar-links">
+        <a href="{% url 'worldcup_matches:dashboard' %}"
+           class="sidebar-link {% if url_name == 'dashboard' %}sidebar-link--active{% endif %}">
+            <i class="ph-duotone ph-house text-lg"></i>
+            <span>Dashboard</span>
+        </a>
+        <a href="{% url 'worldcup_matches:groups' %}"
+           class="sidebar-link {% if url_name == 'groups' or url_name == 'group_detail' %}sidebar-link--active{% endif %}">
+            <i class="ph-duotone ph-circles-four text-lg"></i>
+            <span>Groups</span>
+        </a>
+        <a href="{% url 'worldcup_matches:bracket' %}"
+           class="sidebar-link {% if url_name == 'bracket' %}sidebar-link--active{% endif %}">
+            <i class="ph-duotone ph-tree text-lg"></i>
+            <span>Bracket</span>
+        </a>
+        <a href="{% url 'worldcup_betting:odds_board' %}"
+           class="sidebar-link {% if url_name == 'odds_board' %}sidebar-link--active{% endif %}">
+            <i class="ph-duotone ph-chart-line-up text-lg"></i>
+            <span>Odds</span>
+        </a>
+        <a href="{% url 'worldcup_matches:leaderboard' %}"
+           class="sidebar-link {% if url_name == 'leaderboard' %}sidebar-link--active{% endif %}">
+            <i class="ph-duotone ph-ranking text-lg"></i>
+            <span>Leaderboard</span>
+        </a>
+        {% if user.is_superuser %}
+        <div class="sidebar-divider"></div>
+        <a href="{% url 'hub:admin_dashboard' %}"
+           class="sidebar-link">
+            <i class="ph-duotone ph-gauge text-lg"></i>
+            <span>Admin</span>
+        </a>
+        {% endif %}
+    </div>
+</nav>
+{% endwith %}

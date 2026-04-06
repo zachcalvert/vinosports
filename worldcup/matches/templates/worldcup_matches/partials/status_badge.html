@@ -1,0 +1,32 @@
+{% if match.status == "IN_PLAY" or match.status == "PAUSED" %}
+<span class="inline-flex items-center gap-1.5 rounded-full bg-accent/10 px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-accent">
+    <span class="h-1.5 w-1.5 rounded-full bg-accent animate-ping"></span>
+    Live
+</span>
+{% elif match.status == "EXTRA_TIME" %}
+<span class="inline-flex items-center gap-1.5 rounded-full bg-accent/10 px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-accent">
+    <span class="h-1.5 w-1.5 rounded-full bg-accent animate-ping"></span>
+    Extra Time
+</span>
+{% elif match.status == "PENALTY_SHOOTOUT" %}
+<span class="inline-flex items-center gap-1.5 rounded-full bg-accent/10 px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-accent">
+    <span class="h-1.5 w-1.5 rounded-full bg-accent animate-ping"></span>
+    Penalties
+</span>
+{% elif match.status == "FINISHED" %}
+<span class="inline-flex items-center rounded-full bg-surface-container px-2.5 py-1 text-xs font-semibold uppercase tracking-wider text-muted">
+    FT
+</span>
+{% elif match.status == "POSTPONED" %}
+<span class="inline-flex items-center rounded-full border border-warning/30 bg-warning/10 px-2.5 py-1 text-xs font-semibold uppercase tracking-wider text-warning">
+    Postponed
+</span>
+{% elif match.status == "CANCELLED" %}
+<span class="inline-flex items-center rounded-full border border-danger/30 bg-danger/10 px-2.5 py-1 text-xs font-semibold uppercase tracking-wider text-danger">
+    Cancelled
+</span>
+{% else %}
+<span class="inline-flex items-center rounded-full border border-outline-variant px-2.5 py-1 text-xs font-semibold uppercase tracking-wider text-muted">
+    <time datetime="{{ match.kickoff|date:'c' }}">{{ match.kickoff|date:"M d · H:i" }}</time>
+</span>
+{% endif %}
