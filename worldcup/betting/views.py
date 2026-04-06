@@ -2,16 +2,21 @@ import logging
 from decimal import Decimal
 
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db import transaction
-from django.db.models import Min
+from django.db import IntegrityError, transaction
+from django.db.models import Count, Min
 from django.shortcuts import get_object_or_404, render
 from django.views import View
 from django.views.generic import TemplateView
 
 from vinosports.betting.balance import log_transaction
+from vinosports.betting.constants import (
+    PARLAY_MAX_LEGS,
+    PARLAY_MAX_PAYOUT,
+    PARLAY_MIN_LEGS,
+)
 from vinosports.betting.models import BalanceTransaction, UserBalance
-from worldcup.betting.forms import PlaceBetForm
-from worldcup.betting.models import BetSlip
+from worldcup.betting.forms import PlaceBetForm, PlaceParlayForm
+from worldcup.betting.models import BetSlip, Parlay, ParlayLeg
 from worldcup.matches.models import Match, Odds
 from worldcup.website.templatetags.currency_tags import format_currency
 
@@ -22,6 +27,127 @@ ODDS_FIELD_MAP = {
     "DRAW": "draw",
     "AWAY_WIN": "away_win",
 }
+
+_WC_PARLAY_SESSION_KEY = "wc_parlay_slip"
+_PARLAY_ODDS_FIELD_MAP = {
+    BetSlip.Selection.HOME_WIN: "home_win",
+    BetSlip.Selection.DRAW: "draw",
+    BetSlip.Selection.AWAY_WIN: "away_win",
+}
+
+
+def _get_match_sentiment(match):
+    """Return sentiment dict for a match, or None if no bets placed."""
+    qs = BetSlip.objects.filter(match=match)
+    total = qs.count()
+    if not total:
+        return None
+
+    counts = {
+        row["selection"]: row["cnt"]
+        for row in qs.values("selection").annotate(cnt=Count("id"))
+    }
+
+    def pct(sel):
+        return round(counts.get(sel, 0) / total * 100)
+
+    home_pct = pct(BetSlip.Selection.HOME_WIN)
+    draw_pct = pct(BetSlip.Selection.DRAW)
+    away_pct = pct(BetSlip.Selection.AWAY_WIN)
+
+    most = max(counts, key=counts.get, default=None)
+    most_popular = dict(BetSlip.Selection.choices).get(most, "") if most else ""
+
+    return {
+        "total": total,
+        "home_pct": home_pct,
+        "draw_pct": draw_pct,
+        "away_pct": away_pct,
+        "most_popular": most_popular,
+    }
+
+
+# ── Parlay session helpers ─────────────────────────────────────────────────────
+
+
+def _wc_get_slip(request):
+    return list(request.session.get(_WC_PARLAY_SESSION_KEY, []))
+
+
+def _wc_save_slip(request, slip):
+    request.session[_WC_PARLAY_SESSION_KEY] = slip
+    request.session.modified = True
+
+
+def _wc_build_slip_context(request):
+    """Build parlay slip template context (mirrors context_processors.parlay_slip)."""
+    if not request.user.is_authenticated:
+        return {
+            "parlay_leg_count": 0,
+            "parlay_legs_needed": PARLAY_MIN_LEGS,
+            "parlay_legs": [],
+            "parlay_combined_odds": None,
+            "parlay_min_legs": PARLAY_MIN_LEGS,
+            "parlay_max_legs": PARLAY_MAX_LEGS,
+            "parlay_max_payout": PARLAY_MAX_PAYOUT,
+            "parlay_form": PlaceParlayForm(),
+        }
+
+    raw = _wc_get_slip(request)
+    match_ids = {e.get("match_id") for e in raw if e.get("match_id")}
+    matches_by_id = (
+        {
+            m.pk: m
+            for m in Match.objects.filter(pk__in=match_ids).select_related(
+                "home_team", "away_team"
+            )
+        }
+        if match_ids
+        else {}
+    )
+
+    legs = []
+    combined_odds = Decimal("1.00")
+    for entry in raw:
+        match = matches_by_id.get(entry.get("match_id"))
+        if not match:
+            continue
+        selection = entry.get("selection", "")
+        odds_field = _PARLAY_ODDS_FIELD_MAP.get(selection)
+        best_odds = None
+        if odds_field:
+            best_odds = (
+                Odds.objects.filter(match=match)
+                .aggregate(best=Min(odds_field))
+                .get("best")
+            )
+        legs.append(
+            {
+                "match": match,
+                "selection": selection,
+                "selection_display": dict(BetSlip.Selection.choices).get(
+                    selection, selection
+                ),
+                "odds": best_odds,
+            }
+        )
+        if best_odds:
+            combined_odds *= best_odds
+
+    if not legs:
+        combined_odds = Decimal("1.00")
+
+    leg_count = len(legs)
+    return {
+        "parlay_legs": legs,
+        "parlay_combined_odds": combined_odds if legs else None,
+        "parlay_leg_count": leg_count,
+        "parlay_legs_needed": max(0, PARLAY_MIN_LEGS - leg_count),
+        "parlay_min_legs": PARLAY_MIN_LEGS,
+        "parlay_max_legs": PARLAY_MAX_LEGS,
+        "parlay_max_payout": PARLAY_MAX_PAYOUT,
+        "parlay_form": PlaceParlayForm(),
+    }
 
 
 class OddsBoardView(TemplateView):
@@ -37,10 +163,17 @@ class OddsBoardView(TemplateView):
             .order_by("kickoff")
         )
 
+        bettable = {Match.Status.SCHEDULED, Match.Status.TIMED}
         matches_with_odds = []
         for match in upcoming:
             odds = match.odds.first()
-            matches_with_odds.append({"match": match, "odds": odds})
+            matches_with_odds.append(
+                {
+                    "match": match,
+                    "odds": odds,
+                    "is_bettable": match.status in bettable,
+                }
+            )
 
         ctx["matches_with_odds"] = matches_with_odds
         return ctx
@@ -240,6 +373,7 @@ class PlaceBetView(LoginRequiredMixin, View):
             )
 
         potential_payout = stake * best_odds_val
+        sentiment = _get_match_sentiment(match)
 
         return render(
             request,
@@ -248,6 +382,247 @@ class PlaceBetView(LoginRequiredMixin, View):
                 "bet": bet,
                 "match": match,
                 "potential_payout": potential_payout,
+                "balance": balance.balance,
+                "sentiment": sentiment,
+            },
+        )
+
+
+# ── Parlay views ───────────────────────────────────────────────────────────────
+
+
+class AddToParlayView(LoginRequiredMixin, View):
+    """Add a selection to the session parlay slip."""
+
+    def post(self, request):
+        try:
+            match_id = int(request.POST.get("match_id", 0))
+        except (ValueError, TypeError):
+            match_id = 0
+        selection = request.POST.get("selection", "")
+
+        if not match_id or selection not in dict(BetSlip.Selection.choices):
+            return render(
+                request,
+                "worldcup_betting/partials/parlay_slip.html",
+                {
+                    **_wc_build_slip_context(request),
+                    "parlay_error": "Invalid selection.",
+                },
+            )
+
+        slip = _wc_get_slip(request)
+
+        if len(slip) >= PARLAY_MAX_LEGS:
+            return render(
+                request,
+                "worldcup_betting/partials/parlay_slip.html",
+                {
+                    **_wc_build_slip_context(request),
+                    "parlay_error": f"Maximum {PARLAY_MAX_LEGS} legs allowed.",
+                },
+            )
+
+        if any(entry["match_id"] == match_id for entry in slip):
+            return render(
+                request,
+                "worldcup_betting/partials/parlay_slip.html",
+                {
+                    **_wc_build_slip_context(request),
+                    "parlay_error": "This match is already in your parlay.",
+                },
+            )
+
+        try:
+            match = Match.objects.get(
+                pk=match_id,
+                status__in=[Match.Status.SCHEDULED, Match.Status.TIMED],
+            )
+        except Match.DoesNotExist:
+            return render(
+                request,
+                "worldcup_betting/partials/parlay_slip.html",
+                {
+                    **_wc_build_slip_context(request),
+                    "parlay_error": "Match not available for betting.",
+                },
+            )
+
+        slip.append({"match_id": match.pk, "selection": selection})
+        _wc_save_slip(request, slip)
+
+        return render(
+            request,
+            "worldcup_betting/partials/parlay_slip.html",
+            _wc_build_slip_context(request),
+        )
+
+
+class RemoveFromParlayView(LoginRequiredMixin, View):
+    """Remove a leg from the session parlay slip."""
+
+    def post(self, request):
+        try:
+            match_id = int(request.POST.get("match_id", 0))
+        except (ValueError, TypeError):
+            match_id = 0
+
+        slip = [e for e in _wc_get_slip(request) if e["match_id"] != match_id]
+        _wc_save_slip(request, slip)
+
+        return render(
+            request,
+            "worldcup_betting/partials/parlay_slip.html",
+            _wc_build_slip_context(request),
+        )
+
+
+class ClearParlayView(LoginRequiredMixin, View):
+    """Clear the entire parlay slip."""
+
+    def post(self, request):
+        _wc_save_slip(request, [])
+        return render(
+            request,
+            "worldcup_betting/partials/parlay_slip.html",
+            _wc_build_slip_context(request),
+        )
+
+
+class PlaceParlayView(LoginRequiredMixin, View):
+    """Validate and place a parlay bet atomically."""
+
+    def post(self, request):
+        slip = _wc_get_slip(request)
+
+        def _error(msg):
+            ctx = _wc_build_slip_context(request)
+            ctx["parlay_error"] = msg
+            return render(request, "worldcup_betting/partials/parlay_slip.html", ctx)
+
+        if len(slip) < PARLAY_MIN_LEGS:
+            return _error(f"A parlay requires at least {PARLAY_MIN_LEGS} selections.")
+        if len(slip) > PARLAY_MAX_LEGS:
+            return _error(f"Maximum {PARLAY_MAX_LEGS} legs allowed.")
+
+        form = PlaceParlayForm(request.POST)
+        if not form.is_valid():
+            ctx = _wc_build_slip_context(request)
+            ctx["parlay_form"] = form
+            ctx["parlay_error"] = "Please enter a valid stake."
+            return render(request, "worldcup_betting/partials/parlay_slip.html", ctx)
+
+        stake = form.cleaned_data["stake"]
+
+        match_ids = [e.get("match_id") for e in slip if e.get("match_id")]
+        matches_by_id = {
+            m.pk: m
+            for m in Match.objects.filter(pk__in=match_ids).select_related(
+                "home_team", "away_team"
+            )
+        }
+
+        leg_data = []
+        for entry in slip:
+            match = matches_by_id.get(entry.get("match_id"))
+            if not match:
+                return _error("One or more matches could not be found.")
+            if match.status not in (Match.Status.SCHEDULED, Match.Status.TIMED):
+                return _error(
+                    f"{match.home_team.short_name or match.home_team.name} vs "
+                    f"{match.away_team.short_name or match.away_team.name} "
+                    "is no longer accepting bets."
+                )
+            selection = entry.get("selection", "")
+            odds_field = _PARLAY_ODDS_FIELD_MAP.get(selection)
+            if not odds_field:
+                return _error("Invalid selection in parlay.")
+            best_odds = (
+                Odds.objects.filter(match=match)
+                .aggregate(best=Min(odds_field))
+                .get("best")
+            )
+            if not best_odds:
+                return _error(
+                    f"No odds available for "
+                    f"{match.home_team.short_name or match.home_team.name} vs "
+                    f"{match.away_team.short_name or match.away_team.name}."
+                )
+            leg_data.append({"match": match, "selection": selection, "odds": best_odds})
+
+        combined_odds = Decimal("1.00")
+        for ld in leg_data:
+            combined_odds *= ld["odds"]
+        combined_odds = combined_odds.quantize(Decimal("0.01"))
+
+        potential_payout = min(stake * combined_odds, PARLAY_MAX_PAYOUT)
+
+        # Deduplicate
+        seen = set()
+        unique_legs = []
+        for ld in leg_data:
+            if ld["match"].pk not in seen:
+                seen.add(ld["match"].pk)
+                unique_legs.append(ld)
+        leg_data = unique_legs
+
+        try:
+            with transaction.atomic():
+                balance = UserBalance.objects.select_for_update().get(user=request.user)
+
+                if balance.balance < stake:
+                    return _error(
+                        f"Insufficient balance. You have "
+                        f"{format_currency(balance.balance, request.user.currency)}."
+                    )
+
+                log_transaction(
+                    balance,
+                    -stake,
+                    BalanceTransaction.Type.PARLAY_PLACEMENT,
+                    f"Parlay with {len(leg_data)} legs",
+                )
+
+                parlay = Parlay.objects.create(
+                    user=request.user,
+                    stake=stake,
+                    combined_odds=combined_odds,
+                    max_payout=PARLAY_MAX_PAYOUT,
+                )
+                ParlayLeg.objects.bulk_create(
+                    [
+                        ParlayLeg(
+                            parlay=parlay,
+                            match=ld["match"],
+                            selection=ld["selection"],
+                            odds_at_placement=ld["odds"],
+                        )
+                        for ld in leg_data
+                    ]
+                )
+
+                from hub.consumers import notify_admin_dashboard
+
+                notify_admin_dashboard("new_bet")
+
+        except UserBalance.DoesNotExist:
+            return _error("Balance not found. Please refresh and try again.")
+        except IntegrityError:
+            return _error(
+                "Duplicate match detected in parlay. Please clear and rebuild your slip."
+            )
+
+        _wc_save_slip(request, [])
+
+        return render(
+            request,
+            "worldcup_betting/partials/parlay_confirmation.html",
+            {
+                "parlay": parlay,
+                "leg_data": leg_data,
+                "combined_odds": combined_odds,
+                "potential_payout": potential_payout,
+                "stake": stake,
                 "balance": balance.balance,
             },
         )

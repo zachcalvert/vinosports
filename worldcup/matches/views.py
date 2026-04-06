@@ -87,8 +87,11 @@ class MatchDetailView(DetailView):
         return Match.objects.select_related("home_team", "away_team", "stage", "group")
 
     def get_context_data(self, **kwargs):
+        from worldcup.betting.views import _get_match_sentiment
+
         ctx = super().get_context_data(**kwargs)
         ctx["odds"] = self.object.odds.first()
+        ctx["sentiment"] = _get_match_sentiment(self.object)
         return ctx
 
 

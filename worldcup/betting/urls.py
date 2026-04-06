@@ -1,10 +1,14 @@
 from django.urls import path
 
 from worldcup.betting.views import (
+    AddToParlayView,
+    ClearParlayView,
     OddsBoardPartialView,
     OddsBoardView,
     PlaceBetView,
+    PlaceParlayView,
     QuickBetFormView,
+    RemoveFromParlayView,
 )
 
 app_name = "worldcup_betting"
@@ -18,4 +22,8 @@ urlpatterns = [
         QuickBetFormView.as_view(),
         name="quick_bet_form",
     ),
+    path("parlay/add/", AddToParlayView.as_view(), name="parlay_add"),
+    path("parlay/remove/", RemoveFromParlayView.as_view(), name="parlay_remove"),
+    path("parlay/clear/", ClearParlayView.as_view(), name="parlay_clear"),
+    path("parlay/place/", PlaceParlayView.as_view(), name="parlay_place"),
 ]

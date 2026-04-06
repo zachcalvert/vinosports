@@ -1,0 +1,46 @@
+{% load currency_tags %}
+<div id="parlay-slip-panel" class="fixed bottom-4 right-4 z-40 max-w-xs w-full sm:w-80">
+    <div class="bg-surface border border-accent/30 rounded-xl shadow-2xl overflow-hidden">
+        <div class="p-5 text-center">
+            <div class="text-accent text-3xl mb-2"><i class="ph-duotone ph-check-circle"></i></div>
+            <h3 class="text-lg font-bold mb-1">Parlay Placed!</h3>
+            <p class="text-xs text-muted mb-4">{{ leg_data|length }}-leg accumulator</p>
+
+            <ul class="text-left space-y-1 mb-4">
+                {% for ld in leg_data %}
+                <li class="flex items-center justify-between text-xs">
+                    <span class="text-muted truncate">
+                        {% if ld.selection == "HOME_WIN" %}
+                            {{ ld.match.home_team.short_name|default:ld.match.home_team.name }} Win
+                        {% elif ld.selection == "DRAW" %}
+                            Draw ({{ ld.match.home_team.short_name|default:ld.match.home_team.name }} vs {{ ld.match.away_team.short_name|default:ld.match.away_team.name }})
+                        {% else %}
+                            {{ ld.match.away_team.short_name|default:ld.match.away_team.name }} Win
+                        {% endif %}
+                    </span>
+                    <span class="text-muted font-mono ml-2 shrink-0">{{ ld.odds }}</span>
+                </li>
+                {% endfor %}
+            </ul>
+
+            <div class="grid grid-cols-3 gap-3 text-center mb-4">
+                <div>
+                    <div class="text-xs text-muted uppercase">Stake</div>
+                    <div class="font-mono font-semibold text-sm">{{ stake|currency:request.user }}</div>
+                </div>
+                <div>
+                    <div class="text-xs text-muted uppercase">Odds</div>
+                    <div class="font-mono font-semibold text-sm">{{ combined_odds|floatformat:2 }}x</div>
+                </div>
+                <div>
+                    <div class="text-xs text-muted uppercase">Payout</div>
+                    <div class="text-accent font-mono font-semibold text-sm">{{ potential_payout|currency:request.user }}</div>
+                </div>
+            </div>
+
+            <a href="{% url 'hub:my_bets' %}"
+               class="text-sm text-accent hover:underline">View My Bets &rarr;</a>
+        </div>
+    </div>
+</div>
+{% include "worldcup_website/components/balance_oob.html" with user=request.user %}

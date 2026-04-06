@@ -1,4 +1,6 @@
 {% load worldcup_match_tags %}
+{# Hidden CSRF token for HTMX parlay add buttons #}
+{% if user.is_authenticated %}<div hidden>{% csrf_token %}</div>{% endif %}
 
 {% if matches_with_odds %}
 <div class="rounded-xl border border-outline-variant bg-surface-container-lowest overflow-hidden divide-y divide-outline-variant">
@@ -14,8 +16,8 @@
             </div>
         </div>
 
-        <!-- Teams + odds row -->
-        <div class="flex items-center gap-4">
+        <!-- Teams + kickoff row -->
+        <div class="flex items-center gap-4 mb-3">
             <!-- Home -->
             <div class="flex items-center gap-2 flex-1 min-w-0">
                 {% if item.match.home_team.crest_url %}
@@ -47,12 +49,68 @@
 
         <!-- Odds buttons -->
         {% if item.odds %}
-        <div class="grid grid-cols-3 gap-2 mt-3">
+        <div class="grid grid-cols-3 gap-2">
+            {% if user.is_authenticated and item.is_bettable %}
+            <!-- Authenticated + bettable: HTMX quick-bet buttons -->
+            <div class="flex flex-col items-center gap-0.5">
+                <button class="w-full flex flex-col items-center rounded-lg border border-outline-variant bg-surface-container px-3 py-2.5 hover:border-accent hover:bg-accent/5 transition-colors font-mono font-bold text-base text-accent"
+                        hx-get="{% url 'worldcup_betting:quick_bet_form' item.match.slug %}?selection=HOME_WIN&container=quick-bet-{{ item.match.pk }}"
+                        hx-target="#quick-bet-{{ item.match.pk }}"
+                        hx-swap="innerHTML">
+                    <span class="text-xs text-muted uppercase tracking-wide mb-1 font-sans font-normal">{{ item.match.home_team.tla }}</span>
+                    {{ item.odds.home_win }}
+                </button>
+                <button class="text-[0.6rem] text-muted hover:text-accent transition-colors leading-none px-1"
+                        title="Add to parlay"
+                        hx-post="{% url 'worldcup_betting:parlay_add' %}"
+                        hx-target="#parlay-slip-panel"
+                        hx-swap="outerHTML"
+                        hx-vals='{"match_id": "{{ item.match.pk }}", "selection": "HOME_WIN"}'
+                        hx-include="[name='csrfmiddlewaretoken']">
+                    + parlay
+                </button>
+            </div>
+            <div class="flex flex-col items-center gap-0.5">
+                <button class="w-full flex flex-col items-center rounded-lg border border-outline-variant bg-surface-container px-3 py-2.5 hover:border-accent hover:bg-accent/5 transition-colors font-mono font-bold text-base text-accent"
+                        hx-get="{% url 'worldcup_betting:quick_bet_form' item.match.slug %}?selection=DRAW&container=quick-bet-{{ item.match.pk }}"
+                        hx-target="#quick-bet-{{ item.match.pk }}"
+                        hx-swap="innerHTML">
+                    <span class="text-xs text-muted uppercase tracking-wide mb-1 font-sans font-normal">Draw</span>
+                    {{ item.odds.draw }}
+                </button>
+                <button class="text-[0.6rem] text-muted hover:text-accent transition-colors leading-none px-1"
+                        title="Add to parlay"
+                        hx-post="{% url 'worldcup_betting:parlay_add' %}"
+                        hx-target="#parlay-slip-panel"
+                        hx-swap="outerHTML"
+                        hx-vals='{"match_id": "{{ item.match.pk }}", "selection": "DRAW"}'
+                        hx-include="[name='csrfmiddlewaretoken']">
+                    + parlay
+                </button>
+            </div>
+            <div class="flex flex-col items-center gap-0.5">
+                <button class="w-full flex flex-col items-center rounded-lg border border-outline-variant bg-surface-container px-3 py-2.5 hover:border-accent hover:bg-accent/5 transition-colors font-mono font-bold text-base text-accent"
+                        hx-get="{% url 'worldcup_betting:quick_bet_form' item.match.slug %}?selection=AWAY_WIN&container=quick-bet-{{ item.match.pk }}"
+                        hx-target="#quick-bet-{{ item.match.pk }}"
+                        hx-swap="innerHTML">
+                    <span class="text-xs text-muted uppercase tracking-wide mb-1 font-sans font-normal">{{ item.match.away_team.tla }}</span>
+                    {{ item.odds.away_win }}
+                </button>
+                <button class="text-[0.6rem] text-muted hover:text-accent transition-colors leading-none px-1"
+                        title="Add to parlay"
+                        hx-post="{% url 'worldcup_betting:parlay_add' %}"
+                        hx-target="#parlay-slip-panel"
+                        hx-swap="outerHTML"
+                        hx-vals='{"match_id": "{{ item.match.pk }}", "selection": "AWAY_WIN"}'
+                        hx-include="[name='csrfmiddlewaretoken']">
+                    + parlay
+                </button>
+            </div>
+            {% else %}
+            <!-- Display-only (anonymous or match not bettable) -->
             <a href="{{ item.match.get_absolute_url }}"
                class="flex flex-col items-center rounded-lg border border-outline-variant bg-surface-container px-3 py-2.5 hover:border-accent hover:bg-accent/5 transition-colors no-underline">
-                <span class="text-xs text-muted uppercase tracking-wide mb-1">
-                    {{ item.match.home_team.tla }}
-                </span>
+                <span class="text-xs text-muted uppercase tracking-wide mb-1">{{ item.match.home_team.tla }}</span>
                 <span class="font-mono font-bold text-base text-accent">{{ item.odds.home_win }}</span>
             </a>
             <a href="{{ item.match.get_absolute_url }}"
@@ -62,12 +120,13 @@
             </a>
             <a href="{{ item.match.get_absolute_url }}"
                class="flex flex-col items-center rounded-lg border border-outline-variant bg-surface-container px-3 py-2.5 hover:border-accent hover:bg-accent/5 transition-colors no-underline">
-                <span class="text-xs text-muted uppercase tracking-wide mb-1">
-                    {{ item.match.away_team.tla }}
-                </span>
+                <span class="text-xs text-muted uppercase tracking-wide mb-1">{{ item.match.away_team.tla }}</span>
                 <span class="font-mono font-bold text-base text-accent">{{ item.odds.away_win }}</span>
             </a>
+            {% endif %}
         </div>
+        <!-- Quick bet slot -->
+        <div id="quick-bet-{{ item.match.pk }}" class="mt-3"></div>
         {% else %}
         <div class="mt-3 text-center text-xs text-muted py-2 border border-outline-variant border-dashed rounded-lg">
             Odds not yet generated

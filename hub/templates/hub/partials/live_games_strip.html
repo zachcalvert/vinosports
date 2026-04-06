@@ -21,8 +21,9 @@
                 <span class="text-[9px] font-label font-bold uppercase tracking-wider px-1.5 py-0.5 rounded
                              {% if game.league == 'epl' %}bg-tertiary/20 text-tertiary
                              {% elif game.league == 'nba' %}bg-secondary/20 text-secondary-fixed-dim
+                             {% elif game.league == 'worldcup' %}bg-amber-500/20 text-amber-300
                              {% else %}bg-primary/30 text-primary-fixed-dim{% endif %}">
-                    {{ game.league|upper }}
+                    {% if game.league == 'worldcup' %}WC{% else %}{{ game.league|upper }}{% endif %}
                 </span>
                 {# Teams + scores #}
                 <div class="font-mono text-sm font-bold text-white tabular-nums">

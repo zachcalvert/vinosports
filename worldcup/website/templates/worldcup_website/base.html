@@ -6,6 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}World Cup 2026{% endblock %} — VinoSports</title>
 
+    <link rel="icon" type="image/png" href="{% static 'worldcup_website/favicon.png' %}">
+
     {% include "vinosports/includes/head_design_system.html" %}
     <link rel="stylesheet" href="{% static 'worldcup_website/css/styles.css' %}">
     {% block extra_css %}{% endblock %}
@@ -75,6 +77,8 @@
          hx-ext="ws" ws-connect="/worldcup/ws/activity/">
     </div>
     {% endif %}
+
+    {% include "worldcup_betting/partials/parlay_slip.html" %}
 
     {% block extra_js %}{% endblock %}
 </body>
