@@ -69,10 +69,12 @@
         <a href="{{ match.get_absolute_url }}"
            class="flex items-center gap-4 px-5 py-3.5 hover:bg-surface-container transition-colors no-underline">
             <!-- Stage / Group context -->
-            <div class="flex-shrink-0 w-20 text-right">
-                <span class="text-xs text-muted uppercase tracking-wide">
-                    {% if match.group %}Group {{ match.group.letter }}{% else %}{{ match.stage.name }}{% endif %}
-                </span>
+            <div class="flex-shrink-0 text-right">
+                {% if match.group %}
+                <span class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-surface-container border border-outline-variant text-xs font-bold text-muted uppercase">{{ match.group.letter }}</span>
+                {% else %}
+                <span class="text-xs text-muted uppercase tracking-wide">{{ match.stage.name }}</span>
+                {% endif %}
             </div>
             <!-- Home team -->
             <div class="flex items-center gap-2 flex-1 min-w-0 justify-end">
@@ -118,10 +120,12 @@
         {% for match in recent_results %}
         <a href="{{ match.get_absolute_url }}"
            class="flex items-center gap-4 px-5 py-3.5 hover:bg-surface-container transition-colors no-underline">
-            <div class="flex-shrink-0 w-20 text-right">
-                <span class="text-xs text-muted uppercase tracking-wide">
-                    {% if match.group %}Group {{ match.group.letter }}{% else %}{{ match.stage.name }}{% endif %}
-                </span>
+            <div class="flex-shrink-0 text-right">
+                {% if match.group %}
+                <span class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-surface-container border border-outline-variant text-xs font-bold text-muted uppercase">{{ match.group.letter }}</span>
+                {% else %}
+                <span class="text-xs text-muted uppercase tracking-wide">{{ match.stage.name }}</span>
+                {% endif %}
             </div>
             <div class="flex items-center gap-2 flex-1 min-w-0 justify-end">
                 <span class="text-sm font-semibold truncate text-right">{{ match.home_team.short_name|default:match.home_team.tla }}</span>
