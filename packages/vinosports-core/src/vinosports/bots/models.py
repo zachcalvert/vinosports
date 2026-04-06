@@ -216,6 +216,7 @@ class BotProfile(AbstractBotProfile):
     active_in_epl = models.BooleanField(_("active in EPL"), default=True)
     active_in_nba = models.BooleanField(_("active in NBA"), default=True)
     active_in_nfl = models.BooleanField(_("active in NFL"), default=False)
+    active_in_worldcup = models.BooleanField(_("active in World Cup"), default=False)
 
     # --- League-specific team affiliations (CharFields, no cross-app FKs) ---
     epl_team_tla = models.CharField(

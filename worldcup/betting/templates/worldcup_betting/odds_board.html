@@ -1,0 +1,30 @@
+{% extends "worldcup_website/base.html" %}
+
+{% block title %}Odds Board — World Cup 2026{% endblock %}
+
+{% block content %}
+<h1 class="text-2xl font-bold mb-6">Odds Board</h1>
+
+<div class="grid gap-3">
+    {% for item in matches_with_odds %}
+    <div class="card p-4">
+        <div class="flex justify-between items-center mb-2">
+            <span class="text-sm text-gray-400">{{ item.match.stage.name }}{% if item.match.group %} · Group {{ item.match.group.letter }}{% endif %}</span>
+            <span class="text-sm text-gray-400">{{ item.match.kickoff|date:"M d, H:i" }}</span>
+        </div>
+        <div class="flex justify-between items-center">
+            <span>{{ item.match.home_team.tla }} vs {{ item.match.away_team.tla }}</span>
+            {% if item.odds %}
+            <div class="flex gap-3 text-sm font-mono">
+                <span>{{ item.odds.home_win }}</span>
+                <span>{{ item.odds.draw }}</span>
+                <span>{{ item.odds.away_win }}</span>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% empty %}
+    <p class="text-gray-400">No upcoming matches with odds.</p>
+    {% endfor %}
+</div>
+{% endblock %}

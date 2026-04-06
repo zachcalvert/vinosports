@@ -1,0 +1,45 @@
+{% extends "worldcup_website/base.html" %}
+
+{% block title %}World Cup 2026 — Groups{% endblock %}
+
+{% block content %}
+<h1 class="text-2xl font-bold mb-6">Group Stage</h1>
+
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    {% for group in groups %}
+    <div class="card p-4">
+        <h2 class="text-lg font-semibold mb-3">
+            <a href="{% url 'worldcup_matches:group_detail' letter=group.letter %}">Group {{ group.letter }}</a>
+        </h2>
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="text-gray-400">
+                    <th class="text-left">#</th>
+                    <th class="text-left">Team</th>
+                    <th>P</th>
+                    <th>W</th>
+                    <th>D</th>
+                    <th>L</th>
+                    <th>GD</th>
+                    <th>Pts</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for standing in group.standings.all %}
+                <tr>
+                    <td>{{ standing.position }}</td>
+                    <td class="text-left">{{ standing.team.tla }}</td>
+                    <td class="text-center">{{ standing.played }}</td>
+                    <td class="text-center">{{ standing.won }}</td>
+                    <td class="text-center">{{ standing.drawn }}</td>
+                    <td class="text-center">{{ standing.lost }}</td>
+                    <td class="text-center">{{ standing.goal_difference }}</td>
+                    <td class="text-center font-semibold">{{ standing.points }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

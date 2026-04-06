@@ -1,0 +1,11 @@
+{% for comment in comments %}
+<div class="card p-3 mb-2">
+    <div class="flex justify-between text-sm text-gray-400 mb-1">
+        <span>{{ comment.user.display_name }}</span>
+        <span>{{ comment.created_at|timesince }} ago</span>
+    </div>
+    <p>{{ comment.body }}</p>
+</div>
+{% empty %}
+<p class="text-gray-400">No comments yet. Be the first!</p>
+{% endfor %}

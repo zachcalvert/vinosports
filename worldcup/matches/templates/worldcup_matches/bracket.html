@@ -1,0 +1,35 @@
+{% extends "worldcup_website/base.html" %}
+
+{% block title %}World Cup 2026 — Knockout Bracket{% endblock %}
+
+{% block content %}
+<h1 class="text-2xl font-bold mb-6">Knockout Bracket</h1>
+
+{% for stage in stages %}
+<section class="mb-8">
+    <h2 class="text-lg font-semibold mb-3">{{ stage.name }}</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        {% for match in knockout_matches|dictsort:"kickoff" %}
+        {% if match.stage == stage %}
+        <a href="{{ match.get_absolute_url }}" class="card p-4 flex justify-between items-center">
+            <span>{{ match.home_team.tla }}</span>
+            <span class="font-mono">
+                {% if match.home_score is not None %}
+                    {{ match.home_score }} – {{ match.away_score }}
+                    {% if match.home_score_penalties is not None %}
+                        ({{ match.home_score_penalties }}-{{ match.away_score_penalties }} pens)
+                    {% elif match.home_score_et is not None %}
+                        (AET)
+                    {% endif %}
+                {% else %}
+                    {{ match.kickoff|date:"M d, H:i" }}
+                {% endif %}
+            </span>
+            <span>{{ match.away_team.tla }}</span>
+        </a>
+        {% endif %}
+        {% endfor %}
+    </div>
+</section>
+{% endfor %}
+{% endblock %}

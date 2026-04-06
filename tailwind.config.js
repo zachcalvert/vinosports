@@ -8,6 +8,7 @@ module.exports = {
     "./nfl/**/templates/**/*.html",
     "./hub/**/templates/**/*.html",
     "./news/**/templates/**/*.html",
+    "./worldcup/**/templates/**/*.html",
   ],
   theme: {
     extend: {

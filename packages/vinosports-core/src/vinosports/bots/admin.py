@@ -73,7 +73,12 @@ class BotProfileAdmin(admin.ModelAdmin):
         (
             "League Activation",
             {
-                "fields": ("active_in_epl", "active_in_nba", "active_in_nfl"),
+                "fields": (
+                    "active_in_epl",
+                    "active_in_nba",
+                    "active_in_nfl",
+                    "active_in_worldcup",
+                ),
             },
         ),
         (
@@ -128,6 +133,11 @@ class BotProfileAdmin(admin.ModelAdmin):
 
                 nfl_run.apply_async(args=[profile.user_id])
                 dispatched += 1
+            if profile.active_in_worldcup:
+                from worldcup.bots.tasks import execute_bot_strategy as wc_run
+
+                wc_run.apply_async(args=[profile.user_id])
+                dispatched += 1
         self.message_user(
             request,
             f"Dispatched {dispatched} strategy task(s).",
@@ -157,6 +167,11 @@ class BotProfileAdmin(admin.ModelAdmin):
             from nfl.discussions.tasks import generate_pregame_comments as nfl_pregame
 
             nfl_pregame.apply_async(kwargs={"bot_user_ids": user_ids})
+            dispatched += 1
+        if queryset.filter(active_in_worldcup=True).exists():
+            from worldcup.bots.tasks import generate_prematch_comments as wc_prematch
+
+            wc_prematch.apply_async(kwargs={"bot_user_ids": user_ids})
             dispatched += 1
         self.message_user(
             request,
@@ -188,6 +203,11 @@ class BotProfileAdmin(admin.ModelAdmin):
             from nfl.discussions.tasks import generate_postgame_comments as nfl_postgame
 
             nfl_postgame.apply_async(kwargs={"bot_user_ids": user_ids})
+            dispatched += 1
+        if queryset.filter(active_in_worldcup=True).exists():
+            from worldcup.bots.tasks import generate_postmatch_comments as wc_postmatch
+
+            wc_postmatch.apply_async(kwargs={"bot_user_ids": user_ids})
             dispatched += 1
         self.message_user(
             request,

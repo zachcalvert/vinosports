@@ -1,0 +1,18 @@
+{% for item in matches_with_odds %}
+<div class="card p-4">
+    <div class="flex justify-between items-center mb-2">
+        <span class="text-sm text-gray-400">{{ item.match.stage.name }}</span>
+        <span class="text-sm text-gray-400">{{ item.match.kickoff|date:"M d, H:i" }}</span>
+    </div>
+    <div class="flex justify-between items-center">
+        <span>{{ item.match.home_team.tla }} vs {{ item.match.away_team.tla }}</span>
+        {% if item.odds %}
+        <div class="flex gap-3 text-sm font-mono">
+            <span>{{ item.odds.home_win }}</span>
+            <span>{{ item.odds.draw }}</span>
+            <span>{{ item.odds.away_win }}</span>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endfor %}

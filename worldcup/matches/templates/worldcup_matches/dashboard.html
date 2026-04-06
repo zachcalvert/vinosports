@@ -1,0 +1,50 @@
+{% extends "worldcup_website/base.html" %}
+
+{% block title %}World Cup 2026 — Dashboard{% endblock %}
+
+{% block content %}
+<h1 class="text-2xl font-bold mb-6">FIFA World Cup 2026</h1>
+
+{% if live_matches %}
+<section class="mb-8">
+    <h2 class="text-lg font-semibold mb-3">Live Now</h2>
+    <div class="grid gap-3">
+        {% for match in live_matches %}
+        <a href="{{ match.get_absolute_url }}" class="card p-4 flex justify-between items-center">
+            <span>{{ match.home_team.tla }}</span>
+            <span class="font-mono">{{ match.home_score|default:"-" }} – {{ match.away_score|default:"-" }}</span>
+            <span>{{ match.away_team.tla }}</span>
+        </a>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+<section class="mb-8">
+    <h2 class="text-lg font-semibold mb-3">Upcoming Matches</h2>
+    <div class="grid gap-3">
+        {% for match in upcoming_matches %}
+        <a href="{{ match.get_absolute_url }}" class="card p-4 flex justify-between items-center">
+            <span>{{ match.home_team.tla }}</span>
+            <span class="text-sm text-gray-400">{{ match.kickoff|date:"M d, H:i" }}</span>
+            <span>{{ match.away_team.tla }}</span>
+        </a>
+        {% endfor %}
+    </div>
+</section>
+
+{% if recent_results %}
+<section>
+    <h2 class="text-lg font-semibold mb-3">Recent Results</h2>
+    <div class="grid gap-3">
+        {% for match in recent_results %}
+        <a href="{{ match.get_absolute_url }}" class="card p-4 flex justify-between items-center">
+            <span>{{ match.home_team.tla }}</span>
+            <span class="font-mono">{{ match.home_score }} – {{ match.away_score }}</span>
+            <span>{{ match.away_team.tla }}</span>
+        </a>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+{% endblock %}

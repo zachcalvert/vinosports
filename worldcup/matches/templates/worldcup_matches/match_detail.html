@@ -1,0 +1,50 @@
+{% extends "worldcup_website/base.html" %}
+
+{% block title %}{{ match }} — World Cup 2026{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <span class="text-sm text-gray-400">{{ match.stage.name }}{% if match.group %} · Group {{ match.group.letter }}{% endif %}</span>
+    <h1 class="text-2xl font-bold">{{ match.home_team.name }} vs {{ match.away_team.name }}</h1>
+    <p class="text-sm text-gray-400">{{ match.kickoff|date:"l, M d Y · H:i" }}{% if match.venue %} · {{ match.venue }}{% if match.city %}, {{ match.city }}{% endif %}{% endif %}</p>
+</div>
+
+{% if match.home_score is not None %}
+<div class="card p-6 mb-6 text-center">
+    <div class="text-4xl font-bold font-mono">
+        {{ match.home_score }} – {{ match.away_score }}
+    </div>
+    {% if match.home_score_et is not None %}
+    <div class="text-sm text-gray-400 mt-1">
+        After Extra Time: {{ match.home_score_et }} – {{ match.away_score_et }}
+    </div>
+    {% endif %}
+    {% if match.home_score_penalties is not None %}
+    <div class="text-sm text-gray-400">
+        Penalties: {{ match.home_score_penalties }} – {{ match.away_score_penalties }}
+    </div>
+    {% endif %}
+    <div class="text-sm mt-2">{{ match.get_status_display }}</div>
+</div>
+{% endif %}
+
+{% if odds %}
+<div class="card p-4 mb-6">
+    <h2 class="text-lg font-semibold mb-3">Odds</h2>
+    <div class="grid grid-cols-3 gap-4 text-center">
+        <div>
+            <div class="text-sm text-gray-400">{{ match.home_team.tla }}</div>
+            <div class="text-xl font-mono">{{ odds.home_win }}</div>
+        </div>
+        <div>
+            <div class="text-sm text-gray-400">Draw</div>
+            <div class="text-xl font-mono">{{ odds.draw }}</div>
+        </div>
+        <div>
+            <div class="text-sm text-gray-400">{{ match.away_team.tla }}</div>
+            <div class="text-xl font-mono">{{ odds.away_win }}</div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

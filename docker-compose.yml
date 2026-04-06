@@ -61,6 +61,7 @@ services:
       - ./epl:/app/epl
       - ./nba:/app/nba
       - ./nfl:/app/nfl
+      - ./worldcup:/app/worldcup
       - ./hub:/app/hub
       - ./news:/app/news
       - ./manage.py:/app/manage.py
@@ -79,6 +80,7 @@ services:
       - ./epl:/app/epl
       - ./nba:/app/nba
       - ./nfl:/app/nfl
+      - ./worldcup:/app/worldcup
       - ./hub:/app/hub
       - ./news:/app/news
     depends_on: []
@@ -98,12 +100,13 @@ services:
   # --- Celery Worker (all queues) ---
   worker:
     <<: *app-build
-    command: celery -A config worker -l info -Q epl,nba,nfl,news
+    command: celery -A config worker -l info -Q epl,nba,nfl,news,worldcup
     volumes:
       - ./config:/app/config
       - ./epl:/app/epl
       - ./nba:/app/nba
       - ./nfl:/app/nfl
+      - ./worldcup:/app/worldcup
       - ./hub:/app/hub
       - ./news:/app/news
       - ./manage.py:/app/manage.py
@@ -119,6 +122,7 @@ services:
       - ./epl:/app/epl
       - ./nba:/app/nba
       - ./nfl:/app/nfl
+      - ./worldcup:/app/worldcup
       - ./hub:/app/hub
       - ./news:/app/news
       - ./manage.py:/app/manage.py

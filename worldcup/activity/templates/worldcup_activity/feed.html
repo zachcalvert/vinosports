@@ -1,0 +1,18 @@
+{% extends "worldcup_website/base.html" %}
+
+{% block title %}Activity — World Cup 2026{% endblock %}
+
+{% block content %}
+<h1 class="text-2xl font-bold mb-6">Activity Feed</h1>
+
+<div class="grid gap-2">
+    {% for event in events %}
+    <div class="card p-3 flex justify-between items-center">
+        <span>{{ event.message }}</span>
+        <span class="text-sm text-gray-400">{{ event.broadcast_at|timesince }} ago</span>
+    </div>
+    {% empty %}
+    <p class="text-gray-400">No activity yet.</p>
+    {% endfor %}
+</div>
+{% endblock %}
