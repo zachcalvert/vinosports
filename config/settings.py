@@ -582,6 +582,7 @@ if not DEBUG:
 SENTRY_DSN = os.environ.get("SENTRY_DSN", "")
 if SENTRY_DSN:
     import sentry_sdk
+    from django.core.exceptions import DisallowedHost
 
     sentry_sdk.init(
         dsn=SENTRY_DSN,
@@ -589,4 +590,5 @@ if SENTRY_DSN:
         traces_sample_rate=0.1,
         profiles_sample_rate=0.1,
         environment="production" if not DEBUG else "development",
+        ignore_errors=[DisallowedHost],
     )
