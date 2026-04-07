@@ -6,9 +6,9 @@ from celery import shared_task
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 
-from vinosports.betting.models import UserBalance
+from vinosports.betting.models import BetStatus, UserBalance
 from vinosports.bots.models import BotProfile
-from worldcup.betting.models import BetSlip, BetStatus
+from worldcup.betting.models import BetSlip
 from worldcup.bots.comment_service import generate_bot_comment, select_reply_bot
 from worldcup.bots.models import BotComment
 from worldcup.bots.strategies import STRATEGY_MAP
