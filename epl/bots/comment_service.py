@@ -63,14 +63,12 @@ BOT_REPLY_AFFINITIES = {
 # Words that should never appear in bot comments
 PROFANITY_BLOCKLIST = {
     "fuck",
-    "shit",
     "bitch",
     "bastard",
     "asshole",
     "cunt",
     "dick",
     "piss",
-    "slut",
     "whore",
     "retard",
     "faggot",
