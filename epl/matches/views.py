@@ -12,6 +12,7 @@ from epl.betting.models import BetSlip
 from epl.matches.forms import MatchNotesForm
 from epl.matches.models import Match, MatchNotes, Odds, Standing
 from epl.matches.services import fetch_match_hype_data
+from vinosports.betting.featured import FeaturedParlay
 from vinosports.betting.leaderboard import (
     BOARD_TYPES,
     get_leaderboard_entries,
@@ -117,8 +118,6 @@ class DashboardView(TemplateView):
             .select_related("team")
             .order_by("position")[:8]
         )
-
-        from vinosports.betting.featured import FeaturedParlay
 
         ctx["featured_parlays"] = (
             FeaturedParlay.objects.filter(

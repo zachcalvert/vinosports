@@ -1,7 +1,8 @@
-from datetime import timedelta
+from datetime import date, timedelta
 
 from django.contrib.auth.mixins import UserPassesTestMixin
-from django.db.models import Count, Prefetch, Q, Sum
+from django.core.cache import cache
+from django.db.models import Avg, Count, Prefetch, Q, Sum
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
@@ -11,6 +12,8 @@ from django.views import View
 from nba.betting.forms import PlaceBetForm
 from nba.betting.models import BetSlip
 from nba.discussions.forms import CommentForm
+from nba.discussions.models import Comment
+from nba.discussions.views import _annotate_bet_positions, _build_bet_map
 from nba.games.forms import GameNotesForm
 from nba.games.models import (
     Conference,
@@ -23,6 +26,7 @@ from nba.games.models import (
     Standing,
     Team,
 )
+from nba.games.tasks import _current_season, fetch_box_score
 from vinosports.betting.models import BetStatus
 
 
@@ -32,10 +36,8 @@ class ScheduleView(View):
         conference = request.GET.get("conference")
 
         if date_str:
-            from datetime import date as date_type
-
             try:
-                target_date = date_type.fromisoformat(date_str)
+                target_date = date.fromisoformat(date_str)
             except ValueError:
                 target_date = timezone.localdate()
         else:
@@ -120,8 +122,6 @@ class ScheduleView(View):
 
 class StandingsView(View):
     def get(self, request):
-        from nba.games.tasks import _current_season
-
         season = _current_season()
         east = (
             Standing.objects.filter(season=season, conference=Conference.EAST)
@@ -216,10 +216,6 @@ class PlayerDetailView(View):
         ).order_by("-game__game_date")[:10]
 
         # Season averages (current season, regular season only)
-        from django.db.models import Avg, Count
-
-        from nba.games.tasks import _current_season
-
         season = _current_season()
         season_games = player.box_scores.filter(
             game__season=season,
@@ -253,8 +249,6 @@ class PlayerDetailView(View):
 
 class TeamDetailView(View):
     def get(self, request, abbreviation):
-        from nba.games.tasks import _current_season
-
         team = get_object_or_404(Team, abbreviation__iexact=abbreviation)
         season = _current_season()
         today = timezone.localdate()
@@ -484,10 +478,6 @@ def _get_box_score_context(game, request=None):
     # Kick off async fetch if no data exists yet (authenticated users only)
     if not box_scores.exists():
         if request and request.user.is_authenticated:
-            from django.core.cache import cache
-
-            from nba.games.tasks import fetch_box_score
-
             lock_key = f"fetch_box_score:{game.pk}"
             if cache.add(lock_key, "1", timeout=120):
                 try:
@@ -550,10 +540,6 @@ class GameDetailView(View):
         odds = Odds.objects.filter(game=game).order_by("-fetched_at")
         best_odds = odds.first()
 
-        from django.db.models import Prefetch
-
-        from nba.discussions.models import Comment
-
         grandchild_qs = (
             Comment.objects.filter(is_deleted=False)
             .select_related("user")
@@ -580,8 +566,6 @@ class GameDetailView(View):
         )
 
         # Annotate comments with bet positions ("Backing Lakers", etc.)
-        from nba.discussions.views import _annotate_bet_positions, _build_bet_map
-
         user_ids = {c.user_id for c in comments}
         for c in comments:
             user_ids.update(r.user_id for r in c.prefetched_replies)

@@ -347,7 +347,7 @@ class TestGenerateOddsTask:
             }
         ]
 
-        with patch("epl.activity.services.queue_activity_event"):
+        with patch("epl.betting.tasks.queue_activity_event"):
             generate_odds()
 
         from epl.matches.models import Odds
@@ -419,7 +419,7 @@ class TestGenerateOddsTask:
             }
         ]
 
-        with patch("epl.activity.services.queue_activity_event") as mock_queue:
+        with patch("epl.betting.tasks.queue_activity_event") as mock_queue:
             generate_odds()
 
         mock_queue.assert_called_once()

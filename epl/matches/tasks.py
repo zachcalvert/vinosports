@@ -1,5 +1,5 @@
 import logging
-from datetime import timedelta
+from datetime import date, timedelta
 
 from asgiref.sync import async_to_sync
 from celery import shared_task
@@ -7,6 +7,7 @@ from channels.layers import get_channel_layer
 from django.conf import settings
 from django.utils import timezone
 
+from epl.activity.services import queue_activity_event
 from epl.betting.tasks import settle_match_bets
 from epl.matches.models import Match
 from epl.matches.services import (
@@ -64,8 +65,6 @@ def fetch_live_scores(self):
                 season=settings.EPL_CURRENT_SEASON,
             ).values("pk", "home_score", "away_score", "status")
         }
-
-        from datetime import date
 
         created, updated = sync_matches(
             settings.EPL_CURRENT_SEASON, game_date=date.today()
@@ -145,8 +144,6 @@ def _broadcast_score_changes(pre_sync):
             send(f"match_{pk}", {"type": "match_score_update", "match_id": pk})
 
             if old and (old[0] != m["home_score"] or old[1] != m["away_score"]):
-                from epl.activity.services import queue_activity_event
-
                 match_obj = (
                     Match.objects.filter(pk=pk)
                     .select_related("home_team", "away_team")

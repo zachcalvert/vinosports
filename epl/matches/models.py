@@ -3,6 +3,7 @@ from datetime import timedelta
 from django.db import models
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.dateparse import parse_datetime
 from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 
@@ -87,8 +88,6 @@ class Match(BaseModel):
         away = slugify(self.away_team.tla or self.away_team.short_name or "xxx")
         kickoff = self.kickoff
         if isinstance(kickoff, str):
-            from django.utils.dateparse import parse_datetime
-
             kickoff = parse_datetime(kickoff) or kickoff
         date_str = (
             kickoff.strftime("%Y-%m-%d")

@@ -8,12 +8,16 @@ Status strings from the API are normalized to GameStatus choices here.
 import logging
 import time
 import zoneinfo
+from collections import defaultdict
 from datetime import date, datetime, timedelta
 from typing import Any
 
 import httpx
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
 from django.conf import settings
 
+from nba.activity.models import ActivityEvent
 from nba.games.models import (
     Conference,
     Game,
@@ -500,8 +504,6 @@ def sync_standings(season: int, client: NBADataClient | None = None) -> int:
 
 def _compute_standings_from_games(season: int) -> int:
     """Compute standings from FINAL game results for the season."""
-    from collections import defaultdict
-
     stats = defaultdict(
         lambda: {
             "wins": 0,
@@ -614,8 +616,6 @@ def sync_box_score(game: Game, client: NBADataClient | None = None) -> int:
     }
 
     # Group by team to infer starters (top 5 by minutes played)
-    from collections import defaultdict
-
     by_team: dict[int, list[dict]] = defaultdict(list)
     for s in stats:
         by_team[s["team_external_id"]].append(s)
@@ -680,11 +680,6 @@ def sync_box_score(game: Game, client: NBADataClient | None = None) -> int:
 
 def _broadcast_score_updates(game_pks: list[int]) -> None:
     """Broadcast score updates to WebSocket groups and create ActivityEvents."""
-    from asgiref.sync import async_to_sync
-    from channels.layers import get_channel_layer
-
-    from nba.activity.models import ActivityEvent
-
     channel_layer = get_channel_layer()
     send = async_to_sync(channel_layer.group_send)
 

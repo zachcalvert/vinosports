@@ -6,7 +6,9 @@ from django.views import View
 
 from nba.betting.forms import CurrencyForm, DisplayNameForm
 from nba.games.models import Game, GameStatus, Standing
+from nba.games.services import today_et
 from nba.website.theme import THEME_SESSION_KEY, get_theme, normalize_theme
+from vinosports.betting.featured import FeaturedParlay
 from vinosports.betting.models import BalanceTransaction, UserBalance, UserStats
 
 User = get_user_model()
@@ -14,8 +16,6 @@ User = get_user_model()
 
 class DashboardView(View):
     def get(self, request):
-        from nba.games.services import today_et
-
         today = today_et()
         games = (
             Game.objects.filter(game_date=today)
@@ -51,8 +51,6 @@ class DashboardView(View):
             first_odds = g.odds.all()[:1]
             if first_odds:
                 odds_by_game[g.id] = first_odds[0]
-
-        from vinosports.betting.featured import FeaturedParlay
 
         featured_parlays = (
             FeaturedParlay.objects.filter(

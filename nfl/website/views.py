@@ -1,12 +1,15 @@
 from django.contrib.auth import logout
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db.models import Count
 from django.shortcuts import redirect, render
+from django.utils import timezone
 from django.views import View
 
 from nfl.betting.models import FuturesMarket, FuturesOutcome
 from nfl.games.models import Game, GameStatus, Standing
 from nfl.games.views import _nfl_current_season, _nfl_current_week
 from nfl.website.theme import THEME_SESSION_KEY, get_theme, normalize_theme
+from vinosports.betting.featured import FeaturedParlay
 from vinosports.betting.models import (
     BalanceTransaction,
     FuturesMarketStatus,
@@ -19,8 +22,6 @@ class DashboardView(View):
     def get(self, request):
         season = _nfl_current_season()
         current_week = _nfl_current_week(season)
-
-        from django.db.models import Count
 
         games = (
             Game.objects.filter(season=season, week=current_week)
@@ -59,8 +60,6 @@ class DashboardView(View):
             if first_odds:
                 odds_by_game[g.id] = first_odds[0]
 
-        from vinosports.betting.featured import FeaturedParlay
-
         featured_parlays = (
             FeaturedParlay.objects.filter(
                 league="nfl", status=FeaturedParlay.Status.ACTIVE
@@ -76,8 +75,6 @@ class DashboardView(View):
         futures_preview = None
         futures_market = None
         if is_offseason:
-            from django.utils import timezone
-
             today = timezone.now().date()
             futures_season = (
                 str(today.year)

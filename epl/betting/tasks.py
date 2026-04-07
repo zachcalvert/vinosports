@@ -2,15 +2,23 @@ import logging
 from decimal import Decimal
 
 from celery import shared_task
+from django.conf import settings
 from django.db import transaction
+from django.utils import timezone
 
+from epl.activity.services import queue_activity_event
 from epl.betting.futures_odds_engine import generate_futures_odds
-from epl.betting.models import BetSlip, Parlay, ParlayLeg
+from epl.betting.models import BetSlip, FuturesMarket, FuturesOutcome, Parlay, ParlayLeg
 from epl.betting.odds_engine import generate_all_upcoming_odds
 from epl.betting.stats import record_bet_result
 from epl.matches.models import Match, Odds
 from vinosports.betting.balance import log_transaction
-from vinosports.betting.models import BalanceTransaction, BetStatus, UserBalance
+from vinosports.betting.models import (
+    BalanceTransaction,
+    BetStatus,
+    FuturesMarketStatus,
+    UserBalance,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -176,11 +184,8 @@ def _evaluate_parlay(parlay_id):
 def generate_odds(self):
     logger.info("generate_odds: starting")
     try:
-        from django.conf import settings as django_settings
-        from django.utils import timezone as tz
-
-        results = generate_all_upcoming_odds(django_settings.EPL_CURRENT_SEASON)
-        now = tz.now()
+        results = generate_all_upcoming_odds(settings.EPL_CURRENT_SEASON)
+        now = timezone.now()
         created = updated = 0
 
         match_objs = [r["match"] for r in results]
@@ -232,8 +237,6 @@ def generate_odds(self):
         logger.info("generate_odds: done created=%d updated=%d", created, updated)
 
         if created > 0:
-            from epl.activity.services import queue_activity_event
-
             queue_activity_event(
                 "odds_update",
                 f"Fresh odds generated ({created} new lines)",
@@ -353,8 +356,6 @@ def settle_match_bets(self, match_id):
 
     total = won_count + lost_count
     if total > 0:
-        from epl.activity.services import queue_activity_event
-
         queue_activity_event(
             "bet_settlement",
             f"{total} bets settled on {match.home_team.short_name} vs {match.away_team.short_name}",
@@ -368,12 +369,7 @@ def update_futures_odds(self):
     """Regenerate futures odds for all open EPL markets from current standings."""
     logger.info("update_futures_odds: starting")
     try:
-        from django.conf import settings as django_settings
-
-        from epl.betting.models import FuturesMarket, FuturesOutcome
-        from vinosports.betting.models import FuturesMarketStatus
-
-        season = django_settings.EPL_CURRENT_SEASON
+        season = settings.EPL_CURRENT_SEASON
         markets = FuturesMarket.objects.filter(
             season=season, status=FuturesMarketStatus.OPEN
         )

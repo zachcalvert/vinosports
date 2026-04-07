@@ -1,13 +1,16 @@
 import logging
 from datetime import timedelta
 from decimal import Decimal
+from heapq import merge
+from operator import attrgetter
 
 from django.contrib.auth import authenticate, get_user_model, login, logout
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.db import transaction
 from django.db.models import Count, DecimalField, ExpressionWrapper, F, Sum
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.template.loader import render_to_string
 from django.utils import timezone
 from django.views import View
 from django.views.generic import TemplateView
@@ -22,6 +25,7 @@ from hub.forms import (
 )
 from vinosports.activity.models import Notification
 from vinosports.betting.balance import log_transaction
+from vinosports.betting.featured import FeaturedParlay
 from vinosports.betting.leaderboard import (
     BOARD_TYPES,
     get_leaderboard_entries,
@@ -37,6 +41,7 @@ from vinosports.betting.models import (
     UserStats,
 )
 from vinosports.bots.models import BotProfile
+from vinosports.challenges.models import Challenge, UserChallenge
 
 from .models import SiteSettings
 from .promo import evaluate_promo_code
@@ -174,8 +179,6 @@ class HomeView(TemplateView):
             .exclude(user__profile_image__isnull=True)
             .order_by("?")[:4]
         )
-        from vinosports.betting.featured import FeaturedParlay
-
         ctx["featured_parlays"] = (
             FeaturedParlay.objects.filter(status=FeaturedParlay.Status.ACTIVE)
             .select_related("sponsor", "sponsor__bot_profile")
@@ -1007,8 +1010,6 @@ class MyBetsView(LoginRequiredMixin, TemplateView):
 
 def _ensure_challenge_enrollment(user):
     """Lazily enroll user into all active challenges they haven't joined."""
-    from vinosports.challenges.models import Challenge, UserChallenge
-
     active_challenges = Challenge.objects.filter(
         status=Challenge.Status.ACTIVE
     ).select_related("template")
@@ -1035,8 +1036,6 @@ def _ensure_challenge_enrollment(user):
 
 def _get_hub_user_challenges(user, status_filter=None):
     """Return UserChallenge queryset for a user with optional status filter."""
-    from vinosports.challenges.models import UserChallenge
-
     qs = UserChallenge.objects.filter(user=user).select_related("challenge__template")
     if status_filter:
         qs = qs.filter(status=status_filter)
@@ -1048,8 +1047,6 @@ class ChallengesView(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        from vinosports.challenges.models import Challenge, UserChallenge
-
         user = self.request.user
         _ensure_challenge_enrollment(user)
 
@@ -1083,8 +1080,6 @@ class ActiveChallengesHubPartial(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        from vinosports.challenges.models import UserChallenge
-
         _ensure_challenge_enrollment(self.request.user)
         ctx["challenges"] = _get_hub_user_challenges(
             self.request.user, UserChallenge.Status.IN_PROGRESS
@@ -1098,8 +1093,6 @@ class CompletedChallengesHubPartial(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        from vinosports.challenges.models import UserChallenge
-
         ctx["challenges"] = _get_hub_user_challenges(
             self.request.user, UserChallenge.Status.COMPLETED
         )
@@ -1112,8 +1105,6 @@ class UpcomingChallengesHubPartial(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        from vinosports.challenges.models import Challenge
-
         ctx["upcoming_challenges"] = (
             Challenge.objects.filter(status=Challenge.Status.UPCOMING)
             .select_related("template")
@@ -1235,8 +1226,6 @@ def _admin_parse_offset(request):
 
 
 def _admin_paginated_response(request, items, total, offset, list_tpl, page_tpl):
-    from django.template.loader import render_to_string
-
     has_more = (offset + ADMIN_PAGE_SIZE) < total
     ctx = {
         "items": items,
@@ -1248,8 +1237,6 @@ def _admin_paginated_response(request, items, total, offset, list_tpl, page_tpl)
         html = render_to_string(page_tpl, ctx, request=request)
     else:
         html = render_to_string(list_tpl, ctx, request=request)
-    from django.http import HttpResponse
-
     return HttpResponse(html)
 
 
@@ -1264,9 +1251,6 @@ _APP_LABEL_TO_LEAGUE = {
 
 
 def _admin_merged_querysets(*querysets, offset, page_size):
-    from heapq import merge
-    from operator import attrgetter
-
     limit = offset + page_size
     item_lists = [list(qs[:limit]) for qs in querysets]
     merged = list(merge(*item_lists, key=attrgetter("created_at"), reverse=True))
@@ -1323,9 +1307,6 @@ class AdminBetsPartialView(SuperuserRequiredMixin, View):
         )
 
         # Final merge of bets + parlays
-        from heapq import merge
-        from operator import attrgetter
-
         merged = list(
             merge(all_bets, all_parlays, key=attrgetter("created_at"), reverse=True)
         )
@@ -1463,9 +1444,6 @@ class AdminBetsFullView(SuperuserRequiredMixin, TemplateView):
             epl_parlays, nba_parlays, nfl_parlays, offset=0, page_size=prefetch_limit
         )
 
-        from heapq import merge
-        from operator import attrgetter
-
         merged = list(
             merge(all_bets, all_parlays, key=attrgetter("created_at"), reverse=True)
         )
@@ -1583,12 +1561,8 @@ class DeleteFeaturedParlayView(SuperuserRequiredMixin, View):
     """Superuser-only: delete a featured parlay directly from the card."""
 
     def post(self, request, pk):
-        from vinosports.betting.featured import FeaturedParlay
-
         fp = get_object_or_404(FeaturedParlay, pk=pk)
         fp.delete()
-        from django.http import HttpResponse
-
         return HttpResponse("")
 
 
@@ -1602,7 +1576,5 @@ class MarkAllReadView(LoginRequiredMixin, View):
         ).update(is_read=True, read_at=timezone.now())
 
         if request.headers.get("HX-Request"):
-            from django.http import HttpResponse as HttpResp
-
-            return HttpResp(headers={"HX-Refresh": "true"})
+            return HttpResponse(headers={"HX-Refresh": "true"})
         return redirect("hub:inbox")
