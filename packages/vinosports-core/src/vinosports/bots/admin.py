@@ -17,8 +17,12 @@ class BotProfileAdmin(admin.ModelAdmin):
         "is_active",
         "active_in_epl",
         "active_in_nba",
+        "active_in_nfl",
+        "active_in_worldcup",
         "epl_team_tla",
         "nba_team_abbr",
+        "nfl_team_abbr",
+        "worldcup_country_code",
         "risk_multiplier",
         "max_daily_bets",
         "schedule_template",
@@ -28,6 +32,8 @@ class BotProfileAdmin(admin.ModelAdmin):
         "is_active",
         "active_in_epl",
         "active_in_nba",
+        "active_in_nfl",
+        "active_in_worldcup",
         "schedule_template",
     ]
     search_fields = ["user__email", "user__display_name"]
@@ -84,10 +90,18 @@ class BotProfileAdmin(admin.ModelAdmin):
         (
             "Team Affiliations",
             {
-                "fields": ("epl_team_tla", "nba_team_abbr"),
+                "fields": (
+                    "epl_team_tla",
+                    "nba_team_abbr",
+                    "nfl_team_abbr",
+                    "worldcup_country_code",
+                ),
                 "description": (
-                    "Team abbreviations for homer bots. "
-                    "Change these to reassign a bot's team loyalty."
+                    "Team abbreviations / country codes for homer bots. "
+                    "EPL: three-letter TLA (e.g. CHE). "
+                    "NBA: team abbreviation (e.g. GSW). "
+                    "NFL: team abbreviation (e.g. KC). "
+                    "World Cup: ISO 3166-1 alpha-3 country code (e.g. BRA, FRA)."
                 ),
             },
         ),

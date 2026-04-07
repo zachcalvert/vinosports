@@ -237,6 +237,14 @@ class BotProfile(AbstractBotProfile):
         blank=True,
         help_text=_("Abbreviation of favourite NFL team (e.g. KC, BUF)."),
     )
+    worldcup_country_code = models.CharField(
+        _("World Cup country code"),
+        max_length=3,
+        blank=True,
+        help_text=_(
+            "ISO 3166-1 alpha-3 country code of favourite World Cup team (e.g. BRA, FRA)."
+        ),
+    )
 
     # --- Public profile fields ---
     tagline = models.CharField(
