@@ -1,0 +1,28 @@
+{% extends "ucl_website/base.html" %}
+
+{% block title %}Leaderboard — Champions League{% endblock %}
+
+{% block content %}
+<h1 class="text-2xl font-bold mb-6">Leaderboard</h1>
+
+<div class="card p-4">
+    <table class="w-full text-sm">
+        <thead>
+            <tr class="text-gray-400">
+                <th class="text-left">#</th>
+                <th class="text-left">User</th>
+                <th>Net Profit</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for stats in leaderboard %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td class="text-left">{{ stats.user.display_name }}</td>
+                <td class="text-center font-mono">{{ stats.net_profit }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

@@ -1,0 +1,287 @@
+/* ==========================================================================
+   UEFA Champions League Stylesheet — League-specific overrides only
+   ==========================================================================
+   Shared palette, navbar, sidebar, footer, and utility classes live in:
+     vinosports-core → static/vinosports/css/design-system.css
+   This file contains only UCL-specific rules.
+   ========================================================================== */
+
+
+/* --------------------------------------------------------------------------
+   1. LEAGUE TOKEN — navy blue (starball aesthetic)
+   -------------------------------------------------------------------------- */
+
+:root {
+    --color-accent: 15 23 42;             /* #0f172a — dark navy */
+    --color-accent-light: 241 245 249;    /* #f1f5f9 — slate-100 */
+    --color-ucl: 30 58 138;               /* #1e3a8a — UCL blue */
+}
+
+
+/* --------------------------------------------------------------------------
+   2. SIDEBAR CTA BUTTON
+   -------------------------------------------------------------------------- */
+
+.sidebar-link--cta {
+    background-color: rgb(var(--color-primary));
+    color: #fff !important;
+    border-radius: 0.5rem;
+    font-weight: 700;
+    justify-content: center;
+    transition: background-color 0.15s ease;
+}
+
+.sidebar-link--cta:hover {
+    background-color: rgb(var(--color-primary) / 0.85);
+}
+
+
+/* --------------------------------------------------------------------------
+   3. HTMX LOADING INDICATOR
+   -------------------------------------------------------------------------- */
+
+.htmx-indicator {
+    opacity: 0;
+    transition: opacity 0.15s ease-in;
+}
+.htmx-request .htmx-indicator,
+.htmx-request.htmx-indicator {
+    opacity: 1;
+}
+
+
+/* --------------------------------------------------------------------------
+   4. LIVE MATCH CARD (pulsing blue glow)
+   -------------------------------------------------------------------------- */
+
+.live-match-card {
+    border-color: rgb(var(--color-ucl)) !important;
+    box-shadow: 0 0 0 1px rgb(var(--color-ucl)),
+                0 0 12px rgb(var(--color-ucl) / 0.15);
+    animation: live-pulse 2s ease-in-out infinite;
+}
+
+@keyframes live-pulse {
+    0%, 100% { box-shadow: 0 0 0 1px rgb(var(--color-ucl)), 0 0 12px rgb(var(--color-ucl) / 0.15); }
+    50%       { box-shadow: 0 0 0 1px rgb(var(--color-ucl)), 0 0 20px rgb(var(--color-ucl) / 0.30); }
+}
+
+
+/* --------------------------------------------------------------------------
+   5. BRACKET
+   -------------------------------------------------------------------------- */
+
+.bracket-match-card {
+    border-left: 3px solid transparent;
+    transition: border-left-color 0.15s, box-shadow 0.15s;
+}
+.bracket-match-card:hover {
+    border-left-color: rgb(var(--color-ucl));
+}
+.bracket-match-card--live {
+    border-left-color: rgb(var(--color-ucl)) !important;
+    animation: live-pulse 2s ease-in-out infinite;
+}
+.bracket-match-card--finished {
+    opacity: 0.85;
+}
+
+.bracket-stage-connector {
+    display: none;
+}
+@media (min-width: 768px) {
+    .bracket-stage-connector {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: rgb(var(--color-border));
+        font-size: 1.25rem;
+    }
+}
+
+
+/* --------------------------------------------------------------------------
+   6. STANDINGS TABLE
+   -------------------------------------------------------------------------- */
+
+.standings-table thead th {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: rgb(var(--color-muted));
+    padding: 0.5rem 0.625rem;
+}
+
+.standings-table tbody tr {
+    border-top: 1px solid rgb(var(--color-border));
+    transition: background-color 0.1s;
+}
+.standings-table tbody tr:hover {
+    background-color: rgb(var(--color-ucl) / 0.04);
+}
+.standings-table tbody td {
+    padding: 0.5rem 0.625rem;
+    font-size: 0.8125rem;
+}
+
+/* Qualification zone highlights */
+.standings-table tr.zone-r16 td:first-child {
+    border-left: 3px solid #16a34a;
+}
+.standings-table tr.zone-playoff td:first-child {
+    border-left: 3px solid #d97706;
+}
+
+/* Qualification line separators */
+.standings-table tr.qualify-border-r16 td {
+    border-bottom: 2px solid #16a34a !important;
+}
+.standings-table tr.qualify-border-playoff td {
+    border-bottom: 2px solid #d97706 !important;
+}
+
+
+/* --------------------------------------------------------------------------
+   7. TOAST NOTIFICATIONS
+   -------------------------------------------------------------------------- */
+
+.toast-shell {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.875rem 1rem;
+    border-radius: 0.75rem;
+    background-color: rgb(var(--color-surface));
+    border: 1px solid rgb(var(--color-border));
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.04);
+    max-width: 100%;
+}
+
+.toast-message {
+    font-size: 0.875rem;
+    color: rgb(var(--color-text));
+    flex: 1;
+    min-width: 0;
+}
+
+.toast-dismiss {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.25rem;
+    border-radius: 0.25rem;
+    color: rgb(var(--color-muted));
+    cursor: pointer;
+    transition: color 0.15s, background-color 0.15s;
+}
+.toast-dismiss:hover {
+    color: rgb(var(--color-text));
+    background-color: rgb(var(--color-accent-light));
+}
+
+
+/* --------------------------------------------------------------------------
+   8. ACTIVITY TOASTS
+   -------------------------------------------------------------------------- */
+
+.activity-toast {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.625rem 0.875rem;
+    border-radius: 0.5rem;
+    background-color: rgb(var(--color-surface));
+    border: 1px solid rgb(var(--color-border));
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    font-size: 0.8125rem;
+    text-decoration: none;
+    color: rgb(var(--color-text));
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+a.activity-toast:hover {
+    border-color: rgb(var(--color-ucl));
+    box-shadow: 0 2px 8px rgb(var(--color-ucl) / 0.1);
+}
+
+.activity-toast-icon {
+    font-size: 1rem;
+    color: rgb(var(--color-ucl));
+    flex-shrink: 0;
+}
+
+.activity-toast-message {
+    font-size: 0.8125rem;
+    color: rgb(var(--color-text));
+    line-height: 1.4;
+}
+
+
+/* --------------------------------------------------------------------------
+   9. FUTURES BET BUTTON
+   -------------------------------------------------------------------------- */
+
+.futures-bet-btn {
+    display: inline-block;
+    border: 2px solid rgb(var(--color-ucl));
+    color: rgb(var(--color-ucl));
+    font-family: 'Epilogue', sans-serif;
+    font-weight: 700;
+    font-style: italic;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    padding: 0.5rem 1.5rem;
+    border-radius: 0.5rem;
+    transition: background-color 0.15s, color 0.15s, transform 0.1s;
+    cursor: pointer;
+}
+.futures-bet-btn:hover {
+    background-color: rgb(var(--color-ucl));
+    color: #fff;
+}
+.futures-bet-btn:active {
+    transform: scale(0.95);
+}
+.futures-bet-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+
+/* --------------------------------------------------------------------------
+   10. SLIDE ANIMATIONS
+   -------------------------------------------------------------------------- */
+
+@keyframes slide-in-right {
+    from { transform: translateX(100%); opacity: 0; }
+    to   { transform: translateX(0);    opacity: 1; }
+}
+@keyframes slide-out-right {
+    from { transform: translateX(0);    opacity: 1; }
+    to   { transform: translateX(100%); opacity: 0; }
+}
+
+.animate-slide-in  { animation: slide-in-right 0.3s ease-out forwards; }
+.animate-slide-out { animation: slide-out-right 0.25s ease-in forwards; }
+
+
+/* --------------------------------------------------------------------------
+   11. DOMESTIC LEAGUE BADGES
+   -------------------------------------------------------------------------- */
+
+.league-badge {
+    display: inline-block;
+    padding: 0.125rem 0.5rem;
+    border-radius: 9999px;
+    font-size: 0.625rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+.league-badge--epl     { background: #e0e7ff; color: #3730a3; }
+.league-badge--laliga  { background: #fef9c3; color: #854d0e; }
+.league-badge--bundes  { background: #fce7f3; color: #9d174d; }
+.league-badge--seriea  { background: #dcfce7; color: #166534; }
+.league-badge--ligue1  { background: #f0f9ff; color: #0c4a6e; }
+.league-badge--other   { background: #f3f4f6; color: #374151; }

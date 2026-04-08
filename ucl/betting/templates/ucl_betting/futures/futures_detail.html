@@ -1,0 +1,81 @@
+{% extends "ucl_website/base.html" %}
+{% load currency_tags %}
+
+{% block title %}{{ market.name }} — Champions League Futures{% endblock %}
+
+{% block content %}
+<!-- Breadcrumb -->
+<div class="mb-8">
+    <a href="{% url 'ucl_betting:futures' %}"
+       class="inline-flex items-center gap-2 text-muted font-bold text-xs uppercase tracking-widest hover:text-accent transition-colors">
+        <i class="ph-bold ph-arrow-left text-sm"></i>
+        All Futures
+    </a>
+</div>
+
+<!-- Header -->
+<header class="mb-8">
+    <span class="text-xs font-bold uppercase tracking-widest text-amber-400 mb-2 block">
+        Champions League 2025-26
+    </span>
+    <h1 class="font-headline text-4xl sm:text-5xl font-black uppercase tracking-tight leading-tight">
+        {{ market.name }}
+    </h1>
+    {% if market.description %}
+    <p class="text-muted text-sm mt-2 max-w-xl">{{ market.description }}</p>
+    {% endif %}
+</header>
+
+<!-- Outcomes table -->
+<div class="bg-surface-container-lowest rounded-xl overflow-hidden border border-outline-variant">
+    <div class="hidden sm:grid grid-cols-12 bg-surface-container px-6 py-4 border-b border-outline-variant">
+        <div class="col-span-6 text-xs font-bold uppercase tracking-widest text-muted">Club</div>
+        <div class="col-span-3 text-xs font-bold uppercase tracking-widest text-muted text-center">Odds</div>
+        <div class="col-span-3 text-xs font-bold uppercase tracking-widest text-muted text-right">Action</div>
+    </div>
+
+    <div class="divide-y divide-outline-variant/30">
+        {% for outcome in outcomes %}
+        <div class="grid grid-cols-12 px-4 sm:px-6 py-4 sm:py-5 items-center hover:bg-surface-container-low transition-colors"
+             id="futures-outcome-{{ outcome.id_hash }}">
+            <!-- Club -->
+            <div class="col-span-6 flex items-center gap-3 sm:gap-4">
+                {% if outcome.team.crest_url %}
+                <img src="{{ outcome.team.crest_url }}" alt=""
+                     class="w-8 h-8 sm:w-10 sm:h-10 object-contain flex-shrink-0">
+                {% else %}
+                <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-surface-container flex items-center justify-center">
+                    <i class="ph-duotone ph-flag text-muted opacity-40"></i>
+                </div>
+                {% endif %}
+                <div>
+                    <span class="font-headline font-bold text-base sm:text-lg leading-none block">{{ outcome.team.name }}</span>
+                </div>
+            </div>
+
+            <!-- Odds -->
+            <div class="col-span-3 text-center">
+                <span class="font-headline font-bold text-lg sm:text-xl text-accent">{{ outcome.odds }}</span>
+            </div>
+
+            <!-- Action -->
+            <div class="col-span-3 text-right">
+                {% if user.is_authenticated %}
+                <button hx-get="{% url 'ucl_betting:futures_bet_form' outcome.id_hash %}"
+                        hx-target="#futures-outcome-{{ outcome.id_hash }}"
+                        hx-swap="outerHTML"
+                        class="bg-primary text-on-primary font-headline font-bold text-xs uppercase tracking-wider px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors">
+                    Bet
+                </button>
+                {% else %}
+                <a href="{% url 'hub:login' %}?next={{ request.path }}"
+                   class="bg-primary text-on-primary font-headline font-bold text-xs uppercase tracking-wider px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors inline-block no-underline">
+                    Bet
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
