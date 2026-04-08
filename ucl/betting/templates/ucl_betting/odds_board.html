@@ -1,0 +1,33 @@
+{% extends "ucl_website/base.html" %}
+
+{% block title %}Match Odds{% endblock %}
+
+{% block content %}
+
+<div class="mb-6">
+    <h1 class="font-headline italic font-black text-4xl sm:text-5xl uppercase tracking-tight leading-none">
+        Match Odds
+    </h1>
+    <div class="flex items-center gap-2 mt-3">
+        <span class="w-1 h-5 rounded-full bg-accent"></span>
+        <p class="text-muted text-sm uppercase tracking-wider font-medium">
+            Latest house odds for upcoming matches
+        </p>
+    </div>
+</div>
+
+<!-- Odds board with HTMX polling -->
+<div id="odds-board"
+     hx-get="{% url 'ucl_betting:odds_board_partial' %}"
+     hx-trigger="every 60s"
+     hx-swap="innerHTML"
+     hx-indicator="#odds-loading">
+    {% include "ucl_betting/partials/odds_board_body.html" %}
+</div>
+
+<div id="odds-loading" class="htmx-indicator text-center py-3">
+    <span class="spinner spinner-sm text-accent"></span>
+    <span class="text-xs text-muted ml-2">Refreshing odds…</span>
+</div>
+
+{% endblock %}

@@ -1,0 +1,134 @@
+{% extends "ucl_website/base.html" %}
+{% load ucl_match_tags %}
+
+{% block title %}Knockout Bracket{% endblock %}
+
+{% block content %}
+
+<div class="mb-6">
+    <h1 class="font-headline italic font-black text-4xl sm:text-5xl uppercase tracking-tight leading-none">
+        Knockout Bracket
+    </h1>
+    <div class="flex items-center gap-2 mt-3">
+        <span class="w-1 h-5 rounded-full bg-accent"></span>
+        <p class="text-muted text-sm uppercase tracking-wider font-medium">
+            Knockout Playoffs → Round of 16 → Quarter-finals → Semi-finals → Final
+        </p>
+    </div>
+</div>
+
+{% for stage in stages %}
+{% with stage_matches=knockout_matches|get_item:stage.stage_type %}
+<section class="mb-10">
+
+    <!-- Stage header -->
+    <div class="flex items-center gap-4 mb-4">
+        <div class="h-px flex-1 bg-outline-variant"></div>
+        <h2 class="font-headline font-black italic uppercase tracking-wider text-lg text-accent px-2">
+            {{ stage.name }}
+        </h2>
+        <div class="h-px flex-1 bg-outline-variant"></div>
+    </div>
+
+    {% if stage_matches %}
+    <div class="grid grid-cols-1 sm:grid-cols-2 {% if stage.stage_type == 'FINAL' %}lg:grid-cols-1 max-w-lg mx-auto{% elif stage.stage_type == 'SEMI' %}lg:grid-cols-2{% else %}lg:grid-cols-2 xl:grid-cols-2{% endif %} gap-4">
+        {% for match in stage_matches %}
+        <a href="{{ match.get_absolute_url }}"
+           class="bracket-match-card {% if match.status == 'IN_PLAY' or match.status == 'EXTRA_TIME' or match.status == 'PENALTY_SHOOTOUT' %}bracket-match-card--live{% elif match.status == 'FINISHED' %}bracket-match-card--finished{% endif %} rounded-xl border border-outline-variant bg-surface-container-lowest overflow-hidden no-underline hover:border-accent transition-colors">
+
+            <!-- Top: stage context + status -->
+            <div class="flex items-center justify-between px-4 pt-3 pb-1">
+                <span class="text-xs text-muted uppercase tracking-wide">
+                    {{ match.kickoff|date:"M d · H:i" }} UTC
+                    {% if match.venue_name %} · {{ match.venue_city }}{% endif %}
+                    {% if match.leg %} · Leg {{ match.leg }}{% endif %}
+                </span>
+                {% ucl_status_badge match %}
+            </div>
+
+            <!-- Teams & score -->
+            <div class="px-4 pb-4">
+                <!-- Home row -->
+                <div class="flex items-center justify-between py-2 {% if match.status == 'FINISHED' and match.winner == match.home_team %}font-bold{% endif %}">
+                    <div class="flex items-center gap-2.5 min-w-0">
+                        {% if match.home_team.crest_url %}
+                        <img src="{{ match.home_team.crest_url }}" alt=""
+                             class="w-7 h-7 object-contain flex-shrink-0">
+                        {% else %}
+                        <span class="w-7 h-7 rounded-full bg-surface-container flex items-center justify-center text-xs font-bold text-muted flex-shrink-0">
+                            {{ match.home_team.tla|slice:":2" }}
+                        </span>
+                        {% endif %}
+                        <span class="text-sm font-semibold truncate">
+                            {{ match.home_team.short_name|default:match.home_team.name }}
+                        </span>
+                        {% if match.status == 'FINISHED' and match.winner == match.home_team %}
+                        <i class="ph-duotone ph-check-circle text-sm text-accent flex-shrink-0"></i>
+                        {% endif %}
+                    </div>
+                    <span class="font-mono font-bold text-lg flex-shrink-0 ml-3">
+                        {{ match.home_score|default:"–" }}
+                    </span>
+                </div>
+
+                <!-- Divider -->
+                <div class="border-t border-outline-variant/50"></div>
+
+                <!-- Away row -->
+                <div class="flex items-center justify-between py-2 {% if match.status == 'FINISHED' and match.winner == match.away_team %}font-bold{% endif %}">
+                    <div class="flex items-center gap-2.5 min-w-0">
+                        {% if match.away_team.crest_url %}
+                        <img src="{{ match.away_team.crest_url }}" alt=""
+                             class="w-7 h-7 object-contain flex-shrink-0">
+                        {% else %}
+                        <span class="w-7 h-7 rounded-full bg-surface-container flex items-center justify-center text-xs font-bold text-muted flex-shrink-0">
+                            {{ match.away_team.tla|slice:":2" }}
+                        </span>
+                        {% endif %}
+                        <span class="text-sm font-semibold truncate">
+                            {{ match.away_team.short_name|default:match.away_team.name }}
+                        </span>
+                        {% if match.status == 'FINISHED' and match.winner == match.away_team %}
+                        <i class="ph-duotone ph-check-circle text-sm text-accent flex-shrink-0"></i>
+                        {% endif %}
+                    </div>
+                    <span class="font-mono font-bold text-lg flex-shrink-0 ml-3">
+                        {{ match.away_score|default:"–" }}
+                    </span>
+                </div>
+
+                <!-- ET / Penalty footnote -->
+                {% if match.home_score_penalties is not None %}
+                <div class="mt-1 text-xs text-muted text-center">
+                    Penalties: {{ match.home_score_penalties }} – {{ match.away_score_penalties }}
+                </div>
+                {% elif match.home_score_et is not None %}
+                <div class="mt-1 text-xs text-muted text-center">
+                    After extra time
+                </div>
+                {% endif %}
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+
+    {% else %}
+    <!-- Placeholder when matches not yet scheduled -->
+    <div class="rounded-xl border border-outline-variant border-dashed bg-surface-container-lowest p-8 text-center">
+        <i class="ph-duotone ph-hourglass text-3xl text-muted/40 mb-2 block"></i>
+        <p class="text-sm text-muted">
+            {{ stage.name }} teams to be determined from the previous round.
+        </p>
+    </div>
+    {% endif %}
+
+</section>
+{% endwith %}
+{% empty %}
+<div class="rounded-xl border border-outline-variant border-dashed bg-surface-container-lowest p-12 text-center">
+    <i class="ph-duotone ph-trophy text-5xl text-muted/30 mb-4 block"></i>
+    <p class="text-muted">Knockout bracket will be set after the league phase.</p>
+</div>
+{% endfor %}
+
+{% endblock %}

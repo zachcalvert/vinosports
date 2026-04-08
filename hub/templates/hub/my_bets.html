@@ -56,6 +56,7 @@
                         <span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider
                             {% if entry.league == 'epl' %}bg-green-500/15 text-green-400
                             {% elif entry.league == 'worldcup' %}bg-amber-500/15 text-amber-400
+                            {% elif entry.league == 'ucl' %}bg-indigo-500/15 text-indigo-400
                             {% else %}bg-blue-500/15 text-blue-400{% endif %}">
                             {% if entry.league == 'worldcup' %}WC{% else %}{{ entry.league|upper }}{% endif %}
                         </span>
@@ -73,6 +74,12 @@
                                 vs
                                 {{ entry.item.match.away_team.short_name|default:entry.item.match.away_team.tla }}
                             </a>
+                        {% elif entry.league == "ucl" %}
+                            <a href="{% url 'ucl_matches:match_detail' entry.item.match.slug %}" class="hover:text-primary transition-colors">
+                                {{ entry.item.match.home_team.short_name|default:entry.item.match.home_team.tla }}
+                                vs
+                                {{ entry.item.match.away_team.short_name|default:entry.item.match.away_team.tla }}
+                            </a>
                         {% else %}
                             <a href="{% url 'nba_games:game_detail' entry.item.game.id_hash %}" class="hover:text-primary transition-colors">
                                 {{ entry.item.game.home_team.abbreviation }}
@@ -82,14 +89,14 @@
                         {% endif %}
                     </td>
                     <td class="py-3 px-2 text-muted">
-                        {% if entry.league == "epl" or entry.league == "worldcup" %}
+                        {% if entry.league == "epl" or entry.league == "worldcup" or entry.league == "ucl" %}
                             {{ entry.item.get_selection_display }}
                         {% else %}
                             {{ entry.item.get_market_display }}: {{ entry.item.get_selection_display }}
                         {% endif %}
                     </td>
                     <td class="py-3 px-2 text-right font-mono text-muted">
-                        {% if entry.league == "epl" or entry.league == "worldcup" %}
+                        {% if entry.league == "epl" or entry.league == "worldcup" or entry.league == "ucl" %}
                             {{ entry.item.odds_at_placement|floatformat:2 }}
                         {% else %}
                             {% if entry.item.odds_at_placement > 0 %}+{% endif %}{{ entry.item.odds_at_placement }}
@@ -237,7 +244,7 @@
                         {% if entry.league == 'worldcup' %}WC{% else %}{{ entry.league|upper }}{% endif %}
                     </span>
                     <span class="text-sm font-medium">
-                        {% if entry.league == "epl" or entry.league == "worldcup" %}
+                        {% if entry.league == "epl" or entry.league == "worldcup" or entry.league == "ucl" %}
                             {{ entry.item.match.home_team.short_name|default:entry.item.match.home_team.tla }}
                             vs
                             {{ entry.item.match.away_team.short_name|default:entry.item.match.away_team.tla }}
@@ -251,14 +258,14 @@
                 {% include "hub/partials/status_badge.html" with status=entry.item.status %}
             </div>
             <div class="text-xs text-muted mb-2">
-                {% if entry.league == "epl" or entry.league == "worldcup" %}{{ entry.item.get_selection_display }}{% else %}{{ entry.item.get_market_display }}: {{ entry.item.get_selection_display }}{% endif %}
+                {% if entry.league == "epl" or entry.league == "worldcup" or entry.league == "ucl" %}{{ entry.item.get_selection_display }}{% else %}{{ entry.item.get_market_display }}: {{ entry.item.get_selection_display }}{% endif %}
                 &middot; {{ entry.date|date:"d M H:i" }}
             </div>
             <div class="grid grid-cols-3 gap-3 text-center">
                 <div>
                     <div class="text-xs text-muted">Odds</div>
                     <div class="font-mono text-sm text-muted">
-                        {% if entry.league == "epl" or entry.league == "worldcup" %}{{ entry.item.odds_at_placement|floatformat:2 }}{% else %}{% if entry.item.odds_at_placement > 0 %}+{% endif %}{{ entry.item.odds_at_placement }}{% endif %}
+                        {% if entry.league == "epl" or entry.league == "worldcup" or entry.league == "ucl" %}{{ entry.item.odds_at_placement|floatformat:2 }}{% else %}{% if entry.item.odds_at_placement > 0 %}+{% endif %}{{ entry.item.odds_at_placement }}{% endif %}
                     </div>
                 </div>
                 <div>
@@ -379,6 +386,7 @@
             <a href="/epl/" class="text-primary hover:underline text-sm">EPL Odds &rarr;</a>
             <a href="/nba/" class="text-primary hover:underline text-sm">NBA Odds &rarr;</a>
             <a href="/worldcup/" class="text-primary hover:underline text-sm">World Cup Odds &rarr;</a>
+            <a href="/ucl/" class="text-primary hover:underline text-sm">UCL Odds &rarr;</a>
         </div>
     </div>
     {% endif %}

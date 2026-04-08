@@ -36,6 +36,15 @@ from worldcup.matches.routing import (
 from worldcup.rewards.routing import (
     websocket_urlpatterns as wc_rewards_ws,
 )
+from ucl.activity.routing import (
+    websocket_urlpatterns as ucl_activity_ws,
+)
+from ucl.matches.routing import (
+    websocket_urlpatterns as ucl_matches_ws,
+)
+from ucl.rewards.routing import (
+    websocket_urlpatterns as ucl_rewards_ws,
+)
 
 application = ProtocolTypeRouter(
     {
@@ -52,6 +61,10 @@ application = ProtocolTypeRouter(
                     path(
                         "worldcup/",
                         URLRouter(wc_matches_ws + wc_activity_ws + wc_rewards_ws),
+                    ),
+                    path(
+                        "ucl/",
+                        URLRouter(ucl_matches_ws + ucl_activity_ws + ucl_rewards_ws),
                     ),
                     path("ws/admin/", AdminDashboardConsumer.as_asgi()),
                 ]

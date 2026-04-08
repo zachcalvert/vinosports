@@ -35,6 +35,7 @@ COPY epl/ epl/
 COPY nba/ nba/
 COPY nfl/ nfl/
 COPY worldcup/ worldcup/
+COPY ucl/ ucl/
 COPY hub/ hub/
 COPY news/ news/
 COPY manage.py .

@@ -1,0 +1,40 @@
+{# UCL sidebar — page navigation links #}
+{% with url_name=request.resolver_match.url_name %}
+<nav class="sidebar-nav" aria-label="Champions League navigation">
+    <div class="sidebar-links">
+        <a href="{% url 'ucl_matches:dashboard' %}"
+           class="sidebar-link {% if url_name == 'dashboard' %}sidebar-link--active{% endif %}">
+            <i class="ph-duotone ph-house text-lg"></i>
+            <span>Dashboard</span>
+        </a>
+        <a href="{% url 'ucl_matches:standings' %}"
+           class="sidebar-link {% if url_name == 'standings' %}sidebar-link--active{% endif %}">
+            <i class="ph-duotone ph-list-numbers text-lg"></i>
+            <span>Standings</span>
+        </a>
+        <a href="{% url 'ucl_matches:bracket' %}"
+           class="sidebar-link {% if url_name == 'bracket' %}sidebar-link--active{% endif %}">
+            <i class="ph-duotone ph-tree text-lg"></i>
+            <span>Bracket</span>
+        </a>
+        <a href="{% url 'ucl_betting:odds_board' %}"
+           class="sidebar-link {% if url_name == 'odds_board' %}sidebar-link--active{% endif %}">
+            <i class="ph-duotone ph-chart-line-up text-lg"></i>
+            <span>Odds</span>
+        </a>
+        <a href="{% url 'ucl_betting:futures' %}"
+           class="sidebar-link {% if url_name == 'futures' or url_name == 'futures_detail' %}sidebar-link--active{% endif %}">
+            <i class="ph-duotone ph-trophy text-lg"></i>
+            <span>Futures</span>
+        </a>
+        {% if user.is_superuser %}
+        <div class="sidebar-divider"></div>
+        <a href="{% url 'hub:admin_dashboard' %}"
+           class="sidebar-link">
+            <i class="ph-duotone ph-gauge text-lg"></i>
+            <span>Admin</span>
+        </a>
+        {% endif %}
+    </div>
+</nav>
+{% endwith %}

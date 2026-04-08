@@ -1,0 +1,5 @@
+{% load currency_tags %}
+<span id="user-balance" hx-swap-oob="true" class="text-sm font-mono text-primary font-semibold" title="Demo balance">
+    {{ balance|currency:user }}
+</span>
+<div id="user-balance-mobile" hx-swap-oob="true" class="px-3 py-2 text-sm font-mono text-primary">{{ balance|currency:user }}</div>

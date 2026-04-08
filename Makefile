@@ -40,6 +40,8 @@ seed:
 	docker compose exec web python manage.py seed_nfl_futures
 	docker compose exec web python manage.py seed_worldcup --offline --skip-odds
 	docker compose exec web python manage.py seed_worldcup_futures
+	docker compose exec web python manage.py seed_ucl --offline --skip-odds
+	docker compose exec web python manage.py seed_ucl_futures
 
 tw:
 	docker compose exec tailwind tailwindcss \
@@ -74,4 +76,4 @@ test:
 	docker compose run --rm web python -m pytest -n auto --reuse-db
 
 test-ci:
-	docker compose run --rm web python -m pytest -n auto --dist worksteal --cov=vinosports --cov=hub --cov=nba --cov=epl --cov=nfl --cov=worldcup --cov-report=term-missing:skip-covered --cov-config=pyproject.toml
+	docker compose run --rm web python -m pytest -n auto --dist worksteal --cov=vinosports --cov=hub --cov=nba --cov=epl --cov=nfl --cov=worldcup --cov=ucl --cov-report=term-missing:skip-covered --cov-config=pyproject.toml

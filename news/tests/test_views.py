@@ -88,6 +88,7 @@ class TestArticleListView:
             ("epl", "EPL"),
             ("nba", "NBA"),
             ("nfl", "NFL"),
+            ("ucl", "UCL"),
         ]
 
 

@@ -1,0 +1,13 @@
+{# Avatar component — include with avatar_user (User) and avatar_size ("sm"|"md"|"lg") #}
+<div class="avatar avatar--{{ avatar_size|default:'sm' }}{% if avatar_user.avatar_frame %} avatar-frame avatar-frame--{{ avatar_user.avatar_frame }}{% endif %}"
+     style="--avatar-bg: {{ avatar_user.avatar_bg|default:'#374151' }};">
+    <div class="avatar-inner">
+        {% if avatar_user.profile_image %}
+        <img src="{{ avatar_user.profile_image.url }}" class="avatar-profile-img" alt="">
+        {% elif avatar_user.avatar_crest_url %}
+        <img src="{{ avatar_user.avatar_crest_url }}" class="avatar-crest-img" alt="">
+        {% else %}
+        <i class="ph-duotone ph-{{ avatar_user.avatar_icon|default:'user-circle' }} avatar-icon"></i>
+        {% endif %}
+    </div>
+</div>

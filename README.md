@@ -4,7 +4,7 @@
 [![codecov](https://codecov.io/gh/zachcalvert/vinosports/graph/badge.svg?token=IU60RM0RZQ)](https://codecov.io/gh/zachcalvert/vinosports)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-Play-money sports betting simulation across EPL, NBA, and NFL. One account, one balance, all leagues.
+Play-money sports betting simulation across EPL, NBA, NFL, 2026 FIFA World Cup, and UEFA Champions League. One account, one balance, all leagues.
 
 **Live at [vinosports.com](https://vinosports.com)**
 
@@ -35,7 +35,7 @@ cd vinosports
 cp .env.example .env        # fill in BDL_API_KEY and ANTHROPIC_API_KEY
 make up                     # build and start all services
 make migrate                # run migrations
-make seed                   # populate EPL + NBA + NFL data
+make seed                   # populate all league data
 ```
 
 Add `127.0.0.1 vinosports.local` to `/etc/hosts`, then visit http://vinosports.local.
@@ -49,6 +49,8 @@ hub/                            # Homepage, auth, global account management
 epl/                            # EPL league (matches, betting, bots, discussions)
 nba/                            # NBA league (games, betting, bots, discussions)
 nfl/                            # NFL league (games, betting, bots)
+worldcup/                       # 2026 FIFA World Cup (matches, betting, bots, discussions)
+ucl/                            # UEFA Champions League (matches, betting, bots, discussions)
 ```
 
 ## Common commands

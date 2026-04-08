@@ -9,6 +9,7 @@ module.exports = {
     "./hub/**/templates/**/*.html",
     "./news/**/templates/**/*.html",
     "./worldcup/**/templates/**/*.html",
+    "./ucl/**/templates/**/*.html",
   ],
   theme: {
     extend: {
