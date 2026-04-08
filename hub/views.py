@@ -15,6 +15,11 @@ from django.utils import timezone
 from django.views import View
 from django.views.generic import TemplateView
 
+from epl.betting.models import BetSlip as EplBetSlip
+from epl.betting.models import FuturesBet as EplFuturesBet
+from epl.betting.models import Parlay as EplParlay
+from epl.discussions.models import Comment as EplComment
+from epl.matches.models import Match
 from hub.forms import (
     BotProfileForm,
     CurrencyForm,
@@ -23,6 +28,19 @@ from hub.forms import (
     ProfileImageForm,
     SignupForm,
 )
+from nba.betting.models import BetSlip as NbaBetSlip
+from nba.betting.models import FuturesBet as NbaFuturesBet
+from nba.betting.models import Parlay as NbaParlay
+from nba.discussions.models import Comment as NbaComment
+from nba.games.models import Game as NbaGame
+from nba.games.models import GameStatus as NbaGameStatus
+from nfl.betting.models import BetSlip as NflBetSlip
+from nfl.betting.models import Parlay as NflParlay
+from nfl.discussions.models import Comment as NflComment
+from nfl.games.models import Game as NflGame
+from nfl.games.models import GameStatus as NflGameStatus
+from ucl.betting.models import BetSlip as UclBetSlip
+from ucl.matches.models import Match as UclMatch
 from vinosports.activity.models import Notification
 from vinosports.betting.balance import log_transaction
 from vinosports.betting.featured import FeaturedParlay
@@ -42,6 +60,7 @@ from vinosports.betting.models import (
 )
 from vinosports.bots.models import BotProfile
 from vinosports.challenges.models import Challenge, UserChallenge
+from worldcup.betting.models import BetSlip as WcBetSlip
 
 from .models import SiteSettings
 from .promo import evaluate_promo_code
@@ -53,12 +72,6 @@ logger = logging.getLogger(__name__)
 
 def _get_live_games():
     """Return a normalized list of live games across all leagues."""
-    from epl.matches.models import Match
-    from nba.games.models import Game as NbaGame
-    from nba.games.models import GameStatus as NbaGameStatus
-    from nfl.games.models import Game as NflGame
-    from nfl.games.models import GameStatus as NflGameStatus
-
     games = []
 
     # EPL
@@ -150,8 +163,6 @@ def _get_live_games():
         )
 
     # UCL
-    from ucl.matches.models import Match as UclMatch
-
     for m in (
         UclMatch.objects.filter(
             status__in=[UclMatch.Status.IN_PLAY, UclMatch.Status.PAUSED]
@@ -235,15 +246,6 @@ class HomeView(TemplateView):
                 ctx["dash_total_bets"] = 0
 
             # Pending bets across both leagues
-            from epl.betting.models import BetSlip as EplBetSlip
-            from epl.betting.models import FuturesBet as EplFuturesBet
-            from epl.betting.models import Parlay as EplParlay
-            from nba.betting.models import BetSlip as NbaBetSlip
-            from nba.betting.models import FuturesBet as NbaFuturesBet
-            from nba.betting.models import Parlay as NbaParlay
-            from ucl.betting.models import BetSlip as UclBetSlip
-            from worldcup.betting.models import BetSlip as WcBetSlip
-
             pending_agg = {"count": Count("id"), "stake": Sum("stake")}
             pending_filter = {"user": user, "status": "PENDING"}
             totals = [
@@ -272,13 +274,6 @@ class HomeView(TemplateView):
 
 def _get_biggest_wins(user, limit=3):
     """Return top N biggest wins across all leagues, sorted by profit descending."""
-    from epl.betting.models import BetSlip as EplBetSlip
-    from epl.betting.models import Parlay as EplParlay
-    from nba.betting.models import BetSlip as NbaBetSlip
-    from nba.betting.models import Parlay as NbaParlay
-    from nfl.betting.models import BetSlip as NflBetSlip
-    from nfl.betting.models import Parlay as NflParlay
-
     profit_expr = ExpressionWrapper(
         F("payout") - F("stake"), output_field=DecimalField()
     )
@@ -411,13 +406,6 @@ class ProfileView(TemplateView):
 
         # Recent bets & comments — bot profiles only (for now)
         if profile_user.is_bot:
-            from epl.betting.models import BetSlip as EplBetSlip
-            from epl.betting.models import Parlay as EplParlay
-            from epl.discussions.models import Comment as EplComment
-            from nba.betting.models import BetSlip as NbaBetSlip
-            from nba.betting.models import Parlay as NbaParlay
-            from nba.discussions.models import Comment as NbaComment
-
             # Recent bets + parlays → unified activity feed
             activity = []
             for bet in (
@@ -910,15 +898,6 @@ class MyBetsView(LoginRequiredMixin, TemplateView):
         ctx = super().get_context_data(**kwargs)
         user = self.request.user
 
-        from epl.betting.models import BetSlip as EplBetSlip
-        from epl.betting.models import FuturesBet as EplFuturesBet
-        from epl.betting.models import Parlay as EplParlay
-        from nba.betting.models import BetSlip as NbaBetSlip
-        from nba.betting.models import FuturesBet as NbaFuturesBet
-        from nba.betting.models import Parlay as NbaParlay
-        from ucl.betting.models import BetSlip as UclBetSlip
-        from worldcup.betting.models import BetSlip as WcBetSlip
-
         epl_bets = EplBetSlip.objects.filter(user=user).select_related(
             "match__home_team", "match__away_team"
         )
@@ -1173,17 +1152,6 @@ ADMIN_MAX_OFFSET = 500
 
 def _admin_stats_context():
     """Build the stats context dict shared by the dashboard and the stats partial."""
-    User = get_user_model()
-
-    from epl.betting.models import BetSlip as EplBetSlip
-    from epl.betting.models import Parlay as EplParlay
-    from epl.discussions.models import Comment as EplComment
-    from nba.betting.models import BetSlip as NbaBetSlip
-    from nba.betting.models import Parlay as NbaParlay
-    from nba.discussions.models import Comment as NbaComment
-    from nfl.betting.models import BetSlip as NflBetSlip
-    from nfl.betting.models import Parlay as NflParlay
-    from nfl.discussions.models import Comment as NflComment
 
     ctx = {}
     ctx["total_users"] = User.objects.count()
@@ -1374,10 +1342,6 @@ class AdminBetsPartialView(SuperuserRequiredMixin, View):
 
 class AdminCommentsPartialView(SuperuserRequiredMixin, View):
     def get(self, request):
-        from epl.discussions.models import Comment as EplComment
-        from nba.discussions.models import Comment as NbaComment
-        from nfl.discussions.models import Comment as NflComment
-
         offset = _admin_parse_offset(request)
         epl_comments = (
             EplComment.objects.filter(is_deleted=False)
@@ -1507,10 +1471,6 @@ class AdminCommentsFullView(SuperuserRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-
-        from epl.discussions.models import Comment as EplComment
-        from nba.discussions.models import Comment as NbaComment
-        from nfl.discussions.models import Comment as NflComment
 
         page = max(1, int(self.request.GET.get("page", 1)))
         offset = (page - 1) * ADMIN_FULL_PAGE_SIZE
