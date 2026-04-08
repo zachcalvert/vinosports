@@ -149,6 +149,32 @@ def _get_live_games():
             }
         )
 
+    # UCL
+    from ucl.matches.models import Match as UclMatch
+
+    for m in (
+        UclMatch.objects.filter(
+            status__in=[UclMatch.Status.IN_PLAY, UclMatch.Status.PAUSED]
+        )
+        .select_related("home_team", "away_team")
+        .order_by("kickoff")
+    ):
+        games.append(
+            {
+                "league": "ucl",
+                "home_name": m.home_team.tla
+                or m.home_team.short_name
+                or m.home_team.name,
+                "away_name": m.away_team.tla
+                or m.away_team.short_name
+                or m.away_team.name,
+                "home_score": m.home_score,
+                "away_score": m.away_score,
+                "is_halftime": m.status == UclMatch.Status.PAUSED,
+                "url": m.get_absolute_url(),
+            }
+        )
+
     return games
 
 
@@ -215,6 +241,7 @@ class HomeView(TemplateView):
             from nba.betting.models import BetSlip as NbaBetSlip
             from nba.betting.models import FuturesBet as NbaFuturesBet
             from nba.betting.models import Parlay as NbaParlay
+            from ucl.betting.models import BetSlip as UclBetSlip
             from worldcup.betting.models import BetSlip as WcBetSlip
 
             pending_agg = {"count": Count("id"), "stake": Sum("stake")}
@@ -225,6 +252,7 @@ class HomeView(TemplateView):
                     EplBetSlip,
                     NbaBetSlip,
                     WcBetSlip,
+                    UclBetSlip,
                     EplParlay,
                     NbaParlay,
                     EplFuturesBet,
@@ -888,6 +916,7 @@ class MyBetsView(LoginRequiredMixin, TemplateView):
         from nba.betting.models import BetSlip as NbaBetSlip
         from nba.betting.models import FuturesBet as NbaFuturesBet
         from nba.betting.models import Parlay as NbaParlay
+        from ucl.betting.models import BetSlip as UclBetSlip
         from worldcup.betting.models import BetSlip as WcBetSlip
 
         epl_bets = EplBetSlip.objects.filter(user=user).select_related(
@@ -911,6 +940,9 @@ class MyBetsView(LoginRequiredMixin, TemplateView):
         wc_bets = WcBetSlip.objects.filter(user=user).select_related(
             "match__home_team", "match__away_team"
         )
+        ucl_bets = UclBetSlip.objects.filter(user=user).select_related(
+            "match__home_team", "match__away_team"
+        )
 
         # Aggregate totals
         all_querysets = [
@@ -921,6 +953,7 @@ class MyBetsView(LoginRequiredMixin, TemplateView):
             epl_futures,
             nba_futures,
             wc_bets,
+            ucl_bets,
         ]
         total_staked = Decimal("0")
         total_payout = Decimal("0")
@@ -947,6 +980,15 @@ class MyBetsView(LoginRequiredMixin, TemplateView):
                 {
                     "type": "bet",
                     "league": "worldcup",
+                    "date": bet.created_at,
+                    "item": bet,
+                }
+            )
+        for bet in ucl_bets:
+            activity.append(
+                {
+                    "type": "bet",
+                    "league": "ucl",
                     "date": bet.created_at,
                     "item": bet,
                 }

@@ -57,15 +57,20 @@ class ArticleListView(LeagueNewsMixin, ListView):
         ).select_related("author__bot_profile")
         # Prefer league from URL middleware, fall back to query param
         league = self.get_league() or self.request.GET.get("league")
-        if league in ("epl", "nba", "nfl"):
+        if league in ("epl", "nba", "nfl", "ucl"):
             qs = qs.filter(league=league)
         return qs
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         league = self.get_league() or self.request.GET.get("league", "")
-        ctx["current_league"] = league if league in ("epl", "nba", "nfl") else ""
-        ctx["league_choices"] = [("epl", "EPL"), ("nba", "NBA"), ("nfl", "NFL")]
+        ctx["current_league"] = league if league in ("epl", "nba", "nfl", "ucl") else ""
+        ctx["league_choices"] = [
+            ("epl", "EPL"),
+            ("nba", "NBA"),
+            ("nfl", "NFL"),
+            ("ucl", "UCL"),
+        ]
         return ctx
 
     def get_template_names(self):

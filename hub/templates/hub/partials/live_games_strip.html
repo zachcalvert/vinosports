@@ -22,6 +22,7 @@
                              {% if game.league == 'epl' %}bg-tertiary/20 text-tertiary
                              {% elif game.league == 'nba' %}bg-secondary/20 text-secondary-fixed-dim
                              {% elif game.league == 'worldcup' %}bg-amber-500/20 text-amber-300
+                             {% elif game.league == 'ucl' %}bg-indigo-500/20 text-indigo-300
                              {% else %}bg-primary/30 text-primary-fixed-dim{% endif %}">
                     {% if game.league == 'worldcup' %}WC{% else %}{{ game.league|upper }}{% endif %}
                 </span>
