@@ -217,6 +217,7 @@ class BotProfile(AbstractBotProfile):
     active_in_nba = models.BooleanField(_("active in NBA"), default=True)
     active_in_nfl = models.BooleanField(_("active in NFL"), default=False)
     active_in_worldcup = models.BooleanField(_("active in World Cup"), default=False)
+    active_in_ucl = models.BooleanField(_("active in UCL"), default=False)
 
     # --- League-specific team affiliations (CharFields, no cross-app FKs) ---
     epl_team_tla = models.CharField(
@@ -244,6 +245,12 @@ class BotProfile(AbstractBotProfile):
         help_text=_(
             "ISO 3166-1 alpha-3 country code of favourite World Cup team (e.g. BRA, FRA)."
         ),
+    )
+    ucl_team_tla = models.CharField(
+        _("UCL team TLA"),
+        max_length=5,
+        blank=True,
+        help_text=_("Abbreviation of favourite UCL team (e.g. LIV, BAR, BAY)."),
     )
 
     # --- Public profile fields ---

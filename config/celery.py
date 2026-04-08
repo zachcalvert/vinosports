@@ -62,9 +62,15 @@ app.autodiscover_tasks(
         "worldcup.discussions",
         "worldcup.activity",
         "worldcup.website",
+        "ucl.matches",
+        "ucl.betting",
+        "ucl.bots",
+        "ucl.discussions",
+        "ucl.activity",
+        "ucl.website",
     ]
 )
 app.autodiscover_tasks(
-    ["epl.website", "nba.website", "worldcup.website"],
+    ["epl.website", "nba.website", "worldcup.website", "ucl.website"],
     related_name="challenge_tasks",
 )

@@ -72,6 +72,14 @@ INSTALLED_APPS = [
     "worldcup.activity",
     "worldcup.rewards",
     "worldcup.website",
+    # UCL
+    "ucl.matches",
+    "ucl.betting",
+    "ucl.bots",
+    "ucl.discussions",
+    "ucl.activity",
+    "ucl.rewards",
+    "ucl.website",
 ]
 
 AUTH_USER_MODEL = "users.User"
@@ -147,6 +155,13 @@ TEMPLATES = [
                 "worldcup.betting.context_processors.futures_sidebar",
                 "worldcup.rewards.context_processors.unseen_rewards",
                 "worldcup.activity.context_processors.activity_toasts",
+                # UCL (guarded by request.league)
+                "ucl.website.context_processors.theme",
+                "ucl.betting.context_processors.bankruptcy",
+                "ucl.betting.context_processors.parlay_slip",
+                "ucl.betting.context_processors.futures_sidebar",
+                "ucl.rewards.context_processors.unseen_rewards",
+                "ucl.activity.context_processors.activity_toasts",
             ],
         },
     },
@@ -279,6 +294,14 @@ LEAGUE_URLS = {
         "status": "active",
         "description": "Bet on the 2026 FIFA World Cup — group stage, knockouts, and futures.",
     },
+    "ucl": {
+        "name": "UEFA Champions League",
+        "short": "UCL",
+        "url": "/ucl/",
+        "icon": "ph-duotone ph-trophy",
+        "status": "active",
+        "description": "Bet on the Champions League — league phase, knockouts, and futures.",
+    },
 }
 
 LOGIN_URL = "/login/"
@@ -297,6 +320,7 @@ CELERY_TASK_ROUTES = {
     "nfl.*": {"queue": "nfl"},
     "news.*": {"queue": "news"},
     "worldcup.*": {"queue": "worldcup"},
+    "ucl.*": {"queue": "ucl"},
 }
 
 # Beat Schedule — EPL and NBA tasks merged, prefixed to avoid key collisions
@@ -632,6 +656,9 @@ EPL_CURRENT_SEASON = "2025"
 # World Cup
 FOOTBALL_DATA_API_KEY = os.environ.get("FOOTBALL_DATA_API_KEY", "")
 
+# UCL
+UCL_CURRENT_SEASON = "2025"
+
 # --- Logging ---
 LOGGING = {
     "version": 1,
@@ -651,6 +678,9 @@ LOGGING = {
             "level": "WARNING",
         },
         "worldcup.activity.tasks": {
+            "level": "WARNING",
+        },
+        "ucl.activity.tasks": {
             "level": "WARNING",
         },
     },

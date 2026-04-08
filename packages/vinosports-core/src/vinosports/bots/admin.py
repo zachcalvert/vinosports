@@ -19,10 +19,12 @@ class BotProfileAdmin(admin.ModelAdmin):
         "active_in_nba",
         "active_in_nfl",
         "active_in_worldcup",
+        "active_in_ucl",
         "epl_team_tla",
         "nba_team_abbr",
         "nfl_team_abbr",
         "worldcup_country_code",
+        "ucl_team_tla",
         "risk_multiplier",
         "max_daily_bets",
         "schedule_template",
@@ -34,6 +36,7 @@ class BotProfileAdmin(admin.ModelAdmin):
         "active_in_nba",
         "active_in_nfl",
         "active_in_worldcup",
+        "active_in_ucl",
         "schedule_template",
     ]
     search_fields = ["user__email", "user__display_name"]
@@ -84,6 +87,7 @@ class BotProfileAdmin(admin.ModelAdmin):
                     "active_in_nba",
                     "active_in_nfl",
                     "active_in_worldcup",
+                    "active_in_ucl",
                 ),
             },
         ),
@@ -95,6 +99,7 @@ class BotProfileAdmin(admin.ModelAdmin):
                     "nba_team_abbr",
                     "nfl_team_abbr",
                     "worldcup_country_code",
+                    "ucl_team_tla",
                 ),
                 "description": (
                     "Team abbreviations / country codes for homer bots. "
