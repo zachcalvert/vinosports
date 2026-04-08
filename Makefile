@@ -40,6 +40,8 @@ seed:
 	docker compose exec web python manage.py seed_nfl_futures
 	docker compose exec web python manage.py seed_worldcup --offline --skip-odds
 	docker compose exec web python manage.py seed_worldcup_futures
+	docker compose exec web python manage.py seed_ucl --offline --skip-odds
+	docker compose exec web python manage.py seed_ucl_futures
 
 tw:
 	docker compose exec tailwind tailwindcss \

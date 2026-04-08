@@ -1,0 +1,254 @@
+[
+  {
+    "id": 2,
+    "name": "Arsenal",
+    "short_name": "Arsenal",
+    "abbreviation": "ARS",
+    "location": "Arsenal"
+  },
+  {
+    "id": 24,
+    "name": "Bayern Munich",
+    "short_name": "Bayern",
+    "abbreviation": "MUN",
+    "location": "Bayern Munich"
+  },
+  {
+    "id": 12,
+    "name": "Liverpool",
+    "short_name": "Liverpool",
+    "abbreviation": "LIV",
+    "location": "Liverpool"
+  },
+  {
+    "id": 18,
+    "name": "Tottenham Hotspur",
+    "short_name": "Spurs",
+    "abbreviation": "TOT",
+    "location": "Tottenham Hotspur"
+  },
+  {
+    "id": 42,
+    "name": "Barcelona",
+    "short_name": "Barcelona",
+    "abbreviation": "BAR",
+    "location": "Barcelona"
+  },
+  {
+    "id": 7,
+    "name": "Chelsea",
+    "short_name": "Chelsea",
+    "abbreviation": "CHE",
+    "location": "Chelsea"
+  },
+  {
+    "id": 109,
+    "name": "Sporting CP",
+    "short_name": "Sporting",
+    "abbreviation": "SCP",
+    "location": "Sporting CP"
+  },
+  {
+    "id": 13,
+    "name": "Manchester City",
+    "short_name": "Man City",
+    "abbreviation": "MNC",
+    "location": "Manchester City"
+  },
+  {
+    "id": 53,
+    "name": "Real Madrid",
+    "short_name": "Real Madrid",
+    "abbreviation": "RMA",
+    "location": "Real Madrid"
+  },
+  {
+    "id": 95,
+    "name": "Internazionale",
+    "short_name": "Inter Milan",
+    "abbreviation": "INT",
+    "location": "Internazionale"
+  },
+  {
+    "id": 73,
+    "name": "Paris Saint-Germain",
+    "short_name": "PSG",
+    "abbreviation": "PSG",
+    "location": "Paris Saint-Germain"
+  },
+  {
+    "id": 15,
+    "name": "Newcastle United",
+    "short_name": "Newcastle",
+    "abbreviation": "NEW",
+    "location": "Newcastle United"
+  },
+  {
+    "id": 96,
+    "name": "Juventus",
+    "short_name": "Juventus",
+    "abbreviation": "JUV",
+    "location": "Juventus"
+  },
+  {
+    "id": 41,
+    "name": "Atl\u00e9tico Madrid",
+    "short_name": "Atl\u00e9tico",
+    "abbreviation": "ATM",
+    "location": "Atl\u00e9tico Madrid"
+  },
+  {
+    "id": 80,
+    "name": "Atalanta",
+    "short_name": "Atalanta",
+    "abbreviation": "ATA",
+    "location": "Atalanta"
+  },
+  {
+    "id": 23,
+    "name": "Bayer Leverkusen",
+    "short_name": "Leverkusen",
+    "abbreviation": "B04",
+    "location": "Bayer Leverkusen"
+  },
+  {
+    "id": 25,
+    "name": "Borussia Dortmund",
+    "short_name": "Dortmund",
+    "abbreviation": "DOR",
+    "location": "Borussia Dortmund"
+  },
+  {
+    "id": 103,
+    "name": "Olympiacos",
+    "short_name": "Olympiacos",
+    "abbreviation": "OLY",
+    "location": "Olympiacos"
+  },
+  {
+    "id": 90,
+    "name": "Club Brugge",
+    "short_name": "Club Brugge",
+    "abbreviation": "BRU",
+    "location": "Club Brugge"
+  },
+  {
+    "id": 94,
+    "name": "Galatasaray",
+    "short_name": "Galatasaray",
+    "abbreviation": "GAL",
+    "location": "Galatasaray"
+  },
+  {
+    "id": 60,
+    "name": "AS Monaco",
+    "short_name": "Monaco",
+    "abbreviation": "MON",
+    "location": "AS Monaco"
+  },
+  {
+    "id": 93,
+    "name": "FK Qarabag",
+    "short_name": "FK Qarabag",
+    "abbreviation": "QAR",
+    "location": "FK Qarabag"
+  },
+  {
+    "id": 87,
+    "name": "Bodo/Glimt",
+    "short_name": "Bodo/Glimt",
+    "abbreviation": "BODO",
+    "location": "Bodo/Glimt"
+  },
+  {
+    "id": 86,
+    "name": "Benfica",
+    "short_name": "Benfica",
+    "abbreviation": "SLB",
+    "location": "Benfica"
+  },
+  {
+    "id": 68,
+    "name": "Marseille",
+    "short_name": "Marseille",
+    "abbreviation": "OLM",
+    "location": "Marseille"
+  },
+  {
+    "id": 105,
+    "name": "Pafos",
+    "short_name": "Pafos",
+    "abbreviation": "PAF",
+    "location": "Pafos"
+  },
+  {
+    "id": 111,
+    "name": "Union St.-Gilloise",
+    "short_name": "Union SG",
+    "abbreviation": "USG",
+    "location": "Union St.-Gilloise"
+  },
+  {
+    "id": 104,
+    "name": "PSV Eindhoven",
+    "short_name": "PSV",
+    "abbreviation": "PSV",
+    "location": "PSV Eindhoven"
+  },
+  {
+    "id": 40,
+    "name": "Athletic Club",
+    "short_name": "Athletic",
+    "abbreviation": "ATH",
+    "location": "Athletic Club"
+  },
+  {
+    "id": 101,
+    "name": "Napoli",
+    "short_name": "Napoli",
+    "abbreviation": "NAP",
+    "location": "Napoli"
+  },
+  {
+    "id": 92,
+    "name": "F.C. K\u00f8benhavn",
+    "short_name": "K\u00f8benhavn",
+    "abbreviation": "KBH",
+    "location": "F.C. K\u00f8benhavn"
+  },
+  {
+    "id": 78,
+    "name": "Ajax Amsterdam",
+    "short_name": "Ajax",
+    "abbreviation": "AJA",
+    "location": "Ajax Amsterdam"
+  },
+  {
+    "id": 27,
+    "name": "Eintracht Frankfurt",
+    "short_name": "Frankfurt",
+    "abbreviation": "SGE",
+    "location": "Eintracht Frankfurt"
+  },
+  {
+    "id": 108,
+    "name": "Slavia Prague",
+    "short_name": "Slavia Prague",
+    "abbreviation": "SLP",
+    "location": "Slavia Prague"
+  },
+  {
+    "id": 58,
+    "name": "Villarreal",
+    "short_name": "Villarreal",
+    "abbreviation": "VIL",
+    "location": "Villarreal"
+  },
+  {
+    "id": 97,
+    "name": "Kairat Almaty",
+    "short_name": "Kairat Almaty",
+    "abbreviation": "KAI",
+    "location": "Kairat Almaty"
+  }
+]

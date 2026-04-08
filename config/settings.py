@@ -599,6 +599,44 @@ CELERY_BEAT_SCHEDULE = {
         "task": "worldcup.activity.tasks.cleanup_old_activity_events",
         "schedule": crontab(hour=5, minute=45),
     },
+    # ===== UCL =====
+    # --- Data ingestion (matches Tue/Wed during season) ---
+    "ucl-fetch-teams-monthly": {
+        "task": "ucl.matches.tasks.fetch_teams",
+        "schedule": crontab(hour=4, minute=15, day_of_week="monday"),
+    },
+    "ucl-fetch-matches-daily": {
+        "task": "ucl.matches.tasks.fetch_matches",
+        "schedule": crontab(hour=4, minute=45),
+    },
+    "ucl-fetch-standings-4h": {
+        "task": "ucl.matches.tasks.fetch_standings",
+        "schedule": crontab(hour="0,4,8,12,16,20", minute=15),
+    },
+    "ucl-fetch-live-scores-2m": {
+        "task": "ucl.matches.tasks.fetch_live_scores",
+        "schedule": crontab(minute="*/2", hour="17-23,0-1", day_of_week="tue,wed,thu"),
+    },
+    # --- UCL Odds ---
+    "ucl-generate-odds-10m": {
+        "task": "ucl.betting.tasks.generate_odds",
+        "schedule": timedelta(minutes=10),
+    },
+    # --- UCL Futures ---
+    "ucl-update-futures-odds-hourly": {
+        "task": "ucl.betting.tasks.update_futures_odds",
+        "schedule": crontab(minute=55),
+    },
+    # --- UCL Activity ---
+    "ucl-broadcast-activity-event-20s": {
+        "task": "ucl.activity.tasks.broadcast_next_activity_event",
+        "schedule": timedelta(seconds=20),
+        "options": {"expires": 20},
+    },
+    "ucl-cleanup-old-activity-events-daily": {
+        "task": "ucl.activity.tasks.cleanup_old_activity_events",
+        "schedule": crontab(hour=6, minute=0),
+    },
     # ===== Cross-league =====
     "expire-featured-parlays-30m": {
         "task": "vinosports.betting.tasks.expire_featured_parlays",
