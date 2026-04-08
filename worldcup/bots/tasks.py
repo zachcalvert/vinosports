@@ -23,7 +23,6 @@ User = get_user_model()
 @shared_task
 def run_bot_strategies():
     """Hourly dispatcher — check bot schedules and place bets."""
-    from vinosports.bots.models import BotProfile
 
     active_bots = BotProfile.objects.filter(is_active=True, active_in_worldcup=True)
     for bot in active_bots:
@@ -33,7 +32,6 @@ def run_bot_strategies():
 @shared_task
 def execute_bot_strategy(bot_profile_pk):
     """Execute a single bot's betting strategy for World Cup matches."""
-
     try:
         profile = BotProfile.objects.select_related("user").get(pk=bot_profile_pk)
     except BotProfile.DoesNotExist:
