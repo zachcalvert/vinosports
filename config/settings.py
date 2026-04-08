@@ -627,6 +627,23 @@ CELERY_BEAT_SCHEDULE = {
         "task": "ucl.betting.tasks.update_futures_odds",
         "schedule": crontab(minute=55),
     },
+    # --- UCL Bots ---
+    "ucl-run-bot-strategies-hourly": {
+        "task": "ucl.bots.tasks.run_bot_strategies",
+        "schedule": crontab(minute=12),
+    },
+    "ucl-generate-prematch-comments-hourly": {
+        "task": "ucl.bots.tasks.generate_prematch_comments",
+        "schedule": crontab(minute=22),
+    },
+    "ucl-generate-postmatch-comments-hourly": {
+        "task": "ucl.bots.tasks.generate_postmatch_comments",
+        "schedule": crontab(minute=42),
+    },
+    "ucl-generate-featured-parlays-daily": {
+        "task": "ucl.bots.tasks.generate_featured_parlays",
+        "schedule": crontab(hour=9, minute=30),
+    },
     # --- UCL Activity ---
     "ucl-broadcast-activity-event-20s": {
         "task": "ucl.activity.tasks.broadcast_next_activity_event",

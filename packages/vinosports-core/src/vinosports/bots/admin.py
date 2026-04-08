@@ -157,6 +157,11 @@ class BotProfileAdmin(admin.ModelAdmin):
 
                 wc_run.apply_async(args=[profile.user_id])
                 dispatched += 1
+            if profile.active_in_ucl:
+                from ucl.bots.tasks import execute_bot_strategy as ucl_run
+
+                ucl_run.apply_async(args=[profile.user_id])
+                dispatched += 1
         self.message_user(
             request,
             f"Dispatched {dispatched} strategy task(s).",
@@ -191,6 +196,11 @@ class BotProfileAdmin(admin.ModelAdmin):
             from worldcup.bots.tasks import generate_prematch_comments as wc_prematch
 
             wc_prematch.apply_async(kwargs={"bot_user_ids": user_ids})
+            dispatched += 1
+        if queryset.filter(active_in_ucl=True).exists():
+            from ucl.bots.tasks import generate_prematch_comments as ucl_prematch
+
+            ucl_prematch.apply_async(kwargs={"bot_user_ids": user_ids})
             dispatched += 1
         self.message_user(
             request,
@@ -227,6 +237,11 @@ class BotProfileAdmin(admin.ModelAdmin):
             from worldcup.bots.tasks import generate_postmatch_comments as wc_postmatch
 
             wc_postmatch.apply_async(kwargs={"bot_user_ids": user_ids})
+            dispatched += 1
+        if queryset.filter(active_in_ucl=True).exists():
+            from ucl.bots.tasks import generate_postmatch_comments as ucl_postmatch
+
+            ucl_postmatch.apply_async(kwargs={"bot_user_ids": user_ids})
             dispatched += 1
         self.message_user(
             request,
