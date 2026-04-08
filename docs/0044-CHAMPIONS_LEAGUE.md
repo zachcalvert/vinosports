@@ -2,7 +2,7 @@
 
 **Date:** 2026-04-08
 
-> Status: **Planning**
+> Status: **Implemented** (Phases 1-8 complete)
 
 
 ## Context
@@ -291,13 +291,31 @@ All prefixed `ucl_*`:
 
 ## Verification
 
-- [ ] `make migrate` — no errors
-- [ ] `python manage.py seed_ucl --offline` — populates teams, stages, matches, standings, odds
-- [ ] `python manage.py seed_ucl_futures` — creates futures markets
-- [ ] Visit http://vinosports.local/ucl/ — dashboard renders
-- [ ] Visit /ucl/standings/ — 36-team league phase table displays
-- [ ] Visit /ucl/bracket/ — knockout bracket renders
-- [ ] Place a bet on a league phase match — verify balance deducted
-- [ ] Settle a match — verify bet settled, balance updated
-- [ ] `make test` — all new tests pass, no regressions
-- [ ] `make lint` — clean
+- [x] `make migrate` — no errors
+- [x] `python manage.py seed_ucl --offline` — 36 teams, 184 matches, 36 standings, 6 odds
+- [x] `python manage.py seed_ucl_futures` — 3 markets (WINNER, FINALIST, TOP_8), 108 outcomes
+- [x] Visit http://vinosports.local/ucl/ — dashboard renders
+- [x] Visit /ucl/standings/ — 36-team league phase table displays
+- [x] Visit /ucl/bracket/ — knockout bracket renders
+- [x] Place a bet on a league phase match — verify balance deducted
+- [x] Settle a match — verify bet settled, balance updated
+- [x] `make test` — 102 new UCL tests pass, no regressions across full suite
+- [x] `make lint` — clean
+
+
+## Implementation Summary
+
+Implemented in a single feature branch (`feature/add-ucl-league`) across 8 phases:
+
+| Phase | What | Key files |
+|-------|------|-----------|
+| 1 | Package skeleton + models | `ucl/` with 7 sub-apps, 6 migrations, 10 config file changes |
+| 2 | Data client + seed commands | `services.py`, `seed_ucl`, `seed_ucl_futures`, odds engines, static JSON |
+| 3 | Betting models + odds | Completed in phases 1+2 |
+| 4 | Discussions, bots, activity | Strategies, comment service (Claude API), discussion CRUD, activity queue |
+| 5 | WebSocket consumers | 3 consumers (live scores, activity, notifications), routing |
+| 6 | Templates + views | 35 templates, all views/URLs, template tags, static CSS |
+| 7 | Hub integration | Live games strip, My Bets, news filter |
+| 8 | Tests | 102 tests (models, settlement, betting views, discussions, page smoke tests) |
+
+**Total:** ~90 new files, ~12,000 lines of code + templates + static data.
