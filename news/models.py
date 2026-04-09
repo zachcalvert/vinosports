@@ -13,6 +13,7 @@ class NewsArticle(BaseModel):
         ROUNDUP = "roundup", _("Weekly Roundup")
         TREND = "trend", _("Betting Trend")
         CROSS_LEAGUE = "cross_league", _("Cross-League")
+        PREVIEW = "preview", _("League Preview")
 
     class Status(models.TextChoices):
         DRAFT = "draft", _("Draft")
@@ -22,10 +23,12 @@ class NewsArticle(BaseModel):
     # Scope
     league = models.CharField(
         _("league"),
-        max_length=3,
+        max_length=10,
         blank=True,
         db_index=True,
-        help_text=_("'epl', 'nba', 'nfl', or blank for cross-league"),
+        help_text=_(
+            "'epl', 'nba', 'nfl', 'ucl', 'worldcup', or blank for cross-league"
+        ),
     )
 
     # Author — the bot's User account (same pattern as BotComment.user)
