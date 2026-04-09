@@ -4,6 +4,8 @@
 {% block title %}Dashboard — NFL Bets{% endblock %}
 
 {% block content %}
+{% include "news/partials/preview_banner.html" %}
+
 {% if is_offseason %}
 
     {# ── Offseason layout: futures hero + sidebar ── #}

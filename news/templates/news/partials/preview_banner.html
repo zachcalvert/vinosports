@@ -1,0 +1,43 @@
+{% load news_filters %}
+{% if latest_previews %}
+<div class="mb-8 grid grid-cols-1 {% if latest_previews|length > 1 %}md:grid-cols-2{% endif %} gap-4">
+    {% for preview in latest_previews %}
+    <a href="{% url news_detail_url_name preview.id_hash %}"
+       class="block bg-gradient-to-r from-surface-container-lowest to-surface-container rounded-xl border border-outline-variant p-5 sm:p-6 hover:border-primary transition-all group">
+        <div class="flex items-center gap-2 mb-3">
+            {% if preview.hero_emoji %}
+            <span class="text-xl">{{ preview.hero_emoji }}</span>
+            {% endif %}
+            <span class="inline-block px-2 py-0.5 rounded-full text-[9px] font-label font-bold uppercase tracking-wider bg-primary/10 text-primary">
+                League Preview
+            </span>
+            {% if preview.published_at %}
+            <span class="text-[10px] font-label text-muted uppercase tracking-widest">
+                {{ preview.published_at|smart_timesince }}
+            </span>
+            {% endif %}
+        </div>
+        <h3 class="font-headline font-black text-xl {% if latest_previews|length == 1 %}sm:text-2xl{% endif %} uppercase italic tracking-tight text-secondary leading-tight group-hover:text-primary transition-colors">
+            {{ preview.title }}
+        </h3>
+        {% if preview.subtitle %}
+        <p class="text-sm text-muted mt-2 font-body leading-relaxed">{{ preview.subtitle }}</p>
+        {% endif %}
+        {% if preview.author and preview.author.bot_profile %}
+        <div class="flex items-center gap-2 mt-4 pt-3 border-t border-outline-variant/50">
+            {% if preview.author.profile_image %}
+            <img src="{{ preview.author.profile_image.url }}" alt="" class="w-6 h-6 rounded-full object-cover">
+            {% else %}
+            <div class="w-6 h-6 rounded-full flex items-center justify-center"
+                 style="background-color: {{ preview.author.bot_profile.avatar_bg }};">
+                <i class="ph-duotone ph-{{ preview.author.bot_profile.avatar_icon }} text-xs text-white"></i>
+            </div>
+            {% endif %}
+            <span class="text-xs font-label font-bold text-muted uppercase tracking-wider">{{ preview.author.display_name }}</span>
+            <span class="ml-auto text-xs text-primary font-semibold group-hover:underline">Read Preview &rarr;</span>
+        </div>
+        {% endif %}
+    </a>
+    {% endfor %}
+</div>
+{% endif %}

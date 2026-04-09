@@ -11,8 +11,14 @@ def latest_articles(request):
     if league:
         qs = qs.filter(league=league)
     ns = LEAGUE_NEWS_NAMESPACES.get(league, "news")
+    latest_previews = (
+        list(qs.filter(article_type=NewsArticle.ArticleType.PREVIEW)[:2])
+        if league
+        else []
+    )
     return {
         "latest_articles": qs[:4],
+        "latest_previews": latest_previews,
         "news_list_url_name": f"{ns}:article_list",
         "news_detail_url_name": f"{ns}:article_detail",
         "news_delete_url_name": f"{ns}:article_delete",

@@ -1,6 +1,7 @@
 from django.urls import include, path
 
 urlpatterns = [
+    path("news/", include("news.urls", namespace="worldcup_news")),
     path("odds/", include("worldcup.betting.urls")),
     path("", include("worldcup.website.challenge_urls")),
     path("", include("worldcup.discussions.urls")),

@@ -25,6 +25,8 @@
     </div>
 </div>
 
+{% include "news/partials/preview_banner.html" %}
+
 <div class="grid grid-cols-1 gap-6 items-start">
     <div class="order-2 xl:order-1" id="game-grid"
          hx-ext="ws" ws-connect="/nba/ws/live/dashboard/">
