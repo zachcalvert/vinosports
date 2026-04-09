@@ -38,6 +38,7 @@ COPY worldcup/ worldcup/
 COPY ucl/ ucl/
 COPY hub/ hub/
 COPY news/ news/
+COPY reddit/ reddit/
 COPY manage.py .
 COPY tailwind.config.js .
 COPY frontend/ frontend/

@@ -65,6 +65,7 @@ services:
       - ./ucl:/app/ucl
       - ./hub:/app/hub
       - ./news:/app/news
+      - ./reddit:/app/reddit
       - ./manage.py:/app/manage.py
       - ./pyproject.toml:/app/pyproject.toml
       - ./packages/vinosports-core/src:/packages/vinosports-core/src
@@ -102,7 +103,7 @@ services:
   # --- Celery Worker (all queues) ---
   worker:
     <<: *app-build
-    command: celery -A config worker -l info -Q epl,nba,nfl,news,worldcup,ucl
+    command: celery -A config worker -l info -Q default,epl,nba,nfl,news,worldcup,ucl
     volumes:
       - ./config:/app/config
       - ./epl:/app/epl
@@ -112,6 +113,7 @@ services:
       - ./ucl:/app/ucl
       - ./hub:/app/hub
       - ./news:/app/news
+      - ./reddit:/app/reddit
       - ./manage.py:/app/manage.py
       - ./packages/vinosports-core/src:/packages/vinosports-core/src
       - media:/app/media
@@ -129,6 +131,7 @@ services:
       - ./ucl:/app/ucl
       - ./hub:/app/hub
       - ./news:/app/news
+      - ./reddit:/app/reddit
       - ./manage.py:/app/manage.py
       - ./packages/vinosports-core/src:/packages/vinosports-core/src
 

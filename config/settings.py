@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     # Hub
     "hub",
     "news",
+    "reddit",
     # EPL
     "epl.matches",
     "epl.betting",
@@ -319,6 +320,7 @@ CELERY_TASK_ROUTES = {
     "nba.*": {"queue": "nba"},
     "nfl.*": {"queue": "nfl"},
     "news.*": {"queue": "news"},
+    "reddit.*": {"queue": "default"},
     "worldcup.*": {"queue": "worldcup"},
     "ucl.*": {"queue": "ucl"},
 }
@@ -698,12 +700,38 @@ CELERY_BEAT_SCHEDULE = {
         "task": "news.tasks.generate_cross_league_task",
         "schedule": crontab(hour=10, minute=0, day_of_week=5),  # Friday 10am
     },
+    # ===== Reddit =====
+    "reddit-fetch-morning": {
+        "task": "reddit.tasks.fetch_subreddit_snapshots",
+        "schedule": crontab(hour=10, minute=0),  # 6am ET (10:00 UTC)
+    },
+    "reddit-fetch-afternoon": {
+        "task": "reddit.tasks.fetch_subreddit_snapshots",
+        "schedule": crontab(hour=18, minute=0),  # 2pm ET (18:00 UTC)
+    },
+    "reddit-purge-old-snapshots": {
+        "task": "reddit.tasks.purge_old_snapshots",
+        "schedule": crontab(hour=4, minute=0),  # 4am UTC daily
+    },
 }
 
 # External APIs
 BDL_API_KEY = os.environ.get("BDL_API_KEY", "")
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
 API_TIMEOUT = 30
+
+# Reddit API
+REDDIT_CLIENT_ID = os.environ.get("REDDIT_CLIENT_ID", "")
+REDDIT_CLIENT_SECRET = os.environ.get("REDDIT_API_SECRET", "")
+REDDIT_USER_AGENT = os.environ.get("REDDIT_USER_AGENT", "vinosports/1.0")
+
+LEAGUE_SUBREDDITS = {
+    "epl": "soccer",
+    "nba": "nba",
+    "nfl": "nfl",
+    "worldcup": "soccer",
+    "ucl": "soccer",
+}
 
 # EPL-specific
 EPL_CURRENT_SEASON = "2025"
