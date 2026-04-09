@@ -4,109 +4,175 @@
 {% block title %}Dashboard — NFL Bets{% endblock %}
 
 {% block content %}
-{% if not is_offseason %}
-<div class="mb-6 flex items-center justify-between">
-    <div>
-        <h1 class="font-headline italic font-black text-4xl sm:text-5xl uppercase tracking-tight leading-none">
-            Week {{ current_week }}
-        </h1>
-        <div class="flex items-center gap-2 mt-3">
-            <span class="w-1 h-5 rounded-full bg-primary"></span>
-            <p class="text-muted text-sm uppercase tracking-wider font-medium">
-                {{ season }} NFL Season
-            </p>
-        </div>
-    </div>
-    <div id="ws-status-container" class="flex items-center gap-2 text-xs text-muted">
-        <span class="ws-status disconnected" id="ws-dot"></span>
-        <span id="ws-label">Connecting&hellip;</span>
-    </div>
-</div>
-{% endif %}
+{% if is_offseason %}
 
-<div class="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_24rem] gap-6 items-start">
-    <div class="order-2 xl:order-1" id="game-grid"
-         hx-ext="ws" ws-connect="/nfl/ws/live/dashboard/">
-
-        {# Live Games #}
-        {% if live_games %}
-        <div class="mb-8">
-            <div class="flex items-center gap-2 mb-3">
-                <span class="inline-block w-2 h-2 rounded-full bg-danger animate-pulse"></span>
-                <h2 class="text-lg font-bold uppercase tracking-wider">Live</h2>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="live-games">
-                {% for game in live_games %}
-                    {% include "nfl_games/partials/game_card.html" %}
-                {% endfor %}
-            </div>
-        </div>
-        {% endif %}
-
-        {# Upcoming Games #}
-        {% if upcoming_games %}
-        <div class="mb-8">
-            <h2 class="text-lg font-bold uppercase tracking-wider mb-3">Upcoming</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="upcoming-games">
-                {% for game in upcoming_games %}
-                    {% include "nfl_games/partials/game_card.html" %}
-                {% endfor %}
-            </div>
-        </div>
-        {% endif %}
-
-        {# Final Games #}
-        {% if final_games %}
-        <div class="mb-8">
-            <h2 class="text-lg font-bold uppercase tracking-wider mb-3 text-muted">Final</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="final-games">
-                {% for game in final_games %}
-                    {% include "nfl_games/partials/game_card.html" %}
-                {% endfor %}
-            </div>
-        </div>
-        {% endif %}
-
-        {# Offseason: show futures preview #}
-        {% if is_offseason and futures_preview %}
+    {# ── Offseason layout: futures hero + sidebar ── #}
+    {% if futures_preview %}
+    <div class="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_24rem] gap-6 items-start">
+        <div>
             {% include "nfl_website/components/futures_preview.html" %}
-        {% elif not live_games and not upcoming_games and not final_games %}
-            {% include "nfl_website/components/empty_state.html" with icon="calendar" title="No games this week" message="Check back later or browse the full schedule." cta_url="/nfl/games/schedule/" cta_text="View Schedule" %}
-        {% endif %}
-    </div>
 
-    {# Sidebar: featured parlays #}
-    <div class="hidden xl:block order-1 xl:order-2 space-y-6">
-        {# Featured Parlays #}
-        {% if featured_parlays %}
-        {% for fp in featured_parlays %}
-            {% include "vinosports/betting/featured_parlay_card.html" with parlay=fp %}
-        {% endfor %}
-        {% endif %}
-
-        {# Latest News #}
-        {% if latest_articles %}
-        <div class="bg-surface-container-lowest rounded-xl p-4 border-b-4 border-outline-variant">
-            <div class="flex items-center justify-between mb-3">
-                <h3 class="font-headline font-black text-sm uppercase tracking-widest text-secondary">News</h3>
-                <a href="{% url 'nfl_news:article_list' %}" class="text-xs text-primary hover:underline">All Articles &rarr;</a>
+            {# Additional open markets #}
+            {% if other_futures_markets %}
+            <div class="mt-10">
+                <h2 class="font-headline font-black text-lg uppercase tracking-wider mb-4">More Markets</h2>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {% for market in other_futures_markets %}
+                    <a href="{% url 'nfl_betting:futures_detail' market.id_hash %}"
+                       class="bg-surface rounded-xl border-l-4 border-outline-variant p-5 hover:border-primary transition-colors group">
+                        <h3 class="font-headline font-bold text-base uppercase tracking-tight group-hover:text-primary transition-colors">
+                            {{ market.get_market_type_display }}
+                        </h3>
+                        <p class="text-xs text-secondary mt-1">{{ market.season }} Season</p>
+                        {% if market.outcome_count %}
+                        <p class="text-xs text-muted mt-2">{{ market.outcome_count }} outcome{{ market.outcome_count|pluralize }}</p>
+                        {% endif %}
+                    </a>
+                    {% endfor %}
+                </div>
             </div>
-            <div class="space-y-3">
-                {% for article in latest_articles %}
-                <a href="{% url 'nfl_news:article_detail' article.id_hash %}" class="block group">
-                    <p class="text-sm font-headline font-bold uppercase tracking-tight text-secondary leading-tight group-hover:text-primary transition-colors">
-                        {{ article.title|truncatechars:60 }}
-                    </p>
-                    {% if article.published_at %}
-                    <p class="text-[10px] font-label text-muted uppercase tracking-widest mt-0.5">{{ article.published_at|smart_timesince }}</p>
-                    {% endif %}
-                </a>
-                {% endfor %}
+            {% endif %}
+        </div>
+
+        {# Sidebar #}
+        <div class="hidden xl:block space-y-6">
+            {# Featured Parlays #}
+            {% if featured_parlays %}
+            {% for fp in featured_parlays %}
+                {% include "vinosports/betting/featured_parlay_card.html" with parlay=fp %}
+            {% endfor %}
+            {% endif %}
+
+            {# Latest News #}
+            {% if latest_articles %}
+            <div class="bg-surface-container-lowest rounded-xl p-4 border-b-4 border-outline-variant">
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="font-headline font-black text-sm uppercase tracking-widest text-secondary">News</h3>
+                    <a href="{% url 'nfl_news:article_list' %}" class="text-xs text-primary hover:underline">All Articles &rarr;</a>
+                </div>
+                <div class="space-y-3">
+                    {% for article in latest_articles %}
+                    <a href="{% url 'nfl_news:article_detail' article.id_hash %}" class="block group">
+                        <p class="text-sm font-headline font-bold uppercase tracking-tight text-secondary leading-tight group-hover:text-primary transition-colors">
+                            {{ article.title|truncatechars:60 }}
+                        </p>
+                        {% if article.published_at %}
+                        <p class="text-[10px] font-label text-muted uppercase tracking-widest mt-0.5">{{ article.published_at|smart_timesince }}</p>
+                        {% endif %}
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% else %}
+        {% include "nfl_website/components/empty_state.html" with icon="trophy" title="Offseason" message="No futures markets are open right now. Check back closer to the new season." cta_url="/nfl/games/schedule/" cta_text="View Schedule" %}
+    {% endif %}
+
+{% else %}
+
+    {# ── In-season layout: games + sidebar ── #}
+    <div class="mb-6 flex items-center justify-between">
+        <div>
+            <h1 class="font-headline italic font-black text-4xl sm:text-5xl uppercase tracking-tight leading-none">
+                Week {{ current_week }}
+            </h1>
+            <div class="flex items-center gap-2 mt-3">
+                <span class="w-1 h-5 rounded-full bg-primary"></span>
+                <p class="text-muted text-sm uppercase tracking-wider font-medium">
+                    {{ season }} NFL Season
+                </p>
             </div>
         </div>
-        {% endif %}
+        <div id="ws-status-container" class="flex items-center gap-2 text-xs text-muted">
+            <span class="ws-status disconnected" id="ws-dot"></span>
+            <span id="ws-label">Connecting&hellip;</span>
+        </div>
     </div>
-</div>
+
+    <div class="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_24rem] gap-6 items-start">
+        <div class="order-2 xl:order-1" id="game-grid"
+             hx-ext="ws" ws-connect="/nfl/ws/live/dashboard/">
+
+            {# Live Games #}
+            {% if live_games %}
+            <div class="mb-8">
+                <div class="flex items-center gap-2 mb-3">
+                    <span class="inline-block w-2 h-2 rounded-full bg-danger animate-pulse"></span>
+                    <h2 class="text-lg font-bold uppercase tracking-wider">Live</h2>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="live-games">
+                    {% for game in live_games %}
+                        {% include "nfl_games/partials/game_card.html" %}
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            {# Upcoming Games #}
+            {% if upcoming_games %}
+            <div class="mb-8">
+                <h2 class="text-lg font-bold uppercase tracking-wider mb-3">Upcoming</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="upcoming-games">
+                    {% for game in upcoming_games %}
+                        {% include "nfl_games/partials/game_card.html" %}
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            {# Final Games #}
+            {% if final_games %}
+            <div class="mb-8">
+                <h2 class="text-lg font-bold uppercase tracking-wider mb-3 text-muted">Final</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="final-games">
+                    {% for game in final_games %}
+                        {% include "nfl_games/partials/game_card.html" %}
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if not live_games and not upcoming_games and not final_games %}
+                {% include "nfl_website/components/empty_state.html" with icon="calendar" title="No games this week" message="Check back later or browse the full schedule." cta_url="/nfl/games/schedule/" cta_text="View Schedule" %}
+            {% endif %}
+        </div>
+
+        {# Sidebar: featured parlays #}
+        <div class="hidden xl:block order-1 xl:order-2 space-y-6">
+            {# Featured Parlays #}
+            {% if featured_parlays %}
+            {% for fp in featured_parlays %}
+                {% include "vinosports/betting/featured_parlay_card.html" with parlay=fp %}
+            {% endfor %}
+            {% endif %}
+
+            {# Latest News #}
+            {% if latest_articles %}
+            <div class="bg-surface-container-lowest rounded-xl p-4 border-b-4 border-outline-variant">
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="font-headline font-black text-sm uppercase tracking-widest text-secondary">News</h3>
+                    <a href="{% url 'nfl_news:article_list' %}" class="text-xs text-primary hover:underline">All Articles &rarr;</a>
+                </div>
+                <div class="space-y-3">
+                    {% for article in latest_articles %}
+                    <a href="{% url 'nfl_news:article_detail' article.id_hash %}" class="block group">
+                        <p class="text-sm font-headline font-bold uppercase tracking-tight text-secondary leading-tight group-hover:text-primary transition-colors">
+                            {{ article.title|truncatechars:60 }}
+                        </p>
+                        {% if article.published_at %}
+                        <p class="text-[10px] font-label text-muted uppercase tracking-widest mt-0.5">{{ article.published_at|smart_timesince }}</p>
+                        {% endif %}
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+{% endif %}
 {% endblock %}
 
 {% block extra_js %}

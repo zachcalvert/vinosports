@@ -1,5 +1,6 @@
 from django.contrib.auth import logout
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db import models
 from django.db.models import Count
 from django.shortcuts import redirect, render
 from django.utils import timezone
@@ -71,9 +72,10 @@ class DashboardView(View):
 
         is_offseason = not live and not upcoming and not final
 
-        # During the offseason, show Super Bowl futures as the main content
+        # During the offseason, show futures as the main content
         futures_preview = None
         futures_market = None
+        other_futures_markets = None
         if is_offseason:
             today = timezone.now().date()
             futures_season = (
@@ -95,6 +97,20 @@ class DashboardView(View):
             except FuturesMarket.DoesNotExist:
                 pass
 
+            other_futures_markets = (
+                FuturesMarket.objects.filter(
+                    season=futures_season,
+                    status=FuturesMarketStatus.OPEN,
+                )
+                .exclude(market_type="SUPER_BOWL")
+                .annotate(
+                    outcome_count=Count(
+                        "outcomes", filter=models.Q(outcomes__is_active=True)
+                    )
+                )
+                .order_by("market_type")
+            )
+
         return render(
             request,
             "nfl_website/dashboard.html",
@@ -110,6 +126,7 @@ class DashboardView(View):
                 "is_offseason": is_offseason,
                 "futures_preview": futures_preview,
                 "futures_market": futures_market,
+                "other_futures_markets": other_futures_markets,
             },
         )
 
