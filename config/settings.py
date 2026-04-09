@@ -21,7 +21,7 @@ CSRF_TRUSTED_ORIGINS = os.environ.get(
 
 INSTALLED_APPS = [
     "daphne",
-    "django.contrib.admin",
+    "config.admin.VinoAdminConfig",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
@@ -106,6 +106,8 @@ TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
         "DIRS": [
+            # Project-level templates (admin overrides)
+            BASE_DIR / "templates",
             # NBA project-level templates (base, dashboard, components)
             BASE_DIR / "nba" / "templates",
             # NFL project-level templates
