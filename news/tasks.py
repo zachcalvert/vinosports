@@ -164,7 +164,8 @@ def generate_weekly_roundup_task(self, league):
 def generate_league_preview_task(self, league):
     """
     Generate a league/tournament preview article.
-    Triggered manually via management command. Articles start as drafts for admin review.
+    Available for async dispatch; the management command calls the service directly.
+    Articles start as drafts for admin review.
     """
     from news.article_service import generate_league_preview
 

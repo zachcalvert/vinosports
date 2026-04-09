@@ -20,6 +20,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from news.models import NewsArticle
+from vinosports.betting.models import FuturesMarketStatus
 from vinosports.bots.models import BotProfile, StrategyType
 from vinosports.core.knowledge import get_global_context
 
@@ -1682,15 +1683,6 @@ def _trend_format_instructions(league_name):
 # ---------------------------------------------------------------------------
 
 
-LEAGUE_DISPLAY_NAMES = {
-    "epl": "Premier League",
-    "nba": "NBA",
-    "nfl": "NFL",
-    "ucl": "UEFA Champions League",
-    "worldcup": "FIFA World Cup",
-}
-
-
 def _build_preview_prompt(league, bot_profile):
     """Dispatch to league-specific preview prompt builder."""
     builders = {
@@ -1719,11 +1711,11 @@ def _build_futures_odds_section(markets_qs, format_odds, top_n=15):
     """
     lines = []
     for market in markets_qs:
-        outcomes = (
-            market.outcomes.filter(is_active=True)
-            .select_related("team")
-            .order_by("odds")[:top_n]
-        )
+        # Use prefetched data — filter/sort in Python to avoid N+1 queries
+        outcomes = sorted(
+            (o for o in market.outcomes.all() if o.is_active),
+            key=lambda o: o.odds,
+        )[:top_n]
         if not outcomes:
             continue
         lines.extend(
@@ -1779,19 +1771,23 @@ def _build_epl_preview(bot_profile):
     """Build preview prompt for EPL — futures odds for the upcoming season."""
     from epl.betting.models import FuturesMarket
 
-    markets = FuturesMarket.objects.filter(status="OPEN").prefetch_related(
-        "outcomes__team"
-    )
+    markets = FuturesMarket.objects.filter(
+        status=FuturesMarketStatus.OPEN
+    ).prefetch_related("outcomes__team")
     if not markets.exists():
         return None
 
     season = markets.first().season
+    odds_lines = _build_futures_odds_section(markets, _format_decimal_odds)
+    if not odds_lines:
+        return None
+
     lines = [
         "You are writing a league preview article for the Premier League on a sports betting simulation platform.",
         "",
         "**Futures odds (current)**:",
     ]
-    lines.extend(_build_futures_odds_section(markets, _format_decimal_odds))
+    lines.extend(odds_lines)
     lines.extend(_build_bot_personality_lines(bot_profile))
     lines.extend(_preview_format_instructions("Premier League", f"{season} season"))
     return "\n".join(lines)
@@ -1801,19 +1797,23 @@ def _build_nba_preview(bot_profile):
     """Build preview prompt for NBA — futures odds for the upcoming season."""
     from nba.betting.models import FuturesMarket
 
-    markets = FuturesMarket.objects.filter(status="OPEN").prefetch_related(
-        "outcomes__team"
-    )
+    markets = FuturesMarket.objects.filter(
+        status=FuturesMarketStatus.OPEN
+    ).prefetch_related("outcomes__team")
     if not markets.exists():
         return None
 
     season = markets.first().season
+    odds_lines = _build_futures_odds_section(markets, _format_american_odds)
+    if not odds_lines:
+        return None
+
     lines = [
         "You are writing a league preview article for the NBA on a sports betting simulation platform.",
         "",
         "**Futures odds (current)**:",
     ]
-    lines.extend(_build_futures_odds_section(markets, _format_american_odds))
+    lines.extend(odds_lines)
     lines.extend(_build_bot_personality_lines(bot_profile))
     lines.extend(_preview_format_instructions("NBA", f"{season} season"))
     return "\n".join(lines)
@@ -1823,19 +1823,23 @@ def _build_nfl_preview(bot_profile):
     """Build preview prompt for NFL — futures odds for the upcoming season."""
     from nfl.betting.models import FuturesMarket
 
-    markets = FuturesMarket.objects.filter(status="OPEN").prefetch_related(
-        "outcomes__team"
-    )
+    markets = FuturesMarket.objects.filter(
+        status=FuturesMarketStatus.OPEN
+    ).prefetch_related("outcomes__team")
     if not markets.exists():
         return None
 
     season = markets.first().season
+    odds_lines = _build_futures_odds_section(markets, _format_american_odds)
+    if not odds_lines:
+        return None
+
     lines = [
         "You are writing a league preview article for the NFL on a sports betting simulation platform.",
         "",
         "**Futures odds (current)**:",
     ]
-    lines.extend(_build_futures_odds_section(markets, _format_american_odds))
+    lines.extend(odds_lines)
     lines.extend(_build_bot_personality_lines(bot_profile))
     lines.extend(_preview_format_instructions("NFL", f"{season} season"))
     return "\n".join(lines)
@@ -1845,19 +1849,23 @@ def _build_ucl_preview(bot_profile):
     """Build preview prompt for UCL — futures odds for the upcoming tournament."""
     from ucl.betting.models import FuturesMarket
 
-    markets = FuturesMarket.objects.filter(status="OPEN").prefetch_related(
-        "outcomes__team"
-    )
+    markets = FuturesMarket.objects.filter(
+        status=FuturesMarketStatus.OPEN
+    ).prefetch_related("outcomes__team")
     if not markets.exists():
         return None
 
     season = markets.first().season
+    odds_lines = _build_futures_odds_section(markets, _format_decimal_odds)
+    if not odds_lines:
+        return None
+
     lines = [
         "You are writing a tournament preview article for the UEFA Champions League on a sports betting simulation platform.",
         "",
         "**Futures odds (current)**:",
     ]
-    lines.extend(_build_futures_odds_section(markets, _format_decimal_odds))
+    lines.extend(odds_lines)
     lines.extend(_build_bot_personality_lines(bot_profile))
     lines.extend(_preview_format_instructions("UEFA Champions League", f"{season}"))
     return "\n".join(lines)
@@ -1867,13 +1875,17 @@ def _build_worldcup_preview(bot_profile):
     """Build preview prompt for World Cup — futures odds for the upcoming tournament."""
     from worldcup.betting.models import FuturesMarket
 
-    markets = FuturesMarket.objects.filter(status="OPEN").prefetch_related(
-        "outcomes__team"
-    )
+    markets = FuturesMarket.objects.filter(
+        status=FuturesMarketStatus.OPEN
+    ).prefetch_related("outcomes__team")
     if not markets.exists():
         return None
 
     season = markets.first().season
+    odds_lines = _build_futures_odds_section(markets, _format_decimal_odds)
+    if not odds_lines:
+        return None
+
     lines = [
         "You are writing a tournament preview article for the FIFA World Cup on a sports betting simulation platform.",
         "",
