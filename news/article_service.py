@@ -20,7 +20,9 @@ from django.urls import reverse
 from django.utils import timezone
 
 from news.models import NewsArticle
+from vinosports.betting.models import FuturesMarketStatus
 from vinosports.bots.models import BotProfile, StrategyType
+from vinosports.core.knowledge import get_global_context
 
 logger = logging.getLogger(__name__)
 
@@ -28,6 +30,7 @@ logger = logging.getLogger(__name__)
 MODEL = "claude-sonnet-4-20250514"
 MAX_TOKENS = 800
 ROUNDUP_MAX_TOKENS = 1200  # Roundups are longer (4-6 paragraphs)
+PREVIEW_MAX_TOKENS = 2500  # Previews are ~1000 words (6-8 paragraphs)
 TEMPERATURE = 0.9
 
 # Post-hoc filter thresholds (wider than comment filter's 10-500)
@@ -117,12 +120,16 @@ LEAGUE_BOT_FIELDS = {
     "epl": ("epl_team_tla", "tla"),
     "nba": ("nba_team_abbr", "abbreviation"),
     "nfl": ("nfl_team_abbr", "abbreviation"),
+    "worldcup": ("worldcup_country_code", "country_code"),
+    "ucl": ("ucl_team_tla", "tla"),
 }
 
 LEAGUE_ACTIVE_FLAGS = {
     "epl": "active_in_epl",
     "nba": "active_in_nba",
     "nfl": "active_in_nfl",
+    "worldcup": "active_in_worldcup",
+    "ucl": "active_in_ucl",
 }
 
 
@@ -417,6 +424,88 @@ def generate_cross_league_article():
         logger.warning(
             "Cross-league article filtered (%s) — saved as draft for review",
             reason,
+        )
+
+    return article
+
+
+def generate_league_preview(league):
+    """
+    Generate a league/tournament preview article.
+
+    Pulls futures odds data for all open markets in the league and has a
+    randomly selected bot write a ~1000-word opinionated preview aimed at
+    bettors. The league/tournament should not have started yet.
+
+    Returns the created NewsArticle, or None if generation failed or no data.
+    """
+    # Any active bot for this league — not analyst-only, we want personality
+    active_flag = LEAGUE_ACTIVE_FLAGS.get(league)
+    if not active_flag:
+        logger.warning("Unknown league for preview: %s", league)
+        return None
+
+    filters = {"is_active": True, active_flag: True}
+    bots = (
+        BotProfile.objects.filter(**filters)
+        .exclude(persona_prompt="")
+        .select_related("user")
+    )
+    if not bots.exists():
+        logger.warning("No bot available for preview: league=%s", league)
+        return None
+
+    bot_profile = bots.order_by("?").first()
+    bot_user = bot_profile.user
+    system_prompt = bot_profile.persona_prompt
+
+    user_prompt = _build_preview_prompt(league, bot_profile)
+    if user_prompt is None:
+        logger.info("No futures data for preview: league=%s", league)
+        return None
+
+    try:
+        client = anthropic.Anthropic(api_key=settings.ANTHROPIC_API_KEY)
+        response = client.messages.create(
+            model=MODEL,
+            max_tokens=PREVIEW_MAX_TOKENS,
+            temperature=TEMPERATURE,
+            system=system_prompt,
+            messages=[{"role": "user", "content": user_prompt}],
+        )
+        raw_text = response.content[0].text
+        if response.stop_reason == "max_tokens":
+            raw_text = _trim_to_last_sentence(raw_text)
+    except Exception as exc:
+        logger.error("Claude API error for preview: league=%s, error=%s", league, exc)
+        return None
+
+    title, subtitle, body = _parse_article_response(raw_text)
+
+    ok, reason = _filter_article(title, body)
+    status = NewsArticle.Status.DRAFT  # Always draft — admin publishes
+
+    try:
+        article = NewsArticle.objects.create(
+            league=league,
+            author=bot_user,
+            article_type=NewsArticle.ArticleType.PREVIEW,
+            title=title[:200],
+            subtitle=subtitle[:300],
+            body=body,
+            status=status,
+            prompt_used=f"SYSTEM:\n{system_prompt}\n\nUSER:\n{user_prompt}",
+            raw_response=raw_text,
+        )
+    except Exception as exc:
+        logger.error("Error creating preview article: league=%s, error=%s", league, exc)
+        return None
+
+    if not ok:
+        logger.warning(
+            "Preview filtered (%s): league=%s — saved as draft for review",
+            reason,
+            league,
         )
 
     return article
@@ -954,24 +1043,31 @@ def _build_nfl_recap(game, bot_profile):
 
 def _article_format_instructions():
     """Shared instructions appended to every recap prompt."""
-    return [
-        "",
-        "---",
-        "",
-        "Write a 3-5 paragraph game recap article. Include:",
-        "1. A punchy, opinionated headline (on its own line, prefixed with TITLE:)",
-        "2. A one-sentence subtitle (on its own line, prefixed with SUBTITLE:)",
-        "3. The article body",
-        "",
-        "CRITICAL — this is NOT a generic ESPN recap. You are a personality, not a journalist.",
-        "Write in FIRST PERSON. Use 'I', share your reactions, your bets, your biases.",
-        "Your persona, betting strategy, and team loyalty should drip from every sentence.",
-        "If you bet on this game, the article should be colored by that outcome — celebrate, vent, cope, gloat.",
-        "If your team played, be unapologetically biased.",
-        "Reference the spread/total result where relevant.",
-        "Focus on what actually happened in the game, informed by the game notes if available.",
-        "Keep it under 500 words.",
-    ]
+    lines = []
+    global_ctx = get_global_context()
+    if global_ctx:
+        lines.extend(["", global_ctx])
+    lines.extend(
+        [
+            "",
+            "---",
+            "",
+            "Write a 3-5 paragraph game recap article. Include:",
+            "1. A punchy, opinionated headline (on its own line, prefixed with TITLE:)",
+            "2. A one-sentence subtitle (on its own line, prefixed with SUBTITLE:)",
+            "3. The article body",
+            "",
+            "CRITICAL — this is NOT a generic ESPN recap. You are a personality, not a journalist.",
+            "Write in FIRST PERSON. Use 'I', share your reactions, your bets, your biases.",
+            "Your persona, betting strategy, and team loyalty should drip from every sentence.",
+            "If you bet on this game, the article should be colored by that outcome — celebrate, vent, cope, gloat.",
+            "If your team played, be unapologetically biased.",
+            "Reference the spread/total result where relevant.",
+            "Focus on what actually happened in the game, informed by the game notes if available.",
+            "Keep it under 500 words.",
+        ]
+    )
+    return lines
 
 
 # ---------------------------------------------------------------------------
@@ -1323,20 +1419,27 @@ def _build_nfl_roundup(bot_profile):
 
 def _roundup_format_instructions(league_name):
     """Shared instructions appended to every roundup prompt."""
-    return [
-        "",
-        "---",
-        "",
-        f"Write a weekly roundup article for {league_name} (4-6 paragraphs). Include:",
-        "1. A punchy, opinionated headline (on its own line, prefixed with TITLE:)",
-        "2. A one-sentence subtitle (on its own line, prefixed with SUBTITLE:)",
-        "3. The article body",
-        "",
-        "Write in FIRST PERSON. You are a personality with opinions, not a wire service.",
-        "Cover the biggest storylines, betting trends, and what to watch next week.",
-        "Your betting strategy and biases should shape which storylines you emphasize.",
-        "Opinionated and entertaining. Under 600 words.",
-    ]
+    lines = []
+    global_ctx = get_global_context()
+    if global_ctx:
+        lines.extend(["", global_ctx])
+    lines.extend(
+        [
+            "",
+            "---",
+            "",
+            f"Write a weekly roundup article for {league_name} (4-6 paragraphs). Include:",
+            "1. A punchy, opinionated headline (on its own line, prefixed with TITLE:)",
+            "2. A one-sentence subtitle (on its own line, prefixed with SUBTITLE:)",
+            "3. The article body",
+            "",
+            "Write in FIRST PERSON. You are a personality with opinions, not a wire service.",
+            "Cover the biggest storylines, betting trends, and what to watch next week.",
+            "Your betting strategy and biases should shape which storylines you emphasize.",
+            "Opinionated and entertaining. Under 600 words.",
+        ]
+    )
+    return lines
 
 
 # ---------------------------------------------------------------------------
@@ -1552,20 +1655,246 @@ def _build_nfl_trend(bot_profile):
 
 def _trend_format_instructions(league_name):
     """Shared instructions appended to every trend prompt."""
-    return [
+    lines = []
+    global_ctx = get_global_context()
+    if global_ctx:
+        lines.extend(["", global_ctx])
+    lines.extend(
+        [
+            "",
+            "---",
+            "",
+            f"Write a mid-week betting trend article for {league_name} (3-5 paragraphs). Include:",
+            "1. A punchy, opinionated headline (on its own line, prefixed with TITLE:)",
+            "2. A one-sentence subtitle (on its own line, prefixed with SUBTITLE:)",
+            "3. The article body",
+            "",
+            "Write in FIRST PERSON. You are a personality with opinions, not a wire service.",
+            "Analyze what the betting data reveals through the lens of YOUR betting strategy.",
+            "Which markets are hot, who's on a streak, and where do YOU see value?",
+            "Be opinionated and specific. Under 500 words.",
+        ]
+    )
+    return lines
+
+
+# ---------------------------------------------------------------------------
+# League preview prompt building
+# ---------------------------------------------------------------------------
+
+
+def _build_preview_prompt(league, bot_profile):
+    """Dispatch to league-specific preview prompt builder."""
+    builders = {
+        "epl": _build_epl_preview,
+        "nba": _build_nba_preview,
+        "nfl": _build_nfl_preview,
+        "ucl": _build_ucl_preview,
+        "worldcup": _build_worldcup_preview,
+    }
+    builder = builders.get(league)
+    if builder is None:
+        return None
+    return builder(bot_profile)
+
+
+def _build_futures_odds_section(markets_qs, format_odds, top_n=15):
+    """
+    Build prompt lines showing futures odds from open markets.
+
+    Args:
+        markets_qs: QuerySet of FuturesMarket objects (already filtered to open).
+        format_odds: Callable that formats an odds value for display.
+        top_n: Max outcomes to show per market.
+
+    Returns list of prompt lines, or empty list if no markets.
+    """
+    lines = []
+    for market in markets_qs:
+        # Use prefetched data — filter/sort in Python to avoid N+1 queries
+        outcomes = sorted(
+            (o for o in market.outcomes.all() if o.is_active),
+            key=lambda o: o.odds,
+        )[:top_n]
+        if not outcomes:
+            continue
+        lines.extend(
+            ["", f"**{market.name}** ({market.get_market_type_display()}):", ""]
+        )
+        for outcome in outcomes:
+            lines.append(f"- {outcome.team.name}: {format_odds(outcome.odds)}")
+    return lines
+
+
+def _format_decimal_odds(odds):
+    """Format decimal odds (EPL, UCL, World Cup)."""
+    return f"{odds:.2f}"
+
+
+def _format_american_odds(odds):
+    """Format American odds (NBA, NFL)."""
+    return f"+{odds}" if odds > 0 else str(odds)
+
+
+def _preview_format_instructions(league_name, season_label):
+    """Shared instructions appended to every preview prompt."""
+    lines = []
+
+    # Inject curated real-world headlines so the bot can reference current events
+    global_ctx = get_global_context()
+    if global_ctx:
+        lines.extend(["", global_ctx])
+
+    lines.extend(
+        [
+            "",
+            "---",
+            "",
+            f"Write a league preview article for the {league_name} ({season_label}) — approximately 1000 words (6-8 paragraphs). Include:",
+            "1. A bold, opinionated headline (on its own line, prefixed with TITLE:)",
+            "2. A one-sentence subtitle (on its own line, prefixed with SUBTITLE:)",
+            "3. The article body",
+            "",
+            "The league/tournament has NOT started yet. Your job is to preview it for bettors.",
+            "Write in FIRST PERSON. You are a personality with strong opinions, not a wire service.",
+            "Analyze the futures odds through the lens of YOUR betting strategy.",
+            "Who are the favorites? Where do YOU see value? Any sleepers worth a look?",
+            "Be specific about odds and teams. Make it informative for bettors and entertaining for everyone.",
+            "Reference the current real-world context above (if provided) to add depth — recent storylines, roster moves, coaching changes, etc.",
+            "Approximately 1000 words.",
+        ]
+    )
+    return lines
+
+
+def _build_epl_preview(bot_profile):
+    """Build preview prompt for EPL — futures odds for the upcoming season."""
+    from epl.betting.models import FuturesMarket
+
+    markets = FuturesMarket.objects.filter(
+        status=FuturesMarketStatus.OPEN
+    ).prefetch_related("outcomes__team")
+    if not markets.exists():
+        return None
+
+    season = markets.first().season
+    odds_lines = _build_futures_odds_section(markets, _format_decimal_odds)
+    if not odds_lines:
+        return None
+
+    lines = [
+        "You are writing a league preview article for the Premier League on a sports betting simulation platform.",
         "",
-        "---",
-        "",
-        f"Write a mid-week betting trend article for {league_name} (3-5 paragraphs). Include:",
-        "1. A punchy, opinionated headline (on its own line, prefixed with TITLE:)",
-        "2. A one-sentence subtitle (on its own line, prefixed with SUBTITLE:)",
-        "3. The article body",
-        "",
-        "Write in FIRST PERSON. You are a personality with opinions, not a wire service.",
-        "Analyze what the betting data reveals through the lens of YOUR betting strategy.",
-        "Which markets are hot, who's on a streak, and where do YOU see value?",
-        "Be opinionated and specific. Under 500 words.",
+        "**Futures odds (current)**:",
     ]
+    lines.extend(odds_lines)
+    lines.extend(_build_bot_personality_lines(bot_profile))
+    lines.extend(_preview_format_instructions("Premier League", f"{season} season"))
+    return "\n".join(lines)
+
+
+def _build_nba_preview(bot_profile):
+    """Build preview prompt for NBA — futures odds for the upcoming season."""
+    from nba.betting.models import FuturesMarket
+
+    markets = FuturesMarket.objects.filter(
+        status=FuturesMarketStatus.OPEN
+    ).prefetch_related("outcomes__team")
+    if not markets.exists():
+        return None
+
+    season = markets.first().season
+    odds_lines = _build_futures_odds_section(markets, _format_american_odds)
+    if not odds_lines:
+        return None
+
+    lines = [
+        "You are writing a league preview article for the NBA on a sports betting simulation platform.",
+        "",
+        "**Futures odds (current)**:",
+    ]
+    lines.extend(odds_lines)
+    lines.extend(_build_bot_personality_lines(bot_profile))
+    lines.extend(_preview_format_instructions("NBA", f"{season} season"))
+    return "\n".join(lines)
+
+
+def _build_nfl_preview(bot_profile):
+    """Build preview prompt for NFL — futures odds for the upcoming season."""
+    from nfl.betting.models import FuturesMarket
+
+    markets = FuturesMarket.objects.filter(
+        status=FuturesMarketStatus.OPEN
+    ).prefetch_related("outcomes__team")
+    if not markets.exists():
+        return None
+
+    season = markets.first().season
+    odds_lines = _build_futures_odds_section(markets, _format_american_odds)
+    if not odds_lines:
+        return None
+
+    lines = [
+        "You are writing a league preview article for the NFL on a sports betting simulation platform.",
+        "",
+        "**Futures odds (current)**:",
+    ]
+    lines.extend(odds_lines)
+    lines.extend(_build_bot_personality_lines(bot_profile))
+    lines.extend(_preview_format_instructions("NFL", f"{season} season"))
+    return "\n".join(lines)
+
+
+def _build_ucl_preview(bot_profile):
+    """Build preview prompt for UCL — futures odds for the upcoming tournament."""
+    from ucl.betting.models import FuturesMarket
+
+    markets = FuturesMarket.objects.filter(
+        status=FuturesMarketStatus.OPEN
+    ).prefetch_related("outcomes__team")
+    if not markets.exists():
+        return None
+
+    season = markets.first().season
+    odds_lines = _build_futures_odds_section(markets, _format_decimal_odds)
+    if not odds_lines:
+        return None
+
+    lines = [
+        "You are writing a tournament preview article for the UEFA Champions League on a sports betting simulation platform.",
+        "",
+        "**Futures odds (current)**:",
+    ]
+    lines.extend(odds_lines)
+    lines.extend(_build_bot_personality_lines(bot_profile))
+    lines.extend(_preview_format_instructions("UEFA Champions League", f"{season}"))
+    return "\n".join(lines)
+
+
+def _build_worldcup_preview(bot_profile):
+    """Build preview prompt for World Cup — futures odds for the upcoming tournament."""
+    from worldcup.betting.models import FuturesMarket
+
+    markets = FuturesMarket.objects.filter(
+        status=FuturesMarketStatus.OPEN
+    ).prefetch_related("outcomes__team")
+    if not markets.exists():
+        return None
+
+    season = markets.first().season
+    odds_lines = _build_futures_odds_section(markets, _format_decimal_odds)
+    if not odds_lines:
+        return None
+
+    lines = [
+        "You are writing a tournament preview article for the FIFA World Cup on a sports betting simulation platform.",
+        "",
+        "**Futures odds (current)**:",
+    ]
+    lines.extend(_build_futures_odds_section(markets, _format_decimal_odds))
+    lines.extend(_build_bot_personality_lines(bot_profile))
+    lines.extend(_preview_format_instructions("FIFA World Cup", f"{season}"))
+    return "\n".join(lines)
 
 
 # ---------------------------------------------------------------------------
@@ -1786,20 +2115,27 @@ def _build_cross_league_betting_summary():
 
 def _cross_league_format_instructions():
     """Instructions for cross-league weekend preview articles."""
-    return [
-        "",
-        "---",
-        "",
-        "Write a cross-league weekend preview article (4-6 paragraphs). Include:",
-        "1. A punchy, opinionated headline (on its own line, prefixed with TITLE:)",
-        "2. A one-sentence subtitle (on its own line, prefixed with SUBTITLE:)",
-        "3. The article body",
-        "",
-        "Write in FIRST PERSON. You are a personality with opinions, not a wire service.",
-        "Connect the dots across leagues through YOUR betting lens — where do you see value,",
-        "what trends match your strategy, and what are you actually betting this weekend?",
-        "Be opinionated and entertaining. Under 600 words.",
-    ]
+    lines = []
+    global_ctx = get_global_context()
+    if global_ctx:
+        lines.extend(["", global_ctx])
+    lines.extend(
+        [
+            "",
+            "---",
+            "",
+            "Write a cross-league weekend preview article (4-6 paragraphs). Include:",
+            "1. A punchy, opinionated headline (on its own line, prefixed with TITLE:)",
+            "2. A one-sentence subtitle (on its own line, prefixed with SUBTITLE:)",
+            "3. The article body",
+            "",
+            "Write in FIRST PERSON. You are a personality with opinions, not a wire service.",
+            "Connect the dots across leagues through YOUR betting lens — where do you see value,",
+            "what trends match your strategy, and what are you actually betting this weekend?",
+            "Be opinionated and entertaining. Under 600 words.",
+        ]
+    )
+    return lines
 
 
 # ---------------------------------------------------------------------------
