@@ -40,6 +40,7 @@ from nfl.discussions.models import Comment as NflComment
 from nfl.games.models import Game as NflGame
 from nfl.games.models import GameStatus as NflGameStatus
 from ucl.betting.models import BetSlip as UclBetSlip
+from ucl.betting.models import Parlay as UclParlay
 from ucl.matches.models import Match as UclMatch
 from vinosports.activity.models import Notification
 from vinosports.betting.balance import log_transaction
@@ -61,6 +62,7 @@ from vinosports.betting.models import (
 from vinosports.bots.models import BotProfile
 from vinosports.challenges.models import Challenge, UserChallenge
 from worldcup.betting.models import BetSlip as WcBetSlip
+from worldcup.betting.models import Parlay as WcParlay
 
 from .models import SiteSettings
 from .promo import evaluate_promo_code
@@ -253,10 +255,14 @@ class HomeView(TemplateView):
                 for model in (
                     EplBetSlip,
                     NbaBetSlip,
+                    NflBetSlip,
                     WcBetSlip,
                     UclBetSlip,
                     EplParlay,
                     NbaParlay,
+                    NflParlay,
+                    WcParlay,
+                    UclParlay,
                     EplFuturesBet,
                     NbaFuturesBet,
                 )
@@ -284,6 +290,8 @@ def _get_biggest_wins(user, limit=3):
         (EplBetSlip, "epl", "match__home_team", "match__away_team", "match"),
         (NbaBetSlip, "nba", "game__home_team", "game__away_team", "game"),
         (NflBetSlip, "nfl", "game__home_team", "game__away_team", "game"),
+        (WcBetSlip, "worldcup", "match__home_team", "match__away_team", "match"),
+        (UclBetSlip, "ucl", "match__home_team", "match__away_team", "match"),
     ]
     for Model, league, home_rel, away_rel, event_rel in bet_configs:
         qs = (
@@ -294,7 +302,7 @@ def _get_biggest_wins(user, limit=3):
         )
         for bet in qs:
             event = getattr(bet, event_rel)
-            if league == "epl":
+            if league in ("epl", "worldcup", "ucl"):
                 desc = f"{event.home_team.short_name or event.home_team.tla} vs {event.away_team.short_name or event.away_team.tla}"
                 odds = f"{bet.odds_at_placement:.2f}"
             else:
@@ -322,6 +330,8 @@ def _get_biggest_wins(user, limit=3):
         (EplParlay, "epl"),
         (NbaParlay, "nba"),
         (NflParlay, "nfl"),
+        (WcParlay, "worldcup"),
+        (UclParlay, "ucl"),
     ]
     for Model, league in parlay_configs:
         qs = (
@@ -331,7 +341,7 @@ def _get_biggest_wins(user, limit=3):
         )
         for parlay in qs:
             leg_count = parlay.legs.count()
-            if league == "epl":
+            if league in ("epl", "worldcup", "ucl"):
                 odds = f"{parlay.combined_odds:.2f}x"
             else:
                 odds = (
