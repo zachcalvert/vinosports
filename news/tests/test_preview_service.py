@@ -7,6 +7,7 @@ import pytest
 from news.article_service import generate_league_preview
 from news.models import NewsArticle
 from vinosports.betting.models import FuturesMarketStatus
+from vinosports.core.models import GlobalKnowledge
 
 from .factories import BotProfileFactory
 
@@ -197,3 +198,27 @@ class TestGenerateLeaguePreview:
         assert "Arsenal" in user_prompt
         assert "2.50" in user_prompt
         assert "1.80" in user_prompt
+
+    @patch("news.article_service.anthropic.Anthropic")
+    def test_prompt_includes_global_knowledge(self, mock_anthropic_cls):
+        BotProfileFactory(active_in_nfl=True)
+        _create_nfl_futures()
+        GlobalKnowledge.objects.create(
+            headline="Saquon Barkley signs with the Eagles",
+            detail="Three-year deal worth $45M.",
+            is_active=True,
+        )
+
+        mock_client = MagicMock()
+        mock_anthropic_cls.return_value = mock_client
+        mock_response = MagicMock()
+        mock_response.content = [MagicMock(text=MOCK_PREVIEW_RESPONSE)]
+        mock_response.stop_reason = "end_turn"
+        mock_client.messages.create.return_value = mock_response
+
+        generate_league_preview("nfl")
+
+        call_kwargs = mock_client.messages.create.call_args.kwargs
+        user_prompt = call_kwargs["messages"][0]["content"]
+        assert "Saquon Barkley signs with the Eagles" in user_prompt
+        assert "$45M" in user_prompt

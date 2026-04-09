@@ -21,6 +21,7 @@ from django.utils import timezone
 
 from news.models import NewsArticle
 from vinosports.bots.models import BotProfile, StrategyType
+from vinosports.core.knowledge import get_global_context
 
 logger = logging.getLogger(__name__)
 
@@ -1041,24 +1042,31 @@ def _build_nfl_recap(game, bot_profile):
 
 def _article_format_instructions():
     """Shared instructions appended to every recap prompt."""
-    return [
-        "",
-        "---",
-        "",
-        "Write a 3-5 paragraph game recap article. Include:",
-        "1. A punchy, opinionated headline (on its own line, prefixed with TITLE:)",
-        "2. A one-sentence subtitle (on its own line, prefixed with SUBTITLE:)",
-        "3. The article body",
-        "",
-        "CRITICAL — this is NOT a generic ESPN recap. You are a personality, not a journalist.",
-        "Write in FIRST PERSON. Use 'I', share your reactions, your bets, your biases.",
-        "Your persona, betting strategy, and team loyalty should drip from every sentence.",
-        "If you bet on this game, the article should be colored by that outcome — celebrate, vent, cope, gloat.",
-        "If your team played, be unapologetically biased.",
-        "Reference the spread/total result where relevant.",
-        "Focus on what actually happened in the game, informed by the game notes if available.",
-        "Keep it under 500 words.",
-    ]
+    lines = []
+    global_ctx = get_global_context()
+    if global_ctx:
+        lines.extend(["", global_ctx])
+    lines.extend(
+        [
+            "",
+            "---",
+            "",
+            "Write a 3-5 paragraph game recap article. Include:",
+            "1. A punchy, opinionated headline (on its own line, prefixed with TITLE:)",
+            "2. A one-sentence subtitle (on its own line, prefixed with SUBTITLE:)",
+            "3. The article body",
+            "",
+            "CRITICAL — this is NOT a generic ESPN recap. You are a personality, not a journalist.",
+            "Write in FIRST PERSON. Use 'I', share your reactions, your bets, your biases.",
+            "Your persona, betting strategy, and team loyalty should drip from every sentence.",
+            "If you bet on this game, the article should be colored by that outcome — celebrate, vent, cope, gloat.",
+            "If your team played, be unapologetically biased.",
+            "Reference the spread/total result where relevant.",
+            "Focus on what actually happened in the game, informed by the game notes if available.",
+            "Keep it under 500 words.",
+        ]
+    )
+    return lines
 
 
 # ---------------------------------------------------------------------------
@@ -1410,20 +1418,27 @@ def _build_nfl_roundup(bot_profile):
 
 def _roundup_format_instructions(league_name):
     """Shared instructions appended to every roundup prompt."""
-    return [
-        "",
-        "---",
-        "",
-        f"Write a weekly roundup article for {league_name} (4-6 paragraphs). Include:",
-        "1. A punchy, opinionated headline (on its own line, prefixed with TITLE:)",
-        "2. A one-sentence subtitle (on its own line, prefixed with SUBTITLE:)",
-        "3. The article body",
-        "",
-        "Write in FIRST PERSON. You are a personality with opinions, not a wire service.",
-        "Cover the biggest storylines, betting trends, and what to watch next week.",
-        "Your betting strategy and biases should shape which storylines you emphasize.",
-        "Opinionated and entertaining. Under 600 words.",
-    ]
+    lines = []
+    global_ctx = get_global_context()
+    if global_ctx:
+        lines.extend(["", global_ctx])
+    lines.extend(
+        [
+            "",
+            "---",
+            "",
+            f"Write a weekly roundup article for {league_name} (4-6 paragraphs). Include:",
+            "1. A punchy, opinionated headline (on its own line, prefixed with TITLE:)",
+            "2. A one-sentence subtitle (on its own line, prefixed with SUBTITLE:)",
+            "3. The article body",
+            "",
+            "Write in FIRST PERSON. You are a personality with opinions, not a wire service.",
+            "Cover the biggest storylines, betting trends, and what to watch next week.",
+            "Your betting strategy and biases should shape which storylines you emphasize.",
+            "Opinionated and entertaining. Under 600 words.",
+        ]
+    )
+    return lines
 
 
 # ---------------------------------------------------------------------------
@@ -1639,20 +1654,27 @@ def _build_nfl_trend(bot_profile):
 
 def _trend_format_instructions(league_name):
     """Shared instructions appended to every trend prompt."""
-    return [
-        "",
-        "---",
-        "",
-        f"Write a mid-week betting trend article for {league_name} (3-5 paragraphs). Include:",
-        "1. A punchy, opinionated headline (on its own line, prefixed with TITLE:)",
-        "2. A one-sentence subtitle (on its own line, prefixed with SUBTITLE:)",
-        "3. The article body",
-        "",
-        "Write in FIRST PERSON. You are a personality with opinions, not a wire service.",
-        "Analyze what the betting data reveals through the lens of YOUR betting strategy.",
-        "Which markets are hot, who's on a streak, and where do YOU see value?",
-        "Be opinionated and specific. Under 500 words.",
-    ]
+    lines = []
+    global_ctx = get_global_context()
+    if global_ctx:
+        lines.extend(["", global_ctx])
+    lines.extend(
+        [
+            "",
+            "---",
+            "",
+            f"Write a mid-week betting trend article for {league_name} (3-5 paragraphs). Include:",
+            "1. A punchy, opinionated headline (on its own line, prefixed with TITLE:)",
+            "2. A one-sentence subtitle (on its own line, prefixed with SUBTITLE:)",
+            "3. The article body",
+            "",
+            "Write in FIRST PERSON. You are a personality with opinions, not a wire service.",
+            "Analyze what the betting data reveals through the lens of YOUR betting strategy.",
+            "Which markets are hot, who's on a streak, and where do YOU see value?",
+            "Be opinionated and specific. Under 500 words.",
+        ]
+    )
+    return lines
 
 
 # ---------------------------------------------------------------------------
@@ -1724,23 +1746,33 @@ def _format_american_odds(odds):
 
 def _preview_format_instructions(league_name, season_label):
     """Shared instructions appended to every preview prompt."""
-    return [
-        "",
-        "---",
-        "",
-        f"Write a league preview article for the {league_name} ({season_label}) — approximately 1000 words (6-8 paragraphs). Include:",
-        "1. A bold, opinionated headline (on its own line, prefixed with TITLE:)",
-        "2. A one-sentence subtitle (on its own line, prefixed with SUBTITLE:)",
-        "3. The article body",
-        "",
-        "The league/tournament has NOT started yet. Your job is to preview it for bettors.",
-        "Write in FIRST PERSON. You are a personality with strong opinions, not a wire service.",
-        "Analyze the futures odds through the lens of YOUR betting strategy.",
-        "Who are the favorites? Where do YOU see value? Any sleepers worth a look?",
-        "Be specific about odds and teams. Make it informative for bettors and entertaining for everyone.",
-        "Use your global knowledge of the sport to add context — recent history, key storylines, roster moves, etc.",
-        "Approximately 1000 words.",
-    ]
+    lines = []
+
+    # Inject curated real-world headlines so the bot can reference current events
+    global_ctx = get_global_context()
+    if global_ctx:
+        lines.extend(["", global_ctx])
+
+    lines.extend(
+        [
+            "",
+            "---",
+            "",
+            f"Write a league preview article for the {league_name} ({season_label}) — approximately 1000 words (6-8 paragraphs). Include:",
+            "1. A bold, opinionated headline (on its own line, prefixed with TITLE:)",
+            "2. A one-sentence subtitle (on its own line, prefixed with SUBTITLE:)",
+            "3. The article body",
+            "",
+            "The league/tournament has NOT started yet. Your job is to preview it for bettors.",
+            "Write in FIRST PERSON. You are a personality with strong opinions, not a wire service.",
+            "Analyze the futures odds through the lens of YOUR betting strategy.",
+            "Who are the favorites? Where do YOU see value? Any sleepers worth a look?",
+            "Be specific about odds and teams. Make it informative for bettors and entertaining for everyone.",
+            "Reference the current real-world context above (if provided) to add depth — recent storylines, roster moves, coaching changes, etc.",
+            "Approximately 1000 words.",
+        ]
+    )
+    return lines
 
 
 def _build_epl_preview(bot_profile):
@@ -2071,20 +2103,27 @@ def _build_cross_league_betting_summary():
 
 def _cross_league_format_instructions():
     """Instructions for cross-league weekend preview articles."""
-    return [
-        "",
-        "---",
-        "",
-        "Write a cross-league weekend preview article (4-6 paragraphs). Include:",
-        "1. A punchy, opinionated headline (on its own line, prefixed with TITLE:)",
-        "2. A one-sentence subtitle (on its own line, prefixed with SUBTITLE:)",
-        "3. The article body",
-        "",
-        "Write in FIRST PERSON. You are a personality with opinions, not a wire service.",
-        "Connect the dots across leagues through YOUR betting lens — where do you see value,",
-        "what trends match your strategy, and what are you actually betting this weekend?",
-        "Be opinionated and entertaining. Under 600 words.",
-    ]
+    lines = []
+    global_ctx = get_global_context()
+    if global_ctx:
+        lines.extend(["", global_ctx])
+    lines.extend(
+        [
+            "",
+            "---",
+            "",
+            "Write a cross-league weekend preview article (4-6 paragraphs). Include:",
+            "1. A punchy, opinionated headline (on its own line, prefixed with TITLE:)",
+            "2. A one-sentence subtitle (on its own line, prefixed with SUBTITLE:)",
+            "3. The article body",
+            "",
+            "Write in FIRST PERSON. You are a personality with opinions, not a wire service.",
+            "Connect the dots across leagues through YOUR betting lens — where do you see value,",
+            "what trends match your strategy, and what are you actually betting this weekend?",
+            "Be opinionated and entertaining. Under 600 words.",
+        ]
+    )
+    return lines
 
 
 # ---------------------------------------------------------------------------
