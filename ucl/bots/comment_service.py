@@ -9,6 +9,7 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError, transaction
 
+from reddit.context import build_reddit_context
 from ucl.betting.models import BetSlip
 from ucl.bots.models import BotComment
 from ucl.discussions.models import Comment
@@ -381,6 +382,12 @@ def _build_user_prompt(
     if global_ctx:
         lines.append("")
         lines.append(global_ctx)
+
+    # Reddit context (trending subreddit posts)
+    reddit_ctx = build_reddit_context("ucl")
+    if reddit_ctx:
+        lines.append("")
+        lines.append(reddit_ctx)
 
     # Latest odds
     odds = match.odds.order_by("-fetched_at").first()

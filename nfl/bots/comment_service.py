@@ -16,6 +16,7 @@ from nfl.betting.models import BetSlip, Odds
 from nfl.bots.models import BotComment
 from nfl.discussions.models import Comment
 from nfl.games.models import GameNotes, GameStats
+from reddit.context import build_reddit_context
 from vinosports.betting.models import BetStatus
 from vinosports.bots.models import BotProfile, StrategyType
 from vinosports.bots.prompt_utils import build_user_stats_context
@@ -388,6 +389,12 @@ def _build_user_prompt(
     if global_ctx:
         lines.append("")
         lines.append(global_ctx)
+
+    # Reddit context (trending subreddit posts)
+    reddit_ctx = build_reddit_context("nfl")
+    if reddit_ctx:
+        lines.append("")
+        lines.append(reddit_ctx)
 
     # Latest odds
     odds = Odds.objects.filter(game=game).order_by("-fetched_at").first()

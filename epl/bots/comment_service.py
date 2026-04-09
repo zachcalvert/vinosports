@@ -18,6 +18,7 @@ from epl.bots.models import BotComment
 from epl.bots.services import get_best_odds_map
 from epl.discussions.models import Comment
 from epl.matches.models import MatchNotes, MatchStats, Odds
+from reddit.context import build_reddit_context
 from vinosports.betting.models import BetStatus
 from vinosports.bots.models import BotProfile, StrategyType
 from vinosports.bots.prompt_utils import build_user_stats_context
@@ -535,6 +536,12 @@ def _build_user_prompt(
     if global_ctx:
         lines.append("")
         lines.append(global_ctx)
+
+    # Reddit context (trending subreddit posts)
+    reddit_ctx = build_reddit_context("epl")
+    if reddit_ctx:
+        lines.append("")
+        lines.append(reddit_ctx)
 
     # Odds
     odds_map = get_best_odds_map([match.pk])
