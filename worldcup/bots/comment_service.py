@@ -9,6 +9,7 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError, transaction
 
+from reddit.context import build_reddit_context
 from vinosports.betting.models import BetStatus
 from vinosports.bots.models import BotProfile, StrategyType
 from vinosports.bots.prompt_utils import build_user_stats_context
@@ -383,6 +384,12 @@ def _build_user_prompt(
     if global_ctx:
         lines.append("")
         lines.append(global_ctx)
+
+    # Reddit context (trending subreddit posts)
+    reddit_ctx = build_reddit_context("worldcup")
+    if reddit_ctx:
+        lines.append("")
+        lines.append(reddit_ctx)
 
     # Latest odds
     odds = match.odds.order_by("-fetched_at").first()

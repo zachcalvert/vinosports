@@ -20,6 +20,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from news.models import NewsArticle
+from reddit.context import build_reddit_context
 from vinosports.betting.models import FuturesMarketStatus
 from vinosports.bots.models import BotProfile, StrategyType
 from vinosports.core.knowledge import get_global_context
@@ -821,7 +822,7 @@ def _build_epl_recap(match, bot_profile):
     lines.extend(_build_bot_bet_on_game_lines("epl", match, bot_profile.user))
     lines.extend(["", f"**Your persona**: {bot_profile.persona_prompt}"])
 
-    lines.extend(_article_format_instructions())
+    lines.extend(_article_format_instructions("epl"))
     return "\n".join(lines)
 
 
@@ -919,7 +920,7 @@ def _build_nba_recap(game, bot_profile):
     lines.extend(_build_bot_bet_on_game_lines("nba", game, bot_profile.user))
     lines.extend(["", f"**Your persona**: {bot_profile.persona_prompt}"])
 
-    lines.extend(_article_format_instructions())
+    lines.extend(_article_format_instructions("nba"))
     return "\n".join(lines)
 
 
@@ -1037,16 +1038,19 @@ def _build_nfl_recap(game, bot_profile):
     lines.extend(_build_bot_bet_on_game_lines("nfl", game, bot_profile.user))
     lines.extend(["", f"**Your persona**: {bot_profile.persona_prompt}"])
 
-    lines.extend(_article_format_instructions())
+    lines.extend(_article_format_instructions("nfl"))
     return "\n".join(lines)
 
 
-def _article_format_instructions():
+def _article_format_instructions(league):
     """Shared instructions appended to every recap prompt."""
     lines = []
     global_ctx = get_global_context()
     if global_ctx:
         lines.extend(["", global_ctx])
+    reddit_ctx = build_reddit_context(league)
+    if reddit_ctx:
+        lines.extend(["", reddit_ctx])
     lines.extend(
         [
             "",
@@ -1179,7 +1183,7 @@ def _build_epl_roundup(bot_profile):
 
     lines.extend(_build_bot_personality_lines(bot_profile))
     lines.extend(["", f"**Your persona**: {bot_profile.persona_prompt}"])
-    lines.extend(_roundup_format_instructions("Premier League"))
+    lines.extend(_roundup_format_instructions("Premier League", "epl"))
     return "\n".join(lines)
 
 
@@ -1294,7 +1298,7 @@ def _build_nba_roundup(bot_profile):
 
     lines.extend(_build_bot_personality_lines(bot_profile))
     lines.extend(["", f"**Your persona**: {bot_profile.persona_prompt}"])
-    lines.extend(_roundup_format_instructions("NBA"))
+    lines.extend(_roundup_format_instructions("NBA", "nba"))
     return "\n".join(lines)
 
 
@@ -1413,16 +1417,19 @@ def _build_nfl_roundup(bot_profile):
 
     lines.extend(_build_bot_personality_lines(bot_profile))
     lines.extend(["", f"**Your persona**: {bot_profile.persona_prompt}"])
-    lines.extend(_roundup_format_instructions("NFL"))
+    lines.extend(_roundup_format_instructions("NFL", "nfl"))
     return "\n".join(lines)
 
 
-def _roundup_format_instructions(league_name):
+def _roundup_format_instructions(league_name, league):
     """Shared instructions appended to every roundup prompt."""
     lines = []
     global_ctx = get_global_context()
     if global_ctx:
         lines.extend(["", global_ctx])
+    reddit_ctx = build_reddit_context(league)
+    if reddit_ctx:
+        lines.extend(["", reddit_ctx])
     lines.extend(
         [
             "",
@@ -1599,7 +1606,7 @@ def _build_epl_trend(bot_profile):
     lines.extend(_build_top_bettors_section())
     lines.extend(_build_bot_personality_lines(bot_profile))
     lines.extend(["", f"**Your persona**: {bot_profile.persona_prompt}"])
-    lines.extend(_trend_format_instructions("Premier League"))
+    lines.extend(_trend_format_instructions("Premier League", "epl"))
     return "\n".join(lines)
 
 
@@ -1624,7 +1631,7 @@ def _build_nba_trend(bot_profile):
     lines.extend(_build_top_bettors_section())
     lines.extend(_build_bot_personality_lines(bot_profile))
     lines.extend(["", f"**Your persona**: {bot_profile.persona_prompt}"])
-    lines.extend(_trend_format_instructions("NBA"))
+    lines.extend(_trend_format_instructions("NBA", "nba"))
     return "\n".join(lines)
 
 
@@ -1649,16 +1656,19 @@ def _build_nfl_trend(bot_profile):
     lines.extend(_build_top_bettors_section())
     lines.extend(_build_bot_personality_lines(bot_profile))
     lines.extend(["", f"**Your persona**: {bot_profile.persona_prompt}"])
-    lines.extend(_trend_format_instructions("NFL"))
+    lines.extend(_trend_format_instructions("NFL", "nfl"))
     return "\n".join(lines)
 
 
-def _trend_format_instructions(league_name):
+def _trend_format_instructions(league_name, league):
     """Shared instructions appended to every trend prompt."""
     lines = []
     global_ctx = get_global_context()
     if global_ctx:
         lines.extend(["", global_ctx])
+    reddit_ctx = build_reddit_context(league)
+    if reddit_ctx:
+        lines.extend(["", reddit_ctx])
     lines.extend(
         [
             "",

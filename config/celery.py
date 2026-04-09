@@ -50,6 +50,7 @@ app.autodiscover_tasks(
         "nba.rewards",
         "nba.website",
         "news",
+        "reddit",
         "nfl.games",
         "nfl.betting",
         "nfl.bots",
