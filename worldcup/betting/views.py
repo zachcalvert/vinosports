@@ -8,6 +8,7 @@ from django.shortcuts import get_object_or_404, render
 from django.views import View
 from django.views.generic import TemplateView
 
+from hub.templatetags.currency_tags import format_currency
 from vinosports.betting.balance import log_transaction
 from vinosports.betting.constants import (
     PARLAY_MAX_LEGS,
@@ -25,7 +26,6 @@ from worldcup.betting.models import (
     ParlayLeg,
 )
 from worldcup.matches.models import Match, Odds
-from worldcup.website.templatetags.currency_tags import format_currency
 
 logger = logging.getLogger(__name__)
 

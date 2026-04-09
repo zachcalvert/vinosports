@@ -2,14 +2,14 @@
 
 from decimal import Decimal
 
-from nba.games.templatetags.game_tags import get_item as games_get_item
-from nba.website.templatetags.currency_tags import (
+from hub.templatetags.currency_tags import (
     currency,
     currency_rounded,
     currency_symbol,
     format_currency,
     negate,
 )
+from nba.games.templatetags.nba_game_tags import get_item as games_get_item
 from nba.website.templatetags.dashboard_tags import get_item
 
 # ---------------------------------------------------------------------------

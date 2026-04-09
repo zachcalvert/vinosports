@@ -27,7 +27,7 @@ from epl.betting.models import (
 from epl.discussions.models import Comment
 from epl.matches.models import Match, Odds
 from epl.website.challenge_engine import update_challenge_progress
-from epl.website.templatetags.currency_tags import format_currency
+from hub.templatetags.currency_tags import format_currency
 from vinosports.betting.balance import log_transaction
 from vinosports.betting.constants import (
     PARLAY_MAX_LEGS,

@@ -1,4 +1,4 @@
-{% load game_tags %}
+{% load nfl_game_tags %}
 {# Regular game card — expects `game`, `standings_by_team`, `odds_by_game` in context. #}
 {# `game` should be annotated with `bet_count` and `comment_count`.                     #}
 <div id="game-{{ game.id_hash }}"

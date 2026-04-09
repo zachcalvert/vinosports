@@ -1,4 +1,4 @@
-{% load game_tags %}
+{% load nba_game_tags %}
 {# OOB swap version of game card — sent over WebSocket for live score updates. #}
 {# Expects `game` and `standings_by_team` in context. Odds omitted (not relevant mid-game). #}
 <div id="game-{{ game.id_hash }}" hx-swap-oob="true"

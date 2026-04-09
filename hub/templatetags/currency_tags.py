@@ -45,3 +45,20 @@ def currency_rounded(value, user):
 def currency_symbol(user):
     """Returns just the symbol: $, £, €"""
     return get_currency_symbol(user)
+
+
+@register.filter
+def negate(value):
+    """Negate a numeric value. Usage: {{ value|negate }}"""
+    try:
+        return -value
+    except (TypeError, ValueError):
+        return value
+
+
+@register.filter
+def get_item(dictionary, key):
+    """Look up a dictionary value by key. Usage: {{ mydict|get_item:key }}"""
+    if not isinstance(dictionary, dict):
+        return None
+    return dictionary.get(key)

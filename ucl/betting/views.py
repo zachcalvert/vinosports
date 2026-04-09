@@ -8,6 +8,7 @@ from django.shortcuts import get_object_or_404, render
 from django.views import View
 from django.views.generic import TemplateView
 
+from hub.templatetags.currency_tags import format_currency
 from ucl.betting.forms import PlaceBetForm, PlaceFuturesBetForm, PlaceParlayForm
 from ucl.betting.models import (
     BetSlip,
@@ -18,7 +19,6 @@ from ucl.betting.models import (
     ParlayLeg,
 )
 from ucl.matches.models import Match, Odds
-from ucl.website.templatetags.currency_tags import format_currency
 from vinosports.betting.balance import log_transaction
 from vinosports.betting.constants import (
     PARLAY_MAX_LEGS,
