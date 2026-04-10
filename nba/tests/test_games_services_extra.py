@@ -786,7 +786,7 @@ class TestSyncBoxScoreEdgeCases:
 
 @pytest.mark.django_db
 class TestBroadcastScoreUpdates:
-    def test_creates_activity_event_for_score_change(self):
+    def test_does_not_create_activity_event_for_score_change(self):
         from nba.activity.models import ActivityEvent
         from nba.games.services import _broadcast_score_updates
 
@@ -802,7 +802,7 @@ class TestBroadcastScoreUpdates:
         ):
             _broadcast_score_updates([game.pk])
 
-        assert ActivityEvent.objects.filter(
+        assert not ActivityEvent.objects.filter(
             event_type=ActivityEvent.EventType.SCORE_CHANGE
         ).exists()
 
@@ -841,7 +841,7 @@ class TestBroadcastScoreUpdates:
         ):
             _broadcast_score_updates([game.pk])
 
-        # Should still create activity event even if box score sync fails
-        assert ActivityEvent.objects.filter(
+        # Score changes no longer create activity events (too noisy as toasts)
+        assert not ActivityEvent.objects.filter(
             event_type=ActivityEvent.EventType.SCORE_CHANGE
         ).exists()

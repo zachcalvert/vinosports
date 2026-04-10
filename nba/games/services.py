@@ -17,7 +17,6 @@ from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 from django.conf import settings
 
-from nba.activity.models import ActivityEvent
 from nba.games.models import (
     Conference,
     Game,
@@ -679,7 +678,7 @@ def sync_box_score(game: Game, client: NBADataClient | None = None) -> int:
 
 
 def _broadcast_score_updates(game_pks: list[int]) -> None:
-    """Broadcast score updates to WebSocket groups and create ActivityEvents."""
+    """Broadcast score updates to WebSocket groups."""
     channel_layer = get_channel_layer()
     send = async_to_sync(channel_layer.group_send)
 
@@ -701,12 +700,5 @@ def _broadcast_score_updates(game_pks: list[int]) -> None:
         # Game detail update
         send(f"game_{game.id_hash}", {"type": "game_score_update", "game_pk": pk})
 
-        # Activity event
-        ActivityEvent.objects.create(
-            event_type=ActivityEvent.EventType.SCORE_CHANGE,
-            message=(
-                f"{game.away_team.abbreviation} {game.away_score}"
-                f" - {game.home_team.abbreviation} {game.home_score}"
-            ),
-            url=game.get_absolute_url(),
-        )
+        # Score updates are already pushed via live_scores and game detail
+        # WebSocket channels — skip activity toast to reduce noise.
