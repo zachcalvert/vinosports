@@ -73,13 +73,13 @@ def on_challenge_completed(sender, instance, **kwargs):
     BotArchiveEntry.objects.create(
         bot_profile=profile,
         entry_type=EntryType.CHALLENGE,
-        summary=f"Completed the '{challenge.name}' challenge",
-        raw_source=f"UserChallenge #{instance.pk}: {challenge.name}",
+        summary=f"Completed the '{challenge.template.title}' challenge",
+        raw_source=f"UserChallenge #{instance.pk}: {challenge.template.title}",
     )
     logger.info(
         "Archive: %s completed challenge '%s'",
         profile.user.display_name,
-        challenge.name,
+        challenge.template.title,
     )
 
 

@@ -619,7 +619,9 @@ def generate_comment(
 
     # Post-processing: check for life update trigger on replies
     if trigger_str == "REPLY" and parent_comment and parent_comment.user.is_bot:
-        _maybe_trigger_life_update(profile, parent_comment, raw_text)
+        _maybe_trigger_life_update(
+            adapter, event, comment, profile, parent_comment, raw_text
+        )
 
     return comment
 
@@ -911,7 +913,9 @@ def build_conversation_reply(adapter, bot_user, event, thread_comments, parent_c
     )
 
     # Post-processing: check for life update trigger
-    _maybe_trigger_life_update(profile, parent_comment, raw_text)
+    _maybe_trigger_life_update(
+        adapter, event, comment, profile, parent_comment, raw_text
+    )
 
     return comment
 
@@ -1007,11 +1011,21 @@ def generate_life_update(bot_profile, question_context=None):
     return raw_text
 
 
-def _maybe_trigger_life_update(author_profile, parent_comment, reply_text):
+def _maybe_trigger_life_update(
+    adapter, event, asking_comment, author_profile, parent_comment, reply_text
+):
     """Check if a bot's reply contains a question that should trigger a life update.
 
-    Heuristic: reply ends with '?' or contains '?' after mentioning the
-    target's name. If so, generate a life update for the target bot.
+    When detected, generates a life update for the target bot AND posts it
+    as a reply comment in the thread — so the conversation continues naturally.
+
+    Args:
+        adapter: LeagueAdapter for model access.
+        event: The match/game object.
+        asking_comment: The Comment that contained the question (for reply threading).
+        author_profile: BotProfile of the bot that asked the question.
+        parent_comment: The original comment being replied to.
+        reply_text: The text of the reply that contains the question.
     """
     if not parent_comment.user.is_bot:
         return
@@ -1046,12 +1060,47 @@ def _maybe_trigger_life_update(author_profile, parent_comment, reply_text):
         question[:80],
     )
 
-    # Generate a life update for the target bot based on the question
     from vinosports.bots.models import BotArchiveEntry, EntryType
 
-    generate_life_update(target_profile, question_context=question)
+    # Generate a life update for the target bot — this archives it
+    life_update_text = generate_life_update(target_profile, question_context=question)
+    if not life_update_text:
+        return
 
-    # Also create a SOCIAL entry for the asking bot
+    # Post the life update as a reply comment in the thread
+    CommentModel = adapter.get_comment_model()
+    BotCommentModel = adapter.get_bot_comment_model()
+    fk_name = adapter.get_event_fk_name()
+
+    # Reply to the asking comment (the one that contained the question)
+    reply_parent = asking_comment
+    if asking_comment.depth >= 2:
+        reply_parent = asking_comment.parent
+
+    with transaction.atomic():
+        comment = CommentModel.objects.create(
+            **{fk_name: event},
+            user=target_profile.user,
+            body=life_update_text,
+            parent=reply_parent,
+        )
+        BotCommentModel.objects.create(
+            user=target_profile.user,
+            trigger_type="CONVERSATION",
+            prompt_used=f"Life update response to: {question[:200]}",
+            raw_response=life_update_text,
+            comment=comment,
+            parent_comment=asking_comment,
+            **{fk_name: event},
+        )
+
+    logger.info(
+        "Life update reply: %s → %r",
+        target_profile.user.display_name,
+        life_update_text[:80],
+    )
+
+    # Create a SOCIAL entry for the asking bot
     BotArchiveEntry.objects.create(
         bot_profile=author_profile,
         entry_type=EntryType.SOCIAL,

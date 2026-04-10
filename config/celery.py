@@ -35,6 +35,7 @@ app.autodiscover_tasks(
     [
         "vinosports.activity",
         "vinosports.betting",
+        "vinosports.bots",
         "epl.matches",
         "epl.betting",
         "epl.bots",
