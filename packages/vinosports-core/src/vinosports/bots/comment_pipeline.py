@@ -820,18 +820,37 @@ def build_conversation_reply(adapter, bot_user, event, thread_comments, parent_c
     user_prompt = "\n".join(lines)
     full_prompt = f"System: {system_prompt}\n\nUser: {user_prompt}"
 
-    # Create BotComment record (no unique constraint on REPLY for conversations)
+    # Claim the (user, event, REPLY) slot — the unique constraint allows only one
+    # REPLY per bot per event, so use get_or_create to avoid IntegrityError races.
+    lookup = {
+        "user": bot_user,
+        "trigger_type": "REPLY",
+        fk_name: event,
+    }
     try:
-        bc = BotCommentModel.objects.create(
-            user=bot_user,
-            trigger_type="REPLY",
-            prompt_used=full_prompt,
-            parent_comment=parent_comment,
-            **{fk_name: event},
-        )
+        with transaction.atomic():
+            bc, created = BotCommentModel.objects.get_or_create(
+                **lookup,
+                defaults={
+                    "prompt_used": full_prompt,
+                    "parent_comment": parent_comment,
+                },
+            )
     except IntegrityError:
         logger.debug("Race creating conversation reply for %s", bot_user.display_name)
         return None
+
+    if not created:
+        if bc.parent_comment_id != parent_comment.id:
+            logger.info(
+                "Skipping conversation reply for %s: existing REPLY bot comment already "
+                "uses a different parent for this event",
+                bot_user.display_name,
+            )
+            return None
+        if bc.prompt_used != full_prompt:
+            bc.prompt_used = full_prompt
+            bc.save(update_fields=["prompt_used", "updated_at"])
 
     # Call Claude
     api_key = getattr(settings, "ANTHROPIC_API_KEY", "")

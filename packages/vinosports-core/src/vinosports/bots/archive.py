@@ -6,9 +6,6 @@ when bots receive awards, complete challenges, or have notable betting moments.
 
 import logging
 
-from django.db.models.signals import post_save
-from django.dispatch import receiver
-
 from vinosports.bots.models import BotArchiveEntry, BotProfile, EntryType
 
 logger = logging.getLogger(__name__)
@@ -29,7 +26,6 @@ def _get_bot_profile(user):
 # ---------------------------------------------------------------------------
 
 
-@receiver(post_save, sender="rewards.RewardDistribution")
 def on_reward_distributed(sender, instance, created, **kwargs):
     """Create an AWARD archive entry when a bot receives a reward."""
     if not created:
@@ -43,7 +39,7 @@ def on_reward_distributed(sender, instance, created, **kwargs):
     BotArchiveEntry.objects.create(
         bot_profile=profile,
         entry_type=EntryType.AWARD,
-        summary=f"Won '{reward.name}' award ({int(reward.amount):,} credits)",
+        summary=f"Won '{reward.name}' award ({reward.amount:,.2f} credits)",
         raw_source=f"RewardDistribution #{instance.pk}: {reward.name} — {reward.amount} credits",
     )
     logger.info(
@@ -56,7 +52,6 @@ def on_reward_distributed(sender, instance, created, **kwargs):
 # ---------------------------------------------------------------------------
 
 
-@receiver(post_save, sender="challenges.UserChallenge")
 def on_challenge_completed(sender, instance, **kwargs):
     """Create a CHALLENGE archive entry when a bot completes a challenge."""
     if instance.status != "COMPLETED":

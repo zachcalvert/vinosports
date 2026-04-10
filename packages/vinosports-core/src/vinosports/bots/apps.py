@@ -8,4 +8,13 @@ class BotsConfig(AppConfig):
     verbose_name = "Bot Profiles"
 
     def ready(self):
-        import vinosports.bots.archive  # noqa: F401 — register signals
+        from django.apps import apps
+        from django.db.models.signals import post_save
+
+        from vinosports.bots.archive import on_challenge_completed, on_reward_distributed
+
+        RewardDistribution = apps.get_model("rewards", "RewardDistribution")
+        post_save.connect(on_reward_distributed, sender=RewardDistribution)
+
+        UserChallenge = apps.get_model("challenges", "UserChallenge")
+        post_save.connect(on_challenge_completed, sender=UserChallenge)
