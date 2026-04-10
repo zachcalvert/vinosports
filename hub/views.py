@@ -28,12 +28,15 @@ from hub.forms import (
     ProfileImageForm,
     SignupForm,
 )
+from hub.models import SiteSettings
+from hub.promo import evaluate_promo_code
 from nba.betting.models import BetSlip as NbaBetSlip
 from nba.betting.models import FuturesBet as NbaFuturesBet
 from nba.betting.models import Parlay as NbaParlay
 from nba.discussions.models import Comment as NbaComment
 from nba.games.models import Game as NbaGame
 from nba.games.models import GameStatus as NbaGameStatus
+from news.models import NewsArticle
 from nfl.betting.models import BetSlip as NflBetSlip
 from nfl.betting.models import Parlay as NflParlay
 from nfl.discussions.models import Comment as NflComment
@@ -41,6 +44,7 @@ from nfl.games.models import Game as NflGame
 from nfl.games.models import GameStatus as NflGameStatus
 from ucl.betting.models import BetSlip as UclBetSlip
 from ucl.betting.models import Parlay as UclParlay
+from ucl.discussions.models import Comment as UclComment
 from ucl.matches.models import Match as UclMatch
 from vinosports.activity.models import Notification
 from vinosports.betting.balance import log_transaction
@@ -63,9 +67,8 @@ from vinosports.bots.models import BotProfile
 from vinosports.challenges.models import Challenge, UserChallenge
 from worldcup.betting.models import BetSlip as WcBetSlip
 from worldcup.betting.models import Parlay as WcParlay
-
-from .models import SiteSettings
-from .promo import evaluate_promo_code
+from worldcup.discussions.models import Comment as WcComment
+from worldcup.matches.models import Match as WcMatch
 
 User = get_user_model()
 
@@ -139,8 +142,6 @@ def _get_live_games():
         )
 
     # World Cup
-    from worldcup.matches.models import Match as WcMatch
-
     for m in (
         WcMatch.objects.filter(
             status__in=[WcMatch.Status.IN_PLAY, WcMatch.Status.PAUSED]
@@ -1170,11 +1171,6 @@ def _admin_stats_context():
         + NbaBetSlip.objects.filter(status="PENDING").count()
         + NflBetSlip.objects.filter(status="PENDING").count()
     )
-    ctx["active_parlays"] = (
-        EplParlay.objects.filter(status="PENDING").count()
-        + NbaParlay.objects.filter(status="PENDING").count()
-        + NflParlay.objects.filter(status="PENDING").count()
-    )
     ctx["total_comments"] = (
         EplComment.objects.filter(is_deleted=False).count()
         + NbaComment.objects.filter(is_deleted=False).count()
@@ -1187,34 +1183,23 @@ def _admin_stats_context():
         + EplParlay.objects.count()
         + NbaParlay.objects.count()
         + NflParlay.objects.count()
+        + UclParlay.objects.count()
+        + WcParlay.objects.count()
     )
-    epl_in_play = (
-        EplBetSlip.objects.filter(status="PENDING").aggregate(total=Sum("stake"))[
-            "total"
-        ]
-        or 0
+    ctx["total_wagered"] = sum(
+        model.objects.aggregate(total=Sum("stake"))["total"] or 0
+        for model in (
+            EplBetSlip,
+            NbaBetSlip,
+            NflBetSlip,
+            EplParlay,
+            NbaParlay,
+            NflParlay,
+            UclParlay,
+            WcParlay,
+        )
     )
-    nba_in_play = (
-        NbaBetSlip.objects.filter(status="PENDING").aggregate(total=Sum("stake"))[
-            "total"
-        ]
-        or 0
-    )
-    nfl_in_play = (
-        NflBetSlip.objects.filter(status="PENDING").aggregate(total=Sum("stake"))[
-            "total"
-        ]
-        or 0
-    )
-    ctx["total_in_play"] = epl_in_play + nba_in_play + nfl_in_play
-
-    # Per-league breakdowns
-    ctx["epl_bets"] = EplBetSlip.objects.count() + EplParlay.objects.count()
-    ctx["nba_bets"] = NbaBetSlip.objects.count() + NbaParlay.objects.count()
-    ctx["nfl_bets"] = NflBetSlip.objects.count() + NflParlay.objects.count()
-    ctx["epl_comments"] = EplComment.objects.filter(is_deleted=False).count()
-    ctx["nba_comments"] = NbaComment.objects.filter(is_deleted=False).count()
-    ctx["nfl_comments"] = NflComment.objects.filter(is_deleted=False).count()
+    ctx["total_articles"] = NewsArticle.objects.count()
     return ctx
 
 
@@ -1224,6 +1209,7 @@ class AdminDashboardView(SuperuserRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         ctx.update(_admin_stats_context())
+        print("ADMIN DASHBOARD:", ctx)  # Debug print
         return ctx
 
 
@@ -1282,13 +1268,6 @@ def _admin_merged_querysets(*querysets, offset, page_size):
 
 class AdminBetsPartialView(SuperuserRequiredMixin, View):
     def get(self, request):
-        from epl.betting.models import BetSlip as EplBetSlip
-        from epl.betting.models import Parlay as EplParlay
-        from nba.betting.models import BetSlip as NbaBetSlip
-        from nba.betting.models import Parlay as NbaParlay
-        from nfl.betting.models import BetSlip as NflBetSlip
-        from nfl.betting.models import Parlay as NflParlay
-
         offset = _admin_parse_offset(request)
         prefetch_limit = offset + ADMIN_PAGE_SIZE * 2
 
@@ -1302,8 +1281,20 @@ class AdminBetsPartialView(SuperuserRequiredMixin, View):
         nfl_bets = NflBetSlip.objects.select_related(
             "user", "game__home_team", "game__away_team"
         ).order_by("-created_at")
+        ucl_bets = UclBetSlip.objects.select_related(
+            "user", "match__home_team", "match__away_team"
+        ).order_by("-created_at")
+        worldcup_bets = WcBetSlip.objects.select_related(
+            "user", "match__home_team", "match__away_team"
+        ).order_by("-created_at")
         all_bets = _admin_merged_querysets(
-            epl_bets, nba_bets, nfl_bets, offset=0, page_size=prefetch_limit
+            epl_bets,
+            nba_bets,
+            nfl_bets,
+            ucl_bets,
+            worldcup_bets,
+            offset=0,
+            page_size=prefetch_limit,
         )
 
         # Merge all parlays from all leagues
@@ -1322,8 +1313,24 @@ class AdminBetsPartialView(SuperuserRequiredMixin, View):
             .prefetch_related("legs__game__home_team", "legs__game__away_team")
             .order_by("-created_at")
         )
+        ucl_parlays = (
+            UclParlay.objects.select_related("user")
+            .prefetch_related("legs__match__home_team", "legs__match__away_team")
+            .order_by("-created_at")
+        )
+        worldcup_parlays = (
+            WcParlay.objects.select_related("user")
+            .prefetch_related("legs__match__home_team", "legs__match__away_team")
+            .order_by("-created_at")
+        )
         all_parlays = _admin_merged_querysets(
-            epl_parlays, nba_parlays, nfl_parlays, offset=0, page_size=prefetch_limit
+            epl_parlays,
+            nba_parlays,
+            nfl_parlays,
+            ucl_parlays,
+            worldcup_parlays,
+            offset=0,
+            page_size=prefetch_limit,
         )
 
         # Final merge of bets + parlays
@@ -1338,6 +1345,8 @@ class AdminBetsPartialView(SuperuserRequiredMixin, View):
             + EplParlay.objects.count()
             + NbaParlay.objects.count()
             + NflParlay.objects.count()
+            + UclParlay.objects.count()
+            + WcParlay.objects.count()
         )
 
         return _admin_paginated_response(
@@ -1368,10 +1377,22 @@ class AdminCommentsPartialView(SuperuserRequiredMixin, View):
             .select_related("user", "game__home_team", "game__away_team")
             .order_by("-created_at")
         )
+        ucl_comments = (
+            UclComment.objects.filter(is_deleted=False)
+            .select_related("user", "match__home_team", "match__away_team")
+            .order_by("-created_at")
+        )
+        worldcup_comments = (
+            WcComment.objects.filter(is_deleted=False)
+            .select_related("user", "match__home_team", "match__away_team")
+            .order_by("-created_at")
+        )
         items = _admin_merged_querysets(
             epl_comments,
             nba_comments,
             nfl_comments,
+            ucl_comments,
+            worldcup_comments,
             offset=offset,
             page_size=ADMIN_PAGE_SIZE,
         )
@@ -1379,6 +1400,8 @@ class AdminCommentsPartialView(SuperuserRequiredMixin, View):
             EplComment.objects.filter(is_deleted=False).count()
             + NbaComment.objects.filter(is_deleted=False).count()
             + NflComment.objects.filter(is_deleted=False).count()
+            + UclComment.objects.filter(is_deleted=False).count()
+            + WcComment.objects.filter(is_deleted=False).count()
         )
 
         return _admin_paginated_response(
@@ -1416,13 +1439,6 @@ class AdminBetsFullView(SuperuserRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-
-        from epl.betting.models import BetSlip as EplBetSlip
-        from epl.betting.models import Parlay as EplParlay
-        from nba.betting.models import BetSlip as NbaBetSlip
-        from nba.betting.models import Parlay as NbaParlay
-        from nfl.betting.models import BetSlip as NflBetSlip
-        from nfl.betting.models import Parlay as NflParlay
 
         page = max(1, int(self.request.GET.get("page", 1)))
         offset = (page - 1) * ADMIN_FULL_PAGE_SIZE
@@ -1500,10 +1516,23 @@ class AdminCommentsFullView(SuperuserRequiredMixin, TemplateView):
             .select_related("user", "game__home_team", "game__away_team")
             .order_by("-created_at")
         )
+        ucl_comments = (
+            UclComment.objects.filter(is_deleted=False)
+            .select_related("user", "match__home_team", "match__away_team")
+            .order_by("-created_at")
+        )
+        worldcup_comments = (
+            WcComment.objects.filter(is_deleted=False)
+            .select_related("user", "match__home_team", "match__away_team")
+            .order_by("-created_at")
+        )
+
         items = _admin_merged_querysets(
             epl_comments,
             nba_comments,
             nfl_comments,
+            ucl_comments,
+            worldcup_comments,
             offset=offset,
             page_size=ADMIN_FULL_PAGE_SIZE,
         )

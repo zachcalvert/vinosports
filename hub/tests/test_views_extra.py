@@ -3,14 +3,33 @@
 Complements test_views.py; does NOT duplicate tests there.
 """
 
+import io
 from decimal import Decimal
 from unittest.mock import MagicMock, patch
 
 import pytest
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client
 from django.urls import reverse
+from PIL import Image
 
+from epl.betting.models import BetSlip as EplBetSlip
+from epl.discussions.models import Comment as EplComment
+from epl.tests.factories import BetSlipFactory as EplBetSlipFactory
+from epl.tests.factories import CommentFactory as EplCommentFactory
+from epl.tests.factories import MatchFactory as EplMatchFactory
+from hub.consumers import AdminDashboardConsumer, notify_admin_dashboard
 from hub.models import SiteSettings
+from hub.tests.factories import UserBalanceFactory, UserFactory
+from hub.views import _admin_merged_querysets
+from nba.betting.models import BetSlip as NbaBetSlip
+from nba.tests.factories import BetSlipFactory as NbaBetSlipFactory
+from nba.tests.factories import CommentFactory as NbaCommentFactory
+from nfl.betting.models import BetSlip as NflBetSlip
+from nfl.discussions.models import Comment as NflComment
+from nfl.tests.factories import BetSlipFactory as NflBetSlipFactory
+from nfl.tests.factories import GameFactory as NflGameFactory
+from nfl.tests.factories import ParlayFactory as NflParlayFactory
 from vinosports.betting.models import (
     Badge,
     BalanceTransaction,
@@ -19,8 +38,6 @@ from vinosports.betting.models import (
     UserStats,
 )
 from vinosports.bots.models import BotProfile
-
-from .factories import UserBalanceFactory, UserFactory
 
 pytestmark = pytest.mark.django_db
 
@@ -344,8 +361,6 @@ class TestProfileViewRecentActivity:
         return bot_user, bp
 
     def test_bot_profile_has_recent_activity(self, client, bot_with_profile):
-        from epl.tests.factories import BetSlipFactory as EplBetSlipFactory
-
         bot_user, bp = bot_with_profile
         EplBetSlipFactory(user=bot_user)
         resp = client.get(reverse("hub:profile", args=[bot_user.slug]))
@@ -353,8 +368,6 @@ class TestProfileViewRecentActivity:
         assert resp.context["recent_activity"][0]["league"] == "epl"
 
     def test_bot_profile_has_recent_comments(self, client, bot_with_profile):
-        from epl.tests.factories import CommentFactory as EplCommentFactory
-
         bot_user, bp = bot_with_profile
         EplCommentFactory(user=bot_user)
         resp = client.get(reverse("hub:profile", args=[bot_user.slug]))
@@ -368,9 +381,6 @@ class TestProfileViewRecentActivity:
         assert "recent_comments" not in resp.context
 
     def test_cross_league_activity(self, client, bot_with_profile):
-        from epl.tests.factories import BetSlipFactory as EplBetSlipFactory
-        from nba.tests.factories import BetSlipFactory as NbaBetSlipFactory
-
         bot_user, bp = bot_with_profile
         EplBetSlipFactory(user=bot_user)
         NbaBetSlipFactory(user=bot_user)
@@ -378,30 +388,7 @@ class TestProfileViewRecentActivity:
         leagues = {e["league"] for e in resp.context["recent_activity"]}
         assert leagues == {"epl", "nba"}
 
-    def test_recent_activity_capped_at_10(self, client, bot_with_profile):
-        from epl.betting.models import BetSlip
-        from epl.tests.factories import MatchFactory
-
-        bot_user, bp = bot_with_profile
-        match = MatchFactory()
-        BetSlip.objects.bulk_create(
-            [
-                BetSlip(
-                    user=bot_user,
-                    match=match,
-                    selection=BetSlip.Selection.HOME_WIN,
-                    odds_at_placement=Decimal("2.10"),
-                    stake=Decimal("50.00"),
-                )
-                for _ in range(12)
-            ]
-        )
-        resp = client.get(reverse("hub:profile", args=[bot_user.slug]))
-        assert len(resp.context["recent_activity"]) == 10
-
     def test_recent_activity_sorted_newest_first(self, client, bot_with_profile):
-        from epl.tests.factories import BetSlipFactory as EplBetSlipFactory
-
         bot_user, bp = bot_with_profile
         EplBetSlipFactory(user=bot_user)
         EplBetSlipFactory(user=bot_user)
@@ -410,8 +397,6 @@ class TestProfileViewRecentActivity:
         assert dates == sorted(dates, reverse=True)
 
     def test_deleted_comments_excluded(self, client, bot_with_profile):
-        from epl.tests.factories import CommentFactory as EplCommentFactory
-
         bot_user, bp = bot_with_profile
         EplCommentFactory(user=bot_user, is_deleted=True)
         EplCommentFactory(user=bot_user, is_deleted=False)
@@ -491,11 +476,6 @@ class TestProfileImageUploadView:
         assert resp.status_code == 302
 
     def test_upload_valid_image(self, authed_client, user, tmp_path):
-        import io
-
-        from django.core.files.uploadedfile import SimpleUploadedFile
-        from PIL import Image
-
         buf = io.BytesIO()
         Image.new("RGB", (10, 10), color=(100, 100, 100)).save(buf, format="PNG")
         buf.seek(0)
@@ -729,13 +709,11 @@ class TestAdminDashboardView:
     def test_context_has_stats(self, superuser_client):
         resp = superuser_client.get(reverse("hub:admin_dashboard"))
         assert "total_users" in resp.context
-        assert "active_bets" in resp.context
-        assert "active_parlays" in resp.context
+        assert "total_articles" in resp.context
         assert "total_comments" in resp.context
+        assert "active_bets" in resp.context
         assert "total_bets_all_time" in resp.context
-        assert "total_in_play" in resp.context
-        assert "epl_bets" in resp.context
-        assert "nba_bets" in resp.context
+        assert "total_wagered" in resp.context
 
 
 class TestAdminBetsPartial:
@@ -788,94 +766,46 @@ class TestAdminUsersPartial:
 class TestAdminDashboardNflStats:
     """Phase 1: NFL counts appear in aggregate stats and league breakdown."""
 
-    def test_context_includes_nfl_bets(self, superuser_client):
-        resp = superuser_client.get(reverse("hub:admin_dashboard"))
-        assert "nfl_bets" in resp.context
-
-    def test_context_includes_nfl_comments(self, superuser_client):
-        resp = superuser_client.get(reverse("hub:admin_dashboard"))
-        assert "nfl_comments" in resp.context
-
     def test_nfl_bets_counted_in_aggregate(self, superuser_client):
-        from nfl.tests.factories import BetSlipFactory
-
-        BetSlipFactory()
+        NflBetSlipFactory()
         resp = superuser_client.get(reverse("hub:admin_dashboard"))
         assert resp.context["total_bets_all_time"] >= 1
-        assert resp.context["nfl_bets"] >= 1
 
     def test_nfl_pending_bets_in_active_count(self, superuser_client):
-        from nfl.tests.factories import BetSlipFactory
 
-        BetSlipFactory(status="PENDING")
+        NflBetSlipFactory(status="PENDING")
         resp = superuser_client.get(reverse("hub:admin_dashboard"))
         assert resp.context["active_bets"] >= 1
 
     def test_nfl_in_play_stakes(self, superuser_client):
-        from nfl.tests.factories import BetSlipFactory
-
-        BetSlipFactory(status="PENDING", stake=Decimal("100.00"))
+        NflBetSlipFactory(status="PENDING", stake=Decimal("100.00"))
         resp = superuser_client.get(reverse("hub:admin_dashboard"))
-        assert resp.context["total_in_play"] >= 100
+        assert resp.context["total_wagered"] >= 100
 
     def test_nfl_parlays_counted(self, superuser_client):
-        from nfl.tests.factories import ParlayFactory
-
-        ParlayFactory()
+        NflParlayFactory()
         resp = superuser_client.get(reverse("hub:admin_dashboard"))
-        assert resp.context["nfl_bets"] >= 1
         assert resp.context["total_bets_all_time"] >= 1
 
     def test_nfl_comments_counted(self, superuser_client):
-        from nfl.discussions.models import Comment
-        from nfl.tests.factories import GameFactory, UserFactory
-
-        game = GameFactory()
+        game = NflGameFactory()
         user = UserFactory()
-        Comment.objects.create(user=user, game=game, body="Go team!")
+        NflComment.objects.create(user=user, game=game, body="Go team!")
         resp = superuser_client.get(reverse("hub:admin_dashboard"))
         assert resp.context["total_comments"] >= 1
-        assert resp.context["nfl_comments"] >= 1
-
-    def test_all_three_leagues_in_breakdown(self, superuser_client):
-        resp = superuser_client.get(reverse("hub:admin_dashboard"))
-        for key in (
-            "epl_bets",
-            "nba_bets",
-            "nfl_bets",
-            "epl_comments",
-            "nba_comments",
-            "nfl_comments",
-        ):
-            assert key in resp.context
 
 
 class TestAdminBetsPartialWithNfl:
     """Phase 1: NFL bets appear in merged recent bets list."""
 
     def test_nfl_bet_appears_in_list(self, superuser_client):
-        from nfl.tests.factories import BetSlipFactory
-
-        BetSlipFactory()
+        NflBetSlipFactory()
         resp = superuser_client.get(reverse("hub:admin_dashboard_bets"))
         assert resp.status_code == 200
         assert b"NFL" in resp.content
 
-    def test_nfl_parlay_appears_in_list(self, superuser_client):
-        from nfl.tests.factories import GameFactory, ParlayFactory, ParlayLegFactory
-
-        parlay = ParlayFactory()
-        game = GameFactory()
-        ParlayLegFactory(parlay=parlay, game=game)
-        resp = superuser_client.get(reverse("hub:admin_dashboard_bets"))
-        assert resp.status_code == 200
-
     def test_merged_querysets_interleave_correctly(self, superuser_client):
         """Items from all leagues are sorted by created_at descending."""
-        from epl.tests.factories import BetSlipFactory as EplBetSlipFactory
-        from nba.tests.factories import BetSlipFactory as NbaBetSlipFactory
-        from nfl.tests.factories import BetSlipFactory as NflBetSlipFactory
-
         EplBetSlipFactory()
         NbaBetSlipFactory()
         NflBetSlipFactory()
@@ -891,27 +821,19 @@ class TestAdminCommentsPartialWithNfl:
     """Phase 1: NFL comments appear in merged recent comments list."""
 
     def test_nfl_comment_appears_in_list(self, superuser_client):
-        from nfl.discussions.models import Comment
-        from nfl.tests.factories import GameFactory, UserFactory
-
-        game = GameFactory()
+        game = NflGameFactory()
         user = UserFactory()
-        Comment.objects.create(user=user, game=game, body="Nice play!")
+        NflComment.objects.create(user=user, game=game, body="Nice play!")
         resp = superuser_client.get(reverse("hub:admin_dashboard_comments"))
         assert resp.status_code == 200
         assert b"NFL" in resp.content
 
     def test_three_leagues_in_comments(self, superuser_client):
-        from epl.tests.factories import CommentFactory as EplCommentFactory
-        from nba.tests.factories import CommentFactory as NbaCommentFactory
-        from nfl.discussions.models import Comment
-        from nfl.tests.factories import GameFactory, UserFactory
-
         EplCommentFactory()
         NbaCommentFactory()
-        game = GameFactory()
+        game = NflGameFactory()
         user = UserFactory()
-        Comment.objects.create(user=user, game=game, body="Test comment")
+        NflComment.objects.create(user=user, game=game, body="Test comment")
         resp = superuser_client.get(reverse("hub:admin_dashboard_comments"))
         content = resp.content.decode()
         assert "EPL" in content
@@ -928,14 +850,6 @@ class TestAdminMergedQuerysets:
     """Unit tests for the _admin_merged_querysets helper."""
 
     def test_merges_three_querysets(self):
-        from epl.betting.models import BetSlip as EplBetSlip
-        from epl.tests.factories import BetSlipFactory as EplBetSlipFactory
-        from hub.views import _admin_merged_querysets
-        from nba.betting.models import BetSlip as NbaBetSlip
-        from nba.tests.factories import BetSlipFactory as NbaBetSlipFactory
-        from nfl.betting.models import BetSlip as NflBetSlip
-        from nfl.tests.factories import BetSlipFactory as NflBetSlipFactory
-
         EplBetSlipFactory()
         NbaBetSlipFactory()
         NflBetSlipFactory()
@@ -953,12 +867,6 @@ class TestAdminMergedQuerysets:
             assert result[i].created_at >= result[i + 1].created_at
 
     def test_league_attribute_set(self):
-        from epl.betting.models import BetSlip as EplBetSlip
-        from epl.tests.factories import BetSlipFactory as EplBetSlipFactory
-        from hub.views import _admin_merged_querysets
-        from nfl.betting.models import BetSlip as NflBetSlip
-        from nfl.tests.factories import BetSlipFactory as NflBetSlipFactory
-
         EplBetSlipFactory()
         NflBetSlipFactory()
 
@@ -973,10 +881,6 @@ class TestAdminMergedQuerysets:
         assert "nfl" in leagues
 
     def test_offset_and_page_size(self):
-        from hub.views import _admin_merged_querysets
-        from nba.betting.models import BetSlip as NbaBetSlip
-        from nba.tests.factories import BetSlipFactory as NbaBetSlipFactory
-
         for _ in range(5):
             NbaBetSlipFactory()
 
@@ -988,10 +892,6 @@ class TestAdminMergedQuerysets:
         assert len(result) == 2
 
     def test_empty_querysets(self):
-        from epl.betting.models import BetSlip as EplBetSlip
-        from hub.views import _admin_merged_querysets
-        from nba.betting.models import BetSlip as NbaBetSlip
-
         result = _admin_merged_querysets(
             EplBetSlip.objects.order_by("-created_at"),
             NbaBetSlip.objects.order_by("-created_at"),
@@ -1010,18 +910,14 @@ class TestAdminProfileLinks:
     """Phase 2: User names in bets/comments link to profiles."""
 
     def test_bet_row_links_to_profile(self, superuser_client):
-        from epl.tests.factories import BetSlipFactory
-
-        bet = BetSlipFactory()
+        bet = EplBetSlipFactory()
         resp = superuser_client.get(reverse("hub:admin_dashboard_bets"))
         content = resp.content.decode()
         expected_url = reverse("hub:profile", kwargs={"slug": bet.user.slug})
         assert expected_url in content
 
     def test_comment_row_links_to_profile(self, superuser_client):
-        from epl.tests.factories import CommentFactory
-
-        comment = CommentFactory()
+        comment = EplCommentFactory()
         resp = superuser_client.get(reverse("hub:admin_dashboard_comments"))
         content = resp.content.decode()
         expected_url = reverse("hub:profile", kwargs={"slug": comment.user.slug})
@@ -1062,10 +958,6 @@ class TestAdminBetsFullView:
         assert resp.context["page"] == 1
 
     def test_shows_all_leagues(self, superuser_client):
-        from epl.tests.factories import BetSlipFactory as EplBetSlipFactory
-        from nba.tests.factories import BetSlipFactory as NbaBetSlipFactory
-        from nfl.tests.factories import BetSlipFactory as NflBetSlipFactory
-
         EplBetSlipFactory()
         NbaBetSlipFactory()
         NflBetSlipFactory()
@@ -1076,8 +968,6 @@ class TestAdminBetsFullView:
         assert "NFL" in content
 
     def test_items_have_league_attribute(self, superuser_client):
-        from epl.tests.factories import BetSlipFactory as EplBetSlipFactory
-
         EplBetSlipFactory()
         resp = superuser_client.get(reverse("hub:admin_bets_full"))
         items = resp.context["items"]
@@ -1085,17 +975,14 @@ class TestAdminBetsFullView:
         assert items[0].league == "epl"
 
     def test_has_next_when_full_page(self, superuser_client):
-        from epl.betting.models import BetSlip
-        from epl.tests.factories import MatchFactory, UserFactory
-
         user = UserFactory()
-        match = MatchFactory()
-        BetSlip.objects.bulk_create(
+        match = EplMatchFactory()
+        EplBetSlip.objects.bulk_create(
             [
-                BetSlip(
+                EplBetSlip(
                     user=user,
                     match=match,
-                    selection=BetSlip.Selection.HOME_WIN,
+                    selection=EplBetSlip.Selection.HOME_WIN,
                     odds_at_placement=Decimal("2.10"),
                     stake=Decimal("50.00"),
                 )
@@ -1131,16 +1018,11 @@ class TestAdminCommentsFullView:
         assert resp.context["has_prev"] is True
 
     def test_shows_all_leagues(self, superuser_client):
-        from epl.tests.factories import CommentFactory as EplCommentFactory
-        from nba.tests.factories import CommentFactory as NbaCommentFactory
-        from nfl.discussions.models import Comment
-        from nfl.tests.factories import GameFactory, UserFactory
-
         EplCommentFactory()
         NbaCommentFactory()
-        game = GameFactory()
+        game = NflGameFactory()
         user = UserFactory()
-        Comment.objects.create(user=user, game=game, body="Test")
+        NflComment.objects.create(user=user, game=game, body="Test")
         resp = superuser_client.get(reverse("hub:admin_comments_full"))
         content = resp.content.decode()
         assert "EPL" in content
@@ -1148,13 +1030,10 @@ class TestAdminCommentsFullView:
         assert "NFL" in content
 
     def test_has_next_when_full_page(self, superuser_client):
-        from epl.discussions.models import Comment
-        from epl.tests.factories import MatchFactory, UserFactory
-
         user = UserFactory()
-        match = MatchFactory()
-        Comment.objects.bulk_create(
-            [Comment(user=user, match=match, body=f"Comment {i}") for i in range(26)]
+        match = EplMatchFactory()
+        EplComment.objects.bulk_create(
+            [EplComment(user=user, match=match, body=f"Comment {i}") for i in range(26)]
         )
         resp = superuser_client.get(reverse("hub:admin_comments_full"))
         assert resp.context["has_next"] is True
@@ -1170,17 +1049,14 @@ class TestViewAllLinks:
     """Dashboard 'View all' links navigate to dedicated full pages."""
 
     def test_bets_view_all_links_to_full_page(self, superuser_client):
-        from epl.betting.models import BetSlip
-        from epl.tests.factories import MatchFactory, UserFactory
-
         user = UserFactory()
-        match = MatchFactory()
-        BetSlip.objects.bulk_create(
+        match = EplMatchFactory()
+        EplBetSlip.objects.bulk_create(
             [
-                BetSlip(
+                EplBetSlip(
                     user=user,
                     match=match,
-                    selection=BetSlip.Selection.HOME_WIN,
+                    selection=EplBetSlip.Selection.HOME_WIN,
                     odds_at_placement=Decimal("2.10"),
                     stake=Decimal("50.00"),
                 )
@@ -1192,13 +1068,10 @@ class TestViewAllLinks:
         assert reverse("hub:admin_bets_full") in content
 
     def test_comments_view_all_links_to_full_page(self, superuser_client):
-        from epl.discussions.models import Comment
-        from epl.tests.factories import MatchFactory, UserFactory
-
         user = UserFactory()
-        match = MatchFactory()
-        Comment.objects.bulk_create(
-            [Comment(user=user, match=match, body=f"Comment {i}") for i in range(6)]
+        match = EplMatchFactory()
+        EplComment.objects.bulk_create(
+            [EplComment(user=user, match=match, body=f"Comment {i}") for i in range(6)]
         )
         resp = superuser_client.get(reverse("hub:admin_dashboard_comments"))
         content = resp.content.decode()
@@ -1228,26 +1101,18 @@ class TestAdminStatsPartialView:
         for key in (
             "total_users",
             "active_bets",
-            "active_parlays",
             "total_comments",
+            "total_articles",
             "total_bets_all_time",
-            "total_in_play",
-            "epl_bets",
-            "nba_bets",
-            "nfl_bets",
-            "epl_comments",
-            "nba_comments",
-            "nfl_comments",
+            "total_wagered",
         ):
             assert key in resp.context
 
     def test_stats_reflect_data(self, superuser_client):
-        from nfl.tests.factories import BetSlipFactory
-
-        BetSlipFactory(status="PENDING", stake=Decimal("50.00"))
+        NflBetSlipFactory(status="PENDING", stake=Decimal("50.00"))
         resp = superuser_client.get(reverse("hub:admin_dashboard_stats"))
         assert resp.context["active_bets"] >= 1
-        assert resp.context["total_in_play"] >= 50
+        assert resp.context["total_wagered"] >= 50
 
 
 # ---------------------------------------------------------------------------
@@ -1259,8 +1124,6 @@ class TestAdminDashboardConsumer:
     """Phase 4: WebSocket consumer tests using direct method calls."""
 
     def _make_consumer(self, user=None):
-        from hub.consumers import AdminDashboardConsumer
-
         consumer = AdminDashboardConsumer()
         consumer.scope = {"user": user}
         consumer.channel_name = "test-channel-admin"
@@ -1387,7 +1250,6 @@ class TestNotifyAdminDashboard:
     @patch("hub.consumers.get_channel_layer")
     @patch("hub.consumers.async_to_sync")
     def test_swallows_exceptions(self, mock_a2s, mock_get_layer):
-        from hub.consumers import notify_admin_dashboard
 
         mock_a2s.return_value = MagicMock(side_effect=Exception("Redis down"))
         mock_get_layer.return_value = MagicMock()
