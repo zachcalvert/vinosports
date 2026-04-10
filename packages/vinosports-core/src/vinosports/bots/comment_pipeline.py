@@ -616,6 +616,11 @@ def generate_comment(
         event,
         raw_text[:80],
     )
+
+    # Post-processing: check for life update trigger on replies
+    if trigger_str == "REPLY" and parent_comment and parent_comment.user.is_bot:
+        _maybe_trigger_life_update(profile, parent_comment, raw_text)
+
     return comment
 
 
@@ -708,3 +713,327 @@ def select_bots_for_event(
         return []
 
     return random.sample(candidates, min(max_bots, len(candidates)))
+
+
+# ---------------------------------------------------------------------------
+# Focused conversations
+# ---------------------------------------------------------------------------
+
+
+def pick_conversation_bots(adapter, event, count=3):
+    """Pick bots for a focused conversation on an event.
+
+    Unlike select_bots_for_event, this ignores the PRE_MATCH dedup constraint
+    and picks bots purely for social interaction potential.
+    """
+    candidates = []
+    for profile in adapter.get_bot_profiles_qs():
+        if adapter.is_bot_relevant(profile, event):
+            candidates.append(profile.user)
+
+    if len(candidates) < 2:
+        return candidates
+
+    return random.sample(candidates, min(count, len(candidates)))
+
+
+def build_conversation_reply(adapter, bot_user, event, thread_comments, parent_comment):
+    """Generate a reply with full thread context for a focused conversation.
+
+    Unlike generate_comment() which uses the dedup slot pattern, this
+    creates REPLY-type comments without the unique constraint restriction,
+    allowing multi-turn conversations.
+    """
+    profile = get_bot_profile(bot_user)
+    if not profile or not profile.persona_prompt:
+        return None
+
+    BotCommentModel = adapter.get_bot_comment_model()
+    CommentModel = adapter.get_comment_model()
+    BetSlipModel = adapter.get_bet_slip_model()
+    fk_name = adapter.get_event_fk_name()
+
+    system_prompt = profile.persona_prompt
+    bot_stats = build_user_stats_context(
+        bot_user, BetSlipModel.objects.filter(user=bot_user)
+    )
+
+    match_ctx = adapter.build_match_context(event)
+
+    # Build thread context — full conversation so far
+    thread_lines = ["CONVERSATION SO FAR IN THIS THREAD:"]
+    for c in thread_comments:
+        thread_lines.append(f'- {c.user.display_name}: "{c.body[:200]}"')
+    thread_context = "\n".join(thread_lines)
+
+    # Archive context
+    own_archive_ctx = build_own_archive_context(profile)
+    target_archive_ctx = ""
+    if parent_comment.user.is_bot:
+        target_archive_ctx = build_target_archive_context(profile, parent_comment.user)
+
+    from reddit.context import build_reddit_context
+
+    reddit_ctx = build_reddit_context(adapter.league)
+
+    # Build prompt with thread context injected
+    lines = list(match_ctx.header_lines)
+
+    if bot_stats:
+        lines.append(f"Your stats: {bot_stats}")
+
+    if own_archive_ctx:
+        lines.append("")
+        lines.append(own_archive_ctx)
+
+    if target_archive_ctx:
+        lines.append("")
+        lines.append(target_archive_ctx)
+
+    global_ctx = get_global_context()
+    if global_ctx:
+        lines.append("")
+        lines.append(global_ctx)
+
+    if reddit_ctx:
+        lines.append("")
+        lines.append(reddit_ctx)
+
+    if match_ctx.odds_line:
+        lines.append(match_ctx.odds_line)
+
+    # Thread context
+    lines.append("")
+    lines.append(thread_context)
+
+    # Instructions
+    lines.append("")
+    lines.append(
+        f"Continue the conversation with {parent_comment.user.display_name}. "
+        "Write a short reply (1-2 sentences max). Stay in character. "
+        "Build on what's been said — agree, push back, riff, or change the subject. "
+        "If their archive shows something you can reference, do it naturally."
+    )
+    lines.append("")
+    lines.append(SOCIAL_INSTRUCTIONS)
+
+    user_prompt = "\n".join(lines)
+    full_prompt = f"System: {system_prompt}\n\nUser: {user_prompt}"
+
+    # Create BotComment record (no unique constraint on REPLY for conversations)
+    try:
+        bc = BotCommentModel.objects.create(
+            user=bot_user,
+            trigger_type="REPLY",
+            prompt_used=full_prompt,
+            parent_comment=parent_comment,
+            **{fk_name: event},
+        )
+    except IntegrityError:
+        logger.debug("Race creating conversation reply for %s", bot_user.display_name)
+        return None
+
+    # Call Claude
+    api_key = getattr(settings, "ANTHROPIC_API_KEY", "")
+    if not api_key:
+        bc.error = "ANTHROPIC_API_KEY not configured"
+        bc.save(update_fields=["error", "updated_at"])
+        return None
+
+    try:
+        client = anthropic.Anthropic(api_key=api_key)
+        response = client.messages.create(
+            model="claude-sonnet-4-20250514",
+            max_tokens=150,
+            temperature=0.9,
+            system=system_prompt,
+            messages=[{"role": "user", "content": user_prompt}],
+        )
+        raw_text = response.content[0].text.strip()
+        if response.stop_reason == "max_tokens":
+            raw_text = trim_to_last_sentence(raw_text)
+    except Exception:
+        logger.exception("Claude API call failed for %s", bot_user.display_name)
+        bc.error = "API call failed"
+        bc.save(update_fields=["error", "updated_at"])
+        return None
+
+    # Filter
+    ok, reason = filter_comment(raw_text, match_ctx.team_terms, adapter.keywords)
+    if not ok:
+        bc.raw_response = raw_text
+        bc.filtered = True
+        bc.error = reason
+        bc.save(update_fields=["raw_response", "filtered", "error", "updated_at"])
+        return None
+
+    # Post
+    reply_parent = parent_comment
+    if parent_comment.depth >= 2:
+        reply_parent = parent_comment.parent
+
+    with transaction.atomic():
+        comment = CommentModel.objects.create(
+            **{fk_name: event},
+            user=bot_user,
+            body=raw_text,
+            parent=reply_parent,
+        )
+        bc.raw_response = raw_text
+        bc.comment = comment
+        bc.save(update_fields=["raw_response", "comment", "updated_at"])
+
+    logger.info(
+        "Conversation reply: %s → %r",
+        bot_user.display_name,
+        raw_text[:80],
+    )
+
+    # Post-processing: check for life update trigger
+    _maybe_trigger_life_update(profile, parent_comment, raw_text)
+
+    return comment
+
+
+# ---------------------------------------------------------------------------
+# Life updates
+# ---------------------------------------------------------------------------
+
+
+def generate_life_update(bot_profile, question_context=None):
+    """Generate an in-character life update and archive it.
+
+    Called when another bot asks a personal question, or when the system
+    wants to deepen a bot's backstory.
+
+    Returns the generated text, or None on failure.
+    """
+    from vinosports.bots.models import BotArchiveEntry, EntryType
+
+    existing_archive = list(bot_profile.archive_entries.order_by("-created_at")[:20])
+
+    archive_text = ""
+    if existing_archive:
+        archive_lines = []
+        for entry in existing_archive:
+            archive_lines.append(f"- {entry.summary}")
+        archive_text = "\n".join(archive_lines)
+
+    prompt_parts = [
+        f"You are {bot_profile.user.display_name}.",
+        "",
+        bot_profile.persona_prompt,
+        "",
+    ]
+
+    if archive_text:
+        prompt_parts.append("THINGS YOU'VE PREVIOUSLY SHARED ABOUT YOUR LIFE:")
+        prompt_parts.append(archive_text)
+        prompt_parts.append("")
+
+    if question_context:
+        prompt_parts.append(f"Someone asked you: {question_context}")
+    else:
+        prompt_parts.append("Share something new about your life outside of betting.")
+
+    prompt_parts.append("")
+    prompt_parts.append(
+        "Respond in character. Be specific and personal. This should feel "
+        "like a real person opening up to friends on a forum. 1-3 sentences max."
+    )
+
+    user_prompt = "\n".join(prompt_parts)
+    system_prompt = bot_profile.persona_prompt
+
+    api_key = getattr(settings, "ANTHROPIC_API_KEY", "")
+    if not api_key:
+        return None
+
+    try:
+        client = anthropic.Anthropic(api_key=api_key)
+        response = client.messages.create(
+            model="claude-sonnet-4-20250514",
+            max_tokens=150,
+            temperature=0.9,
+            system=system_prompt,
+            messages=[{"role": "user", "content": user_prompt}],
+        )
+        raw_text = response.content[0].text.strip()
+        if response.stop_reason == "max_tokens":
+            raw_text = trim_to_last_sentence(raw_text)
+    except Exception:
+        logger.exception(
+            "Life update generation failed for %s",
+            bot_profile.user.display_name,
+        )
+        return None
+
+    # Archive it
+    BotArchiveEntry.objects.create(
+        bot_profile=bot_profile,
+        entry_type=EntryType.LIFE_UPDATE,
+        summary=raw_text,
+        raw_source=f"question: {question_context}"
+        if question_context
+        else "spontaneous",
+    )
+
+    logger.info(
+        "Life update for %s: %r",
+        bot_profile.user.display_name,
+        raw_text[:80],
+    )
+    return raw_text
+
+
+def _maybe_trigger_life_update(author_profile, parent_comment, reply_text):
+    """Check if a bot's reply contains a question that should trigger a life update.
+
+    Heuristic: reply ends with '?' or contains '?' after mentioning the
+    target's name. If so, generate a life update for the target bot.
+    """
+    if not parent_comment.user.is_bot:
+        return
+
+    # Simple heuristic: does the reply contain a question?
+    if "?" not in reply_text:
+        return
+
+    target_profile = get_bot_profile(parent_comment.user)
+    if not target_profile:
+        return
+
+    # Extract the question — take the sentence containing '?'
+    sentences = re.split(r"[.!]", reply_text)
+    questions = [s.strip() for s in sentences if "?" in s]
+    if not questions:
+        return
+
+    question = questions[0]
+
+    # Don't trigger on rhetorical questions about betting/sports
+    # (these are too common and not personal)
+    betting_words = {"odds", "bet", "parlay", "spread", "pick", "lock"}
+    question_lower = question.lower()
+    if any(w in question_lower for w in betting_words):
+        return
+
+    logger.info(
+        "Question detected from %s to %s: %r",
+        author_profile.user.display_name,
+        target_profile.user.display_name,
+        question[:80],
+    )
+
+    # Generate a life update for the target bot based on the question
+    from vinosports.bots.models import BotArchiveEntry, EntryType
+
+    generate_life_update(target_profile, question_context=question)
+
+    # Also create a SOCIAL entry for the asking bot
+    BotArchiveEntry.objects.create(
+        bot_profile=author_profile,
+        entry_type=EntryType.SOCIAL,
+        summary=f'Asked {target_profile.user.display_name}: "{question[:100]}"',
+        related_bot=target_profile,
+    )
