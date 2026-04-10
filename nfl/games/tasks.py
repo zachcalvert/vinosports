@@ -199,6 +199,14 @@ def sync_live_scores() -> int:
         settle_pending_bets.delay()
         fetch_standings.delay()
 
+        from nfl.discussions.tasks import generate_postgame_comments
+
+        generate_postgame_comments.apply_async(countdown=900)
+
+        from news.tasks import generate_pending_recaps
+
+        generate_pending_recaps.apply_async(countdown=1800)
+
     logger.info(
         "sync_live_scores: updated %d games (%d changed)", count, len(changed_pks)
     )

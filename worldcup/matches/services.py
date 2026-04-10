@@ -329,3 +329,11 @@ def poll_live_scores():
                 from worldcup.betting.tasks import settle_match_bets
 
                 settle_match_bets.delay(match.pk)
+
+                from worldcup.bots.tasks import generate_postmatch_comments
+
+                generate_postmatch_comments.apply_async(countdown=900)
+
+                from news.tasks import generate_pending_recaps
+
+                generate_pending_recaps.apply_async(countdown=1800)

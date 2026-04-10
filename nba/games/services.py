@@ -566,6 +566,7 @@ def sync_live_scores(client: NBADataClient | None = None) -> int:
 
     count = 0
     changed_game_pks = []
+    newly_final_pks = []
     for g in games:
         external_id = g.pop("external_id")
         g.pop("home_team_external_id", None)
@@ -576,27 +577,50 @@ def sync_live_scores(client: NBADataClient | None = None) -> int:
         except Game.DoesNotExist:
             continue
 
+        old_status = game_obj.status
+        new_status = g["status"]
+
         # Only flag as changed if the score or status actually differs
         score_changed = (
             game_obj.home_score != g["home_score"]
             or game_obj.away_score != g["away_score"]
-            or game_obj.status != g["status"]
+            or old_status != new_status
         )
 
         Game.objects.filter(pk=game_obj.pk).update(
             home_score=g["home_score"],
             away_score=g["away_score"],
-            status=g["status"],
+            status=new_status,
         )
         count += 1
 
         if score_changed:
             changed_game_pks.append(game_obj.pk)
 
+        if new_status == GameStatus.FINAL and old_status != GameStatus.FINAL:
+            newly_final_pks.append(game_obj.pk)
+
     if changed_game_pks:
         _broadcast_score_updates(changed_game_pks)
 
-    logger.info("sync_live_scores: updated %d games", count)
+    if newly_final_pks:
+        from nba.betting.tasks import settle_pending_bets
+
+        settle_pending_bets.delay()
+
+        from nba.discussions.tasks import generate_postgame_comments
+
+        generate_postgame_comments.apply_async(countdown=900)
+
+        from news.tasks import generate_pending_recaps
+
+        generate_pending_recaps.apply_async(countdown=1800)
+
+    logger.info(
+        "sync_live_scores: updated %d games (%d newly final)",
+        count,
+        len(newly_final_pks),
+    )
     return count
 
 

@@ -329,12 +329,45 @@ CELERY_TASK_ROUTES = {
 
 # Beat Schedule — EPL and NBA tasks merged, prefixed to avoid key collisions
 CELERY_BEAT_SCHEDULE = {
-    # ===== EPL =====
-    # --- Data ingestion ---
-    "epl-fetch-teams-monthly": {
-        "task": "epl.matches.tasks.fetch_teams",
+    # ===================================================================
+    # Cross-league orchestrators (fan out to per-league subtasks)
+    # ===================================================================
+    "all-fetch-teams-monthly": {
+        "task": "vinosports.core.tasks.all_fetch_teams",
         "schedule": crontab(hour=3, minute=0, day_of_month=1),
     },
+    "all-generate-odds-10m": {
+        "task": "vinosports.core.tasks.all_generate_odds",
+        "schedule": timedelta(minutes=10),
+    },
+    "all-update-futures-odds-hourly": {
+        "task": "vinosports.core.tasks.all_update_futures_odds",
+        "schedule": crontab(minute=30),
+    },
+    "all-run-bot-strategies-hourly": {
+        "task": "vinosports.core.tasks.all_run_bot_strategies",
+        "schedule": crontab(minute=5),
+    },
+    "all-generate-prematch-comments-hourly": {
+        "task": "vinosports.core.tasks.all_generate_prematch_comments",
+        "schedule": crontab(minute=15),
+    },
+    "all-generate-featured-parlays-daily": {
+        "task": "vinosports.core.tasks.all_generate_featured_parlays",
+        "schedule": crontab(hour=9, minute=0),
+    },
+    "all-cleanup-activity-events-daily": {
+        "task": "vinosports.core.tasks.all_cleanup_activity_events",
+        "schedule": crontab(hour=4, minute=30),
+    },
+    "expire-featured-parlays-30m": {
+        "task": "vinosports.betting.tasks.expire_featured_parlays",
+        "schedule": timedelta(minutes=30),
+    },
+    # ===================================================================
+    # Per-league data ingestion (different APIs/windows — can't consolidate)
+    # ===================================================================
+    # --- EPL ---
     "epl-fetch-fixtures-daily": {
         "task": "epl.matches.tasks.fetch_fixtures",
         "schedule": crontab(hour=3, minute=0),
@@ -357,62 +390,7 @@ CELERY_BEAT_SCHEDULE = {
         "task": "epl.matches.tasks.prefetch_upcoming_hype_data",
         "schedule": timedelta(hours=6),
     },
-    # --- EPL Odds ---
-    "epl-generate-odds-10m": {
-        "task": "epl.betting.tasks.generate_odds",
-        "schedule": timedelta(minutes=10),
-    },
-    # --- EPL Futures ---
-    "epl-update-futures-odds-hourly": {
-        "task": "epl.betting.tasks.update_futures_odds",
-        "schedule": crontab(minute=30),
-    },
-    # --- EPL Challenges ---
-    "epl-rotate-daily-challenges": {
-        "task": "epl.website.challenge_tasks.rotate_daily_challenges",
-        "schedule": crontab(hour=5, minute=0),
-    },
-    "epl-rotate-weekly-challenges": {
-        "task": "epl.website.challenge_tasks.rotate_weekly_challenges",
-        "schedule": crontab(hour=4, minute=0, day_of_week="friday"),
-    },
-    "epl-expire-challenges-30m": {
-        "task": "epl.website.challenge_tasks.expire_challenges",
-        "schedule": timedelta(minutes=30),
-    },
-    # --- EPL Bots ---
-    "epl-run-bot-strategies-hourly": {
-        "task": "epl.bots.tasks.run_bot_strategies",
-        "schedule": crontab(minute=5),
-    },
-    "epl-generate-featured-parlays-weekly": {
-        "task": "epl.bots.tasks.generate_featured_parlays",
-        "schedule": crontab(hour=8, minute=0, day_of_week="friday"),
-    },
-    "epl-generate-prematch-comments-hourly": {
-        "task": "epl.bots.tasks.generate_prematch_comments",
-        "schedule": crontab(minute=15),
-    },
-    "epl-generate-postmatch-comments-hourly": {
-        "task": "epl.bots.tasks.generate_postmatch_comments",
-        "schedule": crontab(minute=30),
-    },
-    # --- EPL Activity ---
-    "epl-broadcast-activity-event-20s": {
-        "task": "epl.activity.tasks.broadcast_next_activity_event",
-        "schedule": timedelta(seconds=20),
-        "options": {"expires": 20},
-    },
-    "epl-cleanup-old-activity-events-daily": {
-        "task": "epl.activity.tasks.cleanup_old_activity_events",
-        "schedule": crontab(hour=4, minute=30),
-    },
-    # ===== NBA =====
-    # --- Data ingestion ---
-    "nba-fetch-teams-monthly": {
-        "task": "nba.games.tasks.fetch_teams",
-        "schedule": crontab(hour=3, minute=0, day_of_month=1),
-    },
+    # --- NBA ---
     "nba-fetch-schedule-daily": {
         "task": "nba.games.tasks.fetch_schedule",
         "schedule": crontab(hour=6, minute=0),
@@ -429,67 +407,7 @@ CELERY_BEAT_SCHEDULE = {
         "task": "nba.games.tasks.fetch_live_scores",
         "schedule": crontab(minute="*/2", hour="17-23,0-6"),
     },
-    # --- NBA Odds ---
-    "nba-generate-odds-10m": {
-        "task": "nba.betting.tasks.generate_odds",
-        "schedule": timedelta(minutes=10),
-    },
-    # --- NBA Futures ---
-    "nba-update-futures-odds-hourly": {
-        "task": "nba.betting.tasks.update_futures_odds",
-        "schedule": crontab(minute=45),
-    },
-    # --- NBA Settlement ---
-    "nba-settle-pending-bets-5m": {
-        "task": "nba.betting.tasks.settle_pending_bets",
-        "schedule": crontab(minute="*/5", hour="17-23,0-6"),
-    },
-    # --- NBA Bots ---
-    "nba-run-bot-strategies-hourly": {
-        "task": "nba.bots.tasks.run_bot_strategies",
-        "schedule": crontab(minute=5),
-    },
-    "nba-generate-featured-parlays-daily": {
-        "task": "nba.bots.tasks.generate_featured_parlays",
-        "schedule": crontab(hour=10, minute=0),
-    },
-    "nba-generate-pregame-comments-hourly": {
-        "task": "nba.discussions.tasks.generate_pregame_comments",
-        "schedule": crontab(minute=15),
-    },
-    "nba-generate-postgame-comments-hourly": {
-        "task": "nba.discussions.tasks.generate_postgame_comments",
-        "schedule": crontab(minute=30),
-    },
-    # --- NBA Activity ---
-    "nba-broadcast-activity-event-20s": {
-        "task": "nba.activity.tasks.broadcast_next_activity_event",
-        "schedule": timedelta(seconds=20),
-        "options": {"expires": 20},
-    },
-    "nba-cleanup-old-activity-events-daily": {
-        "task": "nba.activity.tasks.cleanup_old_activity_events",
-        "schedule": crontab(hour=5, minute=0),
-    },
-    # --- NBA Challenges ---
-    "nba-rotate-daily-challenges": {
-        "task": "nba.website.challenge_tasks.rotate_daily_challenges",
-        "schedule": crontab(hour=6, minute=30),
-    },
-    "nba-rotate-weekly-challenges": {
-        "task": "nba.website.challenge_tasks.rotate_weekly_challenges",
-        "schedule": crontab(hour=6, minute=30, day_of_week="monday"),
-    },
-    "nba-expire-challenges-30m": {
-        "task": "nba.website.challenge_tasks.expire_challenges",
-        "schedule": timedelta(minutes=30),
-    },
-    # ===== NFL =====
-    # --- Data ingestion ---
-    "nfl-fetch-teams-monthly": {
-        "task": "nfl.games.tasks.fetch_teams",
-        "schedule": crontab(hour=3, minute=30, day_of_month=1),
-    },
+    # --- NFL ---
     "nfl-fetch-schedule-daily": {
         "task": "nfl.games.tasks.fetch_schedule",
         "schedule": crontab(hour=6, minute=30),
@@ -506,54 +424,7 @@ CELERY_BEAT_SCHEDULE = {
         "task": "nfl.games.tasks.fetch_live_scores",
         "schedule": crontab(minute="*/2", hour="13-23,0-2", day_of_week="thu,sun,mon"),
     },
-    # --- NFL Odds ---
-    "nfl-generate-odds-10m": {
-        "task": "nfl.betting.tasks.generate_odds",
-        "schedule": timedelta(minutes=10),
-    },
-    # --- NFL Futures ---
-    "nfl-update-futures-odds-hourly": {
-        "task": "nfl.betting.tasks.update_futures_odds",
-        "schedule": crontab(minute=50),
-    },
-    # --- NFL Settlement ---
-    "nfl-settle-pending-bets-5m": {
-        "task": "nfl.betting.tasks.settle_pending_bets",
-        "schedule": crontab(minute="*/5", hour="13-23,0-2", day_of_week="thu,sun,mon"),
-    },
-    # --- NFL Bots ---
-    "nfl-run-bot-strategies-hourly": {
-        "task": "nfl.bots.tasks.run_bot_strategies",
-        "schedule": crontab(minute=10),
-    },
-    "nfl-generate-featured-parlays-daily": {
-        "task": "nfl.bots.tasks.generate_featured_parlays",
-        "schedule": crontab(hour=10, minute=30),
-    },
-    "nfl-generate-pregame-comments-hourly": {
-        "task": "nfl.discussions.tasks.generate_pregame_comments",
-        "schedule": crontab(minute=20),
-    },
-    "nfl-generate-postgame-comments-hourly": {
-        "task": "nfl.discussions.tasks.generate_postgame_comments",
-        "schedule": crontab(minute=35),
-    },
-    # --- NFL Activity ---
-    "nfl-broadcast-activity-event-20s": {
-        "task": "nfl.activity.tasks.broadcast_next_activity_event",
-        "schedule": timedelta(seconds=20),
-        "options": {"expires": 20},
-    },
-    "nfl-cleanup-old-activity-events-daily": {
-        "task": "nfl.activity.tasks.cleanup_old_activity_events",
-        "schedule": crontab(hour=5, minute=30),
-    },
-    # ===== World Cup =====
-    # --- Data ingestion (daily during tournament: June 11 – July 19, 2026) ---
-    "wc-fetch-teams-weekly": {
-        "task": "worldcup.matches.tasks.fetch_teams",
-        "schedule": crontab(hour=4, minute=0, day_of_week="monday"),
-    },
+    # --- World Cup ---
     "wc-fetch-matches-daily": {
         "task": "worldcup.matches.tasks.fetch_matches",
         "schedule": crontab(hour=4, minute=30),
@@ -566,49 +437,7 @@ CELERY_BEAT_SCHEDULE = {
         "task": "worldcup.matches.tasks.fetch_live_scores",
         "schedule": crontab(minute="*/2", hour="10-23,0-2"),
     },
-    # --- WC Odds ---
-    "wc-generate-odds-10m": {
-        "task": "worldcup.betting.tasks.generate_odds",
-        "schedule": timedelta(minutes=10),
-    },
-    # --- WC Futures ---
-    "wc-update-futures-odds-hourly": {
-        "task": "worldcup.betting.tasks.update_futures_odds",
-        "schedule": crontab(minute=40),
-    },
-    # --- WC Bots ---
-    "wc-run-bot-strategies-hourly": {
-        "task": "worldcup.bots.tasks.run_bot_strategies",
-        "schedule": crontab(minute=8),
-    },
-    "wc-generate-prematch-comments-hourly": {
-        "task": "worldcup.bots.tasks.generate_prematch_comments",
-        "schedule": crontab(minute=18),
-    },
-    "wc-generate-postmatch-comments-hourly": {
-        "task": "worldcup.bots.tasks.generate_postmatch_comments",
-        "schedule": crontab(minute=38),
-    },
-    "wc-generate-featured-parlays-daily": {
-        "task": "worldcup.bots.tasks.generate_featured_parlays",
-        "schedule": crontab(hour=9, minute=0),
-    },
-    # --- WC Activity ---
-    "wc-broadcast-activity-event-20s": {
-        "task": "worldcup.activity.tasks.broadcast_next_activity_event",
-        "schedule": timedelta(seconds=20),
-        "options": {"expires": 20},
-    },
-    "wc-cleanup-old-activity-events-daily": {
-        "task": "worldcup.activity.tasks.cleanup_old_activity_events",
-        "schedule": crontab(hour=5, minute=45),
-    },
-    # ===== UCL =====
-    # --- Data ingestion (matches Tue/Wed during season) ---
-    "ucl-fetch-teams-monthly": {
-        "task": "ucl.matches.tasks.fetch_teams",
-        "schedule": crontab(hour=4, minute=15, day_of_week="monday"),
-    },
+    # --- UCL ---
     "ucl-fetch-matches-daily": {
         "task": "ucl.matches.tasks.fetch_matches",
         "schedule": crontab(hour=4, minute=45),
@@ -621,56 +450,55 @@ CELERY_BEAT_SCHEDULE = {
         "task": "ucl.matches.tasks.fetch_live_scores",
         "schedule": crontab(minute="*/2", hour="17-23,0-1", day_of_week="tue,wed,thu"),
     },
-    # --- UCL Odds ---
-    "ucl-generate-odds-10m": {
-        "task": "ucl.betting.tasks.generate_odds",
-        "schedule": timedelta(minutes=10),
-    },
-    # --- UCL Futures ---
-    "ucl-update-futures-odds-hourly": {
-        "task": "ucl.betting.tasks.update_futures_odds",
-        "schedule": crontab(minute=55),
-    },
-    # --- UCL Bots ---
-    "ucl-run-bot-strategies-hourly": {
-        "task": "ucl.bots.tasks.run_bot_strategies",
-        "schedule": crontab(minute=12),
-    },
-    "ucl-generate-prematch-comments-hourly": {
-        "task": "ucl.bots.tasks.generate_prematch_comments",
-        "schedule": crontab(minute=22),
-    },
-    "ucl-generate-postmatch-comments-hourly": {
-        "task": "ucl.bots.tasks.generate_postmatch_comments",
-        "schedule": crontab(minute=42),
-    },
-    "ucl-generate-featured-parlays-daily": {
-        "task": "ucl.bots.tasks.generate_featured_parlays",
-        "schedule": crontab(hour=9, minute=30),
-    },
-    # --- UCL Activity ---
-    "ucl-broadcast-activity-event-20s": {
-        "task": "ucl.activity.tasks.broadcast_next_activity_event",
-        "schedule": timedelta(seconds=20),
-        "options": {"expires": 20},
-    },
-    "ucl-cleanup-old-activity-events-daily": {
-        "task": "ucl.activity.tasks.cleanup_old_activity_events",
+    # ===================================================================
+    # Settlement safety nets (primary trigger is inline from live scores)
+    # ===================================================================
+    "nba-settle-pending-bets-daily": {
+        "task": "nba.betting.tasks.settle_pending_bets",
         "schedule": crontab(hour=6, minute=0),
     },
-    # ===== Cross-league =====
-    "expire-featured-parlays-30m": {
-        "task": "vinosports.betting.tasks.expire_featured_parlays",
+    "nfl-settle-pending-bets-daily": {
+        "task": "nfl.betting.tasks.settle_pending_bets",
+        "schedule": crontab(hour=6, minute=0),
+    },
+    # ===================================================================
+    # Challenges (EPL + NBA only)
+    # ===================================================================
+    "epl-rotate-daily-challenges": {
+        "task": "epl.website.challenge_tasks.rotate_daily_challenges",
+        "schedule": crontab(hour=5, minute=0),
+    },
+    "epl-rotate-weekly-challenges": {
+        "task": "epl.website.challenge_tasks.rotate_weekly_challenges",
+        "schedule": crontab(hour=4, minute=0, day_of_week="friday"),
+    },
+    "epl-expire-challenges-30m": {
+        "task": "epl.website.challenge_tasks.expire_challenges",
         "schedule": timedelta(minutes=30),
     },
-    # ===== News =====
-    "news-generate-recaps-hourly": {
+    "nba-rotate-daily-challenges": {
+        "task": "nba.website.challenge_tasks.rotate_daily_challenges",
+        "schedule": crontab(hour=6, minute=30),
+    },
+    "nba-rotate-weekly-challenges": {
+        "task": "nba.website.challenge_tasks.rotate_weekly_challenges",
+        "schedule": crontab(hour=6, minute=30, day_of_week="monday"),
+    },
+    "nba-expire-challenges-30m": {
+        "task": "nba.website.challenge_tasks.expire_challenges",
+        "schedule": timedelta(minutes=30),
+    },
+    # ===================================================================
+    # News
+    # ===================================================================
+    # Daily catch-up — primary trigger is inline from match completion
+    "news-generate-recaps-daily": {
         "task": "news.tasks.generate_pending_recaps",
-        "schedule": crontab(minute=45),
+        "schedule": crontab(hour=6, minute=0),
     },
     "news-weekly-roundup-epl": {
         "task": "news.tasks.generate_weekly_roundup_task",
-        "schedule": crontab(hour=10, minute=0, day_of_week=1),  # Monday 10am
+        "schedule": crontab(hour=10, minute=0, day_of_week=1),
         "args": ("epl",),
     },
     "news-weekly-roundup-nba": {
@@ -685,7 +513,7 @@ CELERY_BEAT_SCHEDULE = {
     },
     "news-betting-trend-epl": {
         "task": "news.tasks.generate_betting_trend_task",
-        "schedule": crontab(hour=10, minute=0, day_of_week=3),  # Wednesday 10am
+        "schedule": crontab(hour=10, minute=0, day_of_week=3),
         "args": ("epl",),
     },
     "news-betting-trend-nba": {
@@ -700,20 +528,22 @@ CELERY_BEAT_SCHEDULE = {
     },
     "news-cross-league": {
         "task": "news.tasks.generate_cross_league_task",
-        "schedule": crontab(hour=10, minute=0, day_of_week=5),  # Friday 10am
+        "schedule": crontab(hour=10, minute=0, day_of_week=5),
     },
-    # ===== Reddit =====
+    # ===================================================================
+    # Reddit
+    # ===================================================================
     "reddit-fetch-morning": {
         "task": "reddit.tasks.fetch_subreddit_snapshots",
-        "schedule": crontab(hour=10, minute=0),  # 6am ET (10:00 UTC)
+        "schedule": crontab(hour=10, minute=0),
     },
     "reddit-fetch-afternoon": {
         "task": "reddit.tasks.fetch_subreddit_snapshots",
-        "schedule": crontab(hour=18, minute=0),  # 2pm ET (18:00 UTC)
+        "schedule": crontab(hour=18, minute=0),
     },
     "reddit-purge-old-snapshots": {
         "task": "reddit.tasks.purge_old_snapshots",
-        "schedule": crontab(hour=4, minute=0),  # 4am UTC daily
+        "schedule": crontab(hour=4, minute=0),
     },
 }
 
@@ -752,21 +582,6 @@ LOGGING = {
         "django.security.DisallowedHost": {
             "handlers": [],
             "propagate": False,
-        },
-        "epl.activity.tasks": {
-            "level": "WARNING",
-        },
-        "nba.activity.tasks": {
-            "level": "WARNING",
-        },
-        "nfl.activity.tasks": {
-            "level": "WARNING",
-        },
-        "worldcup.activity.tasks": {
-            "level": "WARNING",
-        },
-        "ucl.activity.tasks": {
-            "level": "WARNING",
         },
     },
 }
