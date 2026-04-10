@@ -1,6 +1,25 @@
 from django.contrib import admin, messages
 
-from vinosports.bots.models import BotProfile, ScheduleTemplate
+from vinosports.bots.models import BotArchiveEntry, BotProfile, ScheduleTemplate
+
+
+@admin.register(BotArchiveEntry)
+class BotArchiveEntryAdmin(admin.ModelAdmin):
+    list_display = [
+        "bot_profile",
+        "entry_type",
+        "summary_short",
+        "league",
+        "created_at",
+    ]
+    list_filter = ["entry_type", "league"]
+    search_fields = ["summary", "bot_profile__user__display_name"]
+    raw_id_fields = ["bot_profile", "related_bot"]
+    readonly_fields = ["created_at", "updated_at"]
+
+    @admin.display(description="Summary")
+    def summary_short(self, obj):
+        return obj.summary[:100] + ("..." if len(obj.summary) > 100 else "")
 
 
 @admin.register(ScheduleTemplate)
@@ -117,6 +136,7 @@ class BotProfileAdmin(admin.ModelAdmin):
         "run_strategies",
         "generate_pregame_comments",
         "generate_postgame_comments",
+        "spark_conversations",
     ]
 
     @admin.action(description="Mark selected bots as active")
@@ -249,3 +269,49 @@ class BotProfileAdmin(admin.ModelAdmin):
             f"across {dispatched} league(s).",
             messages.SUCCESS,
         )
+
+    @admin.action(
+        description="Spark conversation (bet → comment → reply → life update)"
+    )
+    def spark_conversations(self, request, queryset):
+        """For each selected bot, place a bet and spark a social conversation.
+
+        The bot places a bet on an upcoming match, comments about it, and a
+        second bot is dispatched to reply with social/curiosity prompts.
+        The reply pipeline handles question detection → life update → response.
+        """
+        from vinosports.bots.tasks import spark_conversation
+
+        dispatched = 0
+        league_fields = [
+            ("epl", "active_in_epl"),
+            ("nba", "active_in_nba"),
+            ("nfl", "active_in_nfl"),
+            ("worldcup", "active_in_worldcup"),
+            ("ucl", "active_in_ucl"),
+        ]
+
+        for profile in queryset.filter(is_active=True).select_related("user"):
+            # Collect all active leagues — task will try them in order
+            active_leagues = [
+                league for league, field in league_fields if getattr(profile, field)
+            ]
+            if active_leagues:
+                spark_conversation.apply_async(
+                    args=[profile.user_id, active_leagues],
+                )
+                dispatched += 1
+
+        if dispatched:
+            self.message_user(
+                request,
+                f"Sparked {dispatched} conversation(s). "
+                "Each bot will: bet → comment → receive a reply (2-5 min).",
+                messages.SUCCESS,
+            )
+        else:
+            self.message_user(
+                request,
+                "No active bots selected.",
+                messages.WARNING,
+            )

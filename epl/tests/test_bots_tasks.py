@@ -207,7 +207,7 @@ class TestGenerateBotCommentTask:
         )
         assert result == "match not found"
 
-    @patch("epl.bots.comment_service.anthropic.Anthropic")
+    @patch("vinosports.bots.comment_pipeline.anthropic.Anthropic")
     def test_successful_comment(self, MockAnthropic, settings):
         settings.ANTHROPIC_API_KEY = "test-key"
         match = MatchFactory()
@@ -223,7 +223,7 @@ class TestGenerateBotCommentTask:
         )
         assert "posted:" in result
 
-    @patch("epl.bots.comment_service.anthropic.Anthropic")
+    @patch("vinosports.bots.comment_pipeline.anthropic.Anthropic")
     def test_dedup_returns_skipped(self, MockAnthropic):
         match = MatchFactory()
         profile = BotProfileFactory()

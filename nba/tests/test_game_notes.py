@@ -157,7 +157,7 @@ class TestBuildUserPromptNotes:
         game = GameFactory(status=GameStatus.FINAL, home_score=110, away_score=105)
         GameNotes.objects.create(game=game, body="Incredible fourth quarter comeback")
         prompt = _build_user_prompt(game, BotComment.TriggerType.POST_MATCH)
-        assert "Game notes (from a real viewer):" in prompt
+        assert "Match notes (from a real viewer):" in prompt
         assert "Incredible fourth quarter comeback" in prompt
 
     def test_reply_includes_notes(self):
@@ -167,14 +167,14 @@ class TestBuildUserPromptNotes:
         prompt = _build_user_prompt(
             game, BotComment.TriggerType.REPLY, parent_comment=comment
         )
-        assert "Game notes (from a real viewer):" in prompt
+        assert "Match notes (from a real viewer):" in prompt
         assert "Clutch three-pointer at the buzzer" in prompt
 
     def test_pre_match_excludes_notes(self):
         game = GameFactory()
         GameNotes.objects.create(game=game, body="Should not appear")
         prompt = _build_user_prompt(game, BotComment.TriggerType.PRE_MATCH)
-        assert "Game notes (from a real viewer):" not in prompt
+        assert "Match notes (from a real viewer):" not in prompt
         assert "Should not appear" not in prompt
 
     def test_post_bet_excludes_notes(self):
@@ -185,15 +185,15 @@ class TestBuildUserPromptNotes:
         bet = BetSlipFactory(game=game)
         GameNotes.objects.create(game=game, body="Should not appear")
         prompt = _build_user_prompt(game, BotComment.TriggerType.POST_BET, bet_slip=bet)
-        assert "Game notes (from a real viewer):" not in prompt
+        assert "Match notes (from a real viewer):" not in prompt
 
     def test_post_match_without_notes_succeeds(self):
         game = GameFactory(status=GameStatus.FINAL, home_score=100, away_score=95)
         prompt = _build_user_prompt(game, BotComment.TriggerType.POST_MATCH)
-        assert "Game notes (from a real viewer):" not in prompt
+        assert "Match notes (from a real viewer):" not in prompt
 
     def test_empty_notes_excluded(self):
         game = GameFactory(status=GameStatus.FINAL, home_score=100, away_score=95)
         GameNotes.objects.create(game=game, body="   ")
         prompt = _build_user_prompt(game, BotComment.TriggerType.POST_MATCH)
-        assert "Game notes (from a real viewer):" not in prompt
+        assert "Match notes (from a real viewer):" not in prompt

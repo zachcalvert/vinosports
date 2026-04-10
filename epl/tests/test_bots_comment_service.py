@@ -9,6 +9,7 @@ from epl.bots.comment_service import (
     MAX_REPLIES_PER_MATCH,
     _build_user_prompt,
     _filter_comment,
+    _homer_team_cache,
     _homer_team_mentioned,
     _is_bot_relevant,
     generate_bot_comment,
@@ -122,8 +123,6 @@ class TestFilterComment:
 class TestHomerTeamMentioned:
     def setup_method(self):
         # Clear the module-level cache before each test
-        from epl.bots.comment_service import _homer_team_cache
-
         _homer_team_cache.clear()
 
     def test_no_tla_returns_false(self):
@@ -412,7 +411,7 @@ class TestSelectReplyBot:
                 break
         assert found, "Frontrunner should reply to underdog via affinity"
 
-    @patch("epl.bots.comment_service.random.random", return_value=0.8)
+    @patch("vinosports.bots.comment_pipeline.random.random", return_value=0.8)
     def test_human_comment_gate_rejects(self, mock_random):
         """Configurable gate for human comments — random >= probability means no reply."""
         match = MatchFactory()
@@ -424,7 +423,7 @@ class TestSelectReplyBot:
         result = select_reply_bot(match, comment)
         assert result is None
 
-    @patch("epl.bots.comment_service.random.random", return_value=0.5)
+    @patch("vinosports.bots.comment_pipeline.random.random", return_value=0.5)
     def test_human_comment_gate_passes(self, mock_random):
         """Configurable gate for human comments — random < probability means try to reply."""
         match = MatchFactory()
@@ -462,7 +461,7 @@ class TestGenerateBotComment:
         profile = BotProfileFactory(strategy_type=StrategyType.FRONTRUNNER)
         return profile.user, match
 
-    @patch("epl.bots.comment_service.anthropic.Anthropic")
+    @patch("vinosports.bots.comment_pipeline.anthropic.Anthropic")
     def test_successful_comment_creation(self, MockAnthropic, settings):
         settings.ANTHROPIC_API_KEY = "test-key"
         bot_user, match = self._make_bot_with_match()
@@ -481,7 +480,7 @@ class TestGenerateBotComment:
         assert comment.user == bot_user
         assert comment.match == match
 
-    @patch("epl.bots.comment_service.anthropic.Anthropic")
+    @patch("vinosports.bots.comment_pipeline.anthropic.Anthropic")
     def test_dedup_prevents_second_comment(self, MockAnthropic, settings):
         settings.ANTHROPIC_API_KEY = "test-key"
         bot_user, match = self._make_bot_with_match()
@@ -506,7 +505,7 @@ class TestGenerateBotComment:
         )
         assert result is None
 
-    @patch("epl.bots.comment_service.anthropic.Anthropic")
+    @patch("vinosports.bots.comment_pipeline.anthropic.Anthropic")
     def test_filtered_comment_returns_none(self, MockAnthropic, settings):
         settings.ANTHROPIC_API_KEY = "test-key"
         bot_user, match = self._make_bot_with_match()
@@ -523,7 +522,7 @@ class TestGenerateBotComment:
 
     def test_no_api_key_returns_none(self):
         bot_user, match = self._make_bot_with_match()
-        with patch("epl.bots.comment_service.settings") as mock_settings:
+        with patch("vinosports.bots.comment_pipeline.settings") as mock_settings:
             mock_settings.ANTHROPIC_API_KEY = ""
             result = generate_bot_comment(
                 bot_user, match, BotComment.TriggerType.PRE_MATCH
@@ -532,7 +531,7 @@ class TestGenerateBotComment:
         bc = BotComment.objects.get(user=bot_user, match=match)
         assert "ANTHROPIC_API_KEY" in bc.error
 
-    @patch("epl.bots.comment_service.anthropic.Anthropic")
+    @patch("vinosports.bots.comment_pipeline.anthropic.Anthropic")
     def test_api_exception_returns_none(self, MockAnthropic, settings):
         settings.ANTHROPIC_API_KEY = "test-key"
         bot_user, match = self._make_bot_with_match()
@@ -543,7 +542,7 @@ class TestGenerateBotComment:
         bc = BotComment.objects.get(user=bot_user, match=match)
         assert bc.error == "API call failed"
 
-    @patch("epl.bots.comment_service.anthropic.Anthropic")
+    @patch("vinosports.bots.comment_pipeline.anthropic.Anthropic")
     def test_reply_cap_enforced_at_creation_time(self, MockAnthropic):
         match = MatchFactory()
         OddsFactory(match=match)
@@ -563,7 +562,7 @@ class TestGenerateBotComment:
         )
         assert result is None
 
-    @patch("epl.bots.comment_service.anthropic.Anthropic")
+    @patch("vinosports.bots.comment_pipeline.anthropic.Anthropic")
     def test_max_tokens_trims_to_sentence(self, MockAnthropic, settings):
         settings.ANTHROPIC_API_KEY = "test-key"
         bot_user, match = self._make_bot_with_match()
@@ -582,7 +581,7 @@ class TestGenerateBotComment:
         assert comment is not None
         assert comment.body.endswith(".")
 
-    @patch("epl.bots.comment_service.anthropic.Anthropic")
+    @patch("vinosports.bots.comment_pipeline.anthropic.Anthropic")
     def test_reply_to_depth1_nests_directly(self, MockAnthropic, settings):
         """Replies to depth-1 comments nest directly under them (depth 2)."""
         settings.ANTHROPIC_API_KEY = "test-key"
@@ -609,7 +608,7 @@ class TestGenerateBotComment:
         assert comment is not None
         assert comment.parent == child_comment
 
-    @patch("epl.bots.comment_service.anthropic.Anthropic")
+    @patch("vinosports.bots.comment_pipeline.anthropic.Anthropic")
     def test_reply_to_depth2_normalizes_to_parent(self, MockAnthropic, settings):
         """Replies to depth-2 comments get normalized up to the depth-1 parent."""
         settings.ANTHROPIC_API_KEY = "test-key"
@@ -875,7 +874,7 @@ class TestBuildUserStatsContext:
 
 @pytest.mark.django_db
 class TestGenerateBotCommentStats:
-    @patch("epl.bots.comment_service.anthropic.Anthropic")
+    @patch("vinosports.bots.comment_pipeline.anthropic.Anthropic")
     def test_bot_stats_appear_in_stored_prompt(self, MockAnthropic, settings):
         """Bot's balance/stats should be present in the prompt_used on BotComment."""
         settings.ANTHROPIC_API_KEY = "test-key"
@@ -897,7 +896,7 @@ class TestGenerateBotCommentStats:
         bc = BotComment.objects.get(user=bot_user, match=match)
         assert "88,000 credits" in bc.prompt_used
 
-    @patch("epl.bots.comment_service.anthropic.Anthropic")
+    @patch("vinosports.bots.comment_pipeline.anthropic.Anthropic")
     def test_target_stats_appear_in_reply_prompt(self, MockAnthropic, settings):
         """When replying, the target user's stats should be in the prompt."""
         settings.ANTHROPIC_API_KEY = "test-key"

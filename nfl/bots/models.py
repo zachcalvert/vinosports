@@ -34,6 +34,7 @@ class BotComment(AbstractBotComment):
         constraints = [
             models.UniqueConstraint(
                 fields=["user", "game", "trigger_type"],
+                condition=~models.Q(trigger_type="CONVERSATION"),
                 name="unique_nfl_bot_comment_per_trigger",
             ),
         ]

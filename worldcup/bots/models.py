@@ -34,6 +34,7 @@ class BotComment(AbstractBotComment):
         constraints = [
             models.UniqueConstraint(
                 fields=["user", "match", "trigger_type"],
+                condition=~models.Q(trigger_type="CONVERSATION"),
                 name="unique_wc_bot_comment_per_trigger",
             ),
         ]

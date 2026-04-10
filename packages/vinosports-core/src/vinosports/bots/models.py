@@ -115,6 +115,7 @@ class AbstractBotComment(BaseModel):
         POST_BET = "POST_BET", _("Post-bet reaction")
         POST_MATCH = "POST_MATCH", _("Post-match reaction")
         REPLY = "REPLY", _("Reply to comment")
+        CONVERSATION = "CONVERSATION", _("Multi-turn conversation")
 
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -271,3 +272,77 @@ class BotProfile(AbstractBotProfile):
 
     def __str__(self):
         return f"{self.user.display_name} ({self.get_strategy_type_display()})"
+
+
+# ---------------------------------------------------------------------------
+# Bot Archive — persistent life record for social dynamics
+# ---------------------------------------------------------------------------
+
+
+class EntryType(models.TextChoices):
+    LIFE_UPDATE = "life_update", _("Life Update")
+    AWARD = "award", _("Award")
+    CHALLENGE = "challenge", _("Challenge")
+    BETTING_HIGHLIGHT = "betting_highlight", _("Betting Highlight")
+    SOCIAL = "social", _("Social")
+
+
+class BotArchiveEntry(BaseModel):
+    """A single entry in a bot's life archive.
+
+    Archive entries accumulate over time and are injected into prompts
+    to give bots memory and social awareness.
+    """
+
+    bot_profile = models.ForeignKey(
+        BotProfile,
+        on_delete=models.CASCADE,
+        related_name="archive_entries",
+        verbose_name=_("bot profile"),
+    )
+
+    entry_type = models.CharField(
+        _("entry type"),
+        max_length=20,
+        choices=EntryType.choices,
+    )
+
+    # The content
+    summary = models.TextField(
+        _("summary"),
+        help_text=_("1-3 sentence distillation for prompt injection."),
+    )
+    raw_source = models.TextField(
+        _("raw source"),
+        blank=True,
+        help_text=_("Original text that spawned this entry (e.g. Claude response)."),
+    )
+
+    # Context
+    league = models.CharField(
+        _("league"),
+        max_length=20,
+        blank=True,
+        help_text=_("Which league context, if any (epl, nba, nfl, ucl, worldcup)."),
+    )
+    related_bot = models.ForeignKey(
+        BotProfile,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="mentioned_in",
+        verbose_name=_("related bot"),
+        help_text=_("Another bot involved in this entry (for social entries)."),
+    )
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["bot_profile", "-created_at"]),
+            models.Index(fields=["entry_type"]),
+        ]
+        verbose_name = _("bot archive entry")
+        verbose_name_plural = _("bot archive entries")
+
+    def __str__(self):
+        return f"[{self.get_entry_type_display()}] {self.summary[:80]}"
