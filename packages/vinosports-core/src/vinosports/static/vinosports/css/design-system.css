@@ -449,11 +449,22 @@
     transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
 }
 
-/* Rarity accent — bottom border stripe like a collectible card */
+/* Rarity accent — bottom border stripe (fallback, overridden by per-badge colors) */
 .badge-card--common    { border-bottom: 3px solid #a8a29e; }
 .badge-card--uncommon  { border-bottom: 3px solid #22c55e; }
 .badge-card--rare      { border-bottom: 3px solid #3b82f6; }
 .badge-card--epic      { border-bottom: 3px solid #8b5cf6; }
+
+/* Per-badge identity colors — two-tone: icon (saturated) + border (lighter shade) */
+.badge-card--earned.badge-card--first_blood     { border-bottom-color: #fca5a5; }
+.badge-card--earned.badge-card--century         { border-bottom-color: #fcd34d; }
+.badge-card--earned.badge-card--called_the_upset { border-bottom-color: #fdba74; }
+.badge-card--earned.badge-card--high_roller     { border-bottom-color: #6ee7b7; }
+.badge-card--earned.badge-card--perfect_matchweek { border-bottom-color: #93c5fd; }
+.badge-card--earned.badge-card--sharp_eye       { border-bottom-color: #5eead4; }
+.badge-card--earned.badge-card--underdog_hunter { border-bottom-color: #a5b4fc; }
+.badge-card--earned.badge-card--parlay_king     { border-bottom-color: #c4b5fd; }
+.badge-card--earned.badge-card--streak_master   { border-bottom-color: #fda4af; }
 
 /* Earned cards get a subtle lift on hover */
 .badge-card--earned:hover {
@@ -476,11 +487,16 @@
     line-height: 1;
 }
 
-/* Rarity-tinted icons for earned cards */
-.badge-card--earned.badge-card--common  .badge-card-icon  { color: #78716c; }
-.badge-card--earned.badge-card--uncommon .badge-card-icon { color: #16a34a; }
-.badge-card--earned.badge-card--rare    .badge-card-icon  { color: #2563eb; }
-.badge-card--earned.badge-card--epic    .badge-card-icon  { color: #7c3aed; }
+/* Per-badge icon colors (saturated tone of the two-tone pair) */
+.badge-card--earned.badge-card--first_blood     .badge-card-icon { color: #dc2626; }
+.badge-card--earned.badge-card--century         .badge-card-icon { color: #d97706; }
+.badge-card--earned.badge-card--called_the_upset .badge-card-icon { color: #ea580c; }
+.badge-card--earned.badge-card--high_roller     .badge-card-icon { color: #059669; }
+.badge-card--earned.badge-card--perfect_matchweek .badge-card-icon { color: #2563eb; }
+.badge-card--earned.badge-card--sharp_eye       .badge-card-icon { color: #0d9488; }
+.badge-card--earned.badge-card--underdog_hunter .badge-card-icon { color: #4f46e5; }
+.badge-card--earned.badge-card--parlay_king     .badge-card-icon { color: #7c3aed; }
+.badge-card--earned.badge-card--streak_master   .badge-card-icon { color: #e11d48; }
 
 .badge-card-name {
     font-family: 'Oswald', sans-serif;

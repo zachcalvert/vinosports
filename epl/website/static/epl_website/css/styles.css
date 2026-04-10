@@ -268,11 +268,22 @@
     box-shadow: 0 4px 12px rgba(0,0,0,0.08);
 }
 
-/* Rarity borders */
+/* Rarity borders (fallback) */
 .badge-toast--common   { border-color: #a8a29e; }
 .badge-toast--rare     { border-color: #3b82f6; }
 .badge-toast--epic     { border-color: #8b5cf6; }
 .badge-toast--legendary { border-color: rgb(var(--color-gold)); }
+
+/* Per-badge toast borders */
+.badge-toast--first_blood      { border-color: #dc2626; }
+.badge-toast--century          { border-color: #d97706; }
+.badge-toast--called_the_upset { border-color: #ea580c; }
+.badge-toast--high_roller      { border-color: #059669; }
+.badge-toast--perfect_matchweek { border-color: #2563eb; }
+.badge-toast--sharp_eye        { border-color: #0d9488; }
+.badge-toast--underdog_hunter  { border-color: #4f46e5; }
+.badge-toast--parlay_king      { border-color: #7c3aed; }
+.badge-toast--streak_master    { border-color: #e11d48; }
 
 .badge-toast-shine {
     position: absolute;
@@ -309,6 +320,17 @@
 .badge-toast--legendary .badge-toast-icon { color: rgb(var(--color-gold)); }
 .badge-toast--epic      .badge-toast-icon { color: #8b5cf6; }
 .badge-toast--rare      .badge-toast-icon { color: #3b82f6; }
+
+/* Per-badge toast icon colors */
+.badge-toast--first_blood      .badge-toast-icon { color: #dc2626; }
+.badge-toast--century          .badge-toast-icon { color: #d97706; }
+.badge-toast--called_the_upset .badge-toast-icon { color: #ea580c; }
+.badge-toast--high_roller      .badge-toast-icon { color: #059669; }
+.badge-toast--perfect_matchweek .badge-toast-icon { color: #2563eb; }
+.badge-toast--sharp_eye        .badge-toast-icon { color: #0d9488; }
+.badge-toast--underdog_hunter  .badge-toast-icon { color: #4f46e5; }
+.badge-toast--parlay_king      .badge-toast-icon { color: #7c3aed; }
+.badge-toast--streak_master    .badge-toast-icon { color: #e11d48; }
 
 .badge-toast-eyebrow {
     font-size: 0.6875rem;
