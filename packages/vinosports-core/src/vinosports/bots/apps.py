@@ -11,7 +11,10 @@ class BotsConfig(AppConfig):
         from django.apps import apps
         from django.db.models.signals import post_save
 
-        from vinosports.bots.archive import on_challenge_completed, on_reward_distributed
+        from vinosports.bots.archive import (
+            on_challenge_completed,
+            on_reward_distributed,
+        )
 
         RewardDistribution = apps.get_model("rewards", "RewardDistribution")
         post_save.connect(on_reward_distributed, sender=RewardDistribution)

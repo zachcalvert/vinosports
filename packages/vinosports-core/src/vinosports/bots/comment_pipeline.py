@@ -826,12 +826,16 @@ def build_conversation_reply(adapter, bot_user, event, thread_comments, parent_c
     # Use select_for_update() inside a single atomic block so the check and
     # create are serialized even under concurrent task execution.
     with transaction.atomic():
-        already_replied = BotCommentModel.objects.select_for_update().filter(
-            user=bot_user,
-            trigger_type="CONVERSATION",
-            parent_comment=parent_comment,
-            **{fk_name: event},
-        ).exists()
+        already_replied = (
+            BotCommentModel.objects.select_for_update()
+            .filter(
+                user=bot_user,
+                trigger_type="CONVERSATION",
+                parent_comment=parent_comment,
+                **{fk_name: event},
+            )
+            .exists()
+        )
         if already_replied:
             logger.debug(
                 "Skipping conversation reply for %s: already replied to parent comment %s",
