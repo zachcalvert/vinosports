@@ -405,7 +405,8 @@ class TestGenerateComment:
         return adapter
 
     @patch("vinosports.bots.comment_pipeline.anthropic.Anthropic")
-    def test_successful_generation(self, MockAnthropic):
+    def test_successful_generation(self, MockAnthropic, settings):
+        settings.ANTHROPIC_API_KEY = "test-key"
         mock_response = MagicMock()
         mock_response.content = [
             MagicMock(text="Arsenal looking strong for this match!")
@@ -547,7 +548,8 @@ class TestSelectBotsForEvent:
 
 class TestGenerateLifeUpdate:
     @patch("vinosports.bots.comment_pipeline.anthropic.Anthropic")
-    def test_successful_life_update(self, MockAnthropic):
+    def test_successful_life_update(self, MockAnthropic, settings):
+        settings.ANTHROPIC_API_KEY = "test-key"
         mock_response = MagicMock()
         mock_response.content = [
             MagicMock(text="Been restoring a vintage motorcycle in my garage.")
@@ -567,7 +569,8 @@ class TestGenerateLifeUpdate:
         assert "motorcycle" in entry.summary
 
     @patch("vinosports.bots.comment_pipeline.anthropic.Anthropic")
-    def test_spontaneous_life_update(self, MockAnthropic):
+    def test_spontaneous_life_update(self, MockAnthropic, settings):
+        settings.ANTHROPIC_API_KEY = "test-key"
         mock_response = MagicMock()
         mock_response.content = [
             MagicMock(text="My daughter started school this week.")
@@ -588,7 +591,8 @@ class TestGenerateLifeUpdate:
         assert generate_life_update(profile) is None
 
     @patch("vinosports.bots.comment_pipeline.anthropic.Anthropic")
-    def test_includes_existing_archive_in_prompt(self, MockAnthropic):
+    def test_includes_existing_archive_in_prompt(self, MockAnthropic, settings):
+        settings.ANTHROPIC_API_KEY = "test-key"
         mock_response = MagicMock()
         mock_response.content = [MagicMock(text="Still riding every weekend.")]
         mock_response.stop_reason = "end_turn"
