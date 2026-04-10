@@ -115,6 +115,7 @@ class AbstractBotComment(BaseModel):
         POST_BET = "POST_BET", _("Post-bet reaction")
         POST_MATCH = "POST_MATCH", _("Post-match reaction")
         REPLY = "REPLY", _("Reply to comment")
+        CONVERSATION = "CONVERSATION", _("Multi-turn conversation")
 
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,

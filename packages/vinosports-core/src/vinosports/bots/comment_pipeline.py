@@ -740,9 +740,9 @@ def pick_conversation_bots(adapter, event, count=3):
 def build_conversation_reply(adapter, bot_user, event, thread_comments, parent_comment):
     """Generate a reply with full thread context for a focused conversation.
 
-    Unlike generate_comment() which uses the dedup slot pattern, this
-    creates REPLY-type comments without the unique constraint restriction,
-    allowing multi-turn conversations.
+    Unlike generate_comment() which uses the REPLY trigger type with a dedup
+    slot, this creates CONVERSATION-type records which are exempt from the
+    unique constraint, allowing unlimited multi-turn exchanges per bot per event.
     """
     profile = get_bot_profile(bot_user)
     if not profile or not profile.persona_prompt:
@@ -820,37 +820,35 @@ def build_conversation_reply(adapter, bot_user, event, thread_comments, parent_c
     user_prompt = "\n".join(lines)
     full_prompt = f"System: {system_prompt}\n\nUser: {user_prompt}"
 
-    # Claim the (user, event, REPLY) slot — the unique constraint allows only one
-    # REPLY per bot per event, so use get_or_create to avoid IntegrityError races.
-    lookup = {
-        "user": bot_user,
-        "trigger_type": "REPLY",
-        fk_name: event,
-    }
-    try:
-        with transaction.atomic():
-            bc, created = BotCommentModel.objects.get_or_create(
-                **lookup,
-                defaults={
-                    "prompt_used": full_prompt,
-                    "parent_comment": parent_comment,
-                },
-            )
-    except IntegrityError:
-        logger.debug("Race creating conversation reply for %s", bot_user.display_name)
-        return None
-
-    if not created:
-        if bc.parent_comment_id != parent_comment.id:
-            logger.info(
-                "Skipping conversation reply for %s: existing REPLY bot comment already "
-                "uses a different parent for this event",
+    # Guard: prevent duplicate replies to the exact same parent comment.
+    # Multiple CONVERSATION turns per bot per event are intentionally allowed,
+    # but replying twice to the same parent_comment would produce duplicates.
+    # Use select_for_update() inside a single atomic block so the check and
+    # create are serialized even under concurrent task execution.
+    with transaction.atomic():
+        already_replied = BotCommentModel.objects.select_for_update().filter(
+            user=bot_user,
+            trigger_type="CONVERSATION",
+            parent_comment=parent_comment,
+            **{fk_name: event},
+        ).exists()
+        if already_replied:
+            logger.debug(
+                "Skipping conversation reply for %s: already replied to parent comment %s",
                 bot_user.display_name,
+                parent_comment.pk,
             )
             return None
-        if bc.prompt_used != full_prompt:
-            bc.prompt_used = full_prompt
-            bc.save(update_fields=["prompt_used", "updated_at"])
+
+        # Create a CONVERSATION record — the unique constraint excludes this trigger
+        # type, so multiple turns per bot per event are allowed.
+        bc = BotCommentModel.objects.create(
+            user=bot_user,
+            trigger_type="CONVERSATION",
+            prompt_used=full_prompt,
+            parent_comment=parent_comment,
+            **{fk_name: event},
+        )
 
     # Call Claude
     api_key = getattr(settings, "ANTHROPIC_API_KEY", "")
