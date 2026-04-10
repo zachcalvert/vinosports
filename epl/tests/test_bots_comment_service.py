@@ -9,6 +9,7 @@ from epl.bots.comment_service import (
     MAX_REPLIES_PER_MATCH,
     _build_user_prompt,
     _filter_comment,
+    _homer_team_cache,
     _homer_team_mentioned,
     _is_bot_relevant,
     generate_bot_comment,
@@ -122,8 +123,6 @@ class TestFilterComment:
 class TestHomerTeamMentioned:
     def setup_method(self):
         # Clear the module-level cache before each test
-        from epl.bots.comment_service import _homer_team_cache
-
         _homer_team_cache.clear()
 
     def test_no_tla_returns_false(self):

@@ -6,3 +6,6 @@ class BotsConfig(AppConfig):
     name = "vinosports.bots"
     label = "global_bots"
     verbose_name = "Bot Profiles"
+
+    def ready(self):
+        import vinosports.bots.archive  # noqa: F401 — register signals

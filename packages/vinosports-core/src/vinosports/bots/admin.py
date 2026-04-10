@@ -1,6 +1,25 @@
 from django.contrib import admin, messages
 
-from vinosports.bots.models import BotProfile, ScheduleTemplate
+from vinosports.bots.models import BotArchiveEntry, BotProfile, ScheduleTemplate
+
+
+@admin.register(BotArchiveEntry)
+class BotArchiveEntryAdmin(admin.ModelAdmin):
+    list_display = [
+        "bot_profile",
+        "entry_type",
+        "summary_short",
+        "league",
+        "created_at",
+    ]
+    list_filter = ["entry_type", "league"]
+    search_fields = ["summary", "bot_profile__user__display_name"]
+    raw_id_fields = ["bot_profile", "related_bot"]
+    readonly_fields = ["created_at", "updated_at"]
+
+    @admin.display(description="Summary")
+    def summary_short(self, obj):
+        return obj.summary[:100] + ("..." if len(obj.summary) > 100 else "")
 
 
 @admin.register(ScheduleTemplate)

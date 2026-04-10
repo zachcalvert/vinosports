@@ -9,6 +9,7 @@ from epl.bots.adapter import BOT_REPLY_AFFINITIES, FOOTBALL_KEYWORDS, epl_adapte
 from vinosports.bots.comment_pipeline import (
     DEFAULT_MAX_REPLIES,
     PROFANITY_BLOCKLIST,
+    _homer_team_cache,  # noqa: F401 — tests clear this between runs
     filter_comment,
     generate_comment,
     homer_team_mentioned,
