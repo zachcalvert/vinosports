@@ -226,8 +226,102 @@ def homer_team_mentioned(adapter, profile, text):
 
 
 # ---------------------------------------------------------------------------
+# Archive context
+# ---------------------------------------------------------------------------
+
+MAX_OWN_ARCHIVE_ENTRIES = 5
+MAX_TARGET_ARCHIVE_ENTRIES = 5
+
+
+def build_own_archive_context(bot_profile):
+    """Build prompt lines for a bot's own recent archive entries."""
+    from vinosports.bots.models import BotArchiveEntry
+
+    entries = list(
+        BotArchiveEntry.objects.filter(bot_profile=bot_profile).order_by("-created_at")[
+            :MAX_OWN_ARCHIVE_ENTRIES
+        ]
+    )
+    if not entries:
+        return ""
+
+    lines = ["YOUR RECENT HISTORY (things you've shared or experienced):"]
+    for entry in entries:
+        age = _format_age(entry.created_at)
+        lines.append(f"- [{age}] {entry.summary}")
+    return "\n".join(lines)
+
+
+def build_target_archive_context(bot_profile, target_user):
+    """Build prompt lines about a target bot for reply context."""
+    from vinosports.bots.models import BotArchiveEntry
+
+    target_profile = get_bot_profile(target_user)
+    if not target_profile:
+        return ""
+
+    entries = list(
+        BotArchiveEntry.objects.filter(bot_profile=target_profile).order_by(
+            "-created_at"
+        )[:MAX_TARGET_ARCHIVE_ENTRIES]
+    )
+    if not entries:
+        return ""
+
+    display_name = target_user.display_name
+    lines = [f"ABOUT {display_name} (from their archive):"]
+    for entry in entries:
+        lines.append(f"- {entry.summary}")
+
+    # Also include shared history — entries where replying bot mentions target
+    shared = list(
+        BotArchiveEntry.objects.filter(
+            bot_profile=bot_profile,
+            related_bot=target_profile,
+        ).order_by("-created_at")[:3]
+    )
+    if shared:
+        lines.append(f"YOUR HISTORY WITH {display_name}:")
+        for entry in shared:
+            age = _format_age(entry.created_at)
+            lines.append(f"- [{age}] {entry.summary}")
+
+    return "\n".join(lines)
+
+
+def _format_age(dt):
+    """Format a datetime as a human-readable relative age."""
+    from django.utils import timezone
+
+    delta = timezone.now() - dt
+    days = delta.days
+    if days == 0:
+        hours = delta.seconds // 3600
+        if hours == 0:
+            return "just now"
+        return f"{hours}h ago"
+    elif days == 1:
+        return "yesterday"
+    elif days < 7:
+        return f"{days} days ago"
+    elif days < 30:
+        weeks = days // 7
+        return f"{weeks} week{'s' if weeks > 1 else ''} ago"
+    else:
+        return f"{days // 30} month{'s' if days >= 60 else ''} ago"
+
+
+# ---------------------------------------------------------------------------
 # Prompt building
 # ---------------------------------------------------------------------------
+
+# Added to REPLY prompts to encourage bots to be curious and open
+SOCIAL_INSTRUCTIONS = (
+    "You trust the other regulars on this site. You're open about your life, "
+    "your feelings, your bad days. This is your community. "
+    "Sometimes ask the other person about something personal — their week, "
+    "their family, a hobby they mentioned. Not every time, but when it feels natural."
+)
 
 
 def build_user_prompt(
@@ -238,6 +332,8 @@ def build_user_prompt(
     bot_stats=None,
     target_stats=None,
     reddit_context="",
+    own_archive_context="",
+    target_archive_context="",
 ):
     """Build the user prompt from a MatchContext and trigger-specific data.
 
@@ -249,6 +345,15 @@ def build_user_prompt(
 
     if bot_stats:
         lines.append(f"Your stats: {bot_stats}")
+
+    # Archive context — personal history for richer, memory-aware comments
+    if own_archive_context:
+        lines.append("")
+        lines.append(own_archive_context)
+
+    if target_archive_context:
+        lines.append("")
+        lines.append(target_archive_context)
 
     global_ctx = get_global_context()
     if global_ctx:
@@ -285,8 +390,12 @@ def build_user_prompt(
         lines.append("")
         lines.append(
             "Write a short reply (1-2 sentences max) to this comment. "
-            "Agree, disagree, or dunk on it — stay in character."
+            "Agree, disagree, or dunk on it — stay in character. "
+            "If their archive shows something you can reference, do it naturally."
         )
+        if parent_comment.user.is_bot:
+            lines.append("")
+            lines.append(SOCIAL_INSTRUCTIONS)
 
     elif trigger_type == "POST_BET" and bet_slip:
         lines.append(
@@ -382,6 +491,12 @@ def generate_comment(
 
     reddit_ctx = build_reddit_context(adapter.league)
 
+    # Archive context — bot's own history + target bot's history for replies
+    own_archive_ctx = build_own_archive_context(profile)
+    target_archive_ctx = ""
+    if trigger_str == "REPLY" and parent_comment and parent_comment.user.is_bot:
+        target_archive_ctx = build_target_archive_context(profile, parent_comment.user)
+
     user_prompt = build_user_prompt(
         match_ctx,
         trigger_str,
@@ -390,6 +505,8 @@ def generate_comment(
         bot_stats=bot_stats,
         target_stats=target_stats,
         reddit_context=reddit_ctx,
+        own_archive_context=own_archive_ctx,
+        target_archive_context=target_archive_ctx,
     )
     full_prompt = f"System: {system_prompt}\n\nUser: {user_prompt}"
 
