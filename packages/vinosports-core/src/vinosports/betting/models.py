@@ -414,3 +414,103 @@ from vinosports.betting.featured import (  # noqa: E402, F401
     FeaturedParlay,
     FeaturedParlayLeg,
 )
+
+# ---------------------------------------------------------------------------
+# Prop bets (site-wide)
+# ---------------------------------------------------------------------------
+
+
+class PropBetStatus(models.TextChoices):
+    DRAFT = "DRAFT", _("Draft")
+    OPEN = "OPEN", _("Open")
+    CLOSED = "CLOSED", _("Closed")
+    SETTLED = "SETTLED", _("Settled")
+    CANCELLED = "CANCELLED", _("Cancelled")
+
+
+class PropBet(BaseModel):
+    """A site-wide proposition market created by registered users.
+
+    Initially supports binary (Yes/No) outcomes only. Superusers settle markets.
+    """
+
+    title = models.CharField("title", max_length=200)
+    description = models.TextField("description", blank=True, default="")
+    creator = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="created_prop_bets",
+        verbose_name=_("creator"),
+    )
+    status = models.CharField(
+        "status",
+        max_length=10,
+        choices=PropBetStatus.choices,
+        default=PropBetStatus.DRAFT,
+    )
+    open_at = models.DateTimeField("open at", null=True, blank=True)
+    close_at = models.DateTimeField("close at", null=True, blank=True)
+
+    # Snapshot odds at creation / editable by creator or odds manager.
+    yes_odds = models.DecimalField(
+        "yes odds", max_digits=8, decimal_places=3, default=2.00
+    )
+    no_odds = models.DecimalField(
+        "no odds", max_digits=8, decimal_places=3, default=2.00
+    )
+
+    total_stake_yes = models.DecimalField(
+        "total stake yes", max_digits=14, decimal_places=2, default=0
+    )
+    total_stake_no = models.DecimalField(
+        "total stake no", max_digits=14, decimal_places=2, default=0
+    )
+
+    # Settlement
+    settled_outcome = models.BooleanField(
+        "settled outcome (True=yes, False=no)", null=True, blank=True
+    )
+    settled_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="settled_prop_bets",
+        verbose_name=_("settled by"),
+    )
+    settled_at = models.DateTimeField("settled at", null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        permissions = [
+            ("settle_propbet", "Can settle prop bet"),
+        ]
+
+    def __str__(self):
+        return self.title
+
+
+class PropBetSlip(AbstractBetSlip):
+    """A concrete bet for a `PropBet`.
+
+    Selection choices are binary: YES / NO.
+    """
+
+    class Selection(models.TextChoices):
+        YES = "YES", _("Yes")
+        NO = "NO", _("No")
+
+    prop = models.ForeignKey(
+        PropBet,
+        on_delete=models.CASCADE,
+        related_name="bets",
+        verbose_name=_("prop market"),
+    )
+    selection = models.CharField("selection", max_length=3, choices=Selection.choices)
+    odds = models.DecimalField("odds at placement", max_digits=8, decimal_places=3)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.user} — {self.prop} ({self.selection})"

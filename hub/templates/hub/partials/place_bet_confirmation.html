@@ -1,0 +1,15 @@
+{% load i18n %}
+{% load currency_tags %}
+<div class="bg-positive/10 border border-positive/30 rounded-lg p-4">
+    <div class="flex items-center gap-2 mb-1">
+        <i class="ph-duotone ph-check-circle text-positive text-lg"></i>
+        <span class="font-bold text-sm text-positive">Bet Placed</span>
+    </div>
+    <p class="text-sm text-muted">
+        {{ bet.get_selection_display }} on <span class="font-semibold">{{ prop.title }}</span>
+        &mdash; {{ bet.stake|currency:user }} @ {{ bet.odds|floatformat:2 }}
+    </p>
+    <p class="text-xs text-muted mt-1">
+        <a href="{% url 'hub:my_bets' %}" class="text-primary hover:underline">View My Bets</a>
+    </p>
+</div>

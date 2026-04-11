@@ -59,6 +59,9 @@ from vinosports.betting.leaderboard import (
 from vinosports.betting.models import (
     Badge,
     BalanceTransaction,
+    PropBet,
+    PropBetSlip,
+    PropBetStatus,
     UserBadge,
     UserBalance,
     UserStats,
@@ -868,6 +871,309 @@ class BalanceHistoryAPI(View):
 
 
 # ---------------------------------------------------------------------------
+# Prop bets API (creation, listing, placement)
+# ---------------------------------------------------------------------------
+
+
+class PropBetListCreateAPI(LoginRequiredMixin, View):
+    """GET: list open props as JSON. POST: create a new prop (authenticated users)."""
+
+    def get(self, request):
+        props = (
+            PropBet.objects.filter(status=PropBetStatus.OPEN)
+            .order_by("-created_at")
+            .values(
+                "id",
+                "id_hash",
+                "title",
+                "description",
+                "yes_odds",
+                "no_odds",
+                "total_stake_yes",
+                "total_stake_no",
+                "open_at",
+                "close_at",
+            )
+        )
+        return JsonResponse({"props": list(props)})
+
+    def post(self, request):
+        title = request.POST.get("title", "").strip()
+        description = request.POST.get("description", "").strip()
+        yes_odds = request.POST.get("yes_odds")
+        no_odds = request.POST.get("no_odds")
+
+        if not title:
+            return JsonResponse({"error": "Title is required."}, status=400)
+
+        try:
+            yes_odds = (
+                Decimal(str(yes_odds)) if yes_odds is not None else Decimal("2.00")
+            )
+            no_odds = Decimal(str(no_odds)) if no_odds is not None else Decimal("2.00")
+        except Exception:
+            return JsonResponse({"error": "Invalid odds."}, status=400)
+
+        prop = PropBet.objects.create(
+            title=title,
+            description=description,
+            creator=request.user,
+            status=PropBetStatus.OPEN,
+            yes_odds=yes_odds,
+            no_odds=no_odds,
+        )
+
+        return JsonResponse(
+            {"id": prop.id, "id_hash": prop.id_hash, "title": prop.title}
+        )
+
+
+class PropBetDetailAPI(View):
+    def get(self, request, pk):
+        prop = get_object_or_404(PropBet, pk=pk)
+        data = {
+            "id": prop.id,
+            "id_hash": prop.id_hash,
+            "title": prop.title,
+            "description": prop.description,
+            "yes_odds": float(prop.yes_odds),
+            "no_odds": float(prop.no_odds),
+            "total_stake_yes": float(prop.total_stake_yes),
+            "total_stake_no": float(prop.total_stake_no),
+            "status": prop.status,
+            "open_at": prop.open_at.isoformat() if prop.open_at else None,
+            "close_at": prop.close_at.isoformat() if prop.close_at else None,
+        }
+        return JsonResponse({"prop": data})
+
+
+class PropBetPlaceBetAPI(LoginRequiredMixin, View):
+    def post(self, request, pk):
+        prop = get_object_or_404(PropBet, pk=pk)
+
+        if prop.status != PropBetStatus.OPEN:
+            return JsonResponse({"error": "Market not open."}, status=400)
+
+        selection = request.POST.get("selection")
+        stake_raw = request.POST.get("stake")
+        if selection not in ("YES", "NO"):
+            return JsonResponse({"error": "Invalid selection."}, status=400)
+
+        try:
+            stake = Decimal(str(stake_raw))
+        except Exception:
+            return JsonResponse({"error": "Invalid stake."}, status=400)
+
+        # Atomic: deduct balance + create bet
+        try:
+            with transaction.atomic():
+                balance = UserBalance.objects.select_for_update().get(user=request.user)
+                if balance.balance < stake:
+                    return JsonResponse({"error": "Insufficient balance."}, status=400)
+
+                odds_val = prop.yes_odds if selection == "YES" else prop.no_odds
+
+                # log transaction
+                log_transaction(
+                    balance,
+                    -stake,
+                    BalanceTransaction.Type.BET_PLACEMENT,
+                    f"Bet on prop: {prop.title}",
+                )
+
+                bet = PropBetSlip.objects.create(
+                    user=request.user,
+                    prop=prop,
+                    selection=selection,
+                    odds=odds_val,
+                    stake=stake,
+                )
+
+                # update prop totals
+                if selection == "YES":
+                    PropBet.objects.filter(pk=prop.pk).update(
+                        total_stake_yes=F("total_stake_yes") + stake
+                    )
+                else:
+                    PropBet.objects.filter(pk=prop.pk).update(
+                        total_stake_no=F("total_stake_no") + stake
+                    )
+
+                from hub.consumers import notify_admin_dashboard
+
+                notify_admin_dashboard("new_bet")
+
+        except UserBalance.DoesNotExist:
+            return JsonResponse({"error": "User balance not found."}, status=500)
+
+        potential_payout = float(stake * odds_val)
+        return JsonResponse({"bet_id": bet.id, "payout": potential_payout})
+
+
+class PropBetsPageView(LoginRequiredMixin, TemplateView):
+    template_name = "hub/prop_bets.html"
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["open_props"] = PropBet.objects.filter(status=PropBetStatus.OPEN).order_by(
+            "-created_at"
+        )
+        ctx["settled_props"] = PropBet.objects.filter(
+            status=PropBetStatus.SETTLED
+        ).order_by("-settled_at")[:20]
+        ctx["user_bets"] = (
+            PropBetSlip.objects.filter(user=self.request.user)
+            .select_related("prop")
+            .order_by("-created_at")[:20]
+        )
+        return ctx
+
+
+class PropBetsListPartial(LoginRequiredMixin, TemplateView):
+    template_name = "hub/partials/prop_bets_list.html"
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["props"] = PropBet.objects.filter(status=PropBetStatus.OPEN).order_by(
+            "-created_at"
+        )
+        return ctx
+
+
+class PropBetCreatePartial(LoginRequiredMixin, View):
+    def get(self, request):
+        return render(request, "hub/partials/prop_bet_form.html", {})
+
+    def post(self, request):
+        title = request.POST.get("title", "").strip()
+        description = request.POST.get("description", "").strip()
+        yes_odds = request.POST.get("yes_odds")
+        no_odds = request.POST.get("no_odds")
+
+        if not title:
+            return render(
+                request,
+                "hub/partials/prop_bet_form.html",
+                {"error": "Title required."},
+                status=400,
+            )
+
+        try:
+            yes_odds = (
+                Decimal(str(yes_odds)) if yes_odds is not None else Decimal("2.00")
+            )
+            no_odds = Decimal(str(no_odds)) if no_odds is not None else Decimal("2.00")
+        except Exception:
+            return render(
+                request,
+                "hub/partials/prop_bet_form.html",
+                {"error": "Invalid odds."},
+                status=400,
+            )
+
+        PropBet.objects.create(
+            title=title,
+            description=description,
+            creator=request.user,
+            status=PropBetStatus.OPEN,
+            yes_odds=yes_odds,
+            no_odds=no_odds,
+        )
+
+        # return updated list fragment
+        props = PropBet.objects.filter(status=PropBetStatus.OPEN).order_by(
+            "-created_at"
+        )
+        return render(request, "hub/partials/prop_bets_list.html", {"props": props})
+
+
+class PropBetPlacePartial(LoginRequiredMixin, View):
+    def get(self, request, pk):
+        prop = get_object_or_404(PropBet, pk=pk)
+        return render(request, "hub/partials/place_bet_form.html", {"prop": prop})
+
+    def post(self, request, pk):
+        prop = get_object_or_404(PropBet, pk=pk)
+        if prop.status != PropBetStatus.OPEN:
+            return render(
+                request,
+                "hub/partials/place_bet_form.html",
+                {"prop": prop, "error": "Market not open."},
+                status=400,
+            )
+
+        selection = request.POST.get("selection")
+        stake_raw = request.POST.get("stake")
+        if selection not in ("YES", "NO"):
+            return render(
+                request,
+                "hub/partials/place_bet_form.html",
+                {"prop": prop, "error": "Invalid selection."},
+                status=400,
+            )
+
+        try:
+            stake = Decimal(str(stake_raw))
+        except Exception:
+            return render(
+                request,
+                "hub/partials/place_bet_form.html",
+                {"prop": prop, "error": "Invalid stake."},
+                status=400,
+            )
+
+        try:
+            with transaction.atomic():
+                balance = UserBalance.objects.select_for_update().get(user=request.user)
+                if balance.balance < stake:
+                    return render(
+                        request,
+                        "hub/partials/place_bet_form.html",
+                        {"prop": prop, "error": "Insufficient balance."},
+                        status=400,
+                    )
+
+                odds_val = prop.yes_odds if selection == "YES" else prop.no_odds
+                log_transaction(
+                    balance,
+                    -stake,
+                    BalanceTransaction.Type.BET_PLACEMENT,
+                    f"Bet on prop: {prop.title}",
+                )
+
+                bet = PropBetSlip.objects.create(
+                    user=request.user,
+                    prop=prop,
+                    selection=selection,
+                    odds=odds_val,
+                    stake=stake,
+                )
+
+                if selection == "YES":
+                    PropBet.objects.filter(pk=prop.pk).update(
+                        total_stake_yes=F("total_stake_yes") + stake
+                    )
+                else:
+                    PropBet.objects.filter(pk=prop.pk).update(
+                        total_stake_no=F("total_stake_no") + stake
+                    )
+
+        except UserBalance.DoesNotExist:
+            return render(
+                request,
+                "hub/partials/place_bet_form.html",
+                {"prop": prop, "error": "User balance not found."},
+                status=500,
+            )
+
+        return render(
+            request,
+            "hub/partials/place_bet_confirmation.html",
+            {"bet": bet, "prop": prop},
+        )
+
+
+# ---------------------------------------------------------------------------
 # Global Standings
 # ---------------------------------------------------------------------------
 
@@ -933,6 +1239,7 @@ class MyBetsView(LoginRequiredMixin, TemplateView):
         ucl_bets = UclBetSlip.objects.filter(user=user).select_related(
             "match__home_team", "match__away_team"
         )
+        prop_bets = PropBetSlip.objects.filter(user=user).select_related("prop")
 
         # Aggregate totals
         all_querysets = [
@@ -944,6 +1251,7 @@ class MyBetsView(LoginRequiredMixin, TemplateView):
             nba_futures,
             wc_bets,
             ucl_bets,
+            prop_bets,
         ]
         total_staked = Decimal("0")
         total_payout = Decimal("0")
@@ -1017,6 +1325,15 @@ class MyBetsView(LoginRequiredMixin, TemplateView):
                     "league": "nba",
                     "date": fb.created_at,
                     "item": fb,
+                }
+            )
+        for bet in prop_bets:
+            activity.append(
+                {
+                    "type": "prop",
+                    "league": "prop",
+                    "date": bet.created_at,
+                    "item": bet,
                 }
             )
         # Pending first, then most recent

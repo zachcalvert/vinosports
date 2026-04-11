@@ -39,6 +39,35 @@ urlpatterns = [
         views.BalanceHistoryAPI.as_view(),
         name="balance_history_api",
     ),
+    path("api/prop-bets/", views.PropBetListCreateAPI.as_view(), name="prop_bets_api"),
+    path(
+        "api/prop-bets/<int:pk>/",
+        views.PropBetDetailAPI.as_view(),
+        name="prop_bet_detail_api",
+    ),
+    path(
+        "api/prop-bets/<int:pk>/place-bet/",
+        views.PropBetPlaceBetAPI.as_view(),
+        name="prop_bet_place_api",
+    ),
+    # HTMX partials
+    path(
+        "prop-bets/partials/list/",
+        views.PropBetsListPartial.as_view(),
+        name="prop_bets_list_partial",
+    ),
+    path(
+        "prop-bets/partials/create/",
+        views.PropBetCreatePartial.as_view(),
+        name="prop_bet_create_partial",
+    ),
+    path(
+        "prop-bets/<int:pk>/partials/place/",
+        views.PropBetPlacePartial.as_view(),
+        name="prop_bet_place_partial",
+    ),
+    # Prop bets page
+    path("prop-bets/", views.PropBetsPageView.as_view(), name="prop_bets"),
     path("profile/<slug:slug>/", views.ProfileView.as_view(), name="profile"),
     path(
         "bots/<slug:slug>/",

@@ -9,6 +9,8 @@ ADMIN_GROUPS = [
         "general",
         False,
         [
+            ("betting", "PropBet", None),
+            ("betting", "PropBetSlip", "Prop Bet Slips"),
             ("global_bots", "BotProfile", None),
             ("betting", "FeaturedParlay", None),
             ("core", "GlobalKnowledge", None),
