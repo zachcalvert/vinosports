@@ -31,17 +31,25 @@ from vinosports.betting.models import BetStatus
 
 
 class ScheduleView(View):
+    # Reject dates more than 1 year from today (bot/crawler abuse)
+    MAX_DATE_OFFSET_DAYS = 365
+
     def get(self, request):
         date_str = request.GET.get("date")
         conference = request.GET.get("conference")
+
+        today = timezone.localdate()
 
         if date_str:
             try:
                 target_date = date.fromisoformat(date_str)
             except ValueError:
-                target_date = timezone.localdate()
+                target_date = today
+            else:
+                if abs((target_date - today).days) > self.MAX_DATE_OFFSET_DAYS:
+                    return HttpResponse("Bad Request", status=400)
         else:
-            target_date = timezone.localdate()
+            target_date = today
 
         games = (
             Game.objects.filter(game_date=target_date)

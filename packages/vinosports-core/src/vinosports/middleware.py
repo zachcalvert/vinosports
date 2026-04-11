@@ -69,7 +69,7 @@ class RateLimitMiddleware:
         RATE_LIMIT_WINDOW   = 60     # window in seconds
     """
 
-    LEAGUE_PREFIXES = ("/epl/", "/nba/", "/nfl/")
+    LEAGUE_PREFIXES = ("/epl/", "/nba/", "/nfl/", "/worldcup/", "/ucl/")
 
     def __init__(self, get_response):
         self.get_response = get_response

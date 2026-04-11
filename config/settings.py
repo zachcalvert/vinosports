@@ -204,7 +204,7 @@ CACHES = {
 }
 
 # Anonymous rate limiting (per IP, league pages only)
-RATE_LIMIT_REQUESTS = 30  # max requests per window
+RATE_LIMIT_REQUESTS = 20  # max requests per window
 RATE_LIMIT_WINDOW = 60  # seconds
 
 LANGUAGE_CODE = "en-us"

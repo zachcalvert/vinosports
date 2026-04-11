@@ -78,6 +78,14 @@ class TestScheduleView:
         all_games = _all_schedule_games(response)
         assert game in all_games
 
+    def test_out_of_range_date_returns_400(self, auth_client):
+        response = auth_client.get("/nba/games/schedule/", {"date": "2055-10-22"})
+        assert response.status_code == 400
+
+    def test_far_past_date_returns_400(self, auth_client):
+        response = auth_client.get("/nba/games/schedule/", {"date": "1996-10-07"})
+        assert response.status_code == 400
+
     def test_conference_filter_east(self, auth_client):
         today = timezone.localdate()
         east_team = TeamFactory(conference=Conference.EAST)
