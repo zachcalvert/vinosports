@@ -5,14 +5,76 @@ These tasks use the LeagueAdapter pattern so they work for any league.
 
 import logging
 import random
+from decimal import Decimal
 
 from celery import shared_task
 from django.contrib.auth import get_user_model
+from django.db import transaction
+from django.db.models import F
 
-from vinosports.bots.models import BotProfile
+from epl.bots.registry import get_strategy_for_bot
+from epl.bots.services import (
+    get_available_matches_for_bot,
+    get_best_odds_map,
+    maybe_topup_bot,
+    place_bot_bet,
+)
+from epl.matches.models import Match as EplMatch
+from nba.betting.models import BetSlip as NbaBetSlip
+from nba.games.models import (
+    Game as NbaGame,
+)
+from nba.games.models import (
+    GameStatus as NbaGameStatus,
+)
+from nba.games.models import (
+    Odds as NbaOdds,
+)
+from nfl.betting.models import BetSlip as NflBetSlip
+from nfl.betting.models import Odds as NflOdds
+from nfl.bots.services import place_bot_bets
+from nfl.bots.strategies import STRATEGY_MAP
+from nfl.games.models import Game as NflGame
+from nfl.games.models import GameStatus as NflGameStatus
+from ucl.betting.models import BetSlip as UclBetSlip
+from ucl.matches.models import Match as UclMatch
+from ucl.matches.models import Odds as UclOdds
+from vinosports.betting.balance import log_transaction
+from vinosports.betting.models import (
+    Bailout,
+    BalanceTransaction,
+    Bankruptcy,
+    PropBet,
+    PropBetSlip,
+    PropBetStatus,
+    UserBalance,
+)
+from vinosports.bots.comment_pipeline import (
+    build_conversation_reply,
+    pick_conversation_bots,
+    select_reply_bot,
+)
+from vinosports.bots.models import BotProfile, StrategyType
+from worldcup.betting.models import BetSlip as WcBetSlip
+from worldcup.matches.models import Match as WcMatch
+from worldcup.matches.models import Odds as WcOdds
 
 User = get_user_model()
 logger = logging.getLogger(__name__)
+
+# Strategy types that favor the "favorite" side (lower odds)
+_FAVORITE_STRATEGIES = {
+    StrategyType.FRONTRUNNER,
+    StrategyType.HOMER,
+    StrategyType.DRAW_SPECIALIST,
+}
+
+# Strategy types that favor the "underdog" side (higher odds)
+_UNDERDOG_STRATEGIES = {
+    StrategyType.UNDERDOG,
+    StrategyType.CHAOS_AGENT,
+    StrategyType.ALL_IN_ALICE,
+}
 
 
 def _get_adapter(league):
@@ -144,8 +206,6 @@ def social_reply(bot_user_id, league, event_id, parent_comment_id):
         .order_by("created_at")[:20]
     )
 
-    from vinosports.bots.comment_pipeline import build_conversation_reply
-
     comment = build_conversation_reply(
         adapter, bot_user, event, thread_comments, parent
     )
@@ -163,10 +223,7 @@ def social_reply(bot_user_id, league, event_id, parent_comment_id):
 def _find_any_upcoming_event(_adapter, league):
     """Find any upcoming event with odds, without placing a bet."""
     if league == "epl":
-        from epl.bots.services import get_best_odds_map
-        from epl.matches.models import Match
-
-        matches = Match.objects.filter(
+        matches = EplMatch.objects.filter(
             status__in=["SCHEDULED", "TIMED"]
         ).select_related("home_team", "away_team")
         if not matches.exists():
@@ -176,30 +233,22 @@ def _find_any_upcoming_event(_adapter, league):
         with_odds = [m for m in matches if m.pk in odds_map]
         return random.choice(with_odds) if with_odds else None
     elif league == "nba":
-        from nba.games.models import Game, GameStatus
-
-        games = Game.objects.filter(status=GameStatus.SCHEDULED).select_related(
+        games = NbaGame.objects.filter(status=NbaGameStatus.SCHEDULED).select_related(
             "home_team", "away_team"
         )
         return games.first()
     elif league == "nfl":
-        from nfl.games.models import Game, GameStatus
-
-        games = Game.objects.filter(status=GameStatus.SCHEDULED).select_related(
+        games = NflGame.objects.filter(status=NflGameStatus.SCHEDULED).select_related(
             "home_team", "away_team"
         )
         return games.first()
     elif league == "ucl":
-        from ucl.matches.models import Match
-
-        matches = Match.objects.filter(
+        matches = UclMatch.objects.filter(
             status__in=["SCHEDULED", "TIMED"]
         ).select_related("home_team", "away_team")
         return matches.first()
     elif league == "worldcup":
-        from worldcup.matches.models import Match
-
-        matches = Match.objects.filter(
+        matches = WcMatch.objects.filter(
             status__in=["SCHEDULED", "TIMED"]
         ).select_related("home_team", "away_team")
         return matches.first()
@@ -225,14 +274,6 @@ def _place_bet_for_league(adapter, league, bot_user):
 
 
 def _place_epl_bet(bot_user):
-    from epl.bots.registry import get_strategy_for_bot
-    from epl.bots.services import (
-        get_available_matches_for_bot,
-        get_best_odds_map,
-        maybe_topup_bot,
-        place_bot_bet,
-    )
-
     maybe_topup_bot(bot_user)
     available = get_available_matches_for_bot(bot_user)
     if not available.exists():
@@ -247,8 +288,6 @@ def _place_epl_bet(bot_user):
     if not strategy:
         return None, None
 
-    from vinosports.betting.models import UserBalance
-
     try:
         balance = UserBalance.objects.get(user=bot_user).balance
     except UserBalance.DoesNotExist:
@@ -258,9 +297,7 @@ def _place_epl_bet(bot_user):
 
     if picks:
         pick = picks[0]
-        from epl.matches.models import Match
-
-        match = Match.objects.get(pk=pick.match_id)
+        match = EplMatch.objects.get(pk=pick.match_id)
         bet_slip = place_bot_bet(bot_user, pick.match_id, pick.selection, pick.stake)
         if bet_slip:
             return match, bet_slip
@@ -290,12 +327,7 @@ def _place_epl_bet(bot_user):
 
 
 def _place_nba_bet(bot_user):
-    from nba.bots.services import maybe_topup_bot, place_bot_bets
-    from nba.bots.strategies import STRATEGY_MAP
-    from nba.games.models import Game, GameStatus, Odds
     from nba.games.services import today_et
-    from vinosports.betting.models import UserBalance
-    from vinosports.bots.models import BotProfile
 
     maybe_topup_bot(bot_user)
 
@@ -308,12 +340,12 @@ def _place_nba_bet(bot_user):
     except UserBalance.DoesNotExist:
         return None, None
 
-    games = Game.objects.filter(status=GameStatus.SCHEDULED, game_date=today_et())
+    games = NbaGame.objects.filter(status=NbaGameStatus.SCHEDULED, game_date=today_et())
     if not games.exists():
         return None, None
 
     odds_qs = (
-        Odds.objects.filter(game__in=games)
+        NbaOdds.objects.filter(game__in=games)
         .select_related("game", "game__home_team", "game__away_team")
         .order_by("game_id", "-fetched_at")
         .distinct("game_id")
@@ -334,21 +366,13 @@ def _place_nba_bet(bot_user):
         return None, None
 
     # Get the bet slip that was just created
-    from nba.betting.models import BetSlip
-
-    bet_slip = BetSlip.objects.filter(user=bot_user).order_by("-created_at").first()
+    bet_slip = NbaBetSlip.objects.filter(user=bot_user).order_by("-created_at").first()
     if not bet_slip:
         return None, None
     return bet_slip.game, bet_slip
 
 
 def _place_nfl_bet(bot_user):
-    from nfl.bots.services import maybe_topup_bot, place_bot_bets
-    from nfl.bots.strategies import STRATEGY_MAP
-    from nfl.games.models import Game, GameStatus, Odds
-    from vinosports.betting.models import UserBalance
-    from vinosports.bots.models import BotProfile
-
     maybe_topup_bot(bot_user)
 
     profile = BotProfile.objects.filter(user=bot_user).first()
@@ -360,12 +384,12 @@ def _place_nfl_bet(bot_user):
     except UserBalance.DoesNotExist:
         return None, None
 
-    games = Game.objects.filter(status=GameStatus.SCHEDULED)
+    games = NflGame.objects.filter(status=NflGameStatus.SCHEDULED)
     if not games.exists():
         return None, None
 
     odds_qs = (
-        Odds.objects.filter(game__in=games)
+        NflOdds.objects.filter(game__in=games)
         .select_related("game", "game__home_team", "game__away_team")
         .order_by("game_id", "-fetched_at")
         .distinct("game_id")
@@ -385,21 +409,13 @@ def _place_nfl_bet(bot_user):
     if not result or result.get("placed", 0) == 0:
         return None, None
 
-    from nfl.betting.models import BetSlip
-
-    bet_slip = BetSlip.objects.filter(user=bot_user).order_by("-created_at").first()
+    bet_slip = NflBetSlip.objects.filter(user=bot_user).order_by("-created_at").first()
     if not bet_slip:
         return None, None
     return bet_slip.game, bet_slip
 
 
 def _place_ucl_bet(bot_user):
-    from ucl.betting.models import BetSlip
-    from ucl.bots.strategies import STRATEGY_MAP
-    from ucl.matches.models import Match, Odds
-    from vinosports.betting.models import UserBalance
-    from vinosports.bots.models import BotProfile
-
     profile = BotProfile.objects.filter(user=bot_user).first()
     if not profile:
         return None, None
@@ -409,12 +425,12 @@ def _place_ucl_bet(bot_user):
     except UserBalance.DoesNotExist:
         return None, None
 
-    matches = Match.objects.filter(status__in=["SCHEDULED", "TIMED"])
+    matches = UclMatch.objects.filter(status__in=["SCHEDULED", "TIMED"])
     if not matches.exists():
         return None, None
 
     odds_qs = (
-        Odds.objects.filter(match__in=matches)
+        UclOdds.objects.filter(match__in=matches)
         .select_related("match__home_team", "match__away_team")
         .order_by("match_id", "-fetched_at")
         .distinct("match_id")
@@ -431,21 +447,21 @@ def _place_ucl_bet(bot_user):
 
     pick = picks[0]
     try:
-        match = Match.objects.get(pk=pick.match_id)
+        match = UclMatch.objects.get(pk=pick.match_id)
         odds_row = match.odds.order_by("-fetched_at").first()
         if not odds_row:
             return None, None
 
         odds_map = {
-            BetSlip.Selection.HOME_WIN: odds_row.home_win,
-            BetSlip.Selection.DRAW: odds_row.draw,
-            BetSlip.Selection.AWAY_WIN: odds_row.away_win,
+            UclBetSlip.Selection.HOME_WIN: odds_row.home_win,
+            UclBetSlip.Selection.DRAW: odds_row.draw,
+            UclBetSlip.Selection.AWAY_WIN: odds_row.away_win,
         }
         decimal_odds = odds_map.get(pick.selection)
         if decimal_odds is None:
             return None, None
 
-        bet_slip = BetSlip.objects.create(
+        bet_slip = UclBetSlip.objects.create(
             user=bot_user,
             match=match,
             selection=pick.selection,
@@ -459,12 +475,6 @@ def _place_ucl_bet(bot_user):
 
 
 def _place_worldcup_bet(bot_user):
-    from vinosports.betting.models import UserBalance
-    from vinosports.bots.models import BotProfile
-    from worldcup.betting.models import BetSlip
-    from worldcup.bots.strategies import STRATEGY_MAP
-    from worldcup.matches.models import Match, Odds
-
     profile = BotProfile.objects.filter(user=bot_user).first()
     if not profile:
         return None, None
@@ -474,12 +484,12 @@ def _place_worldcup_bet(bot_user):
     except UserBalance.DoesNotExist:
         return None, None
 
-    matches = Match.objects.filter(status__in=["SCHEDULED", "TIMED"])
+    matches = WcMatch.objects.filter(status__in=["SCHEDULED", "TIMED"])
     if not matches.exists():
         return None, None
 
     odds_qs = (
-        Odds.objects.filter(match__in=matches)
+        WcOdds.objects.filter(match__in=matches)
         .select_related("match__home_team", "match__away_team")
         .order_by("match_id", "-fetched_at")
         .distinct("match_id")
@@ -496,21 +506,21 @@ def _place_worldcup_bet(bot_user):
 
     pick = picks[0]
     try:
-        match = Match.objects.get(pk=pick.match_id)
+        match = WcMatch.objects.get(pk=pick.match_id)
         odds_row = match.odds.order_by("-fetched_at").first()
         if not odds_row:
             return None, None
 
         odds_map = {
-            BetSlip.Selection.HOME_WIN: odds_row.home_win,
-            BetSlip.Selection.DRAW: odds_row.draw,
-            BetSlip.Selection.AWAY_WIN: odds_row.away_win,
+            WcBetSlip.Selection.HOME_WIN: odds_row.home_win,
+            WcBetSlip.Selection.DRAW: odds_row.draw,
+            WcBetSlip.Selection.AWAY_WIN: odds_row.away_win,
         }
         decimal_odds = odds_map.get(pick.selection)
         if decimal_odds is None:
             return None, None
 
-        bet_slip = BetSlip.objects.create(
+        bet_slip = WcBetSlip.objects.create(
             user=bot_user,
             match=match,
             selection=pick.selection,
@@ -523,14 +533,193 @@ def _place_worldcup_bet(bot_user):
         return None, None
 
 
+# ---------------------------------------------------------------------------
+# Prop bet bot betting
+# ---------------------------------------------------------------------------
+
+
+def _ensure_bot_has_balance(bot_user, min_balance=Decimal("5000.00")):
+    """League-agnostic bailout for bots with low balance."""
+    try:
+        balance = UserBalance.objects.get(user=bot_user)
+    except UserBalance.DoesNotExist:
+        return
+
+    if balance.balance >= min_balance:
+        return
+
+    with transaction.atomic():
+        balance = UserBalance.objects.select_for_update().get(user=bot_user)
+        if balance.balance >= min_balance:
+            return
+
+        bankruptcy = Bankruptcy.objects.create(
+            user=bot_user,
+            balance_at_bankruptcy=balance.balance,
+        )
+        amount = Decimal(str(random.randint(100000, 300000)))
+        Bailout.objects.create(
+            user=bot_user,
+            bankruptcy=bankruptcy,
+            amount=amount,
+        )
+        log_transaction(
+            balance,
+            amount,
+            BalanceTransaction.Type.BAILOUT,
+            "Bot bailout (prop bet)",
+        )
+    logger.info(
+        "Topped up bot %s with %s for prop betting", bot_user.display_name, amount
+    )
+
+
+def _pick_prop_selection(profile, yes_odds, no_odds):
+    """Choose YES or NO based on the bot's strategy type and prop odds."""
+    # Determine which side is the "favorite" (lower odds = higher implied probability)
+    favorite = "YES" if yes_odds <= no_odds else "NO"
+    underdog = "NO" if favorite == "YES" else "YES"
+
+    if profile.strategy_type in _FAVORITE_STRATEGIES:
+        return favorite
+    if profile.strategy_type in _UNDERDOG_STRATEGIES:
+        return underdog
+
+    # Everyone else: weighted random based on implied probability
+    # implied_prob = 1 / decimal_odds
+    yes_prob = float(1 / yes_odds)
+    no_prob = float(1 / no_odds)
+    total = yes_prob + no_prob
+    return "YES" if random.random() < (yes_prob / total) else "NO"
+
+
+def _pick_prop_stake(balance, risk_multiplier):
+    """Choose a stake for a prop bet: 1-3% of balance, scaled by risk multiplier."""
+    pct = random.uniform(0.01, 0.03) * risk_multiplier
+    stake = (balance * Decimal(str(pct))).quantize(Decimal("1"))
+    return max(Decimal("10"), min(stake, Decimal("2000")))
+
+
+@shared_task(name="vinosports.bots.tasks.place_bot_prop_bets")
+def place_bot_prop_bets(prop_id):
+    """Dispatch 3-5 bots to bet on a newly created prop bet."""
+    try:
+        prop = PropBet.objects.get(pk=prop_id)
+    except PropBet.DoesNotExist:
+        return f"prop {prop_id} not found"
+
+    if prop.status != PropBetStatus.OPEN:
+        return f"prop {prop_id} not open"
+
+    # Pick 3-5 random active bots, excluding the creator
+    bots = list(
+        BotProfile.objects.filter(user__is_active=True)
+        .exclude(user=prop.creator)
+        .select_related("user")
+    )
+    if not bots:
+        return "no active bots"
+
+    count = min(random.randint(3, 5), len(bots))
+    chosen = random.sample(bots, count)
+
+    for i, profile in enumerate(chosen):
+        delay = random.randint(5, 30) + (i * random.randint(10, 30))
+        place_single_bot_prop_bet.apply_async(
+            args=[profile.user_id, prop_id],
+            countdown=delay,
+        )
+        logger.info(
+            "Dispatched prop bet for %s on '%s' in %ds",
+            profile.user.display_name,
+            prop.title[:40],
+            delay,
+        )
+
+    return f"dispatched {count} bots for prop '{prop.title[:40]}'"
+
+
+@shared_task(name="vinosports.bots.tasks.place_single_bot_prop_bet")
+def place_single_bot_prop_bet(bot_user_id, prop_id):
+    """Place a single bot's bet on a prop bet."""
+    try:
+        bot_user = User.objects.get(pk=bot_user_id, is_bot=True, is_active=True)
+    except User.DoesNotExist:
+        return f"bot {bot_user_id} not found"
+
+    profile = BotProfile.objects.filter(user=bot_user).first()
+    if not profile:
+        return "no profile"
+
+    try:
+        prop = PropBet.objects.get(pk=prop_id)
+    except PropBet.DoesNotExist:
+        return f"prop {prop_id} not found"
+
+    if prop.status != PropBetStatus.OPEN:
+        return f"prop {prop_id} not open"
+
+    # Skip if bot already bet on this prop
+    if PropBetSlip.objects.filter(user=bot_user, prop=prop).exists():
+        return f"{bot_user.display_name} already bet on this prop"
+
+    _ensure_bot_has_balance(bot_user)
+
+    selection = _pick_prop_selection(profile, prop.yes_odds, prop.no_odds)
+    odds_val = prop.yes_odds if selection == "YES" else prop.no_odds
+
+    try:
+        with transaction.atomic():
+            balance = UserBalance.objects.select_for_update().get(user=bot_user)
+            stake = _pick_prop_stake(balance.balance, profile.risk_multiplier)
+
+            if balance.balance < stake:
+                return f"{bot_user.display_name} insufficient balance"
+
+            log_transaction(
+                balance,
+                -stake,
+                BalanceTransaction.Type.BET_PLACEMENT,
+                f"Bet on prop: {prop.title}",
+            )
+
+            PropBetSlip.objects.create(
+                user=bot_user,
+                prop=prop,
+                selection=selection,
+                odds=odds_val,
+                stake=stake,
+            )
+
+            if selection == "YES":
+                PropBet.objects.filter(pk=prop.pk).update(
+                    total_stake_yes=F("total_stake_yes") + stake
+                )
+            else:
+                PropBet.objects.filter(pk=prop.pk).update(
+                    total_stake_no=F("total_stake_no") + stake
+                )
+
+    except UserBalance.DoesNotExist:
+        return f"{bot_user.display_name} no balance record"
+
+    logger.info(
+        "Bot %s bet %s on prop '%s' (%s @ %s, stake=%s)",
+        bot_user.display_name,
+        selection,
+        prop.title[:40],
+        selection,
+        odds_val,
+        stake,
+    )
+    return f"{bot_user.display_name} bet {selection} on '{prop.title[:40]}'"
+
+
 def _dispatch_social_reply(adapter, league, event, comment, exclude_user_id):
     """Pick a second bot and dispatch a social reply with a staggered delay."""
-    from vinosports.bots.comment_pipeline import select_reply_bot
-
     bot = select_reply_bot(adapter, event, comment)
     if not bot:
         # Fallback: pick any relevant bot that isn't the author
-        from vinosports.bots.comment_pipeline import pick_conversation_bots
 
         bots = pick_conversation_bots(adapter, event, count=3)
         bots = [b for b in bots if b.pk != exclude_user_id]

@@ -1,0 +1,42 @@
+{# Bot picks breakdown — include with prop (PropBet with bot_bets prefetched) #}
+{% if prop.bot_bets %}
+<div class="flex items-center gap-4 mt-3 pt-3 border-t border-outline-variant/30">
+    <span class="text-[10px] font-bold uppercase tracking-wider text-muted shrink-0">Bot picks</span>
+
+    {# YES side #}
+    <div class="flex items-center gap-1.5">
+        <span class="text-[10px] font-bold uppercase tracking-wider text-positive">Yes</span>
+        <div class="flex -space-x-1.5">
+            {% for bet in prop.bot_bets %}{% if bet.selection == "YES" %}
+            <div class="w-7 h-7 rounded-full border-2 border-positive/40 flex items-center justify-center overflow-hidden shrink-0"
+                 style="background: {{ bet.user.avatar_bg|default:'#374151' }};"
+                 title="{{ bet.user.display_name }}">
+                {% if bet.user.profile_image %}
+                <img src="{{ bet.user.profile_image.url }}" class="w-full h-full object-cover" alt="">
+                {% else %}
+                <i class="ph-duotone ph-{{ bet.user.avatar_icon|default:'user-circle' }} text-xs text-white"></i>
+                {% endif %}
+            </div>
+            {% endif %}{% endfor %}
+        </div>
+    </div>
+
+    {# NO side #}
+    <div class="flex items-center gap-1.5">
+        <span class="text-[10px] font-bold uppercase tracking-wider text-danger">No</span>
+        <div class="flex -space-x-1.5">
+            {% for bet in prop.bot_bets %}{% if bet.selection == "NO" %}
+            <div class="w-7 h-7 rounded-full border-2 border-danger/40 flex items-center justify-center overflow-hidden shrink-0"
+                 style="background: {{ bet.user.avatar_bg|default:'#374151' }};"
+                 title="{{ bet.user.display_name }}">
+                {% if bet.user.profile_image %}
+                <img src="{{ bet.user.profile_image.url }}" class="w-full h-full object-cover" alt="">
+                {% else %}
+                <i class="ph-duotone ph-{{ bet.user.avatar_icon|default:'user-circle' }} text-xs text-white"></i>
+                {% endif %}
+            </div>
+            {% endif %}{% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}

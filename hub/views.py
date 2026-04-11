@@ -7,7 +7,7 @@ from operator import attrgetter
 from django.contrib.auth import authenticate, get_user_model, login, logout
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.db import transaction
-from django.db.models import Count, DecimalField, ExpressionWrapper, F, Sum
+from django.db.models import Count, DecimalField, ExpressionWrapper, F, Prefetch, Sum
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
@@ -927,6 +927,10 @@ class PropBetListCreateAPI(LoginRequiredMixin, View):
             no_odds=no_odds,
         )
 
+        from vinosports.bots.tasks import place_bot_prop_bets
+
+        place_bot_prop_bets.delay(prop.pk)
+
         return JsonResponse(
             {"id": prop.id, "id_hash": prop.id_hash, "title": prop.title}
         )
@@ -1016,14 +1020,29 @@ class PropBetPlaceBetAPI(LoginRequiredMixin, View):
         return JsonResponse({"bet_id": bet.id, "payout": potential_payout})
 
 
+def _open_props_with_bot_bets():
+    """Return open props with bot bets prefetched as `bot_bets` attribute."""
+    return (
+        PropBet.objects.filter(status=PropBetStatus.OPEN)
+        .prefetch_related(
+            Prefetch(
+                "bets",
+                queryset=PropBetSlip.objects.filter(user__is_bot=True).select_related(
+                    "user"
+                ),
+                to_attr="bot_bets",
+            )
+        )
+        .order_by("-created_at")
+    )
+
+
 class PropBetsPageView(LoginRequiredMixin, TemplateView):
     template_name = "hub/prop_bets.html"
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx["open_props"] = PropBet.objects.filter(status=PropBetStatus.OPEN).order_by(
-            "-created_at"
-        )
+        ctx["open_props"] = _open_props_with_bot_bets()
         ctx["settled_props"] = PropBet.objects.filter(
             status=PropBetStatus.SETTLED
         ).order_by("-settled_at")[:20]
@@ -1040,9 +1059,7 @@ class PropBetsListPartial(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx["props"] = PropBet.objects.filter(status=PropBetStatus.OPEN).order_by(
-            "-created_at"
-        )
+        ctx["props"] = _open_props_with_bot_bets()
         return ctx
 
 
@@ -1081,7 +1098,7 @@ class PropBetCreatePartial(LoginRequiredMixin, View):
                 status=400,
             )
 
-        PropBet.objects.create(
+        prop = PropBet.objects.create(
             title=title,
             description=description,
             creator=request.user,
@@ -1090,11 +1107,16 @@ class PropBetCreatePartial(LoginRequiredMixin, View):
             no_odds=no_odds,
         )
 
+        from vinosports.bots.tasks import place_bot_prop_bets
+
+        place_bot_prop_bets.delay(prop.pk)
+
         # return updated list fragment
-        props = PropBet.objects.filter(status=PropBetStatus.OPEN).order_by(
-            "-created_at"
+        return render(
+            request,
+            "hub/partials/prop_bets_list.html",
+            {"props": _open_props_with_bot_bets()},
         )
-        return render(request, "hub/partials/prop_bets_list.html", {"props": props})
 
 
 class PropBetPlacePartial(LoginRequiredMixin, View):
