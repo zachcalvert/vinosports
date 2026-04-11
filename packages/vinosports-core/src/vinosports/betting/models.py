@@ -489,6 +489,17 @@ class PropBet(BaseModel):
     def __str__(self):
         return self.title
 
+    @property
+    def yes_pct(self):
+        total = self.total_stake_yes + self.total_stake_no
+        if not total:
+            return 50
+        return round(self.total_stake_yes / total * 100)
+
+    @property
+    def no_pct(self):
+        return 100 - self.yes_pct
+
 
 class PropBetSlip(AbstractBetSlip):
     """A concrete bet for a `PropBet`.

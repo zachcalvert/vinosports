@@ -222,11 +222,11 @@ class HomeView(TemplateView):
             .exclude(user__profile_image__isnull=True)
             .order_by("?")[:4]
         )
-        ctx["featured_parlays"] = (
-            FeaturedParlay.objects.filter(status=FeaturedParlay.Status.ACTIVE)
-            .select_related("sponsor", "sponsor__bot_profile")
-            .prefetch_related("legs")
-            .order_by("-created_at")[:4]
+        ctx["featured_props"] = (
+            PropBet.objects.filter(status=PropBetStatus.OPEN)
+            .annotate(bet_count=Count("bets"))
+            .select_related("creator")
+            .order_by("-bet_count", "-created_at")[:4]
         )
         ctx["live_games"] = _get_live_games()
 

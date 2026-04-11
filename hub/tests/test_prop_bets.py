@@ -9,6 +9,7 @@ from django.test import Client, RequestFactory
 from django.urls import reverse
 
 from hub.tests.factories import UserBalanceFactory, UserFactory
+from vinosports.activity.models import Notification
 from vinosports.betting.admin import PropBetAdmin
 from vinosports.betting.models import (
     BalanceTransaction,
@@ -428,6 +429,41 @@ class TestPropBetSettlement:
         assert txn.amount == Decimal("1000.000")
         assert "Prop bet won" in txn.description
 
+    def test_settlement_creates_notifications(
+        self, rf, admin_instance, open_prop, superuser, superuser_balance
+    ):
+        user2 = UserFactory()
+        UserBalanceFactory(user=user2, balance=Decimal("100000.00"))
+
+        PropBetSlip.objects.create(
+            user=superuser,
+            prop=open_prop,
+            selection="YES",
+            odds=Decimal("2.000"),
+            stake=Decimal("500.00"),
+        )
+        PropBetSlip.objects.create(
+            user=user2,
+            prop=open_prop,
+            selection="NO",
+            odds=Decimal("1.800"),
+            stake=Decimal("500.00"),
+        )
+
+        request = _admin_request(rf, superuser)
+        admin_instance.settle_yes(request, PropBet.objects.filter(pk=open_prop.pk))
+
+        win_notif = Notification.objects.get(
+            recipient=superuser, category=Notification.Category.BET_SETTLEMENT
+        )
+        assert "won" in win_notif.title
+        assert "paid out" in win_notif.body
+
+        lose_notif = Notification.objects.get(
+            recipient=user2, category=Notification.Category.BET_SETTLEMENT
+        )
+        assert "lost" in lose_notif.title
+
 
 # ---------------------------------------------------------------------------
 # Cancellation (admin action)
@@ -476,6 +512,13 @@ class TestPropBetCancellation:
             transaction_type=BalanceTransaction.Type.BET_VOID,
         )
         assert void_txns.count() == 2
+
+        # Both users notified
+        cancel_notifs = Notification.objects.filter(
+            category=Notification.Category.BET_SETTLEMENT
+        )
+        assert cancel_notifs.count() == 2
+        assert all("cancelled" in n.title.lower() for n in cancel_notifs)
 
     def test_cancel_skips_settled(
         self, rf, admin_instance, open_prop, superuser, superuser_balance

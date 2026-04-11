@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.db import transaction
 from django.utils import timezone
 
+from vinosports.activity.notifications import notify_prop_settlement
 from vinosports.betting.balance import log_transaction
 from vinosports.betting.models import (
     BalanceTransaction,
@@ -76,6 +77,8 @@ class PropBetAdmin(admin.ModelAdmin):
                         bet.payout = 0
                         bet.save(update_fields=["status", "payout"])
 
+                notify_prop_settlement(bet_slip=bet, prop=prop)
+
             settled_count += 1
 
         self.message_user(
@@ -118,6 +121,8 @@ class PropBetAdmin(admin.ModelAdmin):
                         BalanceTransaction.Type.BET_VOID,
                         f"Prop bet cancelled: {prop.title}",
                     )
+
+                notify_prop_settlement(bet_slip=bet, prop=prop)
 
             cancelled += 1
 

@@ -110,23 +110,102 @@
 </div>
 {% endif %}
 
-<!-- Featured Parlay Spotlight -->
-{% if featured_parlays %}
+<!-- Featured Prop Bets -->
+{% if featured_props %}
 <section class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
     <div class="mb-10 text-center">
-        <h2 class="text-3xl sm:text-4xl font-headline font-black uppercase italic text-secondary tracking-tighter">Today's Parlays</h2>
-        <p class="font-label text-tertiary font-bold tracking-[0.2em] uppercase text-xs mt-2">AI-Curated accumulators &bull; Updated Daily</p>
+        <h2 class="text-3xl sm:text-4xl font-headline font-black uppercase italic text-secondary tracking-tighter">Prop Bets</h2>
+        <p class="font-label text-tertiary font-bold tracking-[0.2em] uppercase text-xs mt-2">Community-created markets &bull; Pick a side</p>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {% for parlay in featured_parlays %}
-            {% include "vinosports/betting/featured_parlay_card.html" %}
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+        {% for prop in featured_props %}
+        <div class="bg-surface-container-lowest rounded-xl border border-outline-variant/50 p-5 hover:border-primary/50 transition-colors">
+            <div class="flex items-start justify-between gap-3 mb-3">
+                <h3 class="font-headline font-black text-base uppercase italic text-secondary leading-tight">{{ prop.title }}</h3>
+                <span class="shrink-0 inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-positive/15 text-positive">Open</span>
+            </div>
+            {% if prop.description %}
+            <p class="text-xs text-muted mb-3 line-clamp-2">{{ prop.description }}</p>
+            {% endif %}
+
+            {# Sentiment bar #}
+            {% with total=prop.total_stake_yes|add:prop.total_stake_no %}
+            {% if total > 0 %}
+            <div class="mb-3">
+                <div class="flex justify-between text-[10px] font-label font-bold uppercase tracking-wider mb-1">
+                    <span class="text-positive">Yes {{ prop.yes_pct }}%</span>
+                    <span class="text-danger">No {{ prop.no_pct }}%</span>
+                </div>
+                <div class="h-1.5 rounded-full bg-outline-variant/30 overflow-hidden flex">
+                    <div class="bg-positive rounded-full transition-all" style="width: {{ prop.yes_pct }}%"></div>
+                    <div class="bg-danger rounded-full transition-all" style="width: {{ prop.no_pct }}%"></div>
+                </div>
+            </div>
+            {% endif %}
+            {% endwith %}
+
+            <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-4">
+                    <div class="text-center">
+                        <div class="text-[10px] text-muted uppercase tracking-wider">Yes</div>
+                        <div class="font-mono font-bold text-sm">{{ prop.yes_odds }}</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-[10px] text-muted uppercase tracking-wider">No</div>
+                        <div class="font-mono font-bold text-sm">{{ prop.no_odds }}</div>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <div class="text-[10px] text-muted uppercase tracking-wider">{{ prop.bet_count }} bet{{ prop.bet_count|pluralize }}</div>
+                    <div class="text-xs text-muted">{{ prop.total_stake_yes|add:prop.total_stake_no|currency:user }} staked</div>
+                </div>
+            </div>
+
+            {# Quick bet form (authenticated only) #}
+            {% if user.is_authenticated %}
+            <div id="home-prop-{{ prop.pk }}-slot">
+                <form x-data="{ selection: 'YES' }"
+                      hx-post="{% url 'hub:prop_bet_place_partial' prop.pk %}"
+                      hx-target="#home-prop-{{ prop.pk }}-slot"
+                      hx-swap="innerHTML"
+                      class="flex items-center gap-2 pt-3 border-t border-outline-variant/30">
+                    {% csrf_token %}
+                    <input type="hidden" name="selection" :value="selection">
+                    <button type="button" @click="selection = 'YES'"
+                            :class="selection === 'YES' ? 'bg-positive text-white' : 'bg-surface-container text-muted'"
+                            class="px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors">
+                        Yes
+                    </button>
+                    <button type="button" @click="selection = 'NO'"
+                            :class="selection === 'NO' ? 'bg-danger text-white' : 'bg-surface-container text-muted'"
+                            class="px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors">
+                        No
+                    </button>
+                    <input name="stake" type="number" step="0.01" min="1" placeholder="Stake" required
+                           class="flex-1 min-w-0 px-2 py-1.5 rounded-lg border border-outline-variant bg-surface-container-lowest text-xs font-mono focus:outline-none focus:ring-2 focus:ring-primary/50">
+                    <button type="submit"
+                            class="px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-bold uppercase tracking-wider hover:bg-primary/90 transition-colors shrink-0">
+                        Bet
+                    </button>
+                </form>
+            </div>
+            {% endif %}
+        </div>
         {% endfor %}
     </div>
 
-    {% if not user.is_authenticated %}
     <div class="mt-8 text-center">
-        <p class="text-sm text-muted mb-3">Want to build your own parlays and compete against our bots?</p>
+        {% if user.is_authenticated %}
+        <a href="{% url 'hub:prop_bets' %}"
+           class="inline-flex items-center gap-2 text-sm font-headline font-bold uppercase tracking-widest text-primary hover:text-secondary transition-colors">
+            View all prop bets
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+            </svg>
+        </a>
+        {% else %}
+        <p class="text-sm text-muted mb-3">Create your own props and bet against the community.</p>
         <a href="{% url 'hub:signup' %}"
            class="inline-flex items-center gap-2 text-sm font-headline font-bold uppercase tracking-widest text-primary hover:text-secondary transition-colors">
             Sign up free
@@ -134,8 +213,8 @@
                 <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
             </svg>
         </a>
+        {% endif %}
     </div>
-    {% endif %}
 </section>
 {% endif %}
 

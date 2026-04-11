@@ -56,6 +56,48 @@ def notify_comment_reply(*, parent_comment, reply_comment, match_or_game, league
     return notification
 
 
+def notify_prop_settlement(*, bet_slip, prop):
+    """Create a notification when a prop bet is settled (won, lost, or voided).
+
+    Args:
+        bet_slip: PropBetSlip instance (already settled).
+        prop: PropBet instance.
+    """
+    recipient = bet_slip.user
+
+    # Don't notify bots
+    if recipient.is_bot:
+        return None
+
+    if bet_slip.status == "WON":
+        title = f"You won your prop bet: {prop.title}"
+        body = (
+            f"Your {bet_slip.get_selection_display()} bet paid out "
+            f"${bet_slip.payout:,.2f}."
+        )
+    elif bet_slip.status == "LOST":
+        title = f"You lost your prop bet: {prop.title}"
+        body = (
+            f"Your {bet_slip.get_selection_display()} bet "
+            f"(${bet_slip.stake:,.2f}) did not win."
+        )
+    else:  # VOID
+        title = f"Prop bet cancelled: {prop.title}"
+        body = f"Your ${bet_slip.stake:,.2f} stake has been refunded."
+
+    notification = Notification.objects.create(
+        recipient=recipient,
+        category=Notification.Category.BET_SETTLEMENT,
+        title=title,
+        body=body,
+        url="/prop-bets/",
+        expires_at=timezone.now() + NOTIFICATION_TTL,
+    )
+
+    _push_notification_ws(notification)
+    return notification
+
+
 def _build_match_subject(match_or_game, league):
     """Build an abbreviated match/game string.
 

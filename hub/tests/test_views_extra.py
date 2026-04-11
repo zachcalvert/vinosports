@@ -86,9 +86,9 @@ class TestHomeViewContext:
         resp = client.get(reverse("hub:home"))
         assert "hero_bots" in resp.context
 
-    def test_context_has_featured_parlays(self, client):
+    def test_context_has_featured_props(self, client):
         resp = client.get(reverse("hub:home"))
-        assert "featured_parlays" in resp.context
+        assert "featured_props" in resp.context
 
     def test_bot_profiles_only_active(self, client):
         bot_user = UserFactory(is_bot=True)
