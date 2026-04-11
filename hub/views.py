@@ -911,6 +911,10 @@ class PropBetListCreateAPI(LoginRequiredMixin, View):
                 Decimal(str(yes_odds)) if yes_odds is not None else Decimal("2.00")
             )
             no_odds = Decimal(str(no_odds)) if no_odds is not None else Decimal("2.00")
+            if yes_odds < Decimal("1.01") or no_odds < Decimal("1.01"):
+                raise ValueError
+            if yes_odds > Decimal("1000") or no_odds > Decimal("1000"):
+                raise ValueError
         except Exception:
             return JsonResponse({"error": "Invalid odds."}, status=400)
 
@@ -960,7 +964,9 @@ class PropBetPlaceBetAPI(LoginRequiredMixin, View):
             return JsonResponse({"error": "Invalid selection."}, status=400)
 
         try:
-            stake = Decimal(str(stake_raw))
+            stake = Decimal(str(stake_raw)).quantize(Decimal("0.01"))
+            if stake <= 0:
+                raise ValueError
         except Exception:
             return JsonResponse({"error": "Invalid stake."}, status=400)
 
@@ -999,12 +1005,12 @@ class PropBetPlaceBetAPI(LoginRequiredMixin, View):
                         total_stake_no=F("total_stake_no") + stake
                     )
 
-                from hub.consumers import notify_admin_dashboard
-
-                notify_admin_dashboard("new_bet")
-
         except UserBalance.DoesNotExist:
             return JsonResponse({"error": "User balance not found."}, status=500)
+
+        from hub.consumers import notify_admin_dashboard
+
+        notify_admin_dashboard("new_bet")
 
         potential_payout = float(stake * odds_val)
         return JsonResponse({"bet_id": bet.id, "payout": potential_payout})
@@ -1063,6 +1069,10 @@ class PropBetCreatePartial(LoginRequiredMixin, View):
                 Decimal(str(yes_odds)) if yes_odds is not None else Decimal("2.00")
             )
             no_odds = Decimal(str(no_odds)) if no_odds is not None else Decimal("2.00")
+            if yes_odds < Decimal("1.01") or no_odds < Decimal("1.01"):
+                raise ValueError
+            if yes_odds > Decimal("1000") or no_odds > Decimal("1000"):
+                raise ValueError
         except Exception:
             return render(
                 request,
@@ -1113,7 +1123,9 @@ class PropBetPlacePartial(LoginRequiredMixin, View):
             )
 
         try:
-            stake = Decimal(str(stake_raw))
+            stake = Decimal(str(stake_raw)).quantize(Decimal("0.01"))
+            if stake <= 0:
+                raise ValueError
         except Exception:
             return render(
                 request,

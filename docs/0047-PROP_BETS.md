@@ -1,12 +1,12 @@
-# Prop Bets — Plan & Progress
+# Prop Bets
 
 Created: 2026-04-11
 
-Status: Feature complete (UI, settlement, payout, navigation)
+Status: Complete
 
 Summary
-- Implement site-wide proposition markets where registered users can create binary (Yes/No) props that all users may bet on.
-- Superusers will be responsible for settling prop markets.
+- Site-wide proposition markets where registered users can create binary (Yes/No) props that all users may bet on.
+- Superusers settle prop markets via Django admin actions.
 
 What was built
 - `PropBet` model (core betting): title, description, creator, open/close times, yes/no odds, totals, settlement fields.
@@ -18,18 +18,16 @@ What was built
 - HTMX partials: create prop form, place bet form, bet confirmation.
 - API endpoints: list/create, detail, place bet (JSON).
 - My Bets integration: prop bets appear in the cross-league activity feed (desktop table + mobile cards).
+- Homepage: featured prop bets section with community sentiment bars, quick bet forms for authenticated users.
 - Global navbar: "Prop Bets" link added to user dropdown.
 - Admin groups: PropBet and PropBetSlip in "General" group.
-
-Remaining work
-1. Tests for prop bet creation, placement, settlement, and cancellation.
-2. Seeding: add sample prop bets to `make seed`.
-3. Settlement notifications (optional): notify bettors when a prop settles.
-4. Dynamic odds / auto-close based on `close_at` (optional future enhancement).
+- Settlement notifications: per-user inbox notifications on win, loss, or cancellation.
+- Seeding: `seed_prop_bets` management command with 5 sample props, wired into `make seed`.
+- Tests: 32 tests covering models, views, APIs, settlement payouts, cancellation refunds, and notifications.
 
 Notes
 - Initial implementation supports only binary outcomes (Yes / No).
 - Models live in core betting so parlays and balance transactions integrate easily.
-- Creation policy: any authenticated (registered) user may create prop bets via the site UI; superusers are required to settle markets. Admin actions for settlement are restricted to superusers.
+- Creation policy: any authenticated (registered) user may create prop bets via the site UI; superusers are required to settle markets.
 - Settlement pays out winners (`stake * odds`) and marks losers as LOST.
 - Cancellation refunds all pending bets via BET_VOID transactions.

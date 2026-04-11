@@ -252,6 +252,22 @@ class TestPropBetPlacePartial:
         )
         assert resp.status_code == 400
 
+    def test_zero_stake_rejected(self, authed_client, user_balance, open_prop):
+        resp = authed_client.post(
+            reverse("hub:prop_bet_place_partial", args=[open_prop.pk]),
+            {"selection": "YES", "stake": "0"},
+        )
+        assert resp.status_code == 400
+        assert not PropBetSlip.objects.exists()
+
+    def test_negative_stake_rejected(self, authed_client, user_balance, open_prop):
+        resp = authed_client.post(
+            reverse("hub:prop_bet_place_partial", args=[open_prop.pk]),
+            {"selection": "YES", "stake": "-100.00"},
+        )
+        assert resp.status_code == 400
+        assert not PropBetSlip.objects.exists()
+
     def test_closed_market(self, authed_client, user_balance, open_prop):
         open_prop.status = PropBetStatus.CLOSED
         open_prop.save()

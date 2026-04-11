@@ -6,6 +6,7 @@ from channels.layers import get_channel_layer
 from django.utils import timezone
 
 from vinosports.activity.models import Notification
+from vinosports.betting.models import BetStatus
 
 logger = logging.getLogger(__name__)
 
@@ -69,21 +70,23 @@ def notify_prop_settlement(*, bet_slip, prop):
     if recipient.is_bot:
         return None
 
-    if bet_slip.status == "WON":
+    if bet_slip.status == BetStatus.WON:
         title = f"You won your prop bet: {prop.title}"
         body = (
             f"Your {bet_slip.get_selection_display()} bet paid out "
             f"${bet_slip.payout:,.2f}."
         )
-    elif bet_slip.status == "LOST":
+    elif bet_slip.status == BetStatus.LOST:
         title = f"You lost your prop bet: {prop.title}"
         body = (
             f"Your {bet_slip.get_selection_display()} bet "
             f"(${bet_slip.stake:,.2f}) did not win."
         )
-    else:  # VOID
+    elif bet_slip.status == BetStatus.VOID:
         title = f"Prop bet cancelled: {prop.title}"
         body = f"Your ${bet_slip.stake:,.2f} stake has been refunded."
+    else:
+        return None
 
     notification = Notification.objects.create(
         recipient=recipient,

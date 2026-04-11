@@ -1,4 +1,4 @@
-from django.contrib import admin
+from django.contrib import admin, messages
 from django.db import transaction
 from django.utils import timezone
 
@@ -26,7 +26,7 @@ class PropBetAdmin(admin.ModelAdmin):
     def _ensure_superuser(self, request):
         if not request.user.is_superuser:
             self.message_user(
-                request, "Only superusers may settle prop bets.", level=40
+                request, "Only superusers may settle prop bets.", level=messages.ERROR
             )
             return False
         return True
