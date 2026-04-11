@@ -1,0 +1,29 @@
+{% load i18n %}
+{% load currency_tags %}
+<div class="bg-surface-container rounded-lg border border-outline-variant/50 p-4">
+    {% if error %}<div class="text-danger text-sm font-medium mb-3">{{ error }}</div>{% endif %}
+    <h4 class="font-bold text-sm mb-3">Bet on: {{ prop.title }}</h4>
+    <form hx-post="{% url 'hub:prop_bet_place_partial' prop.pk %}" hx-target="#prop-{{ prop.pk }}-place" hx-swap="innerHTML">
+        {% csrf_token %}
+        <div class="flex items-center gap-4 mb-3">
+            <label class="flex items-center gap-1.5 cursor-pointer">
+                <input type="radio" name="selection" value="YES" checked class="accent-positive">
+                <span class="text-sm font-semibold">Yes <span class="font-mono text-muted">({{ prop.yes_odds }})</span></span>
+            </label>
+            <label class="flex items-center gap-1.5 cursor-pointer">
+                <input type="radio" name="selection" value="NO" class="accent-danger">
+                <span class="text-sm font-semibold">No <span class="font-mono text-muted">({{ prop.no_odds }})</span></span>
+            </label>
+        </div>
+        <div class="flex items-end gap-3">
+            <div class="flex-1">
+                <label class="block text-xs font-bold text-secondary uppercase tracking-wider mb-1">Stake</label>
+                <input name="stake" type="number" step="0.01" min="1" required
+                       class="w-full px-3 py-2 rounded-lg border border-outline-variant bg-surface-container-lowest text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary/50">
+            </div>
+            <button type="submit" class="px-4 py-2 rounded-lg bg-primary text-white font-bold text-sm uppercase tracking-wider hover:bg-primary/90 transition-colors">
+                Place Bet
+            </button>
+        </div>
+    </form>
+</div>

@@ -156,6 +156,26 @@
                     <td class="py-3 px-2 text-right text-muted text-xs">{{ entry.date|date:"d M H:i" }}</td>
                 </tr>
 
+                {% elif entry.type == "prop" %}
+                <tr class="hover:bg-surface-container-low transition-colors border-l-2 border-l-amber-500/40">
+                    <td class="py-3 px-2">
+                        <span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-amber-500/15 text-amber-400">PROP</span>
+                    </td>
+                    <td class="py-3 px-2">
+                        <a href="{% url 'hub:prop_bets' %}" class="hover:text-primary transition-colors">{{ entry.item.prop.title }}</a>
+                    </td>
+                    <td class="py-3 px-2 text-muted">{{ entry.item.get_selection_display }}</td>
+                    <td class="py-3 px-2 text-right font-mono text-muted">{{ entry.item.odds|floatformat:2 }}</td>
+                    <td class="py-3 px-2 text-right font-mono">{{ entry.item.stake|currency:user }}</td>
+                    <td class="py-3 px-2 text-right font-mono {% if entry.item.payout %}text-positive font-bold{% else %}text-muted{% endif %}">
+                        {% if entry.item.payout != None %}{{ entry.item.payout|currency:user }}{% else %}&mdash;{% endif %}
+                    </td>
+                    <td class="py-3 px-2 text-center">
+                        {% include "hub/partials/status_badge.html" with status=entry.item.status %}
+                    </td>
+                    <td class="py-3 px-2 text-right text-muted text-xs">{{ entry.date|date:"d M H:i" }}</td>
+                </tr>
+
                 {% elif entry.type == "parlay" %}
                 <tr class="hover:bg-surface-container-low transition-colors border-l-2 border-l-secondary/40" id="parlay-row-{{ entry.item.id_hash }}">
                     <td class="py-3 px-2">
@@ -307,6 +327,34 @@
                     <div class="font-mono text-sm text-muted">
                         {% if entry.league == "epl" %}{{ entry.item.odds_at_placement|floatformat:2 }}{% else %}{% if entry.item.odds_at_placement > 0 %}+{% endif %}{{ entry.item.odds_at_placement }}{% endif %}
                     </div>
+                </div>
+                <div>
+                    <div class="text-xs text-muted">Stake</div>
+                    <div class="font-mono text-sm">{{ entry.item.stake|currency:user }}</div>
+                </div>
+                <div>
+                    <div class="text-xs text-muted">Payout</div>
+                    <div class="font-mono text-sm {% if entry.item.payout %}text-positive font-bold{% else %}text-muted{% endif %}">
+                        {% if entry.item.payout != None %}{{ entry.item.payout|currency:user }}{% else %}&mdash;{% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% elif entry.type == "prop" %}
+        <div class="bg-surface-container-lowest rounded-lg border border-amber-500/30 p-4">
+            <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center gap-2">
+                    <span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-amber-500/15 text-amber-400">PROP</span>
+                    <span class="text-sm font-medium">{{ entry.item.prop.title }}</span>
+                </div>
+                {% include "hub/partials/status_badge.html" with status=entry.item.status %}
+            </div>
+            <div class="text-xs text-muted mb-2">{{ entry.item.get_selection_display }} &middot; {{ entry.date|date:"d M H:i" }}</div>
+            <div class="grid grid-cols-3 gap-3 text-center">
+                <div>
+                    <div class="text-xs text-muted">Odds</div>
+                    <div class="font-mono text-sm text-muted">{{ entry.item.odds|floatformat:2 }}</div>
                 </div>
                 <div>
                     <div class="text-xs text-muted">Stake</div>

@@ -10,6 +10,7 @@ class Notification(BaseModel):
 
     class Category(models.TextChoices):
         REPLY = "REPLY", "Reply"
+        BET_SETTLEMENT = "BET_SETTLEMENT", "Bet Settlement"
 
     recipient = models.ForeignKey(
         settings.AUTH_USER_MODEL,
