@@ -96,6 +96,7 @@ def toggle_comment_reaction(request, content_type_id, object_id, reaction_type):
         user=request.user, content_type_id=content_type_id, object_id=object_id
     ).first()
 
+    created_downvote = False
     if existing:
         if existing.reaction_type == reaction_type:
             # Same emoji — toggle off
@@ -104,6 +105,7 @@ def toggle_comment_reaction(request, content_type_id, object_id, reaction_type):
             # Different emoji — swap
             existing.reaction_type = reaction_type
             existing.save(update_fields=["reaction_type", "updated_at"])
+            created_downvote = reaction_type == "thumbs_down"
     else:
         CommentReaction.objects.create(
             user=request.user,
@@ -111,6 +113,13 @@ def toggle_comment_reaction(request, content_type_id, object_id, reaction_type):
             object_id=object_id,
             reaction_type=reaction_type,
         )
+        created_downvote = reaction_type == "thumbs_down"
+
+    # When a real user downvotes, bots pile on
+    if created_downvote and not request.user.is_bot:
+        from .dispatch import dispatch_pile_on_downvotes
+
+        dispatch_pile_on_downvotes(content_type_id, object_id, request.user.pk)
 
     html = _render_comment_reaction_buttons(content_type_id, object_id, request)
     return HttpResponse(html)

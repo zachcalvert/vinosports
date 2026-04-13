@@ -21,6 +21,19 @@ def dispatch_comment_reactions(comment):
         logger.warning("Failed to dispatch bot comment reactions", exc_info=True)
 
 
+def dispatch_pile_on_downvotes(content_type_id, object_id, author_user_id):
+    """Dispatch bots to pile on with thumbs_down after a human downvotes.
+
+    Safe to call from views — broker failures are caught and logged.
+    """
+    try:
+        from vinosports.bots.tasks import dispatch_bot_pile_on_downvotes
+
+        dispatch_bot_pile_on_downvotes.delay(content_type_id, object_id, author_user_id)
+    except Exception:
+        logger.warning("Failed to dispatch pile-on downvotes", exc_info=True)
+
+
 def dispatch_article_reactions(article):
     """Dispatch bot reactions for a newly published article.
 
