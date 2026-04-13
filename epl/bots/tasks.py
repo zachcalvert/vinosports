@@ -15,6 +15,8 @@ from django.urls import reverse
 from django.utils import timezone
 
 from epl.activity.services import queue_activity_event
+from epl.betting.models import BetSlip
+from epl.bots.comment_service import generate_bot_comment, select_bots_for_match
 from epl.bots.models import BotComment
 from epl.bots.registry import get_strategy_for_bot
 from epl.bots.services import (
@@ -25,6 +27,9 @@ from epl.bots.services import (
     place_bot_bet,
     place_bot_parlay,
 )
+from epl.bots.strategies import ValueHunterStrategy
+from epl.matches.models import Match
+from vinosports.betting.models import UserBalance
 from vinosports.bots.models import BotProfile
 from vinosports.bots.schedule import get_active_window, roll_action
 
@@ -40,8 +45,6 @@ logger = logging.getLogger(__name__)
 @shared_task
 def run_bot_strategies():
     """Dispatch execute_bot_strategy for active bots whose schedule window matches now."""
-    from epl.betting.models import BetSlip
-
     now = timezone.localtime()
     today = now.date()
     profiles = BotProfile.objects.filter(
@@ -109,14 +112,11 @@ def execute_bot_strategy(self, bot_user_id):
         return f"no odds for {user.email}"
 
     # ValueHunter needs full per-bookmaker odds
-    from epl.bots.strategies import ValueHunterStrategy
 
     if isinstance(strategy, ValueHunterStrategy):
         odds_map["_full"] = get_full_odds_map(match_ids)
 
     # Get current balance for stake calculations
-    from vinosports.betting.models import UserBalance
-
     try:
         balance = UserBalance.objects.get(user=user).balance
     except UserBalance.DoesNotExist:
@@ -177,10 +177,6 @@ def execute_bot_strategy(self, bot_user_id):
 @shared_task
 def generate_bot_comment_task(bot_user_id, match_id, trigger_type, bet_slip_id=None):
     """Generate and post a single bot comment. Dedup-safe via BotComment constraint."""
-    from epl.betting.models import BetSlip
-    from epl.bots.comment_service import generate_bot_comment
-    from epl.matches.models import Match
-
     try:
         bot_user = User.objects.get(pk=bot_user_id, is_bot=True, is_active=True)
     except User.DoesNotExist:
@@ -424,8 +420,6 @@ def generate_postmatch_comments(bot_user_ids=None):
                 dispatched += 1
         logger.info("Admin dispatched %d post-match comment tasks", dispatched)
         return f"dispatched {dispatched} admin post-match comments"
-
-    from epl.bots.comment_service import select_bots_for_match
 
     dispatched = 0
     for match in recently_finished:

@@ -51,6 +51,7 @@ from vinosports.betting.models import (
 )
 from vinosports.bots.comment_pipeline import (
     build_conversation_reply,
+    generate_comment,
     pick_conversation_bots,
     select_reply_bot,
 )
@@ -153,8 +154,6 @@ def spark_conversation(bot_user_id, leagues):
         return f"no upcoming events (tried: {tried})"
 
     # Step 2: Post a comment (POST_BET if we have a bet, PRE_MATCH otherwise)
-    from vinosports.bots.comment_pipeline import generate_comment
-
     trigger = "POST_BET" if bet_slip else "PRE_MATCH"
     comment = generate_comment(adapter, bot_user, event, trigger, bet_slip=bet_slip)
     if not comment:
