@@ -10,6 +10,7 @@ from django.views.decorators.http import require_POST
 
 from news.models import NewsArticle
 
+from .dispatch import dispatch_pile_on_downvotes
 from .models import ArticleReaction, CommentReaction, ReactionType
 
 logger = logging.getLogger(__name__)
@@ -117,8 +118,6 @@ def toggle_comment_reaction(request, content_type_id, object_id, reaction_type):
 
     # When a real user downvotes, bots pile on
     if created_downvote and not request.user.is_bot:
-        from .dispatch import dispatch_pile_on_downvotes
-
         dispatch_pile_on_downvotes(content_type_id, object_id, request.user.pk)
 
     html = _render_comment_reaction_buttons(content_type_id, object_id, request)
