@@ -181,14 +181,14 @@ class TestToggleCommentReaction:
         resp = c.post(self._url(comment_ct.pk, comment.pk, "thumbs_up"))
         assert resp.status_code == 302
 
-    @patch("vinosports.reactions.dispatch.dispatch_pile_on_downvotes")
+    @patch("vinosports.reactions.views.dispatch_pile_on_downvotes")
     def test_human_downvote_triggers_pile_on(
         self, mock_dispatch, auth_client, user, comment, comment_ct
     ):
         auth_client.post(self._url(comment_ct.pk, comment.pk, "thumbs_down"))
         mock_dispatch.assert_called_once_with(comment_ct.pk, comment.pk, user.pk)
 
-    @patch("vinosports.reactions.dispatch.dispatch_pile_on_downvotes")
+    @patch("vinosports.reactions.views.dispatch_pile_on_downvotes")
     def test_upvote_does_not_trigger_pile_on(
         self, mock_dispatch, auth_client, comment, comment_ct
     ):
