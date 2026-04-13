@@ -10,7 +10,7 @@ from vinosports.core.models import BaseModel
 class ReactionType(models.TextChoices):
     THUMBS_UP = "thumbs_up", _("👍")
     THUMBS_DOWN = "thumbs_down", _("👎")
-    PARTY_CUP = "party_cup", _("🥤")
+    PARTY_CUP = "party_cup", _("💸")
 
 
 class AbstractReaction(BaseModel):
