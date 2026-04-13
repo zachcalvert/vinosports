@@ -4,6 +4,12 @@ import logging
 
 from django.contrib.contenttypes.models import ContentType
 
+from vinosports.bots.tasks import (
+    dispatch_bot_article_reactions,
+    dispatch_bot_comment_reactions,
+    dispatch_bot_pile_on_downvotes,
+)
+
 logger = logging.getLogger(__name__)
 
 
@@ -13,8 +19,6 @@ def dispatch_comment_reactions(comment):
     Safe to call from views — broker failures are caught and logged.
     """
     try:
-        from vinosports.bots.tasks import dispatch_bot_comment_reactions
-
         ct = ContentType.objects.get_for_model(comment)
         dispatch_bot_comment_reactions.delay(ct.pk, comment.pk, comment.user_id)
     except Exception:
@@ -27,8 +31,6 @@ def dispatch_pile_on_downvotes(content_type_id, object_id, author_user_id):
     Safe to call from views — broker failures are caught and logged.
     """
     try:
-        from vinosports.bots.tasks import dispatch_bot_pile_on_downvotes
-
         dispatch_bot_pile_on_downvotes.delay(content_type_id, object_id, author_user_id)
     except Exception:
         logger.warning("Failed to dispatch pile-on downvotes", exc_info=True)
@@ -40,8 +42,6 @@ def dispatch_article_reactions(article):
     Safe to call from views/tasks — broker failures are caught and logged.
     """
     try:
-        from vinosports.bots.tasks import dispatch_bot_article_reactions
-
         author_id = article.author_id if article.author_id else None
         dispatch_bot_article_reactions.delay(article.pk, author_id)
     except Exception:

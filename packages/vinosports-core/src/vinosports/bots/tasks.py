@@ -3,12 +3,14 @@
 These tasks use the LeagueAdapter pattern so they work for any league.
 """
 
+import importlib
 import logging
 import random
 from decimal import Decimal
 
 from celery import shared_task
 from django.contrib.auth import get_user_model
+from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
 from django.db.models import F
 
@@ -30,6 +32,7 @@ from nba.games.models import (
 from nba.games.models import (
     Odds as NbaOdds,
 )
+from news.models import NewsArticle
 from nfl.betting.models import BetSlip as NflBetSlip
 from nfl.betting.models import Odds as NflOdds
 from nfl.bots.services import place_bot_bets
@@ -56,6 +59,7 @@ from vinosports.bots.comment_pipeline import (
     select_reply_bot,
 )
 from vinosports.bots.models import BotProfile, StrategyType
+from vinosports.reactions.models import ArticleReaction, CommentReaction
 from worldcup.betting.models import BetSlip as WcBetSlip
 from worldcup.matches.models import Match as WcMatch
 from worldcup.matches.models import Odds as WcOdds
@@ -91,8 +95,6 @@ def _get_adapter(league):
     if not dotted:
         raise ValueError(f"Unknown league: {league}")
     module_path, attr = dotted.rsplit(".", 1)
-    import importlib
-
     mod = importlib.import_module(module_path)
     return getattr(mod, attr)
 
@@ -850,8 +852,6 @@ def _bot_team_lost_article(profile, article):
 
     module_path, class_name = model_info
     try:
-        import importlib
-
         module = importlib.import_module(module_path)
         model_class = getattr(module, class_name)
         event = model_class.objects.select_related("home_team", "away_team").get(
@@ -933,10 +933,6 @@ def react_as_bot_to_comment(bot_user_id, content_type_id, object_id, force_type=
         force_type: If set, use this reaction type instead of picking one.
                     Used for pile-on downvotes triggered by human thumbs_down.
     """
-    from django.contrib.contenttypes.models import ContentType
-
-    from vinosports.reactions.models import CommentReaction
-
     try:
         bot_user = User.objects.get(pk=bot_user_id, is_bot=True, is_active=True)
     except User.DoesNotExist:
@@ -1028,9 +1024,6 @@ def dispatch_bot_article_reactions(article_id, author_user_id=None):
 @shared_task(name="vinosports.bots.tasks.react_as_bot_to_article")
 def react_as_bot_to_article(bot_user_id, article_id):
     """Single bot reacts to a news article."""
-    from news.models import NewsArticle
-    from vinosports.reactions.models import ArticleReaction
-
     try:
         bot_user = User.objects.get(pk=bot_user_id, is_bot=True, is_active=True)
     except User.DoesNotExist:
@@ -1072,8 +1065,6 @@ def react_as_bot_to_article(bot_user_id, article_id):
 @shared_task(name="vinosports.bots.tasks.dispatch_bot_pile_on_downvotes")
 def dispatch_bot_pile_on_downvotes(content_type_id, object_id, downvoter_user_id):
     """Dispatch 1-3 bots to pile on with thumbs_down after a human downvotes."""
-    from vinosports.reactions.models import CommentReaction
-
     # Exclude the downvoter and any bots that already reacted
     already_reacted = set(
         CommentReaction.objects.filter(
