@@ -18,6 +18,14 @@ def get_item(dictionary, key):
     return dictionary.get(key)
 
 
+@register.filter
+def join_names(names):
+    """Join a list of names into a comma-separated string for tooltips."""
+    if not names:
+        return ""
+    return ", ".join(names)
+
+
 @register.simple_tag
 def reaction_url(target_type, content_type_id, target_id, reaction_type):
     """Build the toggle URL for a reaction."""
@@ -48,30 +56,33 @@ def render_reactions(
     }
 
 
+def _build_reactors(qs):
+    """Build a dict of reaction_type -> [display_name, ...] from a queryset."""
+    reactors = {}
+    for rtype, name in qs.values_list("reaction_type", "user__display_name"):
+        reactors.setdefault(rtype, []).append(name)
+    return reactors
+
+
 @register.inclusion_tag("reactions/partials/reaction_buttons.html", takes_context=True)
 def comment_reactions(context, comment):
     """Self-contained reaction buttons for a comment. Fetches data inline."""
     ct = ContentType.objects.get_for_model(comment)
-    counts = dict(
-        CommentReaction.objects.filter(content_type=ct, object_id=comment.pk)
-        .values_list("reaction_type")
-        .annotate(count=Count("id"))
-    )
+    qs = CommentReaction.objects.filter(content_type=ct, object_id=comment.pk)
+    counts = dict(qs.values_list("reaction_type").annotate(count=Count("id")))
+    reactors = _build_reactors(qs)
     user = context.get("user")
     user_reaction = None
     if user and user.is_authenticated:
         user_reaction = (
-            CommentReaction.objects.filter(
-                content_type=ct, object_id=comment.pk, user=user
-            )
-            .values_list("reaction_type", flat=True)
-            .first()
+            qs.filter(user=user).values_list("reaction_type", flat=True).first()
         )
     return {
         "target_type": "comment",
         "content_type_id": ct.pk,
         "target_id": comment.pk,
         "counts": counts,
+        "reactors": reactors,
         "user_reaction": user_reaction,
         "reaction_choices": REACTION_CHOICES,
         "user": user,
@@ -81,24 +92,21 @@ def comment_reactions(context, comment):
 @register.inclusion_tag("reactions/partials/reaction_buttons.html", takes_context=True)
 def article_reactions(context, article):
     """Self-contained reaction buttons for a news article. Fetches data inline."""
-    counts = dict(
-        ArticleReaction.objects.filter(article=article)
-        .values_list("reaction_type")
-        .annotate(count=Count("id"))
-    )
+    qs = ArticleReaction.objects.filter(article=article)
+    counts = dict(qs.values_list("reaction_type").annotate(count=Count("id")))
+    reactors = _build_reactors(qs)
     user = context.get("user")
     user_reaction = None
     if user and user.is_authenticated:
         user_reaction = (
-            ArticleReaction.objects.filter(article=article, user=user)
-            .values_list("reaction_type", flat=True)
-            .first()
+            qs.filter(user=user).values_list("reaction_type", flat=True).first()
         )
     return {
         "target_type": "article",
         "content_type_id": None,
         "target_id": article.id_hash,
         "counts": counts,
+        "reactors": reactors,
         "user_reaction": user_reaction,
         "reaction_choices": REACTION_CHOICES,
         "user": user,

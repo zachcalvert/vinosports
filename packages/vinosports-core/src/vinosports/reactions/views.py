@@ -18,25 +18,25 @@ VALID_REACTION_TYPES = {choice.value for choice in ReactionType}
 REACTION_CHOICES = [(r.value, r.label) for r in ReactionType]
 
 
+def _build_reactors(qs):
+    """Build a dict of reaction_type -> [display_name, ...] from a reaction queryset."""
+    reactors = {}
+    for rtype, name in qs.values_list("reaction_type", "user__display_name"):
+        reactors.setdefault(rtype, []).append(name)
+    return reactors
+
+
 def _render_comment_reaction_buttons(content_type_id, object_id, request):
     """Render the reaction buttons partial for a comment."""
-    counts = dict(
-        CommentReaction.objects.filter(
-            content_type_id=content_type_id, object_id=object_id
-        )
-        .values_list("reaction_type")
-        .annotate(count=Count("id"))
+    qs = CommentReaction.objects.filter(
+        content_type_id=content_type_id, object_id=object_id
     )
+    counts = dict(qs.values_list("reaction_type").annotate(count=Count("id")))
+    reactors = _build_reactors(qs)
     user_reaction = None
     if request.user.is_authenticated:
         user_reaction = (
-            CommentReaction.objects.filter(
-                content_type_id=content_type_id,
-                object_id=object_id,
-                user=request.user,
-            )
-            .values_list("reaction_type", flat=True)
-            .first()
+            qs.filter(user=request.user).values_list("reaction_type", flat=True).first()
         )
     return render_to_string(
         "reactions/partials/reaction_buttons.html",
@@ -45,6 +45,7 @@ def _render_comment_reaction_buttons(content_type_id, object_id, request):
             "content_type_id": content_type_id,
             "target_id": object_id,
             "counts": counts,
+            "reactors": reactors,
             "user_reaction": user_reaction,
             "reaction_choices": REACTION_CHOICES,
         },
@@ -54,17 +55,13 @@ def _render_comment_reaction_buttons(content_type_id, object_id, request):
 
 def _render_article_reaction_buttons(article, request):
     """Render the reaction buttons partial for an article."""
-    counts = dict(
-        ArticleReaction.objects.filter(article=article)
-        .values_list("reaction_type")
-        .annotate(count=Count("id"))
-    )
+    qs = ArticleReaction.objects.filter(article=article)
+    counts = dict(qs.values_list("reaction_type").annotate(count=Count("id")))
+    reactors = _build_reactors(qs)
     user_reaction = None
     if request.user.is_authenticated:
         user_reaction = (
-            ArticleReaction.objects.filter(article=article, user=request.user)
-            .values_list("reaction_type", flat=True)
-            .first()
+            qs.filter(user=request.user).values_list("reaction_type", flat=True).first()
         )
     return render_to_string(
         "reactions/partials/reaction_buttons.html",
@@ -73,6 +70,7 @@ def _render_article_reaction_buttons(article, request):
             "content_type_id": None,
             "target_id": article.id_hash,
             "counts": counts,
+            "reactors": reactors,
             "user_reaction": user_reaction,
             "reaction_choices": REACTION_CHOICES,
         },

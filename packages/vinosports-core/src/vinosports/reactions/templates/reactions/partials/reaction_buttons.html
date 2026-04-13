@@ -3,13 +3,14 @@
 <div class="flex items-center gap-1.5"
      id="reactions-{{ target_type }}-{{ target_id }}">
     {% for rtype, emoji in reaction_choices %}
-    {% with count=counts|get_item:rtype %}
+    {% with count=counts|get_item:rtype names=reactors|get_item:rtype %}
     <button {% if user.is_authenticated %}
             hx-post="{% reaction_url target_type content_type_id target_id rtype %}"
             hx-target="#reactions-{{ target_type }}-{{ target_id }}"
             hx-swap="outerHTML"
             {% endif %}
-            class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs transition-colors border
+            {% if names %}title="{{ names|join_names }}"{% endif %}
+            class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs transition-colors border cursor-default
                    {% if user_reaction == rtype %}bg-primary/15 border-primary/30 text-primary{% else %}bg-surface-container border-outline-variant/50 text-muted hover:bg-surface-container-high{% endif %}">
         <span>{{ emoji }}</span>
         {% if count %}<span>{{ count }}</span>{% endif %}
