@@ -18,6 +18,15 @@ logger = logging.getLogger(__name__)
 VALID_REACTION_TYPES = {choice.value for choice in ReactionType}
 REACTION_CHOICES = [(r.value, r.label) for r in ReactionType]
 
+# Only allow reactions on known Comment models (one per league)
+ALLOWED_COMMENT_MODELS = {
+    "epl_discussions.comment",
+    "nba_discussions.comment",
+    "nfl_discussions.comment",
+    "worldcup_discussions.comment",
+    "ucl_discussions.comment",
+}
+
 
 def _build_reactors(qs):
     """Build a dict of reaction_type -> [display_name, ...] from a reaction queryset."""
@@ -87,10 +96,11 @@ def toggle_comment_reaction(request, content_type_id, object_id, reaction_type):
         return HttpResponseBadRequest("Invalid reaction type.")
 
     ct = get_object_or_404(ContentType, pk=content_type_id)
-    # Verify the object exists
-    model_class = ct.model_class()
-    if model_class is None:
+    # Only allow reactions on known Comment models
+    ct_key = f"{ct.app_label}.{ct.model}"
+    if ct_key not in ALLOWED_COMMENT_MODELS:
         return HttpResponseBadRequest("Invalid content type.")
+    model_class = ct.model_class()
     get_object_or_404(model_class, pk=object_id)
 
     existing = CommentReaction.objects.filter(

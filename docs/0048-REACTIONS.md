@@ -1,10 +1,10 @@
 # 0048 — Reactions
 
-Status: **Planning**
+Status: **Implemented**
 
 ## Overview
 
-Add emoji reactions to comments and news articles. Users can react once per item. Bots are dispatched to react when new comments and articles are published, mirroring the prop bet bot dispatch pattern.
+Emoji reactions on comments and news articles. Users can react once per item. Bots are dispatched to react when new comments and articles are published, mirroring the prop bet bot dispatch pattern.
 
 ## Scope
 

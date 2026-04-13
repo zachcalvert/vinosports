@@ -4,7 +4,8 @@
      id="reactions-{{ target_type }}-{{ target_id }}">
     {% for rtype, emoji in reaction_choices %}
     {% with count=counts|get_item:rtype names=reactors|get_item:rtype %}
-    <button {% if user.is_authenticated %}
+    <button type="button"
+            {% if user.is_authenticated %}
             hx-post="{% reaction_url target_type content_type_id target_id rtype %}"
             hx-target="#reactions-{{ target_type }}-{{ target_id }}"
             hx-swap="outerHTML"

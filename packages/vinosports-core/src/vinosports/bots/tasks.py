@@ -11,7 +11,7 @@ from decimal import Decimal
 from celery import shared_task
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.db.models import F
 
 from epl.bots.registry import get_strategy_for_bot
@@ -945,16 +945,21 @@ def react_as_bot_to_comment(bot_user_id, content_type_id, object_id, force_type=
     # Verify the comment still exists
     try:
         ct = ContentType.objects.get(pk=content_type_id)
-        model_class = ct.model_class()
-        if model_class is None:
-            return "invalid content type"
+    except ContentType.DoesNotExist:
+        return "comment not found"
+
+    model_class = ct.model_class()
+    if model_class is None:
+        return "invalid content type"
+
+    try:
         comment_obj = model_class.objects.select_related(
             "match__home_team",
             "match__away_team",
             "game__home_team",
             "game__away_team",
         ).get(pk=object_id)
-    except (ContentType.DoesNotExist, model_class.DoesNotExist):
+    except model_class.DoesNotExist:
         return "comment not found"
     except Exception:
         # select_related fields may not exist on all comment models — fall back
@@ -976,12 +981,15 @@ def react_as_bot_to_comment(bot_user_id, content_type_id, object_id, force_type=
     else:
         reaction_type = _pick_positive_reaction(profile.strategy_type)
 
-    CommentReaction.objects.create(
-        user=bot_user,
-        content_type_id=content_type_id,
-        object_id=object_id,
-        reaction_type=reaction_type,
-    )
+    try:
+        CommentReaction.objects.create(
+            user=bot_user,
+            content_type_id=content_type_id,
+            object_id=object_id,
+            reaction_type=reaction_type,
+        )
+    except IntegrityError:
+        return f"{bot_user.display_name} already reacted (race)"
 
     logger.info(
         "Bot %s reacted %s on comment %s/%s",
@@ -1047,11 +1055,14 @@ def react_as_bot_to_article(bot_user_id, article_id):
     else:
         reaction_type = _pick_positive_reaction(profile.strategy_type)
 
-    ArticleReaction.objects.create(
-        user=bot_user,
-        article_id=article_id,
-        reaction_type=reaction_type,
-    )
+    try:
+        ArticleReaction.objects.create(
+            user=bot_user,
+            article_id=article_id,
+            reaction_type=reaction_type,
+        )
+    except IntegrityError:
+        return f"{bot_user.display_name} already reacted (race)"
 
     logger.info(
         "Bot %s reacted %s on article %s",

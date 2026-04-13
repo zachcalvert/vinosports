@@ -42,7 +42,13 @@ def reaction_url(target_type, content_type_id, target_id, reaction_type):
 
 @register.inclusion_tag("reactions/partials/reaction_buttons.html", takes_context=True)
 def render_reactions(
-    context, target_type, content_type_id, target_id, counts, user_reaction
+    context,
+    target_type,
+    content_type_id,
+    target_id,
+    counts,
+    user_reaction,
+    reactors=None,
 ):
     """Render reaction buttons for a comment or article."""
     return {
@@ -50,6 +56,7 @@ def render_reactions(
         "content_type_id": content_type_id,
         "target_id": target_id,
         "counts": counts,
+        "reactors": reactors or {},
         "user_reaction": user_reaction,
         "reaction_choices": REACTION_CHOICES,
         "user": context.get("user"),
