@@ -37,7 +37,6 @@ node_modules/
 
 # Environment
 .env
-.env.*
 
 # OS
 .DS_Store

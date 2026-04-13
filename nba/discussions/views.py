@@ -10,6 +10,7 @@ from nba.betting.models import BetSlip
 from nba.discussions.forms import CommentForm
 from nba.discussions.models import Comment
 from nba.games.models import Game
+from vinosports.reactions.dispatch import dispatch_comment_reactions
 
 logger = logging.getLogger(__name__)
 
@@ -73,6 +74,8 @@ class CreateCommentView(LoginRequiredMixin, View):
                 maybe_reply_to_human_comment.delay(comment.pk)
             except Exception:
                 logger.warning("Failed to dispatch bot reply task", exc_info=True)
+
+        dispatch_comment_reactions(comment)
 
         bet_map = _build_bet_map(game.pk, {request.user.pk})
         comment.prefetched_replies = []
@@ -138,6 +141,8 @@ class CreateReplyView(LoginRequiredMixin, View):
                 maybe_reply_to_human_comment.delay(reply.pk)
             except Exception:
                 logger.warning("Failed to dispatch bot reply task", exc_info=True)
+
+        dispatch_comment_reactions(reply)
 
         reply_depth = parent.depth + 1
         bet_map = _build_bet_map(game.pk, {request.user.pk})

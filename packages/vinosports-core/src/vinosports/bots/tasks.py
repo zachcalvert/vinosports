@@ -3,13 +3,15 @@
 These tasks use the LeagueAdapter pattern so they work for any league.
 """
 
+import importlib
 import logging
 import random
 from decimal import Decimal
 
 from celery import shared_task
 from django.contrib.auth import get_user_model
-from django.db import transaction
+from django.contrib.contenttypes.models import ContentType
+from django.db import IntegrityError, transaction
 from django.db.models import F
 
 from epl.bots.registry import get_strategy_for_bot
@@ -30,6 +32,7 @@ from nba.games.models import (
 from nba.games.models import (
     Odds as NbaOdds,
 )
+from news.models import NewsArticle
 from nfl.betting.models import BetSlip as NflBetSlip
 from nfl.betting.models import Odds as NflOdds
 from nfl.bots.services import place_bot_bets
@@ -51,10 +54,12 @@ from vinosports.betting.models import (
 )
 from vinosports.bots.comment_pipeline import (
     build_conversation_reply,
+    generate_comment,
     pick_conversation_bots,
     select_reply_bot,
 )
 from vinosports.bots.models import BotProfile, StrategyType
+from vinosports.reactions.models import ArticleReaction, CommentReaction
 from worldcup.betting.models import BetSlip as WcBetSlip
 from worldcup.matches.models import Match as WcMatch
 from worldcup.matches.models import Odds as WcOdds
@@ -90,8 +95,6 @@ def _get_adapter(league):
     if not dotted:
         raise ValueError(f"Unknown league: {league}")
     module_path, attr = dotted.rsplit(".", 1)
-    import importlib
-
     mod = importlib.import_module(module_path)
     return getattr(mod, attr)
 
@@ -153,8 +156,6 @@ def spark_conversation(bot_user_id, leagues):
         return f"no upcoming events (tried: {tried})"
 
     # Step 2: Post a comment (POST_BET if we have a bet, PRE_MATCH otherwise)
-    from vinosports.bots.comment_pipeline import generate_comment
-
     trigger = "POST_BET" if bet_slip else "PRE_MATCH"
     comment = generate_comment(adapter, bot_user, event, trigger, bet_slip=bet_slip)
     if not comment:
@@ -738,3 +739,375 @@ def _dispatch_social_reply(adapter, league, event, comment, exclude_user_id):
         bot.display_name,
         delay,
     )
+
+
+# ---------------------------------------------------------------------------
+# Bot Reactions
+# ---------------------------------------------------------------------------
+
+# Positive-only reaction weights: (thumbs_up, party_cup)
+# Bots are upbeat by default — thumbs_down is only used situationally.
+_POSITIVE_WEIGHTS = {
+    "frontrunner": (75, 25),
+    "underdog": (60, 40),
+    "spread_shark": (80, 20),
+    "parlay": (60, 40),
+    "total_guru": (70, 30),
+    "draw_specialist": (60, 40),
+    "value_hunter": (75, 25),
+    "chaos_agent": (40, 60),
+    "all_in_alice": (45, 55),
+    "homer": (70, 30),
+    "anti_homer": (65, 35),
+}
+_DEFAULT_POSITIVE_WEIGHTS = (65, 35)
+_POSITIVE_CHOICES = ["thumbs_up", "party_cup"]
+
+
+def _pick_positive_reaction(strategy_type):
+    """Pick a positive reaction type (thumbs_up or party_cup)."""
+    weights = _POSITIVE_WEIGHTS.get(strategy_type, _DEFAULT_POSITIVE_WEIGHTS)
+    return random.choices(_POSITIVE_CHOICES, weights=weights, k=1)[0]
+
+
+def _bot_team_lost(profile, comment_obj):
+    """Check if the bot's favourite team lost the game/match this comment is on.
+
+    Returns True if the game is finished and the bot's team lost.
+    Returns False if no team affiliation, game not finished, or team didn't lose.
+    """
+    # Determine the game/match from the comment
+    event = getattr(comment_obj, "match", None) or getattr(comment_obj, "game", None)
+    if not event:
+        return False
+
+    # Need home/away teams with scores
+    home_team = getattr(event, "home_team", None)
+    away_team = getattr(event, "away_team", None)
+    if not home_team or not away_team:
+        return False
+
+    home_score = getattr(event, "home_score", None)
+    away_score = getattr(event, "away_score", None)
+    if home_score is None or away_score is None:
+        return False
+
+    # Check if the game is finished
+    status = str(getattr(event, "status", "")).upper()
+    if status not in ("FINISHED", "FINAL", "FINAL_OT", "FT"):
+        return False
+
+    # Determine which TLA/abbreviation field to check based on app_label
+    app_label = type(event)._meta.app_label
+    tla_field_map = {
+        "epl_matches": ("epl_team_tla", "tla"),
+        "nba_games": ("nba_team_abbr", "abbreviation"),
+        "nfl_games": ("nfl_team_abbr", "abbreviation"),
+        "worldcup_matches": ("worldcup_team_tla", "tla"),
+        "ucl_matches": ("ucl_team_tla", "tla"),
+    }
+    mapping = tla_field_map.get(app_label)
+    if not mapping:
+        return False
+
+    bot_tla_field, team_tla_field = mapping
+    bot_tla = getattr(profile, bot_tla_field, "")
+    if not bot_tla:
+        return False
+
+    home_tla = getattr(home_team, team_tla_field, "")
+    away_tla = getattr(away_team, team_tla_field, "")
+
+    if bot_tla == home_tla and home_score < away_score:
+        return True
+    if bot_tla == away_tla and away_score < home_score:
+        return True
+
+    return False
+
+
+def _bot_team_lost_article(profile, article):
+    """Check if the bot's favourite team lost the game referenced by a recap article.
+
+    Only applies to recap articles with a game_id_hash.
+    """
+    if article.article_type != "recap" or not article.game_id_hash:
+        return False
+
+    league = article.league
+    if not league:
+        return False
+
+    # Look up the game/match by id_hash
+    league_model_map = {
+        "epl": ("epl.matches.models", "Match"),
+        "nba": ("nba.games.models", "Game"),
+        "nfl": ("nfl.games.models", "Game"),
+        "worldcup": ("worldcup.matches.models", "Match"),
+        "ucl": ("ucl.matches.models", "Match"),
+    }
+    model_info = league_model_map.get(league)
+    if not model_info:
+        return False
+
+    module_path, class_name = model_info
+    try:
+        module = importlib.import_module(module_path)
+        model_class = getattr(module, class_name)
+        event = model_class.objects.select_related("home_team", "away_team").get(
+            id_hash=article.game_id_hash
+        )
+    except Exception:
+        return False
+
+    # Reuse the same logic — create a fake "comment-like" wrapper isn't needed,
+    # just inline the check
+    home_score = getattr(event, "home_score", None)
+    away_score = getattr(event, "away_score", None)
+    if home_score is None or away_score is None:
+        return False
+
+    status = str(getattr(event, "status", "")).upper()
+    if status not in ("FINISHED", "FINAL", "FINAL_OT", "FT"):
+        return False
+
+    tla_field_map = {
+        "epl": ("epl_team_tla", "tla"),
+        "nba": ("nba_team_abbr", "abbreviation"),
+        "nfl": ("nfl_team_abbr", "abbreviation"),
+        "worldcup": ("worldcup_team_tla", "tla"),
+        "ucl": ("ucl_team_tla", "tla"),
+    }
+    bot_tla_field, team_tla_field = tla_field_map[league]
+    bot_tla = getattr(profile, bot_tla_field, "")
+    if not bot_tla:
+        return False
+
+    home_tla = getattr(event.home_team, team_tla_field, "")
+    away_tla = getattr(event.away_team, team_tla_field, "")
+
+    if bot_tla == home_tla and home_score < away_score:
+        return True
+    if bot_tla == away_tla and away_score < home_score:
+        return True
+
+    return False
+
+
+@shared_task(name="vinosports.bots.tasks.dispatch_bot_comment_reactions")
+def dispatch_bot_comment_reactions(content_type_id, object_id, author_user_id):
+    """Dispatch 2-6 bots to react to a comment."""
+    bots = list(
+        BotProfile.objects.filter(user__is_active=True)
+        .exclude(user_id=author_user_id)
+        .select_related("user")
+    )
+    if not bots:
+        return "no active bots"
+
+    count = min(random.randint(2, 6), len(bots))
+    chosen = random.sample(bots, count)
+
+    for i, profile in enumerate(chosen):
+        delay = random.randint(10, 60) + (i * random.randint(5, 15))
+        react_as_bot_to_comment.apply_async(
+            args=[profile.user_id, content_type_id, object_id],
+            countdown=delay,
+        )
+        logger.info(
+            "Dispatched reaction from %s on comment %s/%s in %ds",
+            profile.user.display_name,
+            content_type_id,
+            object_id,
+            delay,
+        )
+
+    return f"dispatched {count} bot reactions for comment {content_type_id}/{object_id}"
+
+
+@shared_task(name="vinosports.bots.tasks.react_as_bot_to_comment")
+def react_as_bot_to_comment(bot_user_id, content_type_id, object_id, force_type=None):
+    """Single bot reacts to a comment.
+
+    Args:
+        force_type: If set, use this reaction type instead of picking one.
+                    Used for pile-on downvotes triggered by human thumbs_down.
+    """
+    try:
+        bot_user = User.objects.get(pk=bot_user_id, is_bot=True, is_active=True)
+    except User.DoesNotExist:
+        return f"bot {bot_user_id} not found"
+
+    profile = BotProfile.objects.filter(user=bot_user).first()
+    if not profile:
+        return "no profile"
+
+    # Verify the comment still exists
+    try:
+        ct = ContentType.objects.get(pk=content_type_id)
+    except ContentType.DoesNotExist:
+        return "comment not found"
+
+    model_class = ct.model_class()
+    if model_class is None:
+        return "invalid content type"
+
+    try:
+        comment_obj = model_class.objects.select_related(
+            "match__home_team",
+            "match__away_team",
+            "game__home_team",
+            "game__away_team",
+        ).get(pk=object_id)
+    except model_class.DoesNotExist:
+        return "comment not found"
+    except Exception:
+        # select_related fields may not exist on all comment models — fall back
+        try:
+            comment_obj = model_class.objects.get(pk=object_id)
+        except model_class.DoesNotExist:
+            return "comment not found"
+
+    # Skip if bot already reacted
+    if CommentReaction.objects.filter(
+        user=bot_user, content_type_id=content_type_id, object_id=object_id
+    ).exists():
+        return f"{bot_user.display_name} already reacted"
+
+    if force_type:
+        reaction_type = force_type
+    elif _bot_team_lost(profile, comment_obj):
+        reaction_type = "thumbs_down"
+    else:
+        reaction_type = _pick_positive_reaction(profile.strategy_type)
+
+    try:
+        CommentReaction.objects.create(
+            user=bot_user,
+            content_type_id=content_type_id,
+            object_id=object_id,
+            reaction_type=reaction_type,
+        )
+    except IntegrityError:
+        return f"{bot_user.display_name} already reacted (race)"
+
+    logger.info(
+        "Bot %s reacted %s on comment %s/%s",
+        bot_user.display_name,
+        reaction_type,
+        content_type_id,
+        object_id,
+    )
+    return f"{bot_user.display_name} reacted {reaction_type}"
+
+
+@shared_task(name="vinosports.bots.tasks.dispatch_bot_article_reactions")
+def dispatch_bot_article_reactions(article_id, author_user_id=None):
+    """Dispatch 2-6 bots to react to a news article."""
+    bots = list(BotProfile.objects.filter(user__is_active=True).select_related("user"))
+    if author_user_id:
+        bots = [b for b in bots if b.user_id != author_user_id]
+    if not bots:
+        return "no active bots"
+
+    count = min(random.randint(2, 6), len(bots))
+    chosen = random.sample(bots, count)
+
+    for i, profile in enumerate(chosen):
+        delay = random.randint(10, 60) + (i * random.randint(5, 15))
+        react_as_bot_to_article.apply_async(
+            args=[profile.user_id, article_id],
+            countdown=delay,
+        )
+        logger.info(
+            "Dispatched reaction from %s on article %s in %ds",
+            profile.user.display_name,
+            article_id,
+            delay,
+        )
+
+    return f"dispatched {count} bot reactions for article {article_id}"
+
+
+@shared_task(name="vinosports.bots.tasks.react_as_bot_to_article")
+def react_as_bot_to_article(bot_user_id, article_id):
+    """Single bot reacts to a news article."""
+    try:
+        bot_user = User.objects.get(pk=bot_user_id, is_bot=True, is_active=True)
+    except User.DoesNotExist:
+        return f"bot {bot_user_id} not found"
+
+    profile = BotProfile.objects.filter(user=bot_user).first()
+    if not profile:
+        return "no profile"
+
+    try:
+        article = NewsArticle.objects.get(pk=article_id)
+    except NewsArticle.DoesNotExist:
+        return f"article {article_id} not found"
+
+    # Skip if bot already reacted
+    if ArticleReaction.objects.filter(user=bot_user, article_id=article_id).exists():
+        return f"{bot_user.display_name} already reacted"
+
+    if _bot_team_lost_article(profile, article):
+        reaction_type = "thumbs_down"
+    else:
+        reaction_type = _pick_positive_reaction(profile.strategy_type)
+
+    try:
+        ArticleReaction.objects.create(
+            user=bot_user,
+            article_id=article_id,
+            reaction_type=reaction_type,
+        )
+    except IntegrityError:
+        return f"{bot_user.display_name} already reacted (race)"
+
+    logger.info(
+        "Bot %s reacted %s on article %s",
+        bot_user.display_name,
+        reaction_type,
+        article_id,
+    )
+    return f"{bot_user.display_name} reacted {reaction_type}"
+
+
+@shared_task(name="vinosports.bots.tasks.dispatch_bot_pile_on_downvotes")
+def dispatch_bot_pile_on_downvotes(content_type_id, object_id, downvoter_user_id):
+    """Dispatch 1-3 bots to pile on with thumbs_down after a human downvotes."""
+    # Exclude the downvoter and any bots that already reacted
+    already_reacted = set(
+        CommentReaction.objects.filter(
+            content_type_id=content_type_id, object_id=object_id
+        ).values_list("user_id", flat=True)
+    )
+    exclude_ids = already_reacted | {downvoter_user_id}
+
+    bots = list(
+        BotProfile.objects.filter(user__is_active=True)
+        .exclude(user_id__in=exclude_ids)
+        .select_related("user")
+    )
+    if not bots:
+        return "no available bots for pile-on"
+
+    count = min(random.randint(1, 3), len(bots))
+    chosen = random.sample(bots, count)
+
+    for i, profile in enumerate(chosen):
+        delay = random.randint(5, 30) + (i * random.randint(5, 15))
+        react_as_bot_to_comment.apply_async(
+            args=[profile.user_id, content_type_id, object_id],
+            kwargs={"force_type": "thumbs_down"},
+            countdown=delay,
+        )
+        logger.info(
+            "Pile-on: dispatched thumbs_down from %s on comment %s/%s in %ds",
+            profile.user.display_name,
+            content_type_id,
+            object_id,
+            delay,
+        )
+
+    return f"dispatched {count} pile-on downvotes"

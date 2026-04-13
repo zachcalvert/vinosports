@@ -7,6 +7,7 @@ from django.shortcuts import get_object_or_404
 from django.template.loader import render_to_string
 from django.views import View
 
+from vinosports.reactions.dispatch import dispatch_comment_reactions
 from worldcup.betting.models import BetSlip
 from worldcup.discussions.forms import CommentForm
 from worldcup.discussions.models import Comment
@@ -170,6 +171,8 @@ class CreateCommentView(LoginRequiredMixin, View):
             except Exception:
                 logger.warning("Failed to dispatch bot reply task", exc_info=True)
 
+        dispatch_comment_reactions(comment)
+
         bet_map = _build_bet_map(match.pk, {request.user.pk})
         comment.prefetched_replies = []
         comment.reply_count = 0
@@ -240,6 +243,8 @@ class CreateReplyView(LoginRequiredMixin, View):
                 maybe_reply_to_human_comment.delay(reply.pk)
             except Exception:
                 logger.warning("Failed to dispatch bot reply task", exc_info=True)
+
+        dispatch_comment_reactions(reply)
 
         reply_depth = parent.depth + 1
         bet_map = _build_bet_map(match.pk, {request.user.pk})

@@ -1,4 +1,5 @@
 {% extends base_template %}
+{% load reactions_tags %}
 
 {% block title %}{{ article.title }} — Vino Sports{% endblock %}
 
@@ -90,6 +91,11 @@
                 [&>ul]:list-disc [&>ul]:pl-5 [&>ul]:mb-4 [&>ul>li]:mb-1
                 [&>blockquote]:border-l-4 [&>blockquote]:border-primary [&>blockquote]:pl-4 [&>blockquote]:italic [&>blockquote]:text-muted">
         {{ article.body|linebreaks }}
+    </div>
+
+    {# Reactions #}
+    <div class="mt-8 pt-6 border-t border-outline-variant/50">
+        {% article_reactions article %}
     </div>
 </article>
 {% endblock %}

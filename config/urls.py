@@ -13,6 +13,7 @@ urlpatterns = [
     path("worldcup/", include("worldcup.urls")),
     path("ucl/", include("ucl.urls")),
     path("news/", include("news.urls")),
+    path("reactions/", include("vinosports.reactions.urls")),
     path("", include("hub.urls")),
 ]
 

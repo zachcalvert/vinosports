@@ -104,3 +104,7 @@ class NewsArticle(BaseModel):
         self.status = self.Status.PUBLISHED
         self.published_at = timezone.now()
         self.save(update_fields=["status", "published_at"])
+
+        from vinosports.reactions.dispatch import dispatch_article_reactions
+
+        dispatch_article_reactions(self)
