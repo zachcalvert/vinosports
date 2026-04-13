@@ -1,4 +1,4 @@
-{% load match_tags %}
+{% load match_tags reactions_tags %}
 
 <div id="comment-{{ comment.id_hash }}" class="{% if depth == 1 %}ml-8 pl-4 border-l border-outline-variant/50{% elif depth == 2 %}ml-16 pl-4 border-l border-outline-variant/50{% endif %}">
     <div class="bg-surface-container-lowest rounded-xl border-b-4 border-outline-variant p-4">
@@ -27,9 +27,11 @@
         {% else %}
         <p class="text-sm text-muted whitespace-pre-line break-words">{{ comment.body }}</p>
 
-        <!-- Actions -->
+        <!-- Reactions + Actions -->
         <div class="flex items-center gap-3 mt-2">
+            {% comment_reactions comment %}
             {% if depth < 2 %}
+            <span class="text-muted/30">|</span>
             {% if depth == 0 and comment.reply_count > 0 %}
             <span class="text-xs text-muted">
                 {{ comment.reply_count }} repl{{ comment.reply_count|pluralize:"y,ies" }}

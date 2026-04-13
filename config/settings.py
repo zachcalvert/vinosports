@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     "vinosports.rewards",
     "vinosports.bots",
     "vinosports.activity",
+    "vinosports.reactions",
     # Hub
     "hub",
     "news",

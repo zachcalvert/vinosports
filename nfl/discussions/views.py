@@ -39,6 +39,10 @@ class CreateCommentView(LoginRequiredMixin, View):
             except Exception:
                 logger.warning("Failed to dispatch bot reply task", exc_info=True)
 
+        from vinosports.reactions.dispatch import dispatch_comment_reactions
+
+        dispatch_comment_reactions(comment)
+
         comment.prefetched_replies = []
         comment.reply_count = 0
 
@@ -98,6 +102,10 @@ class CreateReplyView(LoginRequiredMixin, View):
                 maybe_reply_to_human_comment.delay(reply.pk)
             except Exception:
                 logger.warning("Failed to dispatch bot reply task", exc_info=True)
+
+        from vinosports.reactions.dispatch import dispatch_comment_reactions
+
+        dispatch_comment_reactions(reply)
 
         reply_depth = parent.depth + 1
         reply.prefetched_replies = []

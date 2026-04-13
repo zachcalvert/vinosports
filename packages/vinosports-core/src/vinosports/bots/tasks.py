@@ -737,3 +737,180 @@ def _dispatch_social_reply(adapter, league, event, comment, exclude_user_id):
         bot.display_name,
         delay,
     )
+
+
+# ---------------------------------------------------------------------------
+# Bot Reactions
+# ---------------------------------------------------------------------------
+
+# Personality-based reaction weights: (thumbs_up, thumbs_down, party_cup)
+_REACTION_WEIGHTS = {
+    "frontrunner": (70, 10, 20),
+    "underdog": (50, 20, 30),
+    "spread_shark": (60, 25, 15),
+    "parlay": (55, 15, 30),
+    "total_guru": (60, 20, 20),
+    "draw_specialist": (50, 20, 30),
+    "value_hunter": (60, 25, 15),
+    "chaos_agent": (30, 30, 40),
+    "all_in_alice": (50, 10, 40),
+    "homer": (65, 15, 20),
+    "anti_homer": (40, 35, 25),
+}
+_DEFAULT_WEIGHTS = (60, 20, 20)
+_REACTION_CHOICES = ["thumbs_up", "thumbs_down", "party_cup"]
+
+
+def _pick_reaction_type(strategy_type):
+    """Pick a reaction type based on bot personality weights."""
+    weights = _REACTION_WEIGHTS.get(strategy_type, _DEFAULT_WEIGHTS)
+    return random.choices(_REACTION_CHOICES, weights=weights, k=1)[0]
+
+
+@shared_task(name="vinosports.bots.tasks.dispatch_bot_comment_reactions")
+def dispatch_bot_comment_reactions(content_type_id, object_id, author_user_id):
+    """Dispatch 2-6 bots to react to a comment."""
+    bots = list(
+        BotProfile.objects.filter(user__is_active=True)
+        .exclude(user_id=author_user_id)
+        .select_related("user")
+    )
+    if not bots:
+        return "no active bots"
+
+    count = min(random.randint(2, 6), len(bots))
+    chosen = random.sample(bots, count)
+
+    for i, profile in enumerate(chosen):
+        delay = random.randint(10, 60) + (i * random.randint(5, 15))
+        react_as_bot_to_comment.apply_async(
+            args=[profile.user_id, content_type_id, object_id],
+            countdown=delay,
+        )
+        logger.info(
+            "Dispatched reaction from %s on comment %s/%s in %ds",
+            profile.user.display_name,
+            content_type_id,
+            object_id,
+            delay,
+        )
+
+    return f"dispatched {count} bot reactions for comment {content_type_id}/{object_id}"
+
+
+@shared_task(name="vinosports.bots.tasks.react_as_bot_to_comment")
+def react_as_bot_to_comment(bot_user_id, content_type_id, object_id):
+    """Single bot reacts to a comment."""
+    from django.contrib.contenttypes.models import ContentType
+
+    from vinosports.reactions.models import CommentReaction
+
+    try:
+        bot_user = User.objects.get(pk=bot_user_id, is_bot=True, is_active=True)
+    except User.DoesNotExist:
+        return f"bot {bot_user_id} not found"
+
+    profile = BotProfile.objects.filter(user=bot_user).first()
+    if not profile:
+        return "no profile"
+
+    # Verify the comment still exists
+    try:
+        ct = ContentType.objects.get(pk=content_type_id)
+        model_class = ct.model_class()
+        if model_class is None:
+            return "invalid content type"
+        model_class.objects.get(pk=object_id)
+    except (ContentType.DoesNotExist, model_class.DoesNotExist):
+        return "comment not found"
+
+    # Skip if bot already reacted
+    if CommentReaction.objects.filter(
+        user=bot_user, content_type_id=content_type_id, object_id=object_id
+    ).exists():
+        return f"{bot_user.display_name} already reacted"
+
+    reaction_type = _pick_reaction_type(profile.strategy_type)
+    CommentReaction.objects.create(
+        user=bot_user,
+        content_type_id=content_type_id,
+        object_id=object_id,
+        reaction_type=reaction_type,
+    )
+
+    logger.info(
+        "Bot %s reacted %s on comment %s/%s",
+        bot_user.display_name,
+        reaction_type,
+        content_type_id,
+        object_id,
+    )
+    return f"{bot_user.display_name} reacted {reaction_type}"
+
+
+@shared_task(name="vinosports.bots.tasks.dispatch_bot_article_reactions")
+def dispatch_bot_article_reactions(article_id, author_user_id=None):
+    """Dispatch 2-6 bots to react to a news article."""
+    bots = list(BotProfile.objects.filter(user__is_active=True).select_related("user"))
+    if author_user_id:
+        bots = [b for b in bots if b.user_id != author_user_id]
+    if not bots:
+        return "no active bots"
+
+    count = min(random.randint(2, 6), len(bots))
+    chosen = random.sample(bots, count)
+
+    for i, profile in enumerate(chosen):
+        delay = random.randint(10, 60) + (i * random.randint(5, 15))
+        react_as_bot_to_article.apply_async(
+            args=[profile.user_id, article_id],
+            countdown=delay,
+        )
+        logger.info(
+            "Dispatched reaction from %s on article %s in %ds",
+            profile.user.display_name,
+            article_id,
+            delay,
+        )
+
+    return f"dispatched {count} bot reactions for article {article_id}"
+
+
+@shared_task(name="vinosports.bots.tasks.react_as_bot_to_article")
+def react_as_bot_to_article(bot_user_id, article_id):
+    """Single bot reacts to a news article."""
+    from news.models import NewsArticle
+    from vinosports.reactions.models import ArticleReaction
+
+    try:
+        bot_user = User.objects.get(pk=bot_user_id, is_bot=True, is_active=True)
+    except User.DoesNotExist:
+        return f"bot {bot_user_id} not found"
+
+    profile = BotProfile.objects.filter(user=bot_user).first()
+    if not profile:
+        return "no profile"
+
+    try:
+        NewsArticle.objects.get(pk=article_id)
+    except NewsArticle.DoesNotExist:
+        return f"article {article_id} not found"
+
+    # Skip if bot already reacted
+    if ArticleReaction.objects.filter(user=bot_user, article_id=article_id).exists():
+        return f"{bot_user.display_name} already reacted"
+
+    reaction_type = _pick_reaction_type(profile.strategy_type)
+    ArticleReaction.objects.create(
+        user=bot_user,
+        article_id=article_id,
+        reaction_type=reaction_type,
+    )
+
+    logger.info(
+        "Bot %s reacted %s on article %s",
+        bot_user.display_name,
+        reaction_type,
+        article_id,
+    )
+    return f"{bot_user.display_name} reacted {reaction_type}"
