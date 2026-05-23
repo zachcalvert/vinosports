@@ -6,8 +6,6 @@
 
 Play-money sports betting simulation across EPL, NBA, NFL, 2026 FIFA World Cup, and UEFA Champions League. One account, one balance, all leagues.
 
-**Live at [vinosports.com](https://vinosports.com)**
-
 ## What it does
 
 Users place bets and parlays on real matches using play-money. AI-powered bots with distinct personalities generate commentary and place their own bets using 8 different strategies. Scores sync live from external APIs, bets settle automatically, and everything updates in real time via WebSockets.
